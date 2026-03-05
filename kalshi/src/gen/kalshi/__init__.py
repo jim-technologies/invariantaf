@@ -1,0 +1,1 @@
+"""Generated Kalshi protobuf package."""

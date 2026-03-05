@@ -1,0 +1,3431 @@
+syntax = "proto3";
+
+package kalshi.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/struct.proto";
+
+// KalshiService exposes Trade API operations from Kalshi's OpenAPI spec.
+//
+// Generated from openapi/kalshi.openapi.yaml.
+service KalshiService {
+  // Get Historical Cutoff Timestamps
+  rpc GetHistoricalCutoff(GetHistoricalCutoffRequest) returns (GetHistoricalCutoffResponse) {
+    option (google.api.http) = {
+      get: "/historical/cutoff"
+      response_body: "data"
+    };
+  }
+
+  // Get Historical Market Candlesticks
+  rpc GetMarketCandlesticksHistorical(GetMarketCandlesticksHistoricalRequest) returns (GetMarketCandlesticksHistoricalResponse) {
+    option (google.api.http) = {
+      get: "/historical/markets/{ticker}/candlesticks"
+      response_body: "data"
+    };
+  }
+
+  // Get Historical Fills
+  rpc GetFillsHistorical(GetFillsHistoricalRequest) returns (GetFillsHistoricalResponse) {
+    option (google.api.http) = {
+      get: "/historical/fills"
+      response_body: "data"
+    };
+  }
+
+  // Get Historical Orders
+  rpc GetHistoricalOrders(GetHistoricalOrdersRequest) returns (GetHistoricalOrdersResponse) {
+    option (google.api.http) = {
+      get: "/historical/orders"
+      response_body: "data"
+    };
+  }
+
+  // Get Historical Markets
+  rpc GetHistoricalMarkets(GetHistoricalMarketsRequest) returns (GetHistoricalMarketsResponse) {
+    option (google.api.http) = {
+      get: "/historical/markets"
+      response_body: "data"
+    };
+  }
+
+  // Get Historical Market
+  rpc GetHistoricalMarket(GetHistoricalMarketRequest) returns (GetHistoricalMarketResponse) {
+    option (google.api.http) = {
+      get: "/historical/markets/{ticker}"
+      response_body: "data"
+    };
+  }
+
+  // Get Exchange Status
+  rpc GetExchangeStatus(GetExchangeStatusRequest) returns (GetExchangeStatusResponse) {
+    option (google.api.http) = {
+      get: "/exchange/status"
+      response_body: "data"
+    };
+  }
+
+  // Get Exchange Announcements
+  rpc GetExchangeAnnouncements(GetExchangeAnnouncementsRequest) returns (GetExchangeAnnouncementsResponse) {
+    option (google.api.http) = {
+      get: "/exchange/announcements"
+      response_body: "data"
+    };
+  }
+
+  // Get Series Fee Changes
+  rpc GetSeriesFeeChanges(GetSeriesFeeChangesRequest) returns (GetSeriesFeeChangesResponse) {
+    option (google.api.http) = {
+      get: "/series/fee_changes"
+      response_body: "data"
+    };
+  }
+
+  // Get Exchange Schedule
+  rpc GetExchangeSchedule(GetExchangeScheduleRequest) returns (GetExchangeScheduleResponse) {
+    option (google.api.http) = {
+      get: "/exchange/schedule"
+      response_body: "data"
+    };
+  }
+
+  // Get User Data Timestamp
+  rpc GetUserDataTimestamp(GetUserDataTimestampRequest) returns (GetUserDataTimestampResponse) {
+    option (google.api.http) = {
+      get: "/exchange/user_data_timestamp"
+      response_body: "data"
+    };
+  }
+
+  // Get Orders
+  rpc GetOrders(GetOrdersRequest) returns (GetOrdersResponse) {
+    option (google.api.http) = {
+      get: "/portfolio/orders"
+      response_body: "data"
+    };
+  }
+
+  // Create Order
+  rpc CreateOrder(CreateOrderRequest) returns (CreateOrderResponse) {
+    option (google.api.http) = {
+      post: "/portfolio/orders"
+      body: "body"
+      response_body: "data"
+    };
+  }
+
+  // Get Order
+  rpc GetOrder(GetOrderRequest) returns (GetOrderResponse) {
+    option (google.api.http) = {
+      get: "/portfolio/orders/{order_id}"
+      response_body: "data"
+    };
+  }
+
+  // Cancel Order
+  rpc CancelOrder(CancelOrderRequest) returns (CancelOrderResponse) {
+    option (google.api.http) = {
+      delete: "/portfolio/orders/{order_id}"
+      response_body: "data"
+    };
+  }
+
+  // Batch Create Orders
+  rpc BatchCreateOrders(BatchCreateOrdersRequest) returns (BatchCreateOrdersResponse) {
+    option (google.api.http) = {
+      post: "/portfolio/orders/batched"
+      body: "body"
+      response_body: "data"
+    };
+  }
+
+  // Batch Cancel Orders
+  rpc BatchCancelOrders(BatchCancelOrdersRequest) returns (BatchCancelOrdersResponse) {
+    option (google.api.http) = {
+      delete: "/portfolio/orders/batched"
+      body: "body"
+      response_body: "data"
+    };
+  }
+
+  // Amend Order
+  rpc AmendOrder(AmendOrderRequest) returns (AmendOrderResponse) {
+    option (google.api.http) = {
+      post: "/portfolio/orders/{order_id}/amend"
+      body: "body"
+      response_body: "data"
+    };
+  }
+
+  // Decrease Order
+  rpc DecreaseOrder(DecreaseOrderRequest) returns (DecreaseOrderResponse) {
+    option (google.api.http) = {
+      post: "/portfolio/orders/{order_id}/decrease"
+      body: "body"
+      response_body: "data"
+    };
+  }
+
+  // Get Queue Positions for Orders
+  rpc GetOrderQueuePositions(GetOrderQueuePositionsRequest) returns (GetOrderQueuePositionsResponse) {
+    option (google.api.http) = {
+      get: "/portfolio/orders/queue_positions"
+      response_body: "data"
+    };
+  }
+
+  // Get Order Queue Position
+  rpc GetOrderQueuePosition(GetOrderQueuePositionRequest) returns (GetOrderQueuePositionResponse) {
+    option (google.api.http) = {
+      get: "/portfolio/orders/{order_id}/queue_position"
+      response_body: "data"
+    };
+  }
+
+  // Get Order Groups
+  rpc GetOrderGroups(GetOrderGroupsRequest) returns (GetOrderGroupsResponse) {
+    option (google.api.http) = {
+      get: "/portfolio/order_groups"
+      response_body: "data"
+    };
+  }
+
+  // Create Order Group
+  rpc CreateOrderGroup(CreateOrderGroupRequest) returns (CreateOrderGroupResponse) {
+    option (google.api.http) = {
+      post: "/portfolio/order_groups/create"
+      body: "body"
+      response_body: "data"
+    };
+  }
+
+  // Get Order Group
+  rpc GetOrderGroup(GetOrderGroupRequest) returns (GetOrderGroupResponse) {
+    option (google.api.http) = {
+      get: "/portfolio/order_groups/{order_group_id}"
+      response_body: "data"
+    };
+  }
+
+  // Delete Order Group
+  rpc DeleteOrderGroup(DeleteOrderGroupRequest) returns (DeleteOrderGroupResponse) {
+    option (google.api.http) = {
+      delete: "/portfolio/order_groups/{order_group_id}"
+      response_body: "data"
+    };
+  }
+
+  // Reset Order Group
+  rpc ResetOrderGroup(ResetOrderGroupRequest) returns (ResetOrderGroupResponse) {
+    option (google.api.http) = {
+      put: "/portfolio/order_groups/{order_group_id}/reset"
+      body: "body"
+      response_body: "data"
+    };
+  }
+
+  // Trigger Order Group
+  rpc TriggerOrderGroup(TriggerOrderGroupRequest) returns (TriggerOrderGroupResponse) {
+    option (google.api.http) = {
+      put: "/portfolio/order_groups/{order_group_id}/trigger"
+      body: "body"
+      response_body: "data"
+    };
+  }
+
+  // Update Order Group Limit
+  rpc UpdateOrderGroupLimit(UpdateOrderGroupLimitRequest) returns (UpdateOrderGroupLimitResponse) {
+    option (google.api.http) = {
+      put: "/portfolio/order_groups/{order_group_id}/limit"
+      body: "body"
+      response_body: "data"
+    };
+  }
+
+  // Get Balance
+  rpc GetBalance(GetBalanceRequest) returns (GetBalanceResponse) {
+    option (google.api.http) = {
+      get: "/portfolio/balance"
+      response_body: "data"
+    };
+  }
+
+  // Create Subaccount
+  rpc CreateSubaccount(CreateSubaccountRequest) returns (CreateSubaccountResponse) {
+    option (google.api.http) = {
+      post: "/portfolio/subaccounts"
+      response_body: "data"
+    };
+  }
+
+  // Transfer Between Subaccounts
+  rpc ApplySubaccountTransfer(ApplySubaccountTransferRequest) returns (ApplySubaccountTransferResponse) {
+    option (google.api.http) = {
+      post: "/portfolio/subaccounts/transfer"
+      body: "body"
+      response_body: "data"
+    };
+  }
+
+  // Get All Subaccount Balances
+  rpc GetSubaccountBalances(GetSubaccountBalancesRequest) returns (GetSubaccountBalancesResponse) {
+    option (google.api.http) = {
+      get: "/portfolio/subaccounts/balances"
+      response_body: "data"
+    };
+  }
+
+  // Get Subaccount Transfers
+  rpc GetSubaccountTransfers(GetSubaccountTransfersRequest) returns (GetSubaccountTransfersResponse) {
+    option (google.api.http) = {
+      get: "/portfolio/subaccounts/transfers"
+      response_body: "data"
+    };
+  }
+
+  // Get Subaccount Netting
+  rpc GetSubaccountNetting(GetSubaccountNettingRequest) returns (GetSubaccountNettingResponse) {
+    option (google.api.http) = {
+      get: "/portfolio/subaccounts/netting"
+      response_body: "data"
+    };
+  }
+
+  // Update Subaccount Netting
+  rpc UpdateSubaccountNetting(UpdateSubaccountNettingRequest) returns (UpdateSubaccountNettingResponse) {
+    option (google.api.http) = {
+      put: "/portfolio/subaccounts/netting"
+      body: "body"
+      response_body: "data"
+    };
+  }
+
+  // Get Positions
+  rpc GetPositions(GetPositionsRequest) returns (GetPositionsResponse) {
+    option (google.api.http) = {
+      get: "/portfolio/positions"
+      response_body: "data"
+    };
+  }
+
+  // Get Settlements
+  rpc GetSettlements(GetSettlementsRequest) returns (GetSettlementsResponse) {
+    option (google.api.http) = {
+      get: "/portfolio/settlements"
+      response_body: "data"
+    };
+  }
+
+  // Get Total Resting Order Value
+  rpc GetPortfolioRestingOrderTotalValue(GetPortfolioRestingOrderTotalValueRequest) returns (GetPortfolioRestingOrderTotalValueResponse) {
+    option (google.api.http) = {
+      get: "/portfolio/summary/total_resting_order_value"
+      response_body: "data"
+    };
+  }
+
+  // Get Fills
+  rpc GetFills(GetFillsRequest) returns (GetFillsResponse) {
+    option (google.api.http) = {
+      get: "/portfolio/fills"
+      response_body: "data"
+    };
+  }
+
+  // Get API Keys
+  rpc GetApiKeys(GetApiKeysRequest) returns (GetApiKeysResponse) {
+    option (google.api.http) = {
+      get: "/api_keys"
+      response_body: "data"
+    };
+  }
+
+  // Create API Key
+  rpc CreateApiKey(CreateApiKeyRequest) returns (CreateApiKeyResponse) {
+    option (google.api.http) = {
+      post: "/api_keys"
+      body: "body"
+      response_body: "data"
+    };
+  }
+
+  // Generate API Key
+  rpc GenerateApiKey(GenerateApiKeyRequest) returns (GenerateApiKeyResponse) {
+    option (google.api.http) = {
+      post: "/api_keys/generate"
+      body: "body"
+      response_body: "data"
+    };
+  }
+
+  // Delete API Key
+  rpc DeleteApiKey(DeleteApiKeyRequest) returns (DeleteApiKeyResponse) {
+    option (google.api.http) = {
+      delete: "/api_keys/{api_key}"
+      response_body: "data"
+    };
+  }
+
+  // Get Tags for Series Categories
+  rpc GetTagsForSeriesCategories(GetTagsForSeriesCategoriesRequest) returns (GetTagsForSeriesCategoriesResponse) {
+    option (google.api.http) = {
+      get: "/search/tags_by_categories"
+      response_body: "data"
+    };
+  }
+
+  // Get Filters for Sports
+  rpc GetFiltersForSports(GetFiltersForSportsRequest) returns (GetFiltersForSportsResponse) {
+    option (google.api.http) = {
+      get: "/search/filters_by_sport"
+      response_body: "data"
+    };
+  }
+
+  // Get Account API Limits
+  rpc GetAccountApiLimits(GetAccountApiLimitsRequest) returns (GetAccountApiLimitsResponse) {
+    option (google.api.http) = {
+      get: "/account/limits"
+      response_body: "data"
+    };
+  }
+
+  // Get Market Candlesticks
+  rpc GetMarketCandlesticks(GetMarketCandlesticksRequest) returns (GetMarketCandlesticksResponse) {
+    option (google.api.http) = {
+      get: "/series/{series_ticker}/markets/{ticker}/candlesticks"
+      response_body: "data"
+    };
+  }
+
+  // Get Trades
+  rpc GetTrades(GetTradesRequest) returns (GetTradesResponse) {
+    option (google.api.http) = {
+      get: "/markets/trades"
+      response_body: "data"
+    };
+  }
+
+  // Get Event Candlesticks
+  rpc GetMarketCandlesticksByEvent(GetMarketCandlesticksByEventRequest) returns (GetMarketCandlesticksByEventResponse) {
+    option (google.api.http) = {
+      get: "/series/{series_ticker}/events/{ticker}/candlesticks"
+      response_body: "data"
+    };
+  }
+
+  // Get Events
+  rpc GetEvents(GetEventsRequest) returns (GetEventsResponse) {
+    option (google.api.http) = {
+      get: "/events"
+      response_body: "data"
+    };
+  }
+
+  // Get Multivariate Events
+  rpc GetMultivariateEvents(GetMultivariateEventsRequest) returns (GetMultivariateEventsResponse) {
+    option (google.api.http) = {
+      get: "/events/multivariate"
+      response_body: "data"
+    };
+  }
+
+  // Get Event
+  rpc GetEvent(GetEventRequest) returns (GetEventResponse) {
+    option (google.api.http) = {
+      get: "/events/{event_ticker}"
+      response_body: "data"
+    };
+  }
+
+  // Get Event Metadata
+  rpc GetEventMetadata(GetEventMetadataRequest) returns (GetEventMetadataResponse) {
+    option (google.api.http) = {
+      get: "/events/{event_ticker}/metadata"
+      response_body: "data"
+    };
+  }
+
+  // Get Event Forecast Percentile History
+  rpc GetEventForecastPercentilesHistory(GetEventForecastPercentilesHistoryRequest) returns (GetEventForecastPercentilesHistoryResponse) {
+    option (google.api.http) = {
+      get: "/series/{series_ticker}/events/{ticker}/forecast_percentile_history"
+      response_body: "data"
+    };
+  }
+
+  // Get Live Data
+  rpc GetLiveData(GetLiveDataRequest) returns (GetLiveDataResponse) {
+    option (google.api.http) = {
+      get: "/live_data/{type}/milestone/{milestone_id}"
+      response_body: "data"
+    };
+  }
+
+  // Get Multiple Live Data
+  rpc GetLiveDatas(GetLiveDatasRequest) returns (GetLiveDatasResponse) {
+    option (google.api.http) = {
+      get: "/live_data/batch"
+      response_body: "data"
+    };
+  }
+
+  // Get Incentives
+  rpc GetIncentivePrograms(GetIncentiveProgramsRequest) returns (GetIncentiveProgramsResponse) {
+    option (google.api.http) = {
+      get: "/incentive_programs"
+      response_body: "data"
+    };
+  }
+
+  // Get FCM Orders
+  rpc GetFCMOrders(GetFCMOrdersRequest) returns (GetFCMOrdersResponse) {
+    option (google.api.http) = {
+      get: "/fcm/orders"
+      response_body: "data"
+    };
+  }
+
+  // Get FCM Positions
+  rpc GetFCMPositions(GetFCMPositionsRequest) returns (GetFCMPositionsResponse) {
+    option (google.api.http) = {
+      get: "/fcm/positions"
+      response_body: "data"
+    };
+  }
+
+  // Get Structured Targets
+  rpc GetStructuredTargets(GetStructuredTargetsRequest) returns (GetStructuredTargetsResponse) {
+    option (google.api.http) = {
+      get: "/structured_targets"
+      response_body: "data"
+    };
+  }
+
+  // Get Structured Target
+  rpc GetStructuredTarget(GetStructuredTargetRequest) returns (GetStructuredTargetResponse) {
+    option (google.api.http) = {
+      get: "/structured_targets/{structured_target_id}"
+      response_body: "data"
+    };
+  }
+
+  // Get Market Orderbook
+  rpc GetMarketOrderbook(GetMarketOrderbookRequest) returns (GetMarketOrderbookResponse) {
+    option (google.api.http) = {
+      get: "/markets/{ticker}/orderbook"
+      response_body: "data"
+    };
+  }
+
+  // Get Milestone
+  rpc GetMilestone(GetMilestoneRequest) returns (GetMilestoneResponse) {
+    option (google.api.http) = {
+      get: "/milestones/{milestone_id}"
+      response_body: "data"
+    };
+  }
+
+  // Get Milestones
+  rpc GetMilestones(GetMilestonesRequest) returns (GetMilestonesResponse) {
+    option (google.api.http) = {
+      get: "/milestones"
+      response_body: "data"
+    };
+  }
+
+  // Get Communications ID
+  rpc GetCommunicationsID(GetCommunicationsIDRequest) returns (GetCommunicationsIDResponse) {
+    option (google.api.http) = {
+      get: "/communications/id"
+      response_body: "data"
+    };
+  }
+
+  // Get RFQs
+  rpc GetRFQs(GetRFQsRequest) returns (GetRFQsResponse) {
+    option (google.api.http) = {
+      get: "/communications/rfqs"
+      response_body: "data"
+    };
+  }
+
+  // Create RFQ
+  rpc CreateRFQ(CreateRFQRequest) returns (CreateRFQResponse) {
+    option (google.api.http) = {
+      post: "/communications/rfqs"
+      body: "body"
+      response_body: "data"
+    };
+  }
+
+  // Get RFQ
+  rpc GetRFQ(GetRFQRequest) returns (GetRFQResponse) {
+    option (google.api.http) = {
+      get: "/communications/rfqs/{rfq_id}"
+      response_body: "data"
+    };
+  }
+
+  // Delete RFQ
+  rpc DeleteRFQ(DeleteRFQRequest) returns (DeleteRFQResponse) {
+    option (google.api.http) = {
+      delete: "/communications/rfqs/{rfq_id}"
+      response_body: "data"
+    };
+  }
+
+  // Get Quotes
+  rpc GetQuotes(GetQuotesRequest) returns (GetQuotesResponse) {
+    option (google.api.http) = {
+      get: "/communications/quotes"
+      response_body: "data"
+    };
+  }
+
+  // Create Quote
+  rpc CreateQuote(CreateQuoteRequest) returns (CreateQuoteResponse) {
+    option (google.api.http) = {
+      post: "/communications/quotes"
+      body: "body"
+      response_body: "data"
+    };
+  }
+
+  // Get Quote
+  rpc GetQuote(GetQuoteRequest) returns (GetQuoteResponse) {
+    option (google.api.http) = {
+      get: "/communications/quotes/{quote_id}"
+      response_body: "data"
+    };
+  }
+
+  // Delete Quote
+  rpc DeleteQuote(DeleteQuoteRequest) returns (DeleteQuoteResponse) {
+    option (google.api.http) = {
+      delete: "/communications/quotes/{quote_id}"
+      response_body: "data"
+    };
+  }
+
+  // Accept Quote
+  rpc AcceptQuote(AcceptQuoteRequest) returns (AcceptQuoteResponse) {
+    option (google.api.http) = {
+      put: "/communications/quotes/{quote_id}/accept"
+      body: "body"
+      response_body: "data"
+    };
+  }
+
+  // Confirm Quote
+  rpc ConfirmQuote(ConfirmQuoteRequest) returns (ConfirmQuoteResponse) {
+    option (google.api.http) = {
+      put: "/communications/quotes/{quote_id}/confirm"
+      body: "body"
+      response_body: "data"
+    };
+  }
+
+  // Get Multivariate Event Collection
+  rpc GetMultivariateEventCollection(GetMultivariateEventCollectionRequest) returns (GetMultivariateEventCollectionResponse) {
+    option (google.api.http) = {
+      get: "/multivariate_event_collections/{collection_ticker}"
+      response_body: "data"
+    };
+  }
+
+  // Create Market In Multivariate Event Collection
+  rpc CreateMarketInMultivariateEventCollection(CreateMarketInMultivariateEventCollectionRequest) returns (CreateMarketInMultivariateEventCollectionResponse) {
+    option (google.api.http) = {
+      post: "/multivariate_event_collections/{collection_ticker}"
+      body: "body"
+      response_body: "data"
+    };
+  }
+
+  // Get Multivariate Event Collections
+  rpc GetMultivariateEventCollections(GetMultivariateEventCollectionsRequest) returns (GetMultivariateEventCollectionsResponse) {
+    option (google.api.http) = {
+      get: "/multivariate_event_collections"
+      response_body: "data"
+    };
+  }
+
+  // Get Multivariate Event Collection Lookup History
+  rpc GetMultivariateEventCollectionLookupHistory(GetMultivariateEventCollectionLookupHistoryRequest) returns (GetMultivariateEventCollectionLookupHistoryResponse) {
+    option (google.api.http) = {
+      get: "/multivariate_event_collections/{collection_ticker}/lookup"
+      response_body: "data"
+    };
+  }
+
+  // Lookup Tickers For Market In Multivariate Event Collection
+  rpc LookupTickersForMarketInMultivariateEventCollection(LookupTickersForMarketInMultivariateEventCollectionRequest) returns (LookupTickersForMarketInMultivariateEventCollectionResponse) {
+    option (google.api.http) = {
+      put: "/multivariate_event_collections/{collection_ticker}/lookup"
+      body: "body"
+      response_body: "data"
+    };
+  }
+
+  // Get Series
+  rpc GetSeries(GetSeriesRequest) returns (GetSeriesResponse) {
+    option (google.api.http) = {
+      get: "/series/{series_ticker}"
+      response_body: "data"
+    };
+  }
+
+  // Get Series List
+  rpc GetSeriesList(GetSeriesListRequest) returns (GetSeriesListResponse) {
+    option (google.api.http) = {
+      get: "/series"
+      response_body: "data"
+    };
+  }
+
+  // Get Markets
+  rpc GetMarkets(GetMarketsRequest) returns (GetMarketsResponse) {
+    option (google.api.http) = {
+      get: "/markets"
+      response_body: "data"
+    };
+  }
+
+  // Get Market
+  rpc GetMarket(GetMarketRequest) returns (GetMarketResponse) {
+    option (google.api.http) = {
+      get: "/markets/{ticker}"
+      response_body: "data"
+    };
+  }
+
+  // Batch Get Market Candlesticks
+  rpc BatchGetMarketCandlesticks(BatchGetMarketCandlesticksRequest) returns (BatchGetMarketCandlesticksResponse) {
+    option (google.api.http) = {
+      get: "/markets/candlesticks"
+      response_body: "data"
+    };
+  }
+}
+
+message GetHistoricalCutoffData {
+  // Cutoff based on **market settlement time**. Markets and their candlesticks that settled before this timestamp must be accessed via `GET /historical/markets` and `GET /historical/markets/{ticker}/candlesticks`.
+  string market_settled_ts = 1;
+  // Cutoff based on **trade fill time**. Fills that occurred before this timestamp must be accessed via `GET /historical/fills`.
+  string trades_created_ts = 2;
+  // Cutoff based on **order cancellation or execution time**. Orders canceled or fully executed before this timestamp must be accessed via `GET /historical/orders`. Resting (active) orders are always available in `GET /portfolio/orders`.
+  string orders_updated_ts = 3;
+}
+
+message BidAskDistributionHistorical {
+  // Offer price on the market at the start of the candlestick period (in dollars).
+  string open = 1;
+  // Lowest offer price on the market during the candlestick period (in dollars).
+  string low = 2;
+  // Highest offer price on the market during the candlestick period (in dollars).
+  string high = 3;
+  // Offer price on the market at the end of the candlestick period (in dollars).
+  string close = 4;
+}
+
+message PriceDistributionHistorical {
+  // Price of the first trade during the candlestick period (in dollars). Null if no trades occurred.
+  google.protobuf.Value open = 1;
+  // Lowest trade price during the candlestick period (in dollars). Null if no trades occurred.
+  google.protobuf.Value low = 2;
+  // Highest trade price during the candlestick period (in dollars). Null if no trades occurred.
+  google.protobuf.Value high = 3;
+  // Price of the last trade during the candlestick period (in dollars). Null if no trades occurred.
+  google.protobuf.Value close = 4;
+  // Volume-weighted average price during the candlestick period (in dollars). Null if no trades occurred.
+  google.protobuf.Value mean = 5;
+  // Close price from the previous candlestick period (in dollars). Null if this is the first candlestick or no prior trade exists.
+  google.protobuf.Value previous = 6;
+}
+
+message MarketCandlestickHistorical {
+  // Unix timestamp for the inclusive end of the candlestick period.
+  int64 end_period_ts = 1;
+  // Open, high, low, close (OHLC) data for YES buy offers on the market during the candlestick period.
+  BidAskDistributionHistorical yes_bid = 2;
+  // Open, high, low, close (OHLC) data for YES sell offers on the market during the candlestick period.
+  BidAskDistributionHistorical yes_ask = 3;
+  // Open, high, low, close (OHLC) and more data for trade YES contract prices on the market during the candlestick period.
+  PriceDistributionHistorical price = 4;
+  // String representation of the number of contracts bought on the market during the candlestick period.
+  string volume = 5;
+  // String representation of the number of contracts bought on the market by end of the candlestick period (end_period_ts).
+  string open_interest = 6;
+}
+
+message GetMarketCandlesticksHistoricalData {
+  // Unique identifier for the market.
+  string ticker = 1;
+  // Array of candlestick data points for the specified time range.
+  repeated MarketCandlestickHistorical candlesticks = 2;
+}
+
+message Fill {
+  // Unique identifier for this fill
+  string fill_id = 1;
+  // Unique identifier for this fill (legacy field name, same as fill_id)
+  string trade_id = 2;
+  // Unique identifier for the order that resulted in this fill
+  string order_id = 3;
+  // Client-provided identifier for the order that resulted in this fill
+  string client_order_id = 4;
+  // Unique identifier for the market
+  string ticker = 5;
+  // Unique identifier for the market (legacy field name, same as ticker)
+  string market_ticker = 6;
+  // Specifies if this is a 'yes' or 'no' fill
+  string side = 7;
+  // Specifies if this is a buy or sell order
+  string action = 8;
+  // Number of contracts bought or sold in this fill
+  int64 count = 9;
+  // String representation of the number of contracts bought or sold in this fill
+  string count_fp = 10;
+  // Fill price (deprecated - use yes_price or no_price)
+  double price = 11;
+  // Fill price for the yes side in cents
+  int64 yes_price = 12;
+  // Fill price for the no side in cents
+  int64 no_price = 13;
+  // Fill price for the yes side in fixed point dollars
+  string yes_price_fixed = 14;
+  // Fill price for the no side in fixed point dollars
+  string no_price_fixed = 15;
+  // If true, this fill was a taker (removed liquidity from the order book)
+  bool is_taker = 16;
+  // Timestamp when this fill was executed
+  string created_time = 17;
+  // Fee cost in centi-cents
+  string fee_cost = 18;
+  // Subaccount number (0 for primary, 1-32 for subaccounts). Present for direct users.
+  int64 subaccount_number = 19;
+  // Unix timestamp when this fill was executed (legacy field name)
+  int64 ts = 20;
+}
+
+message GetFillsHistoricalData {
+  repeated Fill fills = 1;
+  string cursor = 2;
+}
+
+message Order {
+  string order_id = 1;
+  // Unique identifier for users
+  string user_id = 2;
+  string client_order_id = 3;
+  string ticker = 4;
+  string side = 5;
+  string action = 6;
+  string type = 7;
+  string status = 8;
+  int64 yes_price = 9;
+  int64 no_price = 10;
+  // The yes price for this order in fixed-point dollars
+  string yes_price_dollars = 11;
+  // The no price for this order in fixed-point dollars
+  string no_price_dollars = 12;
+  // The number of contracts that have been filled
+  int64 fill_count = 13;
+  // String representation of the number of contracts that have been filled
+  string fill_count_fp = 14;
+  int64 remaining_count = 15;
+  // String representation of the remaining contracts for this order
+  string remaining_count_fp = 16;
+  // The initial size of the order (contract units)
+  int64 initial_count = 17;
+  // String representation of the initial size of the order (contract units)
+  string initial_count_fp = 18;
+  // Fees paid on filled taker contracts, in cents
+  int64 taker_fees = 19;
+  // Fees paid on filled maker contracts, in cents
+  int64 maker_fees = 20;
+  // The cost of filled taker orders in cents
+  int64 taker_fill_cost = 21;
+  // The cost of filled maker orders in cents
+  int64 maker_fill_cost = 22;
+  // The cost of filled taker orders in dollars
+  string taker_fill_cost_dollars = 23;
+  // The cost of filled maker orders in dollars
+  string maker_fill_cost_dollars = 24;
+  // **DEPRECATED**: This field is deprecated and will always return 0. Please use the GET /portfolio/orders/{order_id}/queue_position endpoint instead
+  int64 queue_position = 25;
+  // Fees paid on filled taker contracts, in dollars
+  string taker_fees_dollars = 26;
+  // Fees paid on filled maker contracts, in dollars
+  string maker_fees_dollars = 27;
+  string expiration_time = 28;
+  string created_time = 29;
+  // The last update to an order (modify, cancel, fill)
+  string last_update_time = 30;
+  string self_trade_prevention_type = 31;
+  // The order group this order is part of
+  string order_group_id = 32;
+  // If this flag is set to true, the order will be canceled if the order is open and trading on the exchange is paused for any reason.
+  bool cancel_order_on_pause = 33;
+  // Subaccount number (0 for primary, 1-32 for subaccounts).
+  int64 subaccount_number = 34;
+}
+
+message GetHistoricalOrdersData {
+  repeated Order orders = 1;
+  string cursor = 2;
+}
+
+message MveSelectedLeg {
+  // Unique identifier for the selected event
+  string event_ticker = 1;
+  // Unique identifier for the selected market
+  string market_ticker = 2;
+  // The side of the selected market
+  string side = 3;
+  // The settlement value of the YES/LONG side of the contract in dollars. Only filled after determination
+  string yes_settlement_value_dollars = 4;
+}
+
+message PriceRange {
+  // Starting price for this range in dollars
+  string start = 1;
+  // Ending price for this range in dollars
+  string end = 2;
+  // Price step/tick size for this range in dollars
+  string step = 3;
+}
+
+message Market {
+  string ticker = 1;
+  string event_ticker = 2;
+  // Identifies the type of market
+  string market_type = 3;
+  string title = 4;
+  string subtitle = 5;
+  // Shortened title for the yes side of this market
+  string yes_sub_title = 6;
+  // Shortened title for the no side of this market
+  string no_sub_title = 7;
+  string created_time = 8;
+  // Time of the last non-trading metadata update.
+  string updated_time = 9;
+  string open_time = 10;
+  string close_time = 11;
+  // Time when this market is expected to expire
+  string expected_expiration_time = 12;
+  string expiration_time = 13;
+  // Latest possible time for this market to expire
+  string latest_expiration_time = 14;
+  // The amount of time after determination that the market settles
+  int64 settlement_timer_seconds = 15;
+  // The current status of the market in its lifecycle.
+  string status = 16;
+  // DEPRECATED: Use price_level_structure and price_ranges instead.
+  string response_price_units = 17;
+  // DEPRECATED: Use yes_bid_dollars instead.
+  double yes_bid = 18;
+  // Price for the highest YES buy offer on this market in dollars
+  string yes_bid_dollars = 19;
+  // Total contract size of orders to buy YES at the best bid price (fixed-point count string).
+  string yes_bid_size_fp = 20;
+  // DEPRECATED: Use yes_ask_dollars instead.
+  double yes_ask = 21;
+  // Price for the lowest YES sell offer on this market in dollars
+  string yes_ask_dollars = 22;
+  // Total contract size of orders to sell YES at the best ask price (fixed-point count string).
+  string yes_ask_size_fp = 23;
+  // DEPRECATED: Use no_bid_dollars instead.
+  double no_bid = 24;
+  // Price for the highest NO buy offer on this market in dollars
+  string no_bid_dollars = 25;
+  // DEPRECATED: Use no_ask_dollars instead.
+  double no_ask = 26;
+  // Price for the lowest NO sell offer on this market in dollars
+  string no_ask_dollars = 27;
+  // DEPRECATED: Use last_price_dollars instead.
+  double last_price = 28;
+  // Price for the last traded YES contract on this market in dollars
+  string last_price_dollars = 29;
+  int64 volume = 30;
+  // String representation of the market volume in contracts
+  string volume_fp = 31;
+  int64 volume_24h = 32;
+  // String representation of the 24h market volume in contracts
+  string volume_24h_fp = 33;
+  string result = 34;
+  bool can_close_early = 35;
+  bool fractional_trading_enabled = 36;
+  // Number of contracts bought on this market disconsidering netting
+  int64 open_interest = 37;
+  // String representation of the number of contracts bought on this market disconsidering netting
+  string open_interest_fp = 38;
+  // DEPRECATED: Use notional_value_dollars instead.
+  int64 notional_value = 39;
+  // The total value of a single contract at settlement in dollars
+  string notional_value_dollars = 40;
+  // DEPRECATED: Use previous_yes_bid_dollars instead.
+  int64 previous_yes_bid = 41;
+  // Price for the highest YES buy offer on this market a day ago in dollars
+  string previous_yes_bid_dollars = 42;
+  // DEPRECATED: Use previous_yes_ask_dollars instead.
+  int64 previous_yes_ask = 43;
+  // Price for the lowest YES sell offer on this market a day ago in dollars
+  string previous_yes_ask_dollars = 44;
+  // DEPRECATED: Use previous_price_dollars instead.
+  int64 previous_price = 45;
+  // Price for the last traded YES contract on this market a day ago in dollars
+  string previous_price_dollars = 46;
+  // DEPRECATED: This field is deprecated and will always return 0.
+  int64 liquidity = 47;
+  // DEPRECATED: This field is deprecated and will always return "0.0000".
+  string liquidity_dollars = 48;
+  // The settlement value of the YES/LONG side of the contract in cents. Only filled after determination
+  int64 settlement_value = 49;
+  // The settlement value of the YES/LONG side of the contract in dollars. Only filled after determination
+  string settlement_value_dollars = 50;
+  // Timestamp when the market was settled. Only filled for settled markets
+  string settlement_ts = 51;
+  // The value that was considered for the settlement
+  string expiration_value = 52;
+  // Time when this market's fee waiver expires
+  string fee_waiver_expiration_time = 53;
+  // The condition under which the market can close early
+  string early_close_condition = 54;
+  // DEPRECATED: Use price_level_structure and price_ranges instead.
+  int64 tick_size = 55;
+  // Strike type defines how the market strike is defined and evaluated
+  string strike_type = 56;
+  // Minimum expiration value that leads to a YES settlement
+  double floor_strike = 57;
+  // Maximum expiration value that leads to a YES settlement
+  double cap_strike = 58;
+  // Mapping from expiration values to settlement values
+  string functional_strike = 59;
+  // Expiration value for each target that leads to a YES settlement
+  google.protobuf.Value custom_strike = 60;
+  // A plain language description of the most important market terms
+  string rules_primary = 61;
+  // A plain language description of secondary market terms
+  string rules_secondary = 62;
+  // The ticker of the multivariate event collection
+  string mve_collection_ticker = 63;
+  repeated MveSelectedLeg mve_selected_legs = 64;
+  string primary_participant_key = 65;
+  // Price level structure for this market, defining price ranges and tick sizes
+  string price_level_structure = 66;
+  // Valid price ranges for orders on this market
+  repeated PriceRange price_ranges = 67;
+  // If true, the market may be removed after determination if there is no activity on it
+  bool is_provisional = 68;
+}
+
+message GetHistoricalMarketsData {
+  repeated Market markets = 1;
+  string cursor = 2;
+}
+
+message GetHistoricalMarketData {
+  Market market = 1;
+}
+
+message GetExchangeStatusData {
+  // False if the core Kalshi exchange is no longer taking any state changes at all. This includes but is not limited to trading, new users, and transfers. True unless we are under maintenance.
+  bool exchange_active = 1;
+  // True if we are currently permitting trading on the exchange. This is true during trading hours and false outside exchange hours. Kalshi reserves the right to pause at any time in case issues are detected.
+  bool trading_active = 2;
+  // Estimated downtime for the current exchange maintenance window. However, this is not guaranteed and can be extended.
+  string exchange_estimated_resume_time = 3;
+}
+
+message Announcement {
+  // The type of the announcement.
+  string type = 1;
+  // The message contained within the announcement.
+  string message_field = 2;
+  // The time the announcement was delivered.
+  string delivery_time = 3;
+  // The current status of this announcement.
+  string status = 4;
+}
+
+message GetExchangeAnnouncementsData {
+  // A list of exchange-wide announcements.
+  repeated Announcement announcements = 1;
+}
+
+message SeriesFeeChange {
+  // Unique identifier for this fee change
+  string id = 1;
+  // Series ticker this fee change applies to
+  string series_ticker = 2;
+  // New fee type for the series
+  string fee_type = 3;
+  // New fee multiplier for the series
+  double fee_multiplier = 4;
+  // Timestamp when this fee change is scheduled to take effect
+  string scheduled_ts = 5;
+}
+
+message GetSeriesFeeChangesData {
+  repeated SeriesFeeChange series_fee_change_arr = 1;
+}
+
+message DailySchedule {
+  // Opening time in ET (Eastern Time) format HH:MM.
+  string open_time = 1;
+  // Closing time in ET (Eastern Time) format HH:MM.
+  string close_time = 2;
+}
+
+message WeeklySchedule {
+  // Start date and time for when this weekly schedule is effective.
+  string start_time = 1;
+  // End date and time for when this weekly schedule is no longer effective.
+  string end_time = 2;
+  // Trading hours for Monday. May contain multiple sessions.
+  repeated DailySchedule monday = 3;
+  // Trading hours for Tuesday. May contain multiple sessions.
+  repeated DailySchedule tuesday = 4;
+  // Trading hours for Wednesday. May contain multiple sessions.
+  repeated DailySchedule wednesday = 5;
+  // Trading hours for Thursday. May contain multiple sessions.
+  repeated DailySchedule thursday = 6;
+  // Trading hours for Friday. May contain multiple sessions.
+  repeated DailySchedule friday = 7;
+  // Trading hours for Saturday. May contain multiple sessions.
+  repeated DailySchedule saturday = 8;
+  // Trading hours for Sunday. May contain multiple sessions.
+  repeated DailySchedule sunday = 9;
+}
+
+message MaintenanceWindow {
+  // Start date and time of the maintenance window.
+  string start_datetime = 1;
+  // End date and time of the maintenance window.
+  string end_datetime = 2;
+}
+
+message Schedule {
+  // The standard operating hours of the exchange. All times are expressed in ET. Outside of these times trading will be unavailable.
+  repeated WeeklySchedule standard_hours = 1;
+  // Scheduled maintenance windows, during which the exchange may be unavailable.
+  repeated MaintenanceWindow maintenance_windows = 2;
+}
+
+message GetExchangeScheduleData {
+  Schedule schedule = 1;
+}
+
+message GetUserDataTimestampData {
+  // Timestamp when user data was last updated.
+  string as_of_time = 1;
+}
+
+message GetOrdersData {
+  repeated Order orders = 1;
+  string cursor = 2;
+}
+
+message CreateOrderRequest2 {
+  string ticker = 1;
+  string client_order_id = 2;
+  string side = 3;
+  string action = 4;
+  // Order quantity in contracts (whole contracts only). Provide count or count_fp; if both provided they must match.
+  int64 count = 5;
+  // String representation of the order quantity in contracts (whole contracts only). Provide count or count_fp; if both provided they must match.
+  string count_fp = 6;
+  int64 yes_price = 7;
+  int64 no_price = 8;
+  // Submitting price of the Yes side in fixed-point dollars
+  string yes_price_dollars = 9;
+  // Submitting price of the No side in fixed-point dollars
+  string no_price_dollars = 10;
+  int64 expiration_ts = 11;
+  string time_in_force = 12;
+  // Maximum cost in cents. When specified, the order will automatically have Fill-or-Kill (FoK) behavior.
+  int64 buy_max_cost = 13;
+  bool post_only = 14;
+  bool reduce_only = 15;
+  // Deprecated: Use reduce_only instead. Only accepts value of 0.
+  int64 sell_position_floor = 16;
+  google.protobuf.Value self_trade_prevention_type = 17;
+  // The order group this order is part of
+  string order_group_id = 18;
+  // If this flag is set to true, the order will be canceled if the order is open and trading on the exchange is paused for any reason.
+  bool cancel_order_on_pause = 19;
+  // The subaccount number to use for this order. 0 is the primary subaccount.
+  int64 subaccount = 20;
+}
+
+message CreateOrderData {
+  Order order = 1;
+}
+
+message GetOrderData {
+  Order order = 1;
+}
+
+message CancelOrderData {
+  Order order = 1;
+  int64 reduced_by = 2;
+  // String representation of the number of contracts that were successfully canceled from this order
+  string reduced_by_fp = 3;
+}
+
+message BatchCreateOrdersRequest2 {
+  repeated CreateOrderRequest2 orders = 1;
+}
+
+message BatchCreateOrdersIndividualResponse {
+  string client_order_id = 1;
+  google.protobuf.Value order = 2;
+  google.protobuf.Value error = 3;
+}
+
+message BatchCreateOrdersData {
+  repeated BatchCreateOrdersIndividualResponse orders = 1;
+}
+
+message BatchCancelOrdersRequestOrder {
+  // Order ID to cancel
+  string order_id = 1;
+  // Optional subaccount number to use for this cancellation (0 for primary, 1-32 for subaccounts)
+  int64 subaccount = 2;
+}
+
+message BatchCancelOrdersRequest2 {
+  // An array of order IDs to cancel
+  repeated string ids = 1;
+  // An array of orders to cancel, each optionally specifying a subaccount
+  repeated BatchCancelOrdersRequestOrder orders = 2;
+}
+
+message BatchCancelOrdersIndividualResponse {
+  // The order ID to identify which order had an error during batch cancellation
+  string order_id = 1;
+  google.protobuf.Value order = 2;
+  // The number of contracts that were successfully canceled from this order
+  int64 reduced_by = 3;
+  // String representation of the number of contracts that were successfully canceled from this order
+  string reduced_by_fp = 4;
+  google.protobuf.Value error = 5;
+}
+
+message BatchCancelOrdersData {
+  repeated BatchCancelOrdersIndividualResponse orders = 1;
+}
+
+message AmendOrderRequest2 {
+  // Optional subaccount number to use for this amendment (0 for primary, 1-32 for subaccounts)
+  int64 subaccount = 1;
+  // Market ticker
+  string ticker = 2;
+  // Side of the order
+  string side = 3;
+  // Action of the order
+  string action = 4;
+  // The original client-specified order ID to be amended
+  string client_order_id = 5;
+  // The new client-specified order ID after amendment
+  string updated_client_order_id = 6;
+  // Updated yes price for the order in cents
+  int64 yes_price = 7;
+  // Updated no price for the order in cents
+  int64 no_price = 8;
+  // Updated yes price for the order in fixed-point dollars. Exactly one of yes_price, no_price, yes_price_dollars, and no_price_dollars must be passed.
+  string yes_price_dollars = 9;
+  // Updated no price for the order in fixed-point dollars. Exactly one of yes_price, no_price, yes_price_dollars, and no_price_dollars must be passed.
+  string no_price_dollars = 10;
+  // Updated quantity for the order (whole contracts only). If updating quantity, provide count or count_fp; if both provided they must match.
+  int64 count = 11;
+  // String representation of the updated quantity for the order (whole contracts only). If updating quantity, provide count or count_fp; if both provided they must match.
+  string count_fp = 12;
+}
+
+message AmendOrderData {
+  // The order before amendment
+  Order old_order = 1;
+  // The order after amendment
+  Order order = 2;
+}
+
+message DecreaseOrderRequest2 {
+  // Optional subaccount number to use for this decrease (0 for primary, 1-32 for subaccounts)
+  int64 subaccount = 1;
+  // Number of contracts to reduce by (whole contracts only). Reduce-by may be provided via reduce_by or reduce_by_fp; if both provided they must match. Exactly one of reduce_by(/reduce_by_fp) or reduce_to(/reduce_to_fp) must be provided.
+  int64 reduce_by = 2;
+  // String representation of the number of contracts to reduce by (whole contracts only). Reduce-by may be provided via reduce_by or reduce_by_fp; if both provided they must match. Exactly one of reduce_by(/reduce_by_fp) or reduce_to(/reduce_to_fp) must be provided.
+  string reduce_by_fp = 3;
+  // Number of contracts to reduce to (whole contracts only). Reduce-to may be provided via reduce_to or reduce_to_fp; if both provided they must match. Exactly one of reduce_by(/reduce_by_fp) or reduce_to(/reduce_to_fp) must be provided.
+  int64 reduce_to = 4;
+  // String representation of the number of contracts to reduce to (whole contracts only). Reduce-to may be provided via reduce_to or reduce_to_fp; if both provided they must match. Exactly one of reduce_by(/reduce_by_fp) or reduce_to(/reduce_to_fp) must be provided.
+  string reduce_to_fp = 5;
+}
+
+message DecreaseOrderData {
+  Order order = 1;
+}
+
+message OrderQueuePosition {
+  // The order ID
+  string order_id = 1;
+  // The market ticker
+  string market_ticker = 2;
+  // The position of the order in the queue
+  int32 queue_position = 3;
+  // The number of preceding shares before the order in the queue.
+  string queue_position_fp = 4;
+}
+
+message GetOrderQueuePositionsData {
+  // Queue positions for all matching orders
+  repeated OrderQueuePosition queue_positions = 1;
+}
+
+message GetOrderQueuePositionData {
+  // The position of the order in the queue
+  int32 queue_position = 1;
+  // The number of preceding shares before the order in the queue.
+  string queue_position_fp = 2;
+}
+
+message OrderGroup {
+  // Unique identifier for the order group
+  string id = 1;
+  // Current maximum contracts allowed over a rolling 15-second window (whole contracts only).
+  int64 contracts_limit = 2;
+  // String representation of the current maximum contracts allowed over a rolling 15-second window (whole contracts only).
+  string contracts_limit_fp = 3;
+  // Whether auto-cancel is enabled for this order group
+  bool is_auto_cancel_enabled = 4;
+}
+
+message GetOrderGroupsData {
+  repeated OrderGroup order_groups = 1;
+}
+
+message CreateOrderGroupRequest2 {
+  // Optional subaccount number to use for this order group (0 for primary, 1-32 for subaccounts)
+  int64 subaccount = 1;
+  // Specifies the maximum number of contracts that can be matched within this group over a rolling 15-second window. Whole contracts only. Provide contracts_limit or contracts_limit_fp; if both provided they must match.
+  int64 contracts_limit = 2;
+  // String representation of the maximum number of contracts that can be matched within this group over a rolling 15-second window (whole contracts only). Provide contracts_limit or contracts_limit_fp; if both provided they must match.
+  string contracts_limit_fp = 3;
+}
+
+message CreateOrderGroupData {
+  // The unique identifier for the created order group
+  string order_group_id = 1;
+}
+
+message GetOrderGroupData {
+  // Whether auto-cancel is enabled for this order group
+  bool is_auto_cancel_enabled = 1;
+  // Current maximum contracts allowed over a rolling 15-second window (whole contracts only).
+  int64 contracts_limit = 2;
+  // String representation of the current maximum contracts allowed over a rolling 15-second window (whole contracts only).
+  string contracts_limit_fp = 3;
+  // List of order IDs that belong to this order group
+  repeated string orders = 4;
+}
+
+message EmptyResponse {}
+
+message UpdateOrderGroupLimitRequest2 {
+  // New maximum number of contracts that can be matched within this group over a rolling 15-second window. Whole contracts only. Provide contracts_limit or contracts_limit_fp; if both provided they must match.
+  int64 contracts_limit = 1;
+  // String representation of the new maximum number of contracts that can be matched within this group over a rolling 15-second window (whole contracts only). Provide contracts_limit or contracts_limit_fp; if both provided they must match.
+  string contracts_limit_fp = 2;
+}
+
+message GetBalanceData {
+  // Member's available balance in cents. This represents the amount available for trading.
+  int64 balance = 1;
+  // Member's portfolio value in cents. This is the current value of all positions held.
+  int64 portfolio_value = 2;
+  // Unix timestamp of the last update to the balance.
+  int64 updated_ts = 3;
+}
+
+message CreateSubaccountData {
+  // The sequential number assigned to this subaccount (1-32).
+  int64 subaccount_number = 1;
+}
+
+message ApplySubaccountTransferRequest2 {
+  // Unique client-provided transfer ID for idempotency.
+  string client_transfer_id = 1;
+  // Source subaccount number (0 for primary, 1-32 for numbered subaccounts).
+  int64 from_subaccount = 2;
+  // Destination subaccount number (0 for primary, 1-32 for numbered subaccounts).
+  int64 to_subaccount = 3;
+  // Amount to transfer in cents.
+  int64 amount_cents = 4;
+}
+
+message SubaccountBalance {
+  // Subaccount number (0 for primary, 1-32 for subaccounts).
+  int64 subaccount_number = 1;
+  // Balance in dollars.
+  string balance = 2;
+  // Unix timestamp of last balance update.
+  int64 updated_ts = 3;
+}
+
+message GetSubaccountBalancesData {
+  repeated SubaccountBalance subaccount_balances = 1;
+}
+
+message SubaccountTransfer {
+  // Unique identifier for this transfer.
+  string transfer_id = 1;
+  // Source subaccount number (0 for primary, 1-32 for subaccounts).
+  int64 from_subaccount = 2;
+  // Destination subaccount number (0 for primary, 1-32 for subaccounts).
+  int64 to_subaccount = 3;
+  // Transfer amount in cents.
+  int64 amount_cents = 4;
+  // Unix timestamp when the transfer was created.
+  int64 created_ts = 5;
+}
+
+message GetSubaccountTransfersData {
+  repeated SubaccountTransfer transfers = 1;
+  // Cursor for the next page of results.
+  string cursor = 2;
+}
+
+message SubaccountNettingConfig {
+  // Subaccount number (0 for primary, 1-32 for subaccounts).
+  int64 subaccount_number = 1;
+  // Whether netting is enabled for this subaccount.
+  bool enabled = 2;
+}
+
+message GetSubaccountNettingData {
+  repeated SubaccountNettingConfig netting_configs = 1;
+}
+
+message UpdateSubaccountNettingRequest2 {
+  // Subaccount number (0 for primary, 1-32 for subaccounts).
+  int64 subaccount_number = 1;
+  // Whether netting is enabled for this subaccount.
+  bool enabled = 2;
+}
+
+message MarketPosition {
+  // Unique identifier for the market
+  string ticker = 1;
+  // Total spent on this market in cents
+  int64 total_traded = 2;
+  // Total spent on this market in dollars
+  string total_traded_dollars = 3;
+  // Number of contracts bought in this market. Negative means NO contracts and positive means YES contracts
+  int32 position = 4;
+  // String representation of the number of contracts bought in this market. Negative means NO contracts and positive means YES contracts
+  string position_fp = 5;
+  // Cost of the aggregate market position in cents
+  int64 market_exposure = 6;
+  // Cost of the aggregate market position in dollars
+  string market_exposure_dollars = 7;
+  // Locked in profit and loss, in cents
+  int64 realized_pnl = 8;
+  // Locked in profit and loss, in dollars
+  string realized_pnl_dollars = 9;
+  // [DEPRECATED] Aggregate size of resting orders in contract units
+  int32 resting_orders_count = 10;
+  // Fees paid on fill orders, in cents
+  int64 fees_paid = 11;
+  // Fees paid on fill orders, in dollars
+  string fees_paid_dollars = 12;
+  // Last time the position is updated
+  string last_updated_ts = 13;
+}
+
+message EventPosition {
+  // Unique identifier for events
+  string event_ticker = 1;
+  // Total spent on this event in cents
+  int64 total_cost = 2;
+  // Total spent on this event in dollars
+  string total_cost_dollars = 3;
+  // Total number of shares traded on this event (including both YES and NO contracts)
+  int64 total_cost_shares = 4;
+  // String representation of the total number of shares traded on this event (including both YES and NO contracts)
+  string total_cost_shares_fp = 5;
+  // Cost of the aggregate event position in cents
+  int64 event_exposure = 6;
+  // Cost of the aggregate event position in dollars
+  string event_exposure_dollars = 7;
+  // Locked in profit and loss, in cents
+  int64 realized_pnl = 8;
+  // Locked in profit and loss, in dollars
+  string realized_pnl_dollars = 9;
+  // Fees paid on fill orders, in cents
+  int64 fees_paid = 10;
+  // Fees paid on fill orders, in dollars
+  string fees_paid_dollars = 11;
+}
+
+message GetPositionsData {
+  // The Cursor represents a pointer to the next page of records in the pagination. Use the value returned here in the cursor query parameter for this end-point to get the next page containing limit records. An empty value of this field indicates there is no next page.
+  string cursor = 1;
+  // List of market positions
+  repeated MarketPosition market_positions = 2;
+  // List of event positions
+  repeated EventPosition event_positions = 3;
+}
+
+message Settlement {
+  // The ticker symbol of the market that was settled.
+  string ticker = 1;
+  // The event ticker symbol of the market that was settled.
+  string event_ticker = 2;
+  // The outcome of the market settlement. 'yes' = market resolved to YES, 'no' = market resolved to NO, 'scalar' = scalar market settled at a specific value, 'void' = market was voided/cancelled and all positions returned at original cost.
+  string market_result = 3;
+  // Number of YES contracts owned at the time of settlement.
+  int64 yes_count = 4;
+  // String representation of the number of YES contracts owned at the time of settlement.
+  string yes_count_fp = 5;
+  // Total cost basis of all YES contracts in cents.
+  int64 yes_total_cost = 6;
+  // Number of NO contracts owned at the time of settlement.
+  int64 no_count = 7;
+  // String representation of the number of NO contracts owned at the time of settlement.
+  string no_count_fp = 8;
+  // Total cost basis of all NO contracts in cents.
+  int64 no_total_cost = 9;
+  // Total revenue earned from this settlement in cents (winning contracts pay out 100 cents each).
+  int64 revenue = 10;
+  // Timestamp when the market was settled and payouts were processed.
+  string settled_time = 11;
+  // Total fees paid in fixed point dollars.
+  string fee_cost = 12;
+  // Payout of a single yes contract in cents.
+  int64 value = 13;
+}
+
+message GetSettlementsData {
+  repeated Settlement settlements = 1;
+  string cursor = 2;
+}
+
+message GetPortfolioRestingOrderTotalValueData {
+  // Total value of resting orders in cents
+  int64 total_resting_order_value = 1;
+}
+
+message GetFillsData {
+  repeated Fill fills = 1;
+  string cursor = 2;
+}
+
+message ApiKey {
+  // Unique identifier for the API key
+  string api_key_id = 1;
+  // User-provided name for the API key
+  string name = 2;
+  // List of scopes granted to this API key. Valid values are 'read' and 'write'.
+  repeated string scopes = 3;
+}
+
+message GetApiKeysData {
+  // List of all API keys associated with the user
+  repeated ApiKey api_keys = 1;
+}
+
+message CreateApiKeyRequest2 {
+  // Name for the API key. This helps identify the key's purpose
+  string name = 1;
+  // RSA public key in PEM format. This will be used to verify signatures on API requests
+  string public_key = 2;
+  // List of scopes to grant to the API key. Valid values are 'read' and 'write'. If 'write' is included, 'read' must also be included. Defaults to full access (['read', 'write']) if not provided.
+  repeated string scopes = 3;
+}
+
+message CreateApiKeyData {
+  // Unique identifier for the newly created API key
+  string api_key_id = 1;
+}
+
+message GenerateApiKeyRequest2 {
+  // Name for the API key. This helps identify the key's purpose
+  string name = 1;
+  // List of scopes to grant to the API key. Valid values are 'read' and 'write'. If 'write' is included, 'read' must also be included. Defaults to full access (['read', 'write']) if not provided.
+  repeated string scopes = 2;
+}
+
+message GenerateApiKeyData {
+  // Unique identifier for the newly generated API key
+  string api_key_id = 1;
+  // RSA private key in PEM format. This must be stored securely and cannot be retrieved again after this response
+  string private_key = 2;
+}
+
+message GetTagsForSeriesCategoriesData {
+  // Mapping of series categories to their associated tags
+  google.protobuf.Value tags_by_categories = 1;
+}
+
+message ScopeList {
+  // List of scopes
+  repeated string scopes = 1;
+}
+
+message SportFilterDetails {
+  // List of scopes available for this sport
+  repeated string scopes = 1;
+  // Mapping of competitions to their scope lists
+  map<string, ScopeList> competitions = 2;
+}
+
+message GetFiltersForSportsData {
+  // Mapping of sports to their filter details
+  map<string, SportFilterDetails> filters_by_sports = 1;
+  // Ordered list of sports for display
+  repeated string sport_ordering = 2;
+}
+
+message GetAccountApiLimitsData {
+  // User's API usage tier
+  string usage_tier = 1;
+  // Maximum read requests per second
+  int64 read_limit = 2;
+  // Maximum write requests per second
+  int64 write_limit = 3;
+}
+
+message BidAskDistribution {
+  // Offer price on the market at the start of the candlestick period (in cents).
+  int64 open = 1;
+  // Offer price on the market at the start of the candlestick period (in dollars).
+  string open_dollars = 2;
+  // Lowest offer price on the market during the candlestick period (in cents).
+  int64 low = 3;
+  // Lowest offer price on the market during the candlestick period (in dollars).
+  string low_dollars = 4;
+  // Highest offer price on the market during the candlestick period (in cents).
+  int64 high = 5;
+  // Highest offer price on the market during the candlestick period (in dollars).
+  string high_dollars = 6;
+  // Offer price on the market at the end of the candlestick period (in cents).
+  int64 close = 7;
+  // Offer price on the market at the end of the candlestick period (in dollars).
+  string close_dollars = 8;
+}
+
+message PriceDistribution {
+  // First traded YES contract price on the market during the candlestick period (in cents). May be null if there was no trade during the period.
+  int64 open = 1;
+  // First traded YES contract price on the market during the candlestick period (in dollars). May be null if there was no trade during the period.
+  string open_dollars = 2;
+  // Lowest traded YES contract price on the market during the candlestick period (in cents). May be null if there was no trade during the period.
+  int64 low = 3;
+  // Lowest traded YES contract price on the market during the candlestick period (in dollars). May be null if there was no trade during the period.
+  string low_dollars = 4;
+  // Highest traded YES contract price on the market during the candlestick period (in cents). May be null if there was no trade during the period.
+  int64 high = 5;
+  // Highest traded YES contract price on the market during the candlestick period (in dollars). May be null if there was no trade during the period.
+  string high_dollars = 6;
+  // Last traded YES contract price on the market during the candlestick period (in cents). May be null if there was no trade during the period.
+  int64 close = 7;
+  // Last traded YES contract price on the market during the candlestick period (in dollars). May be null if there was no trade during the period.
+  string close_dollars = 8;
+  // Mean traded YES contract price on the market during the candlestick period (in cents). May be null if there was no trade during the period.
+  int64 mean = 9;
+  // Mean traded YES contract price on the market during the candlestick period (in dollars). May be null if there was no trade during the period.
+  string mean_dollars = 10;
+  // Last traded YES contract price on the market before the candlestick period (in cents). May be null if there were no trades before the period.
+  int64 previous = 11;
+  // Last traded YES contract price on the market before the candlestick period (in dollars). May be null if there were no trades before the period.
+  string previous_dollars = 12;
+  // Minimum close price of any market during the candlestick period (in cents).
+  int64 min = 13;
+  // Minimum close price of any market during the candlestick period (in dollars).
+  string min_dollars = 14;
+  // Maximum close price of any market during the candlestick period (in cents).
+  int64 max_field = 15;
+  // Maximum close price of any market during the candlestick period (in dollars).
+  string max_dollars = 16;
+}
+
+message MarketCandlestick {
+  // Unix timestamp for the inclusive end of the candlestick period.
+  int64 end_period_ts = 1;
+  // Open, high, low, close (OHLC) data for YES buy offers on the market during the candlestick period.
+  BidAskDistribution yes_bid = 2;
+  // Open, high, low, close (OHLC) data for YES sell offers on the market during the candlestick period.
+  BidAskDistribution yes_ask = 3;
+  // Open, high, low, close (OHLC) and more data for trade YES contract prices on the market during the candlestick period.
+  PriceDistribution price = 4;
+  // Number of contracts bought on the market during the candlestick period.
+  int64 volume = 5;
+  // String representation of the number of contracts bought on the market during the candlestick period.
+  string volume_fp = 6;
+  // Number of contracts bought on the market by end of the candlestick period (end_period_ts).
+  int64 open_interest = 7;
+  // String representation of the number of contracts bought on the market by end of the candlestick period (end_period_ts).
+  string open_interest_fp = 8;
+}
+
+message GetMarketCandlesticksData {
+  // Unique identifier for the market.
+  string ticker = 1;
+  // Array of candlestick data points for the specified time range.
+  repeated MarketCandlestick candlesticks = 2;
+}
+
+message Trade {
+  // Unique identifier for this trade
+  string trade_id = 1;
+  // Unique identifier for the market
+  string ticker = 2;
+  // Trade price (deprecated - use yes_price or no_price)
+  double price = 3;
+  // Number of contracts bought or sold in this trade
+  int64 count = 4;
+  // String representation of the number of contracts bought or sold in this trade
+  string count_fp = 5;
+  // Yes price for this trade in cents
+  int64 yes_price = 6;
+  // No price for this trade in cents
+  int64 no_price = 7;
+  // Yes price for this trade in dollars
+  string yes_price_dollars = 8;
+  // No price for this trade in dollars
+  string no_price_dollars = 9;
+  // Side for the taker of this trade
+  string taker_side = 10;
+  // Timestamp when this trade was executed
+  string created_time = 11;
+}
+
+message GetTradesData {
+  repeated Trade trades = 1;
+  string cursor = 2;
+}
+
+message GetMarketCandlesticksByEventData {
+  // Array of market tickers in the event.
+  repeated string market_tickers = 1;
+  // Array of market candlestick arrays, one for each market in the event.
+  google.protobuf.Value market_candlesticks = 2;
+  // Adjusted end timestamp if the requested candlesticks would be larger than maxAggregateCandidates.
+  int64 adjusted_end_ts = 3;
+}
+
+message EventData {
+  // Unique identifier for this event.
+  string event_ticker = 1;
+  // Unique identifier for the series this event belongs to.
+  string series_ticker = 2;
+  // Shortened descriptive title for the event.
+  string sub_title = 3;
+  // Full title of the event.
+  string title = 4;
+  // Specifies how collateral is returned when markets settle (e.g., 'binary' for standard yes/no markets).
+  string collateral_return_type = 5;
+  // If true, only one market in this event can resolve to 'yes'. If false, multiple markets can resolve to 'yes'.
+  bool mutually_exclusive = 6;
+  // Event category (deprecated, use series-level category instead).
+  string category = 7;
+  // The specific date this event is based on. Only filled when the event uses a date strike (mutually exclusive with strike_period).
+  string strike_date = 8;
+  // The time period this event covers (e.g., 'week', 'month'). Only filled when the event uses a period strike (mutually exclusive with strike_date).
+  string strike_period = 9;
+  // Array of markets associated with this event. Only populated when 'with_nested_markets=true' is specified in the request.
+  repeated Market markets = 10;
+  // Whether this event is available to trade on brokers.
+  bool available_on_brokers = 11;
+  // Additional metadata for the event.
+  google.protobuf.Value product_metadata = 12;
+  // Timestamp of when this event's metadata was last updated.
+  string last_updated_ts = 13;
+}
+
+message Milestone {
+  // Unique identifier for the milestone.
+  string id = 1;
+  // Category of the milestone.
+  string category = 2;
+  // Type of the milestone.
+  string type = 3;
+  // Start date of the milestone.
+  string start_date = 4;
+  // End date of the milestone, if any.
+  string end_date = 5;
+  // List of event tickers related to this milestone.
+  repeated string related_event_tickers = 6;
+  // Title of the milestone.
+  string title = 7;
+  // Notification message for the milestone.
+  string notification_message = 8;
+  // Source id of milestone if available.
+  string source_id = 9;
+  // Source ids of milestone if available.
+  map<string, string> source_ids = 10;
+  // Additional details about the milestone.
+  map<string, google.protobuf.Value> details = 11;
+  // List of event tickers directly related to the outcome of this milestone.
+  repeated string primary_event_tickers = 12;
+  // Last time this structured target was updated.
+  string last_updated_ts = 13;
+}
+
+message GetEventsData {
+  // Array of events matching the query criteria.
+  repeated EventData events = 1;
+  // Array of milestones related to the events.
+  repeated Milestone milestones = 2;
+  // Pagination cursor for the next page. Empty if there are no more results.
+  string cursor = 3;
+}
+
+message GetMultivariateEventsData {
+  // Array of multivariate events matching the query criteria.
+  repeated EventData events = 1;
+  // Pagination cursor for the next page. Empty if there are no more results.
+  string cursor = 2;
+}
+
+message GetEventData {
+  // Data for the event.
+  EventData event = 1;
+  // Data for the markets in this event. This field is deprecated in favour of the "markets" field inside the event. Which will be filled with the same value if you use the query parameter "with_nested_markets=true".
+  repeated Market markets = 2;
+}
+
+message MarketMetadata {
+  // The ticker of the market.
+  string market_ticker = 1;
+  // A path to an image that represents this market.
+  string image_url = 2;
+  // The color code for the market.
+  string color_code = 3;
+}
+
+message SettlementSource {
+  // Name of the settlement source
+  string name = 1;
+  // URL to the settlement source
+  string url = 2;
+}
+
+message GetEventMetadataData {
+  // A path to an image that represents this event.
+  string image_url = 1;
+  // A path to an image that represents the image of the featured market.
+  string featured_image_url = 2;
+  // Metadata for the markets in this event.
+  repeated MarketMetadata market_details = 3;
+  // A list of settlement sources for this event.
+  repeated SettlementSource settlement_sources = 4;
+  // Event competition.
+  string competition = 5;
+  // Event scope, based on the competition.
+  string competition_scope = 6;
+}
+
+message PercentilePoint {
+  // The percentile value (0-10000).
+  int32 percentile = 1;
+  // The raw numerical forecast value.
+  double raw_numerical_forecast = 2;
+  // The processed numerical forecast value.
+  double numerical_forecast = 3;
+  // The human-readable formatted forecast value.
+  string formatted_forecast = 4;
+}
+
+message ForecastPercentilesPoint {
+  // The event ticker this forecast is for.
+  string event_ticker = 1;
+  // Unix timestamp for the inclusive end of the forecast period.
+  int64 end_period_ts = 2;
+  // Length of the forecast period in minutes.
+  int32 period_interval = 3;
+  // Array of forecast values at different percentiles.
+  repeated PercentilePoint percentile_points = 4;
+}
+
+message GetEventForecastPercentilesHistoryData {
+  // Array of forecast percentile data points over time.
+  repeated ForecastPercentilesPoint forecast_history = 1;
+}
+
+message LiveData {
+  // Type of live data
+  string type = 1;
+  // Live data details as a flexible object
+  map<string, google.protobuf.Value> details = 2;
+  // Milestone ID
+  string milestone_id = 3;
+}
+
+message GetLiveDataData {
+  LiveData live_data = 1;
+}
+
+message GetLiveDatasData {
+  repeated LiveData live_datas = 1;
+}
+
+message IncentiveProgram {
+  // Unique identifier for the incentive program
+  string id = 1;
+  // The unique identifier of the market associated with this incentive program
+  string market_id = 2;
+  // The ticker symbol of the market associated with this incentive program
+  string market_ticker = 3;
+  // Type of incentive program
+  string incentive_type = 4;
+  // Start date of the incentive program
+  string start_date = 5;
+  // End date of the incentive program
+  string end_date = 6;
+  // Total reward for the period in centi-cents
+  int64 period_reward = 7;
+  // Whether the incentive has been paid out
+  bool paid_out = 8;
+  // Discount factor in basis points (optional)
+  int32 discount_factor_bps = 9;
+  // Target size for the incentive program (optional)
+  int32 target_size = 10;
+  // String representation of the target size for the incentive program (optional)
+  string target_size_fp = 11;
+}
+
+message GetIncentiveProgramsData {
+  repeated IncentiveProgram incentive_programs = 1;
+  // Cursor for pagination to get the next page of results
+  string next_cursor = 2;
+}
+
+message GetFCMOrdersData {
+  repeated Order orders = 1;
+  string cursor = 2;
+}
+
+message GetFCMPositionsData {
+  // The Cursor represents a pointer to the next page of records in the pagination. Use the value returned here in the cursor query parameter for this end-point to get the next page containing limit records. An empty value of this field indicates there is no next page.
+  string cursor = 1;
+  // List of market positions
+  repeated MarketPosition market_positions = 2;
+  // List of event positions
+  repeated EventPosition event_positions = 3;
+}
+
+message StructuredTarget {
+  // Unique identifier for the structured target.
+  string id = 1;
+  // Name of the structured target.
+  string name = 2;
+  // Type of the structured target.
+  string type = 3;
+  // Additional details about the structured target. Contains flexible JSON data specific to the target type.
+  google.protobuf.Value details = 4;
+  // External source identifier for the structured target, if available (e.g., third-party data provider ID).
+  string source_id = 5;
+  // Source ids of structured target if available.
+  map<string, string> source_ids = 6;
+  // Timestamp when this structured target was last updated.
+  string last_updated_ts = 7;
+}
+
+message GetStructuredTargetsData {
+  repeated StructuredTarget structured_targets = 1;
+  // Pagination cursor for the next page. Empty if there are no more results.
+  string cursor = 2;
+}
+
+message GetStructuredTargetData {
+  StructuredTarget structured_target = 1;
+}
+
+message Orderbook {
+  google.protobuf.Value true_field = 1;
+  google.protobuf.Value false_field = 2;
+  google.protobuf.Value yes_dollars = 3;
+  google.protobuf.Value no_dollars = 4;
+}
+
+message OrderbookCountFp {
+  google.protobuf.Value yes_dollars = 1;
+  google.protobuf.Value no_dollars = 2;
+}
+
+message GetMarketOrderbookData {
+  // Legacy integer-count orderbook (will be deprecated). Prefer orderbook_fp for fixed-point contract counts.
+  Orderbook orderbook = 1;
+  // Orderbook with fixed-point contract counts (fp) in all price levels.
+  OrderbookCountFp orderbook_fp = 2;
+}
+
+message GetMilestoneData {
+  // The milestone data.
+  Milestone milestone = 1;
+}
+
+message GetMilestonesData {
+  // List of milestones.
+  repeated Milestone milestones = 1;
+  // Cursor for pagination.
+  string cursor = 2;
+}
+
+message GetCommunicationsIDData {
+  // A public communications ID which is used to identify the user
+  string communications_id = 1;
+}
+
+message RFQ {
+  // Unique identifier for the RFQ
+  string id = 1;
+  // Public communications ID of the RFQ creator. Exposed post-execution to the creator.
+  string creator_id = 2;
+  // The ticker of the market this RFQ is for
+  string market_ticker = 3;
+  // Number of contracts requested in the RFQ
+  int64 contracts = 4;
+  // String representation of the number of contracts requested in the RFQ
+  string contracts_fp = 5;
+  // DEPRECATED: Total value of the RFQ in centi-cents. Use target_cost_dollars instead.
+  int64 target_cost_centi_cents = 6;
+  // Total value of the RFQ in dollars
+  string target_cost_dollars = 7;
+  // Current status of the RFQ (open, closed)
+  string status = 8;
+  // Timestamp when the RFQ was created
+  string created_ts = 9;
+  // Ticker of the MVE collection this market belongs to
+  string mve_collection_ticker = 10;
+  // Selected legs for the MVE collection
+  repeated MveSelectedLeg mve_selected_legs = 11;
+  // Whether to rest the remainder of the RFQ after execution
+  bool rest_remainder = 12;
+  // Reason for RFQ cancellation if cancelled
+  string cancellation_reason = 13;
+  // User ID of the RFQ creator (private field)
+  string creator_user_id = 14;
+  // Timestamp when the RFQ was cancelled
+  string cancelled_ts = 15;
+  // Timestamp when the RFQ was last updated
+  string updated_ts = 16;
+}
+
+message GetRFQsData {
+  // List of RFQs matching the query criteria
+  repeated RFQ rfqs = 1;
+  // Cursor for pagination to get the next page of results
+  string cursor = 2;
+}
+
+message CreateRFQRequest2 {
+  // The ticker of the market for which to create an RFQ
+  string market_ticker = 1;
+  // The number of contracts for the RFQ. Whole contracts only. Contracts may be provided via contracts or contracts_fp; if both provided they must match.
+  int64 contracts = 2;
+  // String representation of the number of contracts for the RFQ (whole contracts only). Contracts may be provided via contracts or contracts_fp; if both provided they must match.
+  string contracts_fp = 3;
+  // DEPRECATED: The target cost for the RFQ in centi-cents. Use target_cost_dollars instead.
+  int64 target_cost_centi_cents = 4;
+  // The target cost for the RFQ in dollars
+  string target_cost_dollars = 5;
+  // Whether to rest the remainder of the RFQ after execution
+  bool rest_remainder = 6;
+  // Whether to delete existing RFQs as part of this RFQ's creation
+  bool replace_existing = 7;
+  // The subtrader to create the RFQ for (FCM members only)
+  string subtrader_id = 8;
+  // The subaccount number to create the RFQ for (direct members only; 0 for primary, 1-32 for subaccounts)
+  int64 subaccount = 9;
+}
+
+message CreateRFQData {
+  // The ID of the newly created RFQ
+  string id = 1;
+}
+
+message GetRFQData {
+  // The details of the requested RFQ
+  RFQ rfq = 1;
+}
+
+message Quote {
+  // Unique identifier for the quote
+  string id = 1;
+  // ID of the RFQ this quote is responding to
+  string rfq_id = 2;
+  // Public communications ID of the quote creator
+  string creator_id = 3;
+  // Public communications ID of the RFQ creator
+  string rfq_creator_id = 4;
+  // The ticker of the market this quote is for
+  string market_ticker = 5;
+  // Number of contracts in the quote
+  int64 contracts = 6;
+  // String representation of the number of contracts in the quote
+  string contracts_fp = 7;
+  // Bid price for YES contracts, in cents
+  int64 yes_bid = 8;
+  // Bid price for NO contracts, in cents
+  int64 no_bid = 9;
+  // Bid price for YES contracts, in dollars
+  string yes_bid_dollars = 10;
+  // Bid price for NO contracts, in dollars
+  string no_bid_dollars = 11;
+  // Timestamp when the quote was created
+  string created_ts = 12;
+  // Timestamp when the quote was last updated
+  string updated_ts = 13;
+  // Current status of the quote
+  string status = 14;
+  // The side that was accepted (yes or no)
+  string accepted_side = 15;
+  // Timestamp when the quote was accepted
+  string accepted_ts = 16;
+  // Timestamp when the quote was confirmed
+  string confirmed_ts = 17;
+  // Timestamp when the quote was executed
+  string executed_ts = 18;
+  // Timestamp when the quote was cancelled
+  string cancelled_ts = 19;
+  // Whether to rest the remainder of the quote after execution
+  bool rest_remainder = 20;
+  // Reason for quote cancellation if cancelled
+  string cancellation_reason = 21;
+  // User ID of the quote creator (private field)
+  string creator_user_id = 22;
+  // User ID of the RFQ creator (private field)
+  string rfq_creator_user_id = 23;
+  // DEPRECATED: Total value requested in the RFQ in centi-cents. Use rfq_target_cost_dollars instead.
+  int64 rfq_target_cost_centi_cents = 24;
+  // Total value requested in the RFQ in dollars
+  string rfq_target_cost_dollars = 25;
+  // Order ID for the RFQ creator (private field)
+  string rfq_creator_order_id = 26;
+  // Order ID for the quote creator (private field)
+  string creator_order_id = 27;
+}
+
+message GetQuotesData {
+  // List of quotes matching the query criteria
+  repeated Quote quotes = 1;
+  // Cursor for pagination to get the next page of results
+  string cursor = 2;
+}
+
+message CreateQuoteRequest2 {
+  // The ID of the RFQ to quote on
+  string rfq_id = 1;
+  // The bid price for YES contracts, in dollars
+  string yes_bid = 2;
+  // The bid price for NO contracts, in dollars
+  string no_bid = 3;
+  // Whether to rest the remainder of the quote after execution
+  bool rest_remainder = 4;
+  // Optional subaccount number to place the quote under (0 for primary, 1-32 for subaccounts)
+  int64 subaccount = 5;
+}
+
+message CreateQuoteData {
+  // The ID of the newly created quote
+  string id = 1;
+}
+
+message GetQuoteData {
+  // The details of the requested quote
+  Quote quote = 1;
+}
+
+message AcceptQuoteRequest2 {
+  // The side of the quote to accept (yes or no)
+  string accepted_side = 1;
+}
+
+message AssociatedEvent {
+  // The event ticker.
+  string ticker = 1;
+  // Whether only the 'yes' side can be used for this event.
+  bool is_yes_only = 2;
+  // Maximum number of markets from this event (inclusive). Null means no limit.
+  int32 size_max = 3;
+  // Minimum number of markets from this event (inclusive). Null means no limit.
+  int32 size_min = 4;
+  // List of active quoters for this event.
+  repeated string active_quoters = 5;
+}
+
+message MultivariateEventCollection {
+  // Unique identifier for the collection.
+  string collection_ticker = 1;
+  // Series associated with the collection. Events produced in the collection will be associated with this series.
+  string series_ticker = 2;
+  // Title of the collection.
+  string title = 3;
+  // Short description of the collection.
+  string description = 4;
+  // The open date of the collection. Before this time, the collection cannot be interacted with.
+  string open_date = 5;
+  // The close date of the collection. After this time, the collection cannot be interacted with.
+  string close_date = 6;
+  // List of events with their individual configuration.
+  repeated AssociatedEvent associated_events = 7;
+  // [DEPRECATED - Use associated_events instead] A list of events associated with the collection. Markets in these events can be passed as inputs to the Lookup and Create endpoints.
+  repeated string associated_event_tickers = 8;
+  // Whether the collection is ordered. If true, the order of markets passed into Lookup/Create affects the output. If false, the order does not matter.
+  bool is_ordered = 9;
+  // [DEPRECATED - Use associated_events instead] Whether the collection accepts multiple markets from the same event passed into Lookup/Create.
+  bool is_single_market_per_event = 10;
+  // [DEPRECATED - Use associated_events instead] Whether the collection requires that only the market side of 'yes' may be used.
+  bool is_all_yes = 11;
+  // The minimum number of markets that must be passed into Lookup/Create (inclusive).
+  int32 size_min = 12;
+  // The maximum number of markets that must be passed into Lookup/Create (inclusive).
+  int32 size_max = 13;
+  // A functional description of the collection describing how inputs affect the output.
+  string functional_description = 14;
+}
+
+message GetMultivariateEventCollectionData {
+  // The multivariate event collection.
+  MultivariateEventCollection multivariate_contract = 1;
+}
+
+message TickerPair {
+  // Market ticker identifier.
+  string market_ticker = 1;
+  // Event ticker identifier.
+  string event_ticker = 2;
+  // Side of the market (yes or no).
+  string side = 3;
+}
+
+message CreateMarketInMultivariateEventCollectionRequest2 {
+  // List of selected markets that act as parameters to determine which market is created.
+  repeated TickerPair selected_markets = 1;
+  // Whether to include the market payload in the response.
+  bool with_market_payload = 2;
+}
+
+message CreateMarketInMultivariateEventCollectionData {
+  // Event ticker for the created market.
+  string event_ticker = 1;
+  // Market ticker for the created market.
+  string market_ticker = 2;
+  // Market payload of the created market.
+  Market market = 3;
+}
+
+message GetMultivariateEventCollectionsData {
+  // List of multivariate event collections.
+  repeated MultivariateEventCollection multivariate_contracts = 1;
+  // The Cursor represents a pointer to the next page of records in the pagination. Use the value returned here in the cursor query parameter for this end-point to get the next page containing limit records. An empty value of this field indicates there is no next page.
+  string cursor = 2;
+}
+
+message LookupPoint {
+  // Event ticker for the lookup point.
+  string event_ticker = 1;
+  // Market ticker for the lookup point.
+  string market_ticker = 2;
+  // Markets that were selected for this lookup.
+  repeated TickerPair selected_markets = 3;
+  // Timestamp when this lookup was last queried.
+  string last_queried_ts = 4;
+}
+
+message GetMultivariateEventCollectionLookupHistoryData {
+  // List of recent lookup points in the collection.
+  repeated LookupPoint lookup_points = 1;
+}
+
+message LookupTickersForMarketInMultivariateEventCollectionRequest2 {
+  // List of selected markets that act as parameters to determine which market is produced.
+  repeated TickerPair selected_markets = 1;
+}
+
+message LookupTickersForMarketInMultivariateEventCollectionData {
+  // Event ticker for the looked up market.
+  string event_ticker = 1;
+  // Market ticker for the looked up market.
+  string market_ticker = 2;
+}
+
+message Series {
+  // Ticker that identifies this series.
+  string ticker = 1;
+  // Description of the frequency of the series. There is no fixed value set here, but will be something human-readable like weekly, daily, one-off.
+  string frequency = 2;
+  // Title describing the series. For full context use you should use this field with the title field of the events belonging to this series.
+  string title = 3;
+  // Category specifies the category which this series belongs to.
+  string category = 4;
+  // Tags specifies the subjects that this series relates to, multiple series from different categories can have the same tags.
+  repeated string tags = 5;
+  // SettlementSources specifies the official sources used for the determination of markets within the series. Methodology is defined in the rulebook.
+  repeated SettlementSource settlement_sources = 6;
+  // ContractUrl provides a direct link to the original filing of the contract which underlies the series.
+  string contract_url = 7;
+  // ContractTermsUrl is the URL to the current terms of the contract underlying the series.
+  string contract_terms_url = 8;
+  // Internal product metadata of the series.
+  google.protobuf.Value product_metadata = 9;
+  // FeeType is a string representing the series' fee structure. Fee structures can be found at https://kalshi.com/docs/kalshi-fee-schedule.pdf. 'quadratic' is described by the General Trading Fees Table, 'quadratic_with_maker_fees' is described by the General Trading Fees Table with maker fees described in the Maker Fees section, 'flat' is described by the Specific Trading Fees Table.
+  string fee_type = 10;
+  // FeeMultiplier is a floating point multiplier applied to the fee calculations.
+  double fee_multiplier = 11;
+  // AdditionalProhibitions is a list of additional trading prohibitions for this series.
+  repeated string additional_prohibitions = 12;
+  // Total contracts traded across all events in this series.
+  int64 volume = 13;
+  // String representation of the total number of contracts traded across all events in this series.
+  string volume_fp = 14;
+  // Timestamp of when this series' metadata was last updated.
+  string last_updated_ts = 15;
+}
+
+message GetSeriesData {
+  Series series = 1;
+}
+
+message GetSeriesListData {
+  repeated Series series = 1;
+}
+
+message GetMarketsData {
+  repeated Market markets = 1;
+  string cursor = 2;
+}
+
+message GetMarketData {
+  Market market = 1;
+}
+
+message MarketCandlesticksResponse {
+  // Market ticker string (e.g., 'INXD-24JAN01').
+  string market_ticker = 1;
+  // Array of candlestick data points for the market. Includes an initial data point at the start timestamp when available.
+  repeated MarketCandlestick candlesticks = 2;
+}
+
+message BatchGetMarketCandlesticksData {
+  // Array of market candlestick data, one entry per requested market.
+  repeated MarketCandlesticksResponse markets = 1;
+}
+
+message GetHistoricalCutoffRequest {}
+
+message GetHistoricalCutoffResponse {
+  // Response payload.
+  GetHistoricalCutoffData data = 1;
+}
+
+message GetMarketCandlesticksHistoricalRequest {
+  // Market ticker - unique identifier for the specific market
+  string ticker = 1;
+  // Start timestamp (Unix timestamp). Candlesticks will include those ending on or after this time.
+  int64 start_ts = 2;
+  // End timestamp (Unix timestamp). Candlesticks will include those ending on or before this time.
+  int64 end_ts = 3;
+  // Time period length of each candlestick in minutes. Valid values are 1 (1 minute), 60 (1 hour), or 1440 (1 day).
+  int64 period_interval = 4;
+}
+
+message GetMarketCandlesticksHistoricalResponse {
+  // Response payload.
+  GetMarketCandlesticksHistoricalData data = 1;
+}
+
+message GetFillsHistoricalRequest {
+  // Filter by market ticker
+  string ticker = 1;
+  // Filter items before this Unix timestamp
+  int64 max_ts = 2;
+  // Number of results per page. Defaults to 100. Maximum value is 200.
+  int64 limit = 3;
+  // Pagination cursor. Use the cursor value returned from the previous response to get the next page of results. Leave empty for the first page.
+  string cursor = 4;
+}
+
+message GetFillsHistoricalResponse {
+  // Response payload.
+  GetFillsHistoricalData data = 1;
+}
+
+message GetHistoricalOrdersRequest {
+  // Filter by market ticker
+  string ticker = 1;
+  // Filter items before this Unix timestamp
+  int64 max_ts = 2;
+  // Number of results per page. Defaults to 100. Maximum value is 200.
+  int64 limit = 3;
+  // Pagination cursor. Use the cursor value returned from the previous response to get the next page of results. Leave empty for the first page.
+  string cursor = 4;
+}
+
+message GetHistoricalOrdersResponse {
+  // Response payload.
+  GetHistoricalOrdersData data = 1;
+}
+
+message GetHistoricalMarketsRequest {
+  // Number of results per page. Defaults to 100. Maximum value is 1000.
+  int64 limit = 1;
+  // Pagination cursor. Use the cursor value returned from the previous response to get the next page of results. Leave empty for the first page.
+  string cursor = 2;
+  // Filter by specific market tickers. Comma-separated list of market tickers to retrieve.
+  string tickers = 3;
+  // Event ticker to filter by. Only a single event ticker is supported.
+  string event_ticker = 4;
+  // Filter by multivariate events (combos). By default, MVE markets are included.
+  string mve_filter = 5;
+}
+
+message GetHistoricalMarketsResponse {
+  // Response payload.
+  GetHistoricalMarketsData data = 1;
+}
+
+message GetHistoricalMarketRequest {
+  // Market ticker
+  string ticker = 1;
+}
+
+message GetHistoricalMarketResponse {
+  // Response payload.
+  GetHistoricalMarketData data = 1;
+}
+
+message GetExchangeStatusRequest {}
+
+message GetExchangeStatusResponse {
+  // Response payload.
+  GetExchangeStatusData data = 1;
+}
+
+message GetExchangeAnnouncementsRequest {}
+
+message GetExchangeAnnouncementsResponse {
+  // Response payload.
+  GetExchangeAnnouncementsData data = 1;
+}
+
+message GetSeriesFeeChangesRequest {
+  string series_ticker = 1;
+  bool show_historical = 2;
+}
+
+message GetSeriesFeeChangesResponse {
+  // Response payload.
+  GetSeriesFeeChangesData data = 1;
+}
+
+message GetExchangeScheduleRequest {}
+
+message GetExchangeScheduleResponse {
+  // Response payload.
+  GetExchangeScheduleData data = 1;
+}
+
+message GetUserDataTimestampRequest {}
+
+message GetUserDataTimestampResponse {
+  // Response payload.
+  GetUserDataTimestampData data = 1;
+}
+
+message GetOrdersRequest {
+  // Filter by market ticker
+  string ticker = 1;
+  // Event tickers to filter by, as a comma-separated list (maximum 10).
+  string event_ticker = 2;
+  // Filter items after this Unix timestamp
+  int64 min_ts = 3;
+  // Filter items before this Unix timestamp
+  int64 max_ts = 4;
+  // Filter by status. Possible values depend on the endpoint.
+  string status = 5;
+  // Number of results per page. Defaults to 100. Maximum value is 200.
+  int64 limit = 6;
+  // Pagination cursor. Use the cursor value returned from the previous response to get the next page of results. Leave empty for the first page.
+  string cursor = 7;
+  // Subaccount number (0 for primary, 1-32 for subaccounts). If omitted, defaults to all subaccounts.
+  int64 subaccount = 8;
+}
+
+message GetOrdersResponse {
+  // Response payload.
+  GetOrdersData data = 1;
+}
+
+message CreateOrderRequest {
+  // JSON request body.
+  CreateOrderRequest2 body = 1;
+}
+
+message CreateOrderResponse {
+  // Response payload.
+  CreateOrderData data = 1;
+}
+
+message GetOrderRequest {
+  // Order ID
+  string order_id = 1;
+}
+
+message GetOrderResponse {
+  // Response payload.
+  GetOrderData data = 1;
+}
+
+message CancelOrderRequest {
+  // Order ID
+  string order_id = 1;
+  // Subaccount number (0 for primary, 1-32 for subaccounts). Defaults to 0.
+  int64 subaccount = 2;
+}
+
+message CancelOrderResponse {
+  // Response payload.
+  CancelOrderData data = 1;
+}
+
+message BatchCreateOrdersRequest {
+  // JSON request body.
+  BatchCreateOrdersRequest2 body = 1;
+}
+
+message BatchCreateOrdersResponse {
+  // Response payload.
+  BatchCreateOrdersData data = 1;
+}
+
+message BatchCancelOrdersRequest {
+  // JSON request body.
+  BatchCancelOrdersRequest2 body = 1;
+}
+
+message BatchCancelOrdersResponse {
+  // Response payload.
+  BatchCancelOrdersData data = 1;
+}
+
+message AmendOrderRequest {
+  // Order ID
+  string order_id = 1;
+  // JSON request body.
+  AmendOrderRequest2 body = 2;
+}
+
+message AmendOrderResponse {
+  // Response payload.
+  AmendOrderData data = 1;
+}
+
+message DecreaseOrderRequest {
+  // Order ID
+  string order_id = 1;
+  // JSON request body.
+  DecreaseOrderRequest2 body = 2;
+}
+
+message DecreaseOrderResponse {
+  // Response payload.
+  DecreaseOrderData data = 1;
+}
+
+message GetOrderQueuePositionsRequest {
+  // Comma-separated list of market tickers to filter by
+  string market_tickers = 1;
+  // Event ticker to filter by
+  string event_ticker = 2;
+  // Subaccount number (0 for primary, 1-32 for subaccounts). Defaults to 0.
+  int64 subaccount = 3;
+}
+
+message GetOrderQueuePositionsResponse {
+  // Response payload.
+  GetOrderQueuePositionsData data = 1;
+}
+
+message GetOrderQueuePositionRequest {
+  // Order ID
+  string order_id = 1;
+}
+
+message GetOrderQueuePositionResponse {
+  // Response payload.
+  GetOrderQueuePositionData data = 1;
+}
+
+message GetOrderGroupsRequest {
+  // Subaccount number (0 for primary, 1-32 for subaccounts). If omitted, defaults to all subaccounts.
+  int64 subaccount = 1;
+}
+
+message GetOrderGroupsResponse {
+  // Response payload.
+  GetOrderGroupsData data = 1;
+}
+
+message CreateOrderGroupRequest {
+  // JSON request body.
+  CreateOrderGroupRequest2 body = 1;
+}
+
+message CreateOrderGroupResponse {
+  // Response payload.
+  CreateOrderGroupData data = 1;
+}
+
+message GetOrderGroupRequest {
+  // Order group ID
+  string order_group_id = 1;
+  // Subaccount number (0 for primary, 1-32 for subaccounts). If omitted, defaults to all subaccounts.
+  int64 subaccount = 2;
+}
+
+message GetOrderGroupResponse {
+  // Response payload.
+  GetOrderGroupData data = 1;
+}
+
+message DeleteOrderGroupRequest {
+  // Order group ID
+  string order_group_id = 1;
+  // Subaccount number (0 for primary, 1-32 for subaccounts). Defaults to 0.
+  int64 subaccount = 2;
+}
+
+message DeleteOrderGroupResponse {
+  // Response payload.
+  google.protobuf.Value data = 1;
+}
+
+message ResetOrderGroupRequest {
+  // Order group ID
+  string order_group_id = 1;
+  // Subaccount number (0 for primary, 1-32 for subaccounts). Defaults to 0.
+  int64 subaccount = 2;
+  // JSON request body.
+  EmptyResponse body = 3;
+}
+
+message ResetOrderGroupResponse {
+  // Response payload.
+  google.protobuf.Value data = 1;
+}
+
+message TriggerOrderGroupRequest {
+  // Order group ID
+  string order_group_id = 1;
+  // Subaccount number (0 for primary, 1-32 for subaccounts). Defaults to 0.
+  int64 subaccount = 2;
+  // JSON request body.
+  EmptyResponse body = 3;
+}
+
+message TriggerOrderGroupResponse {
+  // Response payload.
+  google.protobuf.Value data = 1;
+}
+
+message UpdateOrderGroupLimitRequest {
+  // Order group ID
+  string order_group_id = 1;
+  // JSON request body.
+  UpdateOrderGroupLimitRequest2 body = 2;
+}
+
+message UpdateOrderGroupLimitResponse {
+  // Response payload.
+  google.protobuf.Value data = 1;
+}
+
+message GetBalanceRequest {
+  // Subaccount number (0 for primary, 1-32 for subaccounts). Defaults to 0.
+  int64 subaccount = 1;
+}
+
+message GetBalanceResponse {
+  // Response payload.
+  GetBalanceData data = 1;
+}
+
+message CreateSubaccountRequest {}
+
+message CreateSubaccountResponse {
+  // Response payload.
+  CreateSubaccountData data = 1;
+}
+
+message ApplySubaccountTransferRequest {
+  // JSON request body.
+  ApplySubaccountTransferRequest2 body = 1;
+}
+
+message ApplySubaccountTransferResponse {
+  // Response payload.
+  google.protobuf.Value data = 1;
+}
+
+message GetSubaccountBalancesRequest {}
+
+message GetSubaccountBalancesResponse {
+  // Response payload.
+  GetSubaccountBalancesData data = 1;
+}
+
+message GetSubaccountTransfersRequest {
+  // Number of results per page. Defaults to 100. Maximum value is 200.
+  int64 limit = 1;
+  // Pagination cursor. Use the cursor value returned from the previous response to get the next page of results. Leave empty for the first page.
+  string cursor = 2;
+}
+
+message GetSubaccountTransfersResponse {
+  // Response payload.
+  GetSubaccountTransfersData data = 1;
+}
+
+message GetSubaccountNettingRequest {}
+
+message GetSubaccountNettingResponse {
+  // Response payload.
+  GetSubaccountNettingData data = 1;
+}
+
+message UpdateSubaccountNettingRequest {
+  // JSON request body.
+  UpdateSubaccountNettingRequest2 body = 1;
+}
+
+message UpdateSubaccountNettingResponse {
+  // Response payload.
+  google.protobuf.Value data = 1;
+}
+
+message GetPositionsRequest {
+  // The Cursor represents a pointer to the next page of records in the pagination. Use the value returned from the previous response to get the next page.
+  string cursor = 1;
+  // Parameter to specify the number of results per page. Defaults to 100.
+  int32 limit = 2;
+  // Restricts the positions to those with any of following fields with non-zero values, as a comma separated list. The following values are accepted - position, total_traded
+  string count_filter = 3;
+  // Filter by market ticker
+  string ticker = 4;
+  // Event ticker to filter by. Only a single event ticker is supported.
+  string event_ticker = 5;
+  // Subaccount number (0 for primary, 1-32 for subaccounts). Defaults to 0.
+  int64 subaccount = 6;
+}
+
+message GetPositionsResponse {
+  // Response payload.
+  GetPositionsData data = 1;
+}
+
+message GetSettlementsRequest {
+  // Number of results per page. Defaults to 100. Maximum value is 200.
+  int64 limit = 1;
+  // Pagination cursor. Use the cursor value returned from the previous response to get the next page of results. Leave empty for the first page.
+  string cursor = 2;
+  // Filter by market ticker
+  string ticker = 3;
+  // Event ticker to filter by. Only a single event ticker is supported.
+  string event_ticker = 4;
+  // Filter items after this Unix timestamp
+  int64 min_ts = 5;
+  // Filter items before this Unix timestamp
+  int64 max_ts = 6;
+  // Subaccount number (0 for primary, 1-32 for subaccounts). If omitted, defaults to all subaccounts.
+  int64 subaccount = 7;
+}
+
+message GetSettlementsResponse {
+  // Response payload.
+  GetSettlementsData data = 1;
+}
+
+message GetPortfolioRestingOrderTotalValueRequest {}
+
+message GetPortfolioRestingOrderTotalValueResponse {
+  // Response payload.
+  GetPortfolioRestingOrderTotalValueData data = 1;
+}
+
+message GetFillsRequest {
+  // Filter by market ticker
+  string ticker = 1;
+  // Filter by order ID
+  string order_id = 2;
+  // Filter items after this Unix timestamp
+  int64 min_ts = 3;
+  // Filter items before this Unix timestamp
+  int64 max_ts = 4;
+  // Number of results per page. Defaults to 100. Maximum value is 200.
+  int64 limit = 5;
+  // Pagination cursor. Use the cursor value returned from the previous response to get the next page of results. Leave empty for the first page.
+  string cursor = 6;
+  // Subaccount number (0 for primary, 1-32 for subaccounts). If omitted, defaults to all subaccounts.
+  int64 subaccount = 7;
+}
+
+message GetFillsResponse {
+  // Response payload.
+  GetFillsData data = 1;
+}
+
+message GetApiKeysRequest {}
+
+message GetApiKeysResponse {
+  // Response payload.
+  GetApiKeysData data = 1;
+}
+
+message CreateApiKeyRequest {
+  // JSON request body.
+  CreateApiKeyRequest2 body = 1;
+}
+
+message CreateApiKeyResponse {
+  // Response payload.
+  CreateApiKeyData data = 1;
+}
+
+message GenerateApiKeyRequest {
+  // JSON request body.
+  GenerateApiKeyRequest2 body = 1;
+}
+
+message GenerateApiKeyResponse {
+  // Response payload.
+  GenerateApiKeyData data = 1;
+}
+
+message DeleteApiKeyRequest {
+  // API key ID to delete
+  string api_key = 1;
+}
+
+message DeleteApiKeyResponse {
+  // Response payload.
+  google.protobuf.Value data = 1;
+}
+
+message GetTagsForSeriesCategoriesRequest {}
+
+message GetTagsForSeriesCategoriesResponse {
+  // Response payload.
+  GetTagsForSeriesCategoriesData data = 1;
+}
+
+message GetFiltersForSportsRequest {}
+
+message GetFiltersForSportsResponse {
+  // Response payload.
+  GetFiltersForSportsData data = 1;
+}
+
+message GetAccountApiLimitsRequest {}
+
+message GetAccountApiLimitsResponse {
+  // Response payload.
+  GetAccountApiLimitsData data = 1;
+}
+
+message GetMarketCandlesticksRequest {
+  // Series ticker - the series that contains the target market
+  string series_ticker = 1;
+  // Market ticker - unique identifier for the specific market
+  string ticker = 2;
+  // Start timestamp (Unix timestamp). Candlesticks will include those ending on or after this time.
+  int64 start_ts = 3;
+  // End timestamp (Unix timestamp). Candlesticks will include those ending on or before this time.
+  int64 end_ts = 4;
+  // Time period length of each candlestick in minutes. Valid values are 1 (1 minute), 60 (1 hour), or 1440 (1 day).
+  int64 period_interval = 5;
+  // If true, prepends the latest candlestick available before the start_ts. This synthetic candlestick is created by:
+  bool include_latest_before_start = 6;
+}
+
+message GetMarketCandlesticksResponse {
+  // Response payload.
+  GetMarketCandlesticksData data = 1;
+}
+
+message GetTradesRequest {
+  // Number of results per page. Defaults to 100. Maximum value is 1000.
+  int64 limit = 1;
+  // Pagination cursor. Use the cursor value returned from the previous response to get the next page of results. Leave empty for the first page.
+  string cursor = 2;
+  // Filter by market ticker
+  string ticker = 3;
+  // Filter items after this Unix timestamp
+  int64 min_ts = 4;
+  // Filter items before this Unix timestamp
+  int64 max_ts = 5;
+}
+
+message GetTradesResponse {
+  // Response payload.
+  GetTradesData data = 1;
+}
+
+message GetMarketCandlesticksByEventRequest {
+  // The event ticker
+  string ticker = 1;
+  // The series ticker
+  string series_ticker = 2;
+  // Start timestamp for the range
+  int64 start_ts = 3;
+  // End timestamp for the range
+  int64 end_ts = 4;
+  // Specifies the length of each candlestick period, in minutes. Must be one minute, one hour, or one day.
+  int32 period_interval = 5;
+}
+
+message GetMarketCandlesticksByEventResponse {
+  // Response payload.
+  GetMarketCandlesticksByEventData data = 1;
+}
+
+message GetEventsRequest {
+  // Parameter to specify the number of results per page. Defaults to 200. Maximum value is 200.
+  int64 limit = 1;
+  // Parameter to specify the pagination cursor. Use the cursor value returned from the previous response to get the next page of results. Leave empty for the first page.
+  string cursor = 2;
+  // Parameter to specify if nested markets should be included in the response. When true, each event will include a 'markets' field containing a list of Market objects associated with that event. Historical markets settled before the historical cutoff will not be included.
+  bool with_nested_markets = 3;
+  // If true, includes related milestones as a field alongside events.
+  bool with_milestones = 4;
+  // Filter by event status. Possible values are 'open', 'closed', 'settled'. Leave empty to return events with any status.
+  string status = 5;
+  // Filter by series ticker
+  string series_ticker = 6;
+  // Filter events with at least one market with close timestamp greater than this Unix timestamp (in seconds).
+  int64 min_close_ts = 7;
+  // Filter events with metadata updated after this Unix timestamp (in seconds). Use this to efficiently poll for changes.
+  int64 min_updated_ts = 8;
+}
+
+message GetEventsResponse {
+  // Response payload.
+  GetEventsData data = 1;
+}
+
+message GetMultivariateEventsRequest {
+  // Number of results per page. Defaults to 100. Maximum value is 200.
+  int64 limit = 1;
+  // Pagination cursor. Use the cursor value returned from the previous response to get the next page of results.
+  string cursor = 2;
+  // Filter by series ticker
+  string series_ticker = 3;
+  // Filter events by collection ticker. Returns only multivariate events belonging to the specified collection. Cannot be used together with series_ticker.
+  string collection_ticker = 4;
+  // Parameter to specify if nested markets should be included in the response. When true, each event will include a 'markets' field containing a list of Market objects associated with that event.
+  bool with_nested_markets = 5;
+}
+
+message GetMultivariateEventsResponse {
+  // Response payload.
+  GetMultivariateEventsData data = 1;
+}
+
+message GetEventRequest {
+  // Event ticker
+  string event_ticker = 1;
+  // If true, markets are included within the event object. If false (default), markets are returned as a separate top-level field in the response. Historical markets settled before the historical cutoff will not be included.
+  bool with_nested_markets = 2;
+}
+
+message GetEventResponse {
+  // Response payload.
+  GetEventData data = 1;
+}
+
+message GetEventMetadataRequest {
+  // Event ticker
+  string event_ticker = 1;
+}
+
+message GetEventMetadataResponse {
+  // Response payload.
+  GetEventMetadataData data = 1;
+}
+
+message GetEventForecastPercentilesHistoryRequest {
+  // The event ticker
+  string ticker = 1;
+  // The series ticker
+  string series_ticker = 2;
+  // Array of percentile values to retrieve (0-10000, max 10 values)
+  repeated int32 percentiles = 3;
+  // Start timestamp for the range
+  int64 start_ts = 4;
+  // End timestamp for the range
+  int64 end_ts = 5;
+  // Specifies the length of each forecast period, in minutes. 0 for 5-second intervals, or 1, 60, or 1440 for minute-based intervals.
+  int32 period_interval = 6;
+}
+
+message GetEventForecastPercentilesHistoryResponse {
+  // Response payload.
+  GetEventForecastPercentilesHistoryData data = 1;
+}
+
+message GetLiveDataRequest {
+  // Type of live data
+  string type = 1;
+  // Milestone ID
+  string milestone_id = 2;
+}
+
+message GetLiveDataResponse {
+  // Response payload.
+  GetLiveDataData data = 1;
+}
+
+message GetLiveDatasRequest {
+  // Array of milestone IDs
+  repeated string milestone_ids = 1;
+}
+
+message GetLiveDatasResponse {
+  // Response payload.
+  GetLiveDatasData data = 1;
+}
+
+message GetIncentiveProgramsRequest {
+  // Status filter. Can be "all", "active", "upcoming", "closed", or "paid_out". Default is "all".
+  string status = 1;
+  // Type filter. Can be "all", "liquidity", or "volume". Default is "all".
+  string type = 2;
+  // Number of results per page. Defaults to 100. Maximum value is 10000.
+  int64 limit = 3;
+  // Cursor for pagination
+  string cursor = 4;
+}
+
+message GetIncentiveProgramsResponse {
+  // Response payload.
+  GetIncentiveProgramsData data = 1;
+}
+
+message GetFCMOrdersRequest {
+  // Restricts the response to orders for a specific subtrader (FCM members only)
+  string subtrader_id = 1;
+  // Pagination cursor. Use the cursor value returned from the previous response to get the next page of results. Leave empty for the first page.
+  string cursor = 2;
+  // Event ticker to filter by. Only a single event ticker is supported.
+  string event_ticker = 3;
+  // Filter by market ticker
+  string ticker = 4;
+  // Restricts the response to orders after a timestamp, formatted as a Unix Timestamp
+  int64 min_ts = 5;
+  // Restricts the response to orders before a timestamp, formatted as a Unix Timestamp
+  int64 max_ts = 6;
+  // Restricts the response to orders that have a certain status
+  string status = 7;
+  // Parameter to specify the number of results per page. Defaults to 100
+  int64 limit = 8;
+}
+
+message GetFCMOrdersResponse {
+  // Response payload.
+  GetFCMOrdersData data = 1;
+}
+
+message GetFCMPositionsRequest {
+  // Restricts the response to positions for a specific subtrader (FCM members only)
+  string subtrader_id = 1;
+  // Ticker of desired positions
+  string ticker = 2;
+  // Event ticker of desired positions
+  string event_ticker = 3;
+  // Restricts the positions to those with any of following fields with non-zero values, as a comma separated list
+  string count_filter = 4;
+  // Settlement status of the markets to return. Defaults to unsettled
+  string settlement_status = 5;
+  // Parameter to specify the number of results per page. Defaults to 100
+  int64 limit = 6;
+  // The Cursor represents a pointer to the next page of records in the pagination
+  string cursor = 7;
+}
+
+message GetFCMPositionsResponse {
+  // Response payload.
+  GetFCMPositionsData data = 1;
+}
+
+message GetStructuredTargetsRequest {
+  // Filter by structured target type
+  string type = 1;
+  // Filter by competition
+  string competition = 2;
+  // Number of items per page (min 1, max 2000, default 100)
+  int32 page_size = 3;
+  // Pagination cursor
+  string cursor = 4;
+}
+
+message GetStructuredTargetsResponse {
+  // Response payload.
+  GetStructuredTargetsData data = 1;
+}
+
+message GetStructuredTargetRequest {
+  // Structured target ID
+  string structured_target_id = 1;
+}
+
+message GetStructuredTargetResponse {
+  // Response payload.
+  GetStructuredTargetData data = 1;
+}
+
+message GetMarketOrderbookRequest {
+  // Market ticker
+  string ticker = 1;
+  // Depth of the orderbook to retrieve (0 or negative means all levels, 1-100 for specific depth)
+  int64 depth = 2;
+}
+
+message GetMarketOrderbookResponse {
+  // Response payload.
+  GetMarketOrderbookData data = 1;
+}
+
+message GetMilestoneRequest {
+  // Milestone ID
+  string milestone_id = 1;
+}
+
+message GetMilestoneResponse {
+  // Response payload.
+  GetMilestoneData data = 1;
+}
+
+message GetMilestonesRequest {
+  // Number of milestones to return per page
+  int64 limit = 1;
+  // Minimum start date to filter milestones. Format RFC3339 timestamp
+  string minimum_start_date = 2;
+  // Filter by milestone category
+  string category = 3;
+  // Filter by competition
+  string competition = 4;
+  // Filter by source id
+  string source_id = 5;
+  // Filter by milestone type
+  string type = 6;
+  // Filter by related event ticker
+  string related_event_ticker = 7;
+  // Pagination cursor. Use the cursor value returned from the previous response to get the next page of results
+  string cursor = 8;
+  // Filter milestones with metadata updated after this Unix timestamp (in seconds). Use this to efficiently poll for changes.
+  int64 min_updated_ts = 9;
+}
+
+message GetMilestonesResponse {
+  // Response payload.
+  GetMilestonesData data = 1;
+}
+
+message GetCommunicationsIDRequest {}
+
+message GetCommunicationsIDResponse {
+  // Response payload.
+  GetCommunicationsIDData data = 1;
+}
+
+message GetRFQsRequest {
+  // Pagination cursor. Use the cursor value returned from the previous response to get the next page of results. Leave empty for the first page.
+  string cursor = 1;
+  // Event ticker to filter by. Only a single event ticker is supported.
+  string event_ticker = 2;
+  // Filter by market ticker
+  string market_ticker = 3;
+  // Subaccount number (0 for primary, 1-32 for subaccounts). If omitted, defaults to all subaccounts.
+  int64 subaccount = 4;
+  // Parameter to specify the number of results per page. Defaults to 100.
+  int32 limit = 5;
+  // Filter RFQs by status
+  string status = 6;
+  // Filter RFQs by creator user ID
+  string creator_user_id = 7;
+}
+
+message GetRFQsResponse {
+  // Response payload.
+  GetRFQsData data = 1;
+}
+
+message CreateRFQRequest {
+  // JSON request body.
+  CreateRFQRequest2 body = 1;
+}
+
+message CreateRFQResponse {
+  // Response payload.
+  CreateRFQData data = 1;
+}
+
+message GetRFQRequest {
+  // RFQ ID
+  string rfq_id = 1;
+}
+
+message GetRFQResponse {
+  // Response payload.
+  GetRFQData data = 1;
+}
+
+message DeleteRFQRequest {
+  // RFQ ID
+  string rfq_id = 1;
+}
+
+message DeleteRFQResponse {
+  // Response payload.
+  google.protobuf.Value data = 1;
+}
+
+message GetQuotesRequest {
+  // Pagination cursor. Use the cursor value returned from the previous response to get the next page of results. Leave empty for the first page.
+  string cursor = 1;
+  // Event ticker to filter by. Only a single event ticker is supported.
+  string event_ticker = 2;
+  // Filter by market ticker
+  string market_ticker = 3;
+  // Parameter to specify the number of results per page. Defaults to 500.
+  int32 limit = 4;
+  // Filter quotes by status
+  string status = 5;
+  // Filter quotes by quote creator user ID
+  string quote_creator_user_id = 6;
+  // Filter quotes by RFQ creator user ID
+  string rfq_creator_user_id = 7;
+  // Filter quotes by RFQ creator subtrader ID (FCM members only)
+  string rfq_creator_subtrader_id = 8;
+  // Filter quotes by RFQ ID
+  string rfq_id = 9;
+}
+
+message GetQuotesResponse {
+  // Response payload.
+  GetQuotesData data = 1;
+}
+
+message CreateQuoteRequest {
+  // JSON request body.
+  CreateQuoteRequest2 body = 1;
+}
+
+message CreateQuoteResponse {
+  // Response payload.
+  CreateQuoteData data = 1;
+}
+
+message GetQuoteRequest {
+  // Quote ID
+  string quote_id = 1;
+}
+
+message GetQuoteResponse {
+  // Response payload.
+  GetQuoteData data = 1;
+}
+
+message DeleteQuoteRequest {
+  // Quote ID
+  string quote_id = 1;
+}
+
+message DeleteQuoteResponse {
+  // Response payload.
+  google.protobuf.Value data = 1;
+}
+
+message AcceptQuoteRequest {
+  // Quote ID
+  string quote_id = 1;
+  // JSON request body.
+  AcceptQuoteRequest2 body = 2;
+}
+
+message AcceptQuoteResponse {
+  // Response payload.
+  google.protobuf.Value data = 1;
+}
+
+message ConfirmQuoteRequest {
+  // Quote ID
+  string quote_id = 1;
+  // JSON request body.
+  EmptyResponse body = 2;
+}
+
+message ConfirmQuoteResponse {
+  // Response payload.
+  google.protobuf.Value data = 1;
+}
+
+message GetMultivariateEventCollectionRequest {
+  // Collection ticker
+  string collection_ticker = 1;
+}
+
+message GetMultivariateEventCollectionResponse {
+  // Response payload.
+  GetMultivariateEventCollectionData data = 1;
+}
+
+message CreateMarketInMultivariateEventCollectionRequest {
+  // Collection ticker
+  string collection_ticker = 1;
+  // JSON request body.
+  CreateMarketInMultivariateEventCollectionRequest2 body = 2;
+}
+
+message CreateMarketInMultivariateEventCollectionResponse {
+  // Response payload.
+  CreateMarketInMultivariateEventCollectionData data = 1;
+}
+
+message GetMultivariateEventCollectionsRequest {
+  // Only return collections of a certain status. Can be unopened, open, or closed.
+  string status = 1;
+  // Only return collections associated with a particular event ticker.
+  string associated_event_ticker = 2;
+  // Only return collections with a particular series ticker.
+  string series_ticker = 3;
+  // Specify the maximum number of results.
+  int32 limit = 4;
+  // The Cursor represents a pointer to the next page of records in the pagination. This optional parameter, when filled, should be filled with the cursor string returned in a previous request to this end-point.
+  string cursor = 5;
+}
+
+message GetMultivariateEventCollectionsResponse {
+  // Response payload.
+  GetMultivariateEventCollectionsData data = 1;
+}
+
+message GetMultivariateEventCollectionLookupHistoryRequest {
+  // Collection ticker
+  string collection_ticker = 1;
+  // Number of seconds to look back for lookup history. Must be one of 10, 60, 300, or 3600.
+  int32 lookback_seconds = 2;
+}
+
+message GetMultivariateEventCollectionLookupHistoryResponse {
+  // Response payload.
+  GetMultivariateEventCollectionLookupHistoryData data = 1;
+}
+
+message LookupTickersForMarketInMultivariateEventCollectionRequest {
+  // Collection ticker
+  string collection_ticker = 1;
+  // JSON request body.
+  LookupTickersForMarketInMultivariateEventCollectionRequest2 body = 2;
+}
+
+message LookupTickersForMarketInMultivariateEventCollectionResponse {
+  // Response payload.
+  LookupTickersForMarketInMultivariateEventCollectionData data = 1;
+}
+
+message GetSeriesRequest {
+  // The ticker of the series to retrieve
+  string series_ticker = 1;
+  // If true, includes the total volume traded across all events in this series.
+  bool include_volume = 2;
+}
+
+message GetSeriesResponse {
+  // Response payload.
+  GetSeriesData data = 1;
+}
+
+message GetSeriesListRequest {
+  string category = 1;
+  string tags = 2;
+  bool include_product_metadata = 3;
+  // If true, includes the total volume traded across all events in each series.
+  bool include_volume = 4;
+  // Filter series with metadata updated after this Unix timestamp (in seconds). Use this to efficiently poll for changes.
+  int64 min_updated_ts = 5;
+}
+
+message GetSeriesListResponse {
+  // Response payload.
+  GetSeriesListData data = 1;
+}
+
+message GetMarketsRequest {
+  // Number of results per page. Defaults to 100. Maximum value is 1000.
+  int64 limit = 1;
+  // Pagination cursor. Use the cursor value returned from the previous response to get the next page of results. Leave empty for the first page.
+  string cursor = 2;
+  // Event ticker to filter by. Only a single event ticker is supported.
+  string event_ticker = 3;
+  // Filter by series ticker
+  string series_ticker = 4;
+  // Filter items that created after this Unix timestamp
+  int64 min_created_ts = 5;
+  // Filter items that created before this Unix timestamp
+  int64 max_created_ts = 6;
+  // Return markets with metadata updated later than this Unix timestamp. Tracks non-trading changes only. Incompatible with any other filters.
+  int64 min_updated_ts = 7;
+  // Filter items that close before this Unix timestamp
+  int64 max_close_ts = 8;
+  // Filter items that close after this Unix timestamp
+  int64 min_close_ts = 9;
+  // Filter items that settled after this Unix timestamp
+  int64 min_settled_ts = 10;
+  // Filter items that settled before this Unix timestamp
+  int64 max_settled_ts = 11;
+  // Filter by market status. Leave empty to return markets with any status.
+  string status = 12;
+  // Filter by specific market tickers. Comma-separated list of market tickers to retrieve.
+  string tickers = 13;
+  // Filter by multivariate events (combos). 'only' returns only multivariate events, 'exclude' excludes multivariate events.
+  string mve_filter = 14;
+}
+
+message GetMarketsResponse {
+  // Response payload.
+  GetMarketsData data = 1;
+}
+
+message GetMarketRequest {
+  // Market ticker
+  string ticker = 1;
+}
+
+message GetMarketResponse {
+  // Response payload.
+  GetMarketData data = 1;
+}
+
+message BatchGetMarketCandlesticksRequest {
+  // Comma-separated list of market tickers (maximum 100)
+  string market_tickers = 1;
+  // Start timestamp in Unix seconds
+  int64 start_ts = 2;
+  // End timestamp in Unix seconds
+  int64 end_ts = 3;
+  // Candlestick period interval in minutes
+  int32 period_interval = 4;
+  // If true, prepends the latest candlestick available before the start_ts. This synthetic candlestick is created by:
+  bool include_latest_before_start = 5;
+}
+
+message BatchGetMarketCandlesticksResponse {
+  // Response payload.
+  BatchGetMarketCandlesticksData data = 1;
+}
