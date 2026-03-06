@@ -30,12 +30,8 @@ jobs:
       - uses: flox/install-flox-action@v2
       - uses: flox/activate-action@v1
         with:
-          command: |
-            cd ${{ matrix.adapter }}
-            make lint
+          command: make -C ${{ matrix.adapter }} lint
 
       - uses: flox/activate-action@v1
         with:
-          command: |
-            cd ${{ matrix.adapter }}
-            make test
+          command: make -C ${{ matrix.adapter }} test
