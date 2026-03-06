@@ -1,0 +1,357 @@
+syntax = "proto3";
+
+package nasa.v1;
+
+// NASAService provides access to NASA's open data APIs, offering a rich collection
+// of space science, Earth observation, planetary exploration, and technology data.
+//
+// Most endpoints require an API key passed via the NASA_API_KEY environment variable.
+// The default key "DEMO_KEY" works out of the box but has low rate limits
+// (30 requests/hour, 50 requests/day). Get a free unlimited key at https://api.nasa.gov.
+//
+// Use this to explore astronomy images, track near-Earth asteroids, browse Mars rover
+// photos, monitor space weather, view Earth imagery, and search NASA's media library.
+service NASAService {
+
+  // Get the Astronomy Picture of the Day (APOD).
+  //
+  // NASA's most popular API — returns a stunning astronomy image or video each day,
+  // curated by professional astronomers. Includes a detailed expert explanation of
+  // the science behind the image. Optionally pass a specific date (YYYY-MM-DD) to
+  // retrieve a past APOD — the archive goes back to 1995-06-16.
+  //
+  // Use this when the user asks for beautiful space imagery, wants to learn about
+  // a specific astronomical phenomenon, or needs an educational astronomy visual.
+  rpc GetAPOD(GetAPODRequest) returns (GetAPODResponse);
+
+  // Get Astronomy Pictures of the Day for a date range.
+  //
+  // Same data as GetAPOD but returns multiple entries between start_date and end_date
+  // (both inclusive, YYYY-MM-DD format). Useful for building galleries, analyzing how
+  // APOD topics change over time, or retrieving a week/month of astronomy content.
+  //
+  // Keep ranges reasonable (30 days or less) to avoid slow responses.
+  rpc GetAPODRange(GetAPODRangeRequest) returns (GetAPODRangeResponse);
+
+  // Get photos taken by Mars rovers (Curiosity, Opportunity, Spirit).
+  //
+  // Returns actual photographs from the surface of Mars taken by NASA rovers.
+  // Specify the rover name and a Martian sol (solar day since landing) or Earth date.
+  // Optionally filter by camera (e.g., FHAZ for front hazard avoidance, NAVCAM for
+  // navigation, MAST for mast camera on Curiosity). Each photo includes the image URL,
+  // Earth date, and camera metadata.
+  //
+  // Curiosity is still active (landed 2012-08-06). Opportunity (2004-2019) and
+  // Spirit (2004-2010) have extensive archives. Use GetMarsManifest to check
+  // available sols and photo counts.
+  rpc GetMarsPhotos(GetMarsPhotosRequest) returns (GetMarsPhotosResponse);
+
+  // Get the mission manifest for a Mars rover.
+  //
+  // Returns high-level mission metadata: launch date, landing date, current status,
+  // maximum sol reached, and total photos taken. Use this to determine which sols
+  // have photos available before calling GetMarsPhotos, or to compare mission timelines.
+  //
+  // Valid rovers: "curiosity", "opportunity", "spirit".
+  rpc GetMarsManifest(GetMarsManifestRequest) returns (GetMarsManifestResponse);
+
+  // Get near-Earth objects (asteroids) for a date range.
+  //
+  // Queries NASA's Near Earth Object Web Service (NeoWs) for asteroids making close
+  // approaches to Earth. Returns name, estimated diameter, relative velocity, miss
+  // distance, and whether the object is classified as potentially hazardous.
+  //
+  // Date range is limited to 7 days max. Great for tracking asteroid threats,
+  // understanding planetary defense, or finding interesting space objects passing nearby.
+  rpc GetNEOs(GetNEOsRequest) returns (GetNEOsResponse);
+
+  // Look up a specific near-Earth asteroid by its ID.
+  //
+  // Returns detailed orbital and physical data for a single asteroid, including
+  // its full name, absolute magnitude, estimated diameter range, and whether it
+  // is potentially hazardous. Use this after finding an asteroid ID from GetNEOs
+  // to get comprehensive details about a specific object.
+  rpc GetNEOLookup(GetNEOLookupRequest) returns (GetNEOLookupResponse);
+
+  // Get Earth images from the EPIC (Earth Polychromatic Imaging Camera).
+  //
+  // Returns full-disc images of Earth taken by the DSCOVR satellite at the L1
+  // Lagrange point, roughly 1.5 million km from Earth. Each image includes the
+  // date/time, geographic coordinates of the center of the image, and sun position.
+  //
+  // Use this when the user wants to see what Earth looks like from deep space,
+  // or for educational content about Earth observation and satellite imagery.
+  rpc GetEPIC(GetEPICRequest) returns (GetEPICResponse);
+
+  // Search NASA's Image and Video Library.
+  //
+  // Full-text search across NASA's vast archive of images, videos, and audio files.
+  // Returns items with title, description, NASA ID, media type, and preview links.
+  // Does NOT require an API key — this is a separate public API.
+  //
+  // Use this to find NASA imagery for any topic: missions, planets, astronauts,
+  // spacecraft, launches, nebulae, galaxies, or any space-related subject.
+  rpc SearchNASAImages(SearchNASAImagesRequest) returns (SearchNASAImagesResponse);
+
+  // Get space weather events from DONKI (Space Weather Database Of Notifications).
+  //
+  // Returns Coronal Mass Ejection (CME) events from NASA's DONKI system.
+  // Each event includes the time, instruments that detected it, and linked events.
+  // CMEs are massive bursts of solar wind and magnetic fields from the Sun that
+  // can impact Earth's magnetosphere, causing geomagnetic storms.
+  //
+  // Use this for space weather monitoring, understanding solar activity, or
+  // correlating solar events with geomagnetic disturbances on Earth.
+  rpc GetDonki(GetDonkiRequest) returns (GetDonkiResponse);
+
+  // Search NASA Technology Transfer patents and software.
+  //
+  // Queries NASA's database of patented technologies and open-source software
+  // that have been transferred to the public sector. Returns patents with title,
+  // description, patent number, and category.
+  //
+  // Use this to discover NASA-derived technologies, find innovations for commercial
+  // applications, or explore how space research benefits everyday life.
+  rpc GetTechTransfer(GetTechTransferRequest) returns (GetTechTransferResponse);
+}
+
+// --- Domain types ---
+
+message APODEntry {
+  // Title of the astronomy picture.
+  string title = 1;
+  // Expert explanation of the image and the science behind it.
+  string explanation = 2;
+  // URL of the image or video (standard resolution).
+  string url = 3;
+  // URL of the high-definition version (may be empty for videos).
+  string hdurl = 4;
+  // Media type: "image" or "video".
+  string media_type = 5;
+  // Date of the APOD entry (YYYY-MM-DD).
+  string date = 6;
+  // Copyright holder, if any. Empty for public-domain NASA images.
+  string copyright = 7;
+}
+
+message MarsPhoto {
+  // Unique photo ID.
+  int64 id = 1;
+  // Martian sol (solar day) when the photo was taken.
+  int32 sol = 2;
+  // Camera short name (e.g., "FHAZ", "NAVCAM", "MAST").
+  string camera_name = 3;
+  // Camera full name (e.g., "Front Hazard Avoidance Camera").
+  string camera_full_name = 4;
+  // URL to the image file.
+  string img_src = 5;
+  // Earth date when the photo was taken (YYYY-MM-DD).
+  string earth_date = 6;
+  // Name of the rover that took the photo.
+  string rover_name = 7;
+}
+
+message RoverManifest {
+  // Rover name.
+  string name = 1;
+  // Landing date on Mars (YYYY-MM-DD).
+  string landing_date = 2;
+  // Launch date from Earth (YYYY-MM-DD).
+  string launch_date = 3;
+  // Mission status: "active" or "complete".
+  string status = 4;
+  // Maximum sol reached during the mission.
+  int32 max_sol = 5;
+  // Maximum Earth date of photos (YYYY-MM-DD).
+  string max_date = 6;
+  // Total number of photos taken during the mission.
+  int32 total_photos = 7;
+}
+
+message NearEarthObject {
+  // Unique asteroid ID in the NeoWs database.
+  string id = 1;
+  // Human-readable name or designation.
+  string name = 2;
+  // Absolute magnitude (H) — a measure of intrinsic brightness.
+  double absolute_magnitude = 3;
+  // Estimated minimum diameter in kilometers.
+  double estimated_diameter_min_km = 4;
+  // Estimated maximum diameter in kilometers.
+  double estimated_diameter_max_km = 5;
+  // Whether this object is classified as potentially hazardous to Earth.
+  bool is_potentially_hazardous = 6;
+  // Close approach date (YYYY-MM-DD).
+  string close_approach_date = 7;
+  // Relative velocity in km/h at closest approach.
+  double relative_velocity_kmh = 8;
+  // Miss distance in kilometers at closest approach.
+  double miss_distance_km = 9;
+  // Orbiting body (usually "Earth").
+  string orbiting_body = 10;
+}
+
+message EPICImage {
+  // Unique identifier for the image.
+  string identifier = 1;
+  // Caption describing the image.
+  string caption = 2;
+  // Image filename.
+  string image = 3;
+  // Date and time of the image (ISO format).
+  string date = 4;
+  // Latitude of the center of the image.
+  double centroid_lat = 5;
+  // Longitude of the center of the image.
+  double centroid_lon = 6;
+}
+
+message NASAImageItem {
+  // NASA unique identifier for this asset.
+  string nasa_id = 1;
+  // Title of the image/video.
+  string title = 2;
+  // Description of the content.
+  string description = 3;
+  // Media type: "image", "video", or "audio".
+  string media_type = 4;
+  // Date the content was created (ISO format).
+  string date_created = 5;
+  // URL to a preview/thumbnail image (if available).
+  string preview_url = 6;
+}
+
+message CMEEvent {
+  // Unique activity ID for the CME event.
+  string activity_id = 1;
+  // Start time of the CME (ISO format).
+  string start_time = 2;
+  // Source location on the Sun (e.g., "N20W30").
+  string source_location = 3;
+  // URL to more details about this event.
+  string link = 4;
+  // Instruments that detected this CME.
+  repeated string instruments = 5;
+}
+
+message TechTransferItem {
+  // Title of the patent or software.
+  string title = 1;
+  // Description of the technology.
+  string description = 2;
+  // Patent number (if applicable).
+  string patent_number = 3;
+  // NASA center that developed the technology.
+  string center = 4;
+  // Category or technology area.
+  string category = 5;
+}
+
+// --- Request / Response messages ---
+
+message GetAPODRequest {
+  // Date of the APOD to retrieve (YYYY-MM-DD). Defaults to today.
+  string date = 1;
+}
+
+message GetAPODResponse {
+  APODEntry entry = 1;
+}
+
+message GetAPODRangeRequest {
+  // Start date (YYYY-MM-DD, inclusive).
+  string start_date = 1;
+  // End date (YYYY-MM-DD, inclusive).
+  string end_date = 2;
+}
+
+message GetAPODRangeResponse {
+  repeated APODEntry entries = 1;
+}
+
+message GetMarsPhotosRequest {
+  // Rover name: "curiosity", "opportunity", or "spirit".
+  string rover = 1;
+  // Martian sol (solar day since landing). Use this OR earth_date.
+  int32 sol = 2;
+  // Filter by camera short name (e.g., "FHAZ", "NAVCAM", "MAST").
+  string camera = 3;
+  // Earth date (YYYY-MM-DD) as an alternative to sol.
+  string earth_date = 4;
+}
+
+message GetMarsPhotosResponse {
+  repeated MarsPhoto photos = 1;
+}
+
+message GetMarsManifestRequest {
+  // Rover name: "curiosity", "opportunity", or "spirit".
+  string rover = 1;
+}
+
+message GetMarsManifestResponse {
+  RoverManifest manifest = 1;
+}
+
+message GetNEOsRequest {
+  // Start date (YYYY-MM-DD). Defaults to today.
+  string start_date = 1;
+  // End date (YYYY-MM-DD). Max 7 days from start_date.
+  string end_date = 2;
+}
+
+message GetNEOsResponse {
+  // Total number of near-Earth objects in the date range.
+  int32 element_count = 1;
+  // List of near-Earth objects with close approach data.
+  repeated NearEarthObject objects = 2;
+}
+
+message GetNEOLookupRequest {
+  // Asteroid ID from the NeoWs database (e.g., "3542519").
+  string asteroid_id = 1;
+}
+
+message GetNEOLookupResponse {
+  NearEarthObject object = 1;
+}
+
+message GetEPICRequest {
+  // Date to retrieve images for (YYYY-MM-DD). Defaults to most recent available.
+  string date = 1;
+}
+
+message GetEPICResponse {
+  repeated EPICImage images = 1;
+}
+
+message SearchNASAImagesRequest {
+  // Search query (e.g., "apollo 11", "mars", "nebula", "james webb").
+  string query = 1;
+  // Filter by media type: "image", "video", or "audio".
+  string media_type = 2;
+}
+
+message SearchNASAImagesResponse {
+  repeated NASAImageItem items = 1;
+}
+
+message GetDonkiRequest {
+  // Start date (YYYY-MM-DD). Defaults to 30 days ago.
+  string start_date = 1;
+  // End date (YYYY-MM-DD). Defaults to today.
+  string end_date = 2;
+}
+
+message GetDonkiResponse {
+  repeated CMEEvent events = 1;
+}
+
+message GetTechTransferRequest {
+  // Search query (e.g., "robotics", "battery", "solar").
+  string query = 1;
+}
+
+message GetTechTransferResponse {
+  repeated TechTransferItem items = 1;
+}

@@ -1,0 +1,1 @@
+"""STRATZ MCP package."""

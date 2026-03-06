@@ -1,0 +1,1 @@
+"""Generated STRATZ protobuf package."""

@@ -1,0 +1,15 @@
+version: v2
+modules:
+  - path: .
+deps:
+  - buf.build/googleapis/googleapis
+lint:
+  ignore_only:
+    FIELD_LOWER_SNAKE_CASE:
+      - polymarket/v1/polymarket.proto
+    RPC_REQUEST_RESPONSE_UNIQUE:
+      - polymarket/v1/polymarket.proto
+    RPC_REQUEST_STANDARD_NAME:
+      - polymarket/v1/polymarket.proto
+    RPC_RESPONSE_STANDARD_NAME:
+      - polymarket/v1/polymarket.proto

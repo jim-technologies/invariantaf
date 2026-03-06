@@ -1,0 +1,276 @@
+syntax = "proto3";
+
+package wikipedia.v1;
+
+// WikipediaService provides access to Wikipedia, the free encyclopedia
+// with 60+ million articles across 300+ languages.
+//
+// All endpoints are **free and require no authentication**.
+// Data includes article text, summaries, images, categories, links,
+// historical events, and trending/most-read pages.
+//
+// Use this to look up factual information, get article summaries,
+// explore related topics, or discover notable events on any date.
+service WikipediaService {
+
+  // Search Wikipedia articles by keyword or phrase.
+  //
+  // Returns a ranked list of matching articles with titles, snippets, and page IDs.
+  // Snippets contain HTML-highlighted matches — strip tags for plain text.
+  // Use this when you need to find a Wikipedia article but don't know the exact title.
+  // Example queries: "quantum computing", "Battle of Thermopylae", "CRISPR gene editing"
+  rpc Search(SearchRequest) returns (SearchResponse);
+
+  // Get a concise summary of a Wikipedia article by its title.
+  //
+  // Returns the article title, a short plain-text extract (1-2 paragraphs),
+  // a thumbnail image URL, and a Wikidata description.
+  // This is the fastest way to get a factual overview of any topic.
+  // The title should use underscores for spaces (e.g., "Albert_Einstein").
+  rpc GetPage(GetPageRequest) returns (GetPageResponse);
+
+  // Get the full article content of a Wikipedia page as plain text.
+  //
+  // Returns the complete article body without any HTML or wiki markup.
+  // Use this when you need comprehensive information beyond the summary.
+  // Warning: articles can be very long (10,000+ words for major topics).
+  // The title should use underscores for spaces (e.g., "Albert_Einstein").
+  rpc GetFullPage(GetFullPageRequest) returns (GetFullPageResponse);
+
+  // Get one or more random Wikipedia article summaries.
+  //
+  // Each call returns a random article with title, summary, and thumbnail.
+  // Use the count parameter to request multiple random articles (default 1).
+  // Useful for exploration, trivia, or serendipitous discovery.
+  rpc GetRandom(GetRandomRequest) returns (GetRandomResponse);
+
+  // Get historical events that happened on a specific date (month/day).
+  //
+  // Returns notable events with the year they occurred and a description.
+  // Each event includes links to related Wikipedia articles.
+  // Use this for "on this day in history" features or date-based trivia.
+  // Month and day are 1-indexed (e.g., month=7, day=4 for July 4th).
+  rpc GetOnThisDay(GetOnThisDayRequest) returns (GetOnThisDayResponse);
+
+  // Get the most-read Wikipedia articles for a specific date.
+  //
+  // Returns the top articles by page views, with view counts and summaries.
+  // Reflects what the world is searching for and reading about.
+  // Useful for identifying trending topics and current events.
+  // Date must be in the past (yesterday or earlier).
+  rpc GetMostRead(GetMostReadRequest) returns (GetMostReadResponse);
+
+  // Get available language editions for a Wikipedia article.
+  //
+  // Returns a list of languages the article is available in,
+  // along with the localized titles. Useful for multilingual lookups
+  // or to check if content exists in a specific language.
+  // The title should use underscores for spaces (e.g., "Albert_Einstein").
+  rpc GetLanguages(GetLanguagesRequest) returns (GetLanguagesResponse);
+
+  // Get the categories that a Wikipedia article belongs to.
+  //
+  // Returns category names (e.g., "Category:Nobel laureates in Physics").
+  // Categories reveal the topic hierarchy and classification of an article.
+  // Useful for understanding context or finding related articles.
+  // The title should use underscores for spaces (e.g., "Albert_Einstein").
+  rpc GetCategories(GetCategoriesRequest) returns (GetCategoriesResponse);
+
+  // Get internal links from a Wikipedia article.
+  //
+  // Returns a list of other Wikipedia articles linked from the given page.
+  // Useful for topic exploration, building knowledge graphs, or finding
+  // related subjects. Links represent editorial connections between topics.
+  // The title should use underscores for spaces (e.g., "Albert_Einstein").
+  rpc GetLinks(GetLinksRequest) returns (GetLinksResponse);
+
+  // Get images embedded in a Wikipedia article.
+  //
+  // Returns filenames of images used on the page (e.g., "File:Example.jpg").
+  // These are Wikimedia Commons filenames that can be used to construct
+  // image URLs. Useful for visual content or illustration discovery.
+  // The title should use underscores for spaces (e.g., "Albert_Einstein").
+  rpc GetImages(GetImagesRequest) returns (GetImagesResponse);
+}
+
+// --- Domain types ---
+
+message SearchResult {
+  // Wikipedia page ID (unique numeric identifier).
+  int64 page_id = 1;
+  // Article title.
+  string title = 2;
+  // HTML snippet with search term highlighted. Strip tags for plain text.
+  string snippet = 3;
+  // Word count of the article.
+  int32 word_count = 4;
+  // Timestamp of last edit (ISO 8601).
+  string timestamp = 5;
+}
+
+message PageSummary {
+  // Article title.
+  string title = 1;
+  // Short plain-text extract (1-2 paragraphs).
+  string extract = 2;
+  // URL of the article thumbnail image, if available.
+  string thumbnail_url = 3;
+  // Short Wikidata description (e.g., "German-born theoretical physicist").
+  string description = 4;
+  // Wikipedia page ID.
+  int64 page_id = 5;
+  // Full URL to the Wikipedia article.
+  string content_url = 6;
+}
+
+message OnThisDayEvent {
+  // Year the event occurred (e.g., 1776).
+  int32 year = 1;
+  // Description of what happened.
+  string text = 2;
+  // Related Wikipedia pages.
+  repeated PageSummary pages = 3;
+}
+
+message MostReadArticle {
+  // Article title.
+  string title = 1;
+  // Number of page views on that date.
+  int64 views = 2;
+  // Short plain-text extract.
+  string extract = 3;
+  // URL of the article thumbnail image, if available.
+  string thumbnail_url = 4;
+  // Short Wikidata description.
+  string description = 5;
+}
+
+message LanguageLink {
+  // Language code (e.g., "fr", "de", "ja").
+  string lang = 1;
+  // Article title in that language.
+  string title = 2;
+}
+
+// --- Request / Response messages ---
+
+message SearchRequest {
+  // Search query (e.g., "quantum computing", "Battle of Thermopylae").
+  string query = 1;
+  // Maximum number of results to return (1-50). Default 10.
+  int32 limit = 2;
+}
+
+message SearchResponse {
+  repeated SearchResult results = 1;
+  // Total number of matching articles (may be much larger than returned results).
+  int32 total_hits = 2;
+}
+
+message GetPageRequest {
+  // Article title with underscores for spaces (e.g., "Albert_Einstein").
+  string title = 1;
+}
+
+message GetPageResponse {
+  // Article title.
+  string title = 1;
+  // Short plain-text extract (1-2 paragraphs).
+  string extract = 2;
+  // URL of the article thumbnail image, if available.
+  string thumbnail_url = 3;
+  // Short Wikidata description.
+  string description = 4;
+  // Wikipedia page ID.
+  int64 page_id = 5;
+  // Full URL to the Wikipedia article.
+  string content_url = 6;
+}
+
+message GetFullPageRequest {
+  // Article title with underscores for spaces (e.g., "Albert_Einstein").
+  string title = 1;
+}
+
+message GetFullPageResponse {
+  // Article title.
+  string title = 1;
+  // Full article content in plain text (no HTML or wiki markup).
+  string content = 2;
+  // Wikipedia page ID.
+  int64 page_id = 3;
+}
+
+message GetRandomRequest {
+  // Number of random articles to return (default 1, max 20).
+  int32 count = 1;
+}
+
+message GetRandomResponse {
+  repeated PageSummary pages = 1;
+}
+
+message GetOnThisDayRequest {
+  // Month (1-12).
+  int32 month = 1;
+  // Day (1-31).
+  int32 day = 2;
+}
+
+message GetOnThisDayResponse {
+  repeated OnThisDayEvent events = 1;
+}
+
+message GetMostReadRequest {
+  // Year (e.g., 2025).
+  int32 year = 1;
+  // Month (1-12).
+  int32 month = 2;
+  // Day (1-31).
+  int32 day = 3;
+}
+
+message GetMostReadResponse {
+  repeated MostReadArticle articles = 1;
+  // The date these stats are for (ISO 8601).
+  string date = 2;
+}
+
+message GetLanguagesRequest {
+  // Article title with underscores for spaces (e.g., "Albert_Einstein").
+  string title = 1;
+}
+
+message GetLanguagesResponse {
+  repeated LanguageLink languages = 1;
+}
+
+message GetCategoriesRequest {
+  // Article title with underscores for spaces (e.g., "Albert_Einstein").
+  string title = 1;
+}
+
+message GetCategoriesResponse {
+  // Category names (e.g., "Category:Nobel laureates in Physics").
+  repeated string categories = 1;
+}
+
+message GetLinksRequest {
+  // Article title with underscores for spaces (e.g., "Albert_Einstein").
+  string title = 1;
+}
+
+message GetLinksResponse {
+  // Titles of linked Wikipedia articles.
+  repeated string links = 1;
+}
+
+message GetImagesRequest {
+  // Article title with underscores for spaces (e.g., "Albert_Einstein").
+  string title = 1;
+}
+
+message GetImagesResponse {
+  // Filenames of images (e.g., "File:Albert Einstein Head.jpg").
+  repeated string images = 1;
+}

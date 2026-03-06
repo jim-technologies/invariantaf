@@ -1,0 +1,36 @@
+[project]
+name = "jsonplaceholder-mcp"
+version = "0.1.0"
+description = "JSONPlaceholder as an MCP server — zero-code demo of connect_http()"
+requires-python = ">=3.10"
+dependencies = [
+    "invariant-protocol @ git+https://github.com/jim-technologies/invariantprotocol.git#subdirectory=python",
+    "httpx>=0.24.0",
+    "googleapis-common-protos>=1.60.0",
+    "pyyaml>=6.0",
+]
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/jsonplaceholder_mcp"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+    "ruff>=0.13.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+exclude = [
+    "src/jsonplaceholder_mcp/gen",
+]

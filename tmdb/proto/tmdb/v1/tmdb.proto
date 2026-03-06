@@ -1,0 +1,319 @@
+syntax = "proto3";
+
+package tmdb.v1;
+
+// TMDBService provides movie and TV show data from The Movie Database (TMDB),
+// one of the largest community-built movie and TV databases.
+//
+// All endpoints require a TMDB API key, passed via the TMDB_API_KEY env var.
+// Data covers millions of movies, TV shows, and people.
+//
+// Use this to search for movies/TV shows, get details, discover trending
+// content, read reviews, and explore cast/crew information.
+service TMDBService {
+
+  // Search for movies by title.
+  //
+  // Returns a list of movies matching the query string.
+  // Results include title, overview, release date, and vote average.
+  rpc SearchMovies(SearchMoviesRequest) returns (SearchMoviesResponse);
+
+  // Search for TV shows by name.
+  //
+  // Returns a list of TV shows matching the query string.
+  // Results include name, overview, first air date, and vote average.
+  rpc SearchTV(SearchTVRequest) returns (SearchTVResponse);
+
+  // Get detailed information about a specific movie.
+  //
+  // Returns comprehensive data including title, overview, release date,
+  // vote average, genres, runtime, budget, revenue, and poster path.
+  rpc GetMovie(GetMovieRequest) returns (GetMovieResponse);
+
+  // Get detailed information about a specific TV show.
+  //
+  // Returns comprehensive data including name, overview, first air date,
+  // vote average, genres, number of seasons/episodes, and status.
+  rpc GetTVShow(GetTVShowRequest) returns (GetTVShowResponse);
+
+  // Get trending movies, TV shows, or people.
+  //
+  // Returns trending items for a given media type and time window.
+  // Supports media_type: "movie", "tv", "all" and time_window: "day", "week".
+  rpc GetTrending(GetTrendingRequest) returns (GetTrendingResponse);
+
+  // Get cast and crew credits for a movie.
+  //
+  // Returns the full cast list (actors and their characters) and
+  // crew list (directors, writers, etc.) for a specific movie.
+  rpc GetMovieCredits(GetMovieCreditsRequest) returns (GetMovieCreditsResponse);
+
+  // Get user reviews for a movie.
+  //
+  // Returns a list of user-submitted reviews for a specific movie,
+  // including author name, content, rating, and creation date.
+  rpc GetMovieReviews(GetMovieReviewsRequest) returns (GetMovieReviewsResponse);
+
+  // Get currently popular movies.
+  //
+  // Returns a list of movies that are currently popular on TMDB.
+  // Results are sorted by popularity score.
+  rpc GetPopularMovies(GetPopularMoviesRequest) returns (GetPopularMoviesResponse);
+
+  // Get top rated movies of all time.
+  //
+  // Returns a list of movies sorted by vote average.
+  // Only includes movies with a significant number of votes.
+  rpc GetTopRatedMovies(GetTopRatedMoviesRequest) returns (GetTopRatedMoviesResponse);
+
+  // Discover movies with filters.
+  //
+  // Returns movies matching the specified filter criteria.
+  // Supports filtering by year, genre, sort order, and minimum vote average.
+  rpc DiscoverMovies(DiscoverMoviesRequest) returns (DiscoverMoviesResponse);
+}
+
+// --- Domain types ---
+
+message Movie {
+  int32 id = 1;
+  string title = 2;
+  string overview = 3;
+  string release_date = 4;
+  double vote_average = 5;
+  int32 vote_count = 6;
+  double popularity = 7;
+  string poster_path = 8;
+  string backdrop_path = 9;
+  repeated int32 genre_ids = 10;
+  string original_language = 11;
+  bool adult = 12;
+}
+
+message TVShow {
+  int32 id = 1;
+  string name = 2;
+  string overview = 3;
+  string first_air_date = 4;
+  double vote_average = 5;
+  int32 vote_count = 6;
+  double popularity = 7;
+  string poster_path = 8;
+  string backdrop_path = 9;
+  repeated int32 genre_ids = 10;
+  string original_language = 11;
+}
+
+message Genre {
+  int32 id = 1;
+  string name = 2;
+}
+
+message CastMember {
+  int32 id = 1;
+  string name = 2;
+  string character = 3;
+  string profile_path = 4;
+  int32 order = 5;
+}
+
+message CrewMember {
+  int32 id = 1;
+  string name = 2;
+  string job = 3;
+  string department = 4;
+  string profile_path = 5;
+}
+
+message Review {
+  string author = 1;
+  string content = 2;
+  double rating = 3;
+  string created_at = 4;
+  string id = 5;
+  string url = 6;
+}
+
+message TrendingItem {
+  int32 id = 1;
+  string title = 2;
+  string name = 3;
+  string media_type = 4;
+  string overview = 5;
+  string release_date = 6;
+  string first_air_date = 7;
+  double vote_average = 8;
+  string poster_path = 9;
+  double popularity = 10;
+}
+
+// --- Request / Response messages ---
+
+message SearchMoviesRequest {
+  // Search query (e.g., "The Matrix", "Inception").
+  string query = 1;
+  // Page number (1-based). Default 1.
+  int32 page = 2;
+  // Filter by year of release.
+  int32 year = 3;
+}
+
+message SearchMoviesResponse {
+  repeated Movie results = 1;
+  int32 total_results = 2;
+  int32 total_pages = 3;
+  int32 page = 4;
+}
+
+message SearchTVRequest {
+  // Search query (e.g., "Breaking Bad", "The Office").
+  string query = 1;
+  // Page number (1-based). Default 1.
+  int32 page = 2;
+  // Filter by first air date year.
+  int32 first_air_date_year = 3;
+}
+
+message SearchTVResponse {
+  repeated TVShow results = 1;
+  int32 total_results = 2;
+  int32 total_pages = 3;
+  int32 page = 4;
+}
+
+message GetMovieRequest {
+  // TMDB movie ID.
+  int32 id = 1;
+}
+
+message GetMovieResponse {
+  int32 id = 1;
+  string title = 2;
+  string overview = 3;
+  string release_date = 4;
+  double vote_average = 5;
+  int32 vote_count = 6;
+  repeated Genre genres = 7;
+  int32 runtime = 8;
+  int64 budget = 9;
+  int64 revenue = 10;
+  string poster_path = 11;
+  string backdrop_path = 12;
+  string tagline = 13;
+  string status = 14;
+  string original_language = 15;
+  double popularity = 16;
+  string homepage = 17;
+  string imdb_id = 18;
+}
+
+message GetTVShowRequest {
+  // TMDB TV show ID.
+  int32 id = 1;
+}
+
+message GetTVShowResponse {
+  int32 id = 1;
+  string name = 2;
+  string overview = 3;
+  string first_air_date = 4;
+  double vote_average = 5;
+  int32 vote_count = 6;
+  repeated Genre genres = 7;
+  int32 number_of_seasons = 8;
+  int32 number_of_episodes = 9;
+  string status = 10;
+  string poster_path = 11;
+  string backdrop_path = 12;
+  string tagline = 13;
+  string original_language = 14;
+  double popularity = 15;
+  string homepage = 16;
+  string type = 17;
+}
+
+message GetTrendingRequest {
+  // Media type: "movie", "tv", or "all". Default "all".
+  string media_type = 1;
+  // Time window: "day" or "week". Default "day".
+  string time_window = 2;
+}
+
+message GetTrendingResponse {
+  repeated TrendingItem results = 1;
+  int32 total_results = 2;
+  int32 total_pages = 3;
+  int32 page = 4;
+}
+
+message GetMovieCreditsRequest {
+  // TMDB movie ID.
+  int32 id = 1;
+}
+
+message GetMovieCreditsResponse {
+  int32 id = 1;
+  repeated CastMember cast = 2;
+  repeated CrewMember crew = 3;
+}
+
+message GetMovieReviewsRequest {
+  // TMDB movie ID.
+  int32 id = 1;
+  // Page number (1-based). Default 1.
+  int32 page = 2;
+}
+
+message GetMovieReviewsResponse {
+  int32 id = 1;
+  repeated Review results = 2;
+  int32 total_results = 3;
+  int32 total_pages = 4;
+  int32 page = 5;
+}
+
+message GetPopularMoviesRequest {
+  // Page number (1-based). Default 1.
+  int32 page = 1;
+}
+
+message GetPopularMoviesResponse {
+  repeated Movie results = 1;
+  int32 total_results = 2;
+  int32 total_pages = 3;
+  int32 page = 4;
+}
+
+message GetTopRatedMoviesRequest {
+  // Page number (1-based). Default 1.
+  int32 page = 1;
+}
+
+message GetTopRatedMoviesResponse {
+  repeated Movie results = 1;
+  int32 total_results = 2;
+  int32 total_pages = 3;
+  int32 page = 4;
+}
+
+message DiscoverMoviesRequest {
+  // Filter by year of release.
+  int32 year = 1;
+  // Filter by genre ID (comma-separated for multiple, e.g., "28,12").
+  string with_genres = 2;
+  // Sort order (e.g., "popularity.desc", "vote_average.desc", "release_date.desc"). Default "popularity.desc".
+  string sort_by = 3;
+  // Minimum vote average (0-10).
+  double vote_average_gte = 4;
+  // Page number (1-based). Default 1.
+  int32 page = 5;
+  // Minimum vote count.
+  int32 vote_count_gte = 6;
+}
+
+message DiscoverMoviesResponse {
+  repeated Movie results = 1;
+  int32 total_results = 2;
+  int32 total_pages = 3;
+  int32 page = 4;
+}

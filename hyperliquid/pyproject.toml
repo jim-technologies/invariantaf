@@ -1,0 +1,27 @@
+[project]
+name = "hyperliquid-mcp"
+version = "0.1.0"
+description = "Hyperliquid DEX as an MCP server — powered by Invariant Protocol"
+requires-python = ">=3.10"
+dependencies = [
+    "invariant-protocol @ git+https://github.com/jim-technologies/invariantprotocol.git#subdirectory=python",
+    "hyperliquid-python-sdk>=0.9",
+    "eth-account>=0.13",
+    "pyyaml>=6.0",
+]
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

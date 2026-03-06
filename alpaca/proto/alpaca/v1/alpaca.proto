@@ -1,0 +1,364 @@
+syntax = "proto3";
+
+package alpaca.v1;
+
+// AlpacaService provides stock and crypto trading via the Alpaca brokerage API.
+//
+// Alpaca offers commission-free trading of US stocks, ETFs, and crypto.
+// This service wraps both the **Trading API** (account, orders, positions)
+// and the **Market Data API** (bars, quotes, trades).
+//
+// By default this connects to the **paper trading** environment.
+// Set the ALPACA_LIVE environment variable to "true" to use real money.
+//
+// Authentication requires ALPACA_API_KEY and ALPACA_SECRET_KEY environment variables.
+service AlpacaService {
+
+  // Get account information including buying power, equity, and cash.
+  //
+  // Returns the current state of your Alpaca brokerage account:
+  // portfolio value, buying power, cash, equity, margin usage, and
+  // whether the account has any restrictions (PDT, trading blocked, etc.).
+  // Use this to check how much capital is available before placing orders.
+  rpc GetAccount(GetAccountRequest) returns (GetAccountResponse);
+
+  // Get all open positions with current market value and unrealized P&L.
+  //
+  // Returns every position in your portfolio with entry price, current price,
+  // quantity, market value, unrealized profit/loss, and percentage change.
+  // Use this to see what you currently hold and how each position is performing.
+  rpc GetPositions(GetPositionsRequest) returns (GetPositionsResponse);
+
+  // Get a single position by stock/crypto symbol.
+  //
+  // Returns detailed position info for one symbol including quantity,
+  // entry price, current price, market value, and unrealized P&L.
+  // Returns an error if you have no position in the given symbol.
+  rpc GetPosition(GetPositionRequest) returns (Position);
+
+  // Place a market, limit, stop, or stop-limit order.
+  //
+  // Submits a new order to buy or sell a stock or crypto asset.
+  // Supports market orders (execute immediately at best price),
+  // limit orders (execute at specified price or better),
+  // stop orders (trigger at stop price then execute as market),
+  // and stop-limit orders (trigger at stop price then execute as limit).
+  //
+  // Required fields: symbol, qty (or notional), side, type, time_in_force.
+  // For limit/stop_limit orders, set limit_price.
+  // For stop/stop_limit orders, set stop_price.
+  rpc PlaceOrder(PlaceOrderRequest) returns (PlaceOrderResponse);
+
+  // Get recent orders, optionally filtered by status.
+  //
+  // Returns a list of orders with their current status, fill details,
+  // and timestamps. Filter by status: "open" (default), "closed", or "all".
+  // Use this to track order execution and review trade history.
+  rpc GetOrders(GetOrdersRequest) returns (GetOrdersResponse);
+
+  // Cancel an open order by its order ID.
+  //
+  // Attempts to cancel a pending order. Returns success if the cancellation
+  // request was accepted. Note that the order may have already been filled
+  // by the time the cancel request is processed.
+  rpc CancelOrder(CancelOrderRequest) returns (CancelOrderResponse);
+
+  // Get asset details including whether it is tradable and fractionable.
+  //
+  // Returns metadata about a stock or crypto asset: its full name,
+  // exchange, asset class (us_equity or crypto), whether it is currently
+  // tradable, whether fractional shares are supported, and its status.
+  rpc GetAsset(GetAssetRequest) returns (GetAssetResponse);
+
+  // Get historical price bars (OHLCV candles) for a symbol.
+  //
+  // Returns open, high, low, close, and volume for each time period.
+  // Specify the timeframe (e.g., "1Min", "5Min", "15Min", "1Hour", "1Day")
+  // and date range (start/end in RFC 3339 or YYYY-MM-DD format).
+  // Useful for technical analysis, charting, and backtesting.
+  rpc GetBars(GetBarsRequest) returns (GetBarsResponse);
+
+  // Get the latest bid/ask quote for a symbol.
+  //
+  // Returns the most recent National Best Bid and Offer (NBBO):
+  // bid price, bid size, ask price, ask size, and the timestamp.
+  // Use this to check the current spread before placing limit orders.
+  rpc GetLatestQuote(GetLatestQuoteRequest) returns (GetLatestQuoteResponse);
+
+  // Get the latest trade price for a symbol.
+  //
+  // Returns the most recent trade: price, size, exchange, and timestamp.
+  // Use this to see the last traded price of any stock or crypto.
+  rpc GetLatestTrade(GetLatestTradeRequest) returns (GetLatestTradeResponse);
+}
+
+// --- Domain types ---
+
+message Position {
+  // Stock or crypto symbol (e.g., "AAPL", "BTC/USD").
+  string symbol = 1;
+  // Number of shares/units held. Negative means short.
+  string qty = 2;
+  // Average entry price.
+  string avg_entry_price = 3;
+  // Current market price.
+  string current_price = 4;
+  // Current market value of the position.
+  string market_value = 5;
+  // Unrealized profit/loss in dollars.
+  string unrealized_pl = 6;
+  // Unrealized profit/loss as a percentage.
+  string unrealized_plpc = 7;
+  // Asset class: "us_equity" or "crypto".
+  string asset_class = 8;
+  // Side: "long" or "short".
+  string side = 9;
+  // Exchange where the asset is listed.
+  string exchange = 10;
+  // Cost basis of the position.
+  string cost_basis = 11;
+}
+
+message Order {
+  // Unique order ID (UUID).
+  string id = 1;
+  // Symbol (e.g., "AAPL").
+  string symbol = 2;
+  // Order quantity.
+  string qty = 3;
+  // Filled quantity.
+  string filled_qty = 4;
+  // Side: "buy" or "sell".
+  string side = 5;
+  // Order type: "market", "limit", "stop", "stop_limit".
+  string type = 6;
+  // Time in force: "day", "gtc", "ioc", "opg".
+  string time_in_force = 7;
+  // Limit price (for limit and stop_limit orders).
+  string limit_price = 8;
+  // Stop price (for stop and stop_limit orders).
+  string stop_price = 9;
+  // Average fill price.
+  string filled_avg_price = 10;
+  // Order status: "new", "partially_filled", "filled", "canceled", "expired", etc.
+  string status = 11;
+  // When the order was created (RFC 3339).
+  string created_at = 12;
+  // When the order was last updated (RFC 3339).
+  string updated_at = 13;
+  // When the order was submitted (RFC 3339).
+  string submitted_at = 14;
+  // When the order was filled (RFC 3339).
+  string filled_at = 15;
+  // Asset class: "us_equity" or "crypto".
+  string asset_class = 16;
+}
+
+message Bar {
+  // Bar open timestamp (RFC 3339).
+  string timestamp = 1;
+  // Open price.
+  double open = 2;
+  // High price.
+  double high = 3;
+  // Low price.
+  double low = 4;
+  // Close price.
+  double close = 5;
+  // Trading volume.
+  double volume = 6;
+  // Volume-weighted average price.
+  double vwap = 7;
+  // Number of trades in this bar.
+  int64 trade_count = 8;
+}
+
+// --- Request / Response messages ---
+
+message GetAccountRequest {}
+
+message GetAccountResponse {
+  // Account ID (UUID).
+  string id = 1;
+  // Account status (e.g., "ACTIVE").
+  string status = 2;
+  // Account currency (e.g., "USD").
+  string currency = 3;
+  // Available buying power.
+  double buying_power = 4;
+  // Cash balance.
+  double cash = 5;
+  // Total portfolio value.
+  double portfolio_value = 6;
+  // Total equity (cash + long market value + short market value).
+  double equity = 7;
+  // Previous day's equity.
+  double last_equity = 8;
+  // Total market value of long positions.
+  double long_market_value = 9;
+  // Total market value of short positions.
+  double short_market_value = 10;
+  // Whether the account is flagged as a pattern day trader.
+  bool pattern_day_trader = 11;
+  // Whether trading is currently blocked.
+  bool trading_blocked = 12;
+  // Whether the account is blocked.
+  bool account_blocked = 13;
+}
+
+message GetPositionsRequest {}
+
+message GetPositionsResponse {
+  repeated Position positions = 1;
+}
+
+message GetPositionRequest {
+  // Stock or crypto symbol (e.g., "AAPL", "BTC/USD").
+  string symbol = 1;
+}
+
+message PlaceOrderRequest {
+  // Stock or crypto symbol (e.g., "AAPL", "BTCUSD").
+  string symbol = 1;
+  // Number of shares/units to trade. Use qty OR notional, not both.
+  double qty = 2;
+  // Dollar amount to trade (for fractional shares). Use qty OR notional, not both.
+  double notional = 3;
+  // "buy" or "sell".
+  string side = 4;
+  // Order type: "market", "limit", "stop", "stop_limit".
+  string type = 5;
+  // Time in force: "day" (default), "gtc", "ioc", "opg".
+  string time_in_force = 6;
+  // Limit price — required for "limit" and "stop_limit" orders.
+  double limit_price = 7;
+  // Stop price — required for "stop" and "stop_limit" orders.
+  double stop_price = 8;
+}
+
+message PlaceOrderResponse {
+  // Unique order ID (UUID).
+  string id = 1;
+  // Order status after submission (e.g., "accepted", "new").
+  string status = 2;
+  // Symbol that was ordered.
+  string symbol = 3;
+  // Quantity ordered.
+  string qty = 4;
+  // Side: "buy" or "sell".
+  string side = 5;
+  // Order type: "market", "limit", etc.
+  string type = 6;
+  // Time in force.
+  string time_in_force = 7;
+  // When the order was created (RFC 3339).
+  string created_at = 8;
+}
+
+message GetOrdersRequest {
+  // Filter by status: "open" (default), "closed", or "all".
+  string status = 1;
+  // Maximum number of orders to return. Default 50.
+  int32 limit = 2;
+}
+
+message GetOrdersResponse {
+  repeated Order orders = 1;
+}
+
+message CancelOrderRequest {
+  // Order ID (UUID) to cancel.
+  string order_id = 1;
+}
+
+message CancelOrderResponse {
+  // Whether the cancel request was accepted.
+  bool success = 1;
+  // Error message if the cancel failed.
+  string error = 2;
+}
+
+message GetAssetRequest {
+  // Stock or crypto symbol (e.g., "AAPL", "BTCUSD").
+  string symbol = 1;
+}
+
+message GetAssetResponse {
+  // Unique asset ID (UUID).
+  string id = 1;
+  // Asset class: "us_equity" or "crypto".
+  string asset_class = 2;
+  // Primary exchange (e.g., "NASDAQ", "NYSE").
+  string exchange = 3;
+  // Ticker symbol.
+  string symbol = 4;
+  // Full asset name (e.g., "Apple Inc.").
+  string name = 5;
+  // Whether the asset is currently tradable.
+  bool tradable = 6;
+  // Whether fractional shares are supported.
+  bool fractionable = 7;
+  // Asset status (e.g., "active").
+  string status = 8;
+  // Whether the asset can be shorted.
+  bool shortable = 9;
+  // Whether the asset is marginable.
+  bool marginable = 10;
+}
+
+message GetBarsRequest {
+  // Stock symbol (e.g., "AAPL").
+  string symbol = 1;
+  // Bar timeframe: "1Min", "5Min", "15Min", "1Hour", "1Day", "1Week", "1Month".
+  string timeframe = 2;
+  // Start date/time (RFC 3339 or YYYY-MM-DD).
+  string start = 3;
+  // End date/time (RFC 3339 or YYYY-MM-DD). Defaults to now.
+  string end = 4;
+  // Maximum number of bars to return. Default 1000.
+  int32 limit = 5;
+}
+
+message GetBarsResponse {
+  repeated Bar bars = 1;
+  // Symbol the bars are for.
+  string symbol = 2;
+}
+
+message GetLatestQuoteRequest {
+  // Stock symbol (e.g., "AAPL").
+  string symbol = 1;
+}
+
+message GetLatestQuoteResponse {
+  // Symbol.
+  string symbol = 1;
+  // Best bid price.
+  double bid_price = 2;
+  // Bid size (number of shares).
+  double bid_size = 3;
+  // Best ask price.
+  double ask_price = 4;
+  // Ask size (number of shares).
+  double ask_size = 5;
+  // Quote timestamp (RFC 3339).
+  string timestamp = 6;
+}
+
+message GetLatestTradeRequest {
+  // Stock symbol (e.g., "AAPL").
+  string symbol = 1;
+}
+
+message GetLatestTradeResponse {
+  // Symbol.
+  string symbol = 1;
+  // Trade price.
+  double price = 2;
+  // Trade size (number of shares).
+  double size = 3;
+  // Exchange where the trade occurred.
+  string exchange = 4;
+  // Trade timestamp (RFC 3339).
+  string timestamp = 5;
+}

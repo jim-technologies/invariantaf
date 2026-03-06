@@ -1,0 +1,227 @@
+syntax = "proto3";
+
+package reddit.v1;
+
+// RedditService provides read-only access to Reddit content via the
+// public JSON API (append `.json` to any Reddit URL).
+//
+// No authentication required. All endpoints are free.
+// Useful for monitoring subreddits, tracking discussions, searching
+// posts, and gathering community insights.
+service RedditService {
+
+  // Get hot posts from a subreddit.
+  //
+  // Returns the currently trending/popular posts in a subreddit,
+  // ranked by Reddit's "hot" algorithm (recency + score).
+  // Example subreddits: "python", "machinelearning", "worldnews"
+  rpc GetHot(GetHotRequest) returns (GetHotResponse);
+
+  // Get top posts from a subreddit.
+  //
+  // Returns the highest-scoring posts in a subreddit over a time period.
+  // Use time_filter to control the window: hour, day, week, month, year, all.
+  rpc GetTop(GetTopRequest) returns (GetTopResponse);
+
+  // Get newest posts from a subreddit.
+  //
+  // Returns the most recently submitted posts in a subreddit,
+  // sorted by submission time (newest first).
+  rpc GetNew(GetNewRequest) returns (GetNewResponse);
+
+  // Get a single post with its comments.
+  //
+  // Returns the full post details and its comment tree.
+  // Requires the subreddit name and post ID (the base-36 ID from the URL).
+  rpc GetPost(GetPostRequest) returns (GetPostResponse);
+
+  // Search for posts across all of Reddit.
+  //
+  // Full-text search over post titles and bodies.
+  // Returns matching posts sorted by relevance.
+  rpc SearchPosts(SearchPostsRequest) returns (SearchPostsResponse);
+
+  // Get information about a subreddit.
+  //
+  // Returns subreddit metadata: subscriber count, description,
+  // creation date, and activity metrics.
+  rpc GetSubreddit(GetSubredditRequest) returns (GetSubredditResponse);
+
+  // Get a Reddit user's profile information.
+  //
+  // Returns user metadata: karma scores, account age, and description.
+  rpc GetUser(GetUserRequest) returns (GetUserResponse);
+
+  // Get posts submitted by a specific user.
+  //
+  // Returns the user's submitted posts, sorted by newest first.
+  rpc GetUserPosts(GetUserPostsRequest) returns (GetUserPostsResponse);
+
+  // Get a list of popular subreddits.
+  //
+  // Returns subreddits ranked by subscriber count / activity.
+  // Useful for discovering active communities.
+  rpc GetPopularSubreddits(GetPopularSubredditsRequest) returns (GetPopularSubredditsResponse);
+
+  // Get Reddit front page posts.
+  //
+  // Returns the current front page of Reddit (similar to r/all).
+  // A mix of the most popular posts across all subreddits.
+  rpc GetFrontPage(GetFrontPageRequest) returns (GetFrontPageResponse);
+}
+
+// --- Domain types ---
+
+message Post {
+  string id = 1;
+  string title = 2;
+  string selftext = 3;
+  string author = 4;
+  string subreddit = 5;
+  int32 score = 6;
+  int32 num_comments = 7;
+  string url = 8;
+  string permalink = 9;
+  double created_utc = 10;
+  bool is_self = 11;
+  string thumbnail = 12;
+}
+
+message Comment {
+  string id = 1;
+  string author = 2;
+  string body = 3;
+  int32 score = 4;
+  double created_utc = 5;
+  string permalink = 6;
+  repeated Comment replies = 7;
+}
+
+message SubredditInfo {
+  string name = 1;
+  string display_name = 2;
+  string title = 3;
+  string description = 4;
+  int32 subscribers = 5;
+  int32 active_users = 6;
+  double created_utc = 7;
+  string url = 8;
+  bool over18 = 9;
+}
+
+message UserInfo {
+  string name = 1;
+  int32 link_karma = 2;
+  int32 comment_karma = 3;
+  double created_utc = 4;
+  string description = 5;
+  bool is_gold = 6;
+  bool verified = 7;
+}
+
+// --- Request / Response messages ---
+
+message GetHotRequest {
+  // Subreddit name (e.g., "python", "worldnews").
+  string subreddit = 1;
+  // Max number of posts to return (1-100). Default 25.
+  int32 limit = 2;
+}
+
+message GetHotResponse {
+  repeated Post posts = 1;
+}
+
+message GetTopRequest {
+  // Subreddit name.
+  string subreddit = 1;
+  // Time filter: "hour", "day", "week", "month", "year", "all". Default "day".
+  string time_filter = 2;
+  // Max number of posts to return (1-100). Default 25.
+  int32 limit = 3;
+}
+
+message GetTopResponse {
+  repeated Post posts = 1;
+}
+
+message GetNewRequest {
+  // Subreddit name.
+  string subreddit = 1;
+  // Max number of posts to return (1-100). Default 25.
+  int32 limit = 2;
+}
+
+message GetNewResponse {
+  repeated Post posts = 1;
+}
+
+message GetPostRequest {
+  // Subreddit name.
+  string subreddit = 1;
+  // Post ID (base-36 ID from the URL).
+  string post_id = 2;
+}
+
+message GetPostResponse {
+  Post post = 1;
+  repeated Comment comments = 2;
+}
+
+message SearchPostsRequest {
+  // Search query.
+  string query = 1;
+  // Max number of results (1-100). Default 25.
+  int32 limit = 2;
+}
+
+message SearchPostsResponse {
+  repeated Post posts = 1;
+}
+
+message GetSubredditRequest {
+  // Subreddit name.
+  string subreddit = 1;
+}
+
+message GetSubredditResponse {
+  SubredditInfo subreddit = 1;
+}
+
+message GetUserRequest {
+  // Reddit username.
+  string username = 1;
+}
+
+message GetUserResponse {
+  UserInfo user = 1;
+}
+
+message GetUserPostsRequest {
+  // Reddit username.
+  string username = 1;
+  // Max number of posts (1-100). Default 25.
+  int32 limit = 2;
+}
+
+message GetUserPostsResponse {
+  repeated Post posts = 1;
+}
+
+message GetPopularSubredditsRequest {
+  // Max number of subreddits (1-100). Default 25.
+  int32 limit = 1;
+}
+
+message GetPopularSubredditsResponse {
+  repeated SubredditInfo subreddits = 1;
+}
+
+message GetFrontPageRequest {
+  // Max number of posts (1-100). Default 25.
+  int32 limit = 1;
+}
+
+message GetFrontPageResponse {
+  repeated Post posts = 1;
+}

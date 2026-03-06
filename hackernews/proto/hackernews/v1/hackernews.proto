@@ -1,0 +1,200 @@
+syntax = "proto3";
+
+package hackernews.v1;
+
+// HackerNewsService provides access to Hacker News, the popular tech news
+// aggregator run by Y Combinator. All data comes from the official HN
+// Firebase API (https://hacker-news.firebaseio.com/v0).
+//
+// No authentication is required. The API is free and public.
+// Use this to monitor what the tech community is discussing,
+// find trending stories, read comments, and look up user profiles.
+service HackerNewsService {
+
+  // Get the top stories currently on the Hacker News front page.
+  //
+  // Returns the most popular stories ranked by the HN ranking algorithm.
+  // Use this to find what the tech community is discussing right now.
+  // The HN front page typically shows ~500 stories; use `limit` to control
+  // how many you want (default 10). Each story includes its title, URL,
+  // score, author, and comment count.
+  rpc GetTopStories(GetStoriesRequest) returns (GetStoriesResponse);
+
+  // Get the newest stories posted to Hacker News.
+  //
+  // Returns stories in reverse chronological order (newest first).
+  // Use this to discover fresh content before it gains traction.
+  // Up to ~500 recent stories are available; use `limit` to control
+  // how many you want (default 10).
+  rpc GetNewStories(GetStoriesRequest) returns (GetStoriesResponse);
+
+  // Get the best stories on Hacker News.
+  //
+  // Returns the highest-quality stories as determined by HN's "best"
+  // ranking algorithm, which favors stories with high scores and
+  // sustained engagement. Use this to find the most universally
+  // appreciated content. Use `limit` to control how many (default 10).
+  rpc GetBestStories(GetStoriesRequest) returns (GetStoriesResponse);
+
+  // Get Ask HN stories — questions posed by the community.
+  //
+  // Returns stories with titles starting with "Ask HN:". These are
+  // questions, advice requests, and discussions initiated by HN users.
+  // Great for finding community wisdom on tech topics, career advice,
+  // and opinions. Use `limit` to control how many (default 10).
+  rpc GetAskStories(GetStoriesRequest) returns (GetStoriesResponse);
+
+  // Get Show HN stories — projects and products shared by the community.
+  //
+  // Returns stories with titles starting with "Show HN:". These are
+  // projects, tools, and products that HN users have built and are
+  // sharing with the community. Great for discovering new tools,
+  // open-source projects, and startups. Use `limit` to control how many (default 10).
+  rpc GetShowStories(GetStoriesRequest) returns (GetStoriesResponse);
+
+  // Get job postings from Hacker News.
+  //
+  // Returns job listings posted on HN, typically from Y Combinator
+  // portfolio companies and other tech companies. Job items have a
+  // title, URL, and posting time but no score or comments.
+  // Use `limit` to control how many (default 10).
+  rpc GetJobStories(GetStoriesRequest) returns (GetStoriesResponse);
+
+  // Get a single item by its ID.
+  //
+  // Items on HN can be stories, comments, jobs, polls, or poll options.
+  // Every piece of content on HN has a unique integer ID. Use this to
+  // fetch full details for any item — its text content, author, score,
+  // child comments (as IDs in `kids`), URL, and more.
+  rpc GetItem(GetItemRequest) returns (GetItemResponse);
+
+  // Get a user profile by username.
+  //
+  // Returns the public profile for a Hacker News user, including their
+  // karma score, account creation date, "about" bio text, and a list
+  // of their submitted item IDs. Usernames are case-sensitive.
+  rpc GetUser(GetUserRequest) returns (GetUserResponse);
+
+  // Get comments for a story, with optional recursive depth.
+  //
+  // Fetches the story item, then retrieves its child comments (the `kids`
+  // array). Set `depth` to control how many levels of nested replies to
+  // fetch (default 1 = direct replies only, max recommended 3).
+  // Returns a flat list of all comments found. Use this to read the
+  // discussion thread on any story.
+  rpc GetComments(GetCommentsRequest) returns (GetCommentsResponse);
+
+  // Get the current maximum item ID on Hacker News.
+  //
+  // Returns the ID of the most recently created item. This is useful
+  // for polling: you can periodically check this value and fetch any
+  // new items with IDs greater than your last-seen ID. The ID is a
+  // monotonically increasing integer.
+  rpc GetMaxItem(GetMaxItemRequest) returns (GetMaxItemResponse);
+}
+
+// --- Domain types ---
+
+// An item on Hacker News. Items can be stories, comments, jobs, polls, or poll options.
+// Not all fields are present on all item types — for example, comments have `text`
+// and `parent` but no `url` or `score`, while jobs have `url` but no `kids`.
+message Item {
+  // The item's unique integer ID.
+  int64 id = 1;
+  // Whether the item has been deleted.
+  bool deleted = 2;
+  // The type of item: "story", "comment", "job", "poll", or "pollopt".
+  string type = 3;
+  // The username of the item's author.
+  string by = 4;
+  // Creation time as Unix timestamp (seconds since epoch).
+  int64 time = 5;
+  // The comment text or story text (HTML). Present on comments and Ask HN / text stories.
+  string text = 6;
+  // Whether the item is dead (flagged/killed by moderators).
+  bool dead = 7;
+  // The parent item ID. Present on comments (points to story or parent comment).
+  int64 parent = 8;
+  // The poll item ID. Present on poll options (points to the parent poll).
+  int64 poll = 9;
+  // IDs of child items (comments) in ranked display order.
+  repeated int64 kids = 10;
+  // The URL of the story. Present on stories and jobs with external links.
+  string url = 11;
+  // The story's score (upvotes minus downvotes). Present on stories and polls.
+  int32 score = 12;
+  // The title of the story, poll, or job.
+  string title = 13;
+  // IDs of related poll options. Present on polls.
+  repeated int64 parts = 14;
+  // Total number of comments on a story or poll.
+  int32 descendants = 15;
+}
+
+// A Hacker News user profile.
+message User {
+  // The user's unique, case-sensitive username.
+  string id = 1;
+  // Account creation time as Unix timestamp (seconds since epoch).
+  int64 created = 2;
+  // The user's karma score (total upvotes received minus downvotes).
+  int32 karma = 3;
+  // The user's optional self-description (HTML).
+  string about = 4;
+  // IDs of the user's submitted items (stories, comments, polls, etc.).
+  repeated int64 submitted = 5;
+}
+
+// --- Request / Response messages ---
+
+message GetStoriesRequest {
+  // Maximum number of stories to return. Default 10, max 500.
+  int32 limit = 1;
+}
+
+message GetStoriesResponse {
+  // The list of story items, fully hydrated with all fields.
+  repeated Item items = 1;
+}
+
+message GetItemRequest {
+  // The unique item ID to fetch.
+  int64 id = 1;
+}
+
+message GetItemResponse {
+  // The fully hydrated item.
+  Item item = 1;
+}
+
+message GetUserRequest {
+  // The username to look up (case-sensitive).
+  string id = 1;
+}
+
+message GetUserResponse {
+  // The user profile.
+  User user = 1;
+}
+
+message GetCommentsRequest {
+  // The story ID whose comments to fetch.
+  int64 story_id = 1;
+  // How many levels of nested replies to fetch. Default 1 (direct replies only).
+  // Higher values fetch deeper threads but make more API calls.
+  int32 depth = 2;
+  // Maximum total comments to return across all depth levels. Default 30.
+  int32 limit = 3;
+}
+
+message GetCommentsResponse {
+  // A flat list of comment items from the story's discussion thread.
+  repeated Item comments = 1;
+}
+
+message GetMaxItemRequest {}
+
+message GetMaxItemResponse {
+  // The current maximum item ID on Hacker News.
+  int64 max_id = 1;
+}

@@ -1,0 +1,537 @@
+syntax = "proto3";
+
+package stackexchange.v1;
+
+option go_package = "github.com/jim-technologies/invariantaf/stackexchange/proto/stackexchange/v1;stackexchangev1";
+
+// StackExchangeService provides read-only access to the Stack Exchange network
+// of Q&A sites (Stack Overflow, Server Fault, Super User, and 170+ others)
+// via the public Stack Exchange API v2.3.
+//
+// No authentication is required for read access. The public API allows up to
+// 300 requests per day per IP (10,000/day with an API key set via the
+// STACKEXCHANGE_API_KEY environment variable).
+//
+// All requests accept a `site` parameter (default "stackoverflow") to target
+// a specific Stack Exchange site. Common site values: "stackoverflow",
+// "serverfault", "superuser", "askubuntu", "math", "gaming", etc.
+//
+// Use this service to search programming questions, look up answers,
+// find experts by tag, and explore the collective knowledge of the
+// Stack Exchange community.
+service StackExchangeService {
+  // Search for questions matching a query string.
+  //
+  // Performs a basic search across question titles on the specified Stack
+  // Exchange site. Returns questions whose titles contain the search term.
+  // Results include the question title, score, view count, answer count,
+  // tags, and a link to the question page.
+  //
+  // Use `intitle` to search within titles. Use `tagged` to restrict results
+  // to specific tags (semicolon-delimited, e.g. "python;django"). Use `sort`
+  // to order results ("activity", "votes", "creation", "relevance").
+  //
+  // Wraps: GET /2.3/search
+  rpc SearchQuestions(SearchQuestionsRequest) returns (SearchQuestionsResponse);
+
+  // Get a single question by its numeric ID.
+  //
+  // Returns the full details of a specific question including its title,
+  // body (as HTML or markdown), score, tags, author information, view count,
+  // and whether it has an accepted answer. Use this to get the complete text
+  // of a question after finding it via search.
+  //
+  // Set `filter` to "withbody" to include the question body text in the
+  // response (not included by default to reduce payload size).
+  //
+  // Wraps: GET /2.3/questions/{id}
+  rpc GetQuestion(GetQuestionRequest) returns (GetQuestionResponse);
+
+  // Get the answers posted to a specific question.
+  //
+  // Returns all answers for a question, ordered by the specified sort.
+  // Each answer includes its body text (if `filter` is "withbody"), score,
+  // author, creation date, and whether it is the accepted answer.
+  //
+  // Use `sort` to order answers: "activity" (most recent activity),
+  // "votes" (highest score first), or "creation" (oldest first).
+  // Set `filter` to "withbody" to include answer body text.
+  //
+  // Wraps: GET /2.3/questions/{id}/answers
+  rpc GetAnswers(GetAnswersRequest) returns (GetAnswersResponse);
+
+  // Get a user's profile by their numeric user ID.
+  //
+  // Returns the public profile for a Stack Exchange user, including their
+  // display name, reputation score, badge counts (gold/silver/bronze),
+  // profile image URL, and account creation date. Use this to look up
+  // information about question authors or answerers.
+  //
+  // Wraps: GET /2.3/users/{id}
+  rpc GetUser(GetUserRequest) returns (GetUserResponse);
+
+  // Get popular tags on a Stack Exchange site.
+  //
+  // Returns tags ordered by popularity (number of questions tagged).
+  // Each tag includes its name, question count, and excerpt description
+  // if available. Use this to discover what topics are most active on
+  // a site, or to validate tag names before using them in search filters.
+  //
+  // Use `sort` to order: "popular" (most questions), "activity" (most
+  // recent), or "name" (alphabetical). Use `inname` to filter tags
+  // containing a substring.
+  //
+  // Wraps: GET /2.3/tags
+  rpc GetTags(GetTagsRequest) returns (GetTagsResponse);
+
+  // Get top questions, optionally filtered by tag.
+  //
+  // Returns questions from the specified site, ordered by the chosen sort
+  // criteria. Use `tagged` to filter by tag (semicolon-delimited for
+  // multiple tags, e.g. "python;machine-learning"). This is useful for
+  // finding the most popular, newest, or most active questions on a topic.
+  //
+  // Use `sort`: "activity" (recent activity), "votes" (highest score),
+  // "creation" (newest), "hot" (trending), "week" (top this week),
+  // "month" (top this month).
+  //
+  // Wraps: GET /2.3/questions
+  rpc GetTopQuestions(GetTopQuestionsRequest) returns (GetTopQuestionsResponse);
+
+  // Advanced search with multiple filters.
+  //
+  // A more powerful search than SearchQuestions, allowing you to filter by
+  // title text, body text, accepted answer status, minimum answer count,
+  // tags, and more. Use this when basic search is insufficient.
+  //
+  // Key filters: `q` (full-text search in title and body), `title` (title
+  // only), `tagged` (required tags, semicolon-delimited), `nottagged`
+  // (excluded tags), `accepted` (true/false for accepted answer status),
+  // `answers` (minimum answer count), `views` (minimum view count).
+  //
+  // Wraps: GET /2.3/search/advanced
+  rpc SearchAdvanced(SearchAdvancedRequest) returns (SearchAdvancedResponse);
+
+  // Get a user's reputation change history.
+  //
+  // Returns a chronological list of reputation changes for a user, showing
+  // how they earned or lost reputation points. Each entry includes the
+  // change amount, the post that caused it, and the type of event
+  // (upvote, downvote, accepted answer, bounty, etc.).
+  //
+  // Useful for understanding a user's activity patterns and expertise areas.
+  //
+  // Wraps: GET /2.3/users/{id}/reputation
+  rpc GetUserReputation(GetUserReputationRequest) returns (GetUserReputationResponse);
+
+  // Find questions similar to a given title.
+  //
+  // Returns questions that Stack Exchange considers similar to the provided
+  // title string. This uses the same algorithm that powers the "Similar
+  // Questions" sidebar on the site. Great for checking if a question has
+  // already been asked before posting, or for finding related discussions.
+  //
+  // Use `tagged` to restrict similar questions to specific tags.
+  // Use `nottagged` to exclude certain tags from results.
+  //
+  // Wraps: GET /2.3/similar
+  rpc GetSimilar(GetSimilarRequest) returns (GetSimilarResponse);
+
+  // Get unanswered questions, optionally filtered by tag.
+  //
+  // Returns questions that have no upvoted or accepted answers. These are
+  // opportunities to contribute knowledge to the community. Use `tagged`
+  // to filter by your areas of expertise.
+  //
+  // Use `sort`: "activity" (recent activity), "votes" (highest score),
+  // "creation" (newest). Results are paginated; use `page` and `pagesize`.
+  //
+  // Wraps: GET /2.3/questions/unanswered
+  rpc GetUnanswered(GetUnansweredRequest) returns (GetUnansweredResponse);
+}
+
+// --- Domain types ---
+
+// A question on a Stack Exchange site. Contains the question's metadata,
+// content, and relationship to answers and tags.
+message Question {
+  // The unique numeric ID of the question.
+  int64 question_id = 1;
+  // The question title (plain text).
+  string title = 2;
+  // The question body as HTML. Only present if the "withbody" filter is used.
+  string body = 3;
+  // A direct link to the question page on the Stack Exchange site.
+  string link = 4;
+  // The question's score (upvotes minus downvotes).
+  int32 score = 5;
+  // The total number of answers posted to this question.
+  int32 answer_count = 6;
+  // The number of times this question has been viewed.
+  int32 view_count = 7;
+  // Whether this question has an accepted answer.
+  bool is_answered = 8;
+  // The tags applied to this question (e.g. ["python", "django", "orm"]).
+  repeated string tags = 9;
+  // The question author's information.
+  ShallowUser owner = 10;
+  // Creation time as Unix timestamp (seconds since epoch).
+  int64 creation_date = 11;
+  // Last activity time as Unix timestamp.
+  int64 last_activity_date = 12;
+  // The numeric ID of the accepted answer, if any.
+  int64 accepted_answer_id = 13;
+  // The number of times this question has been bookmarked/favorited.
+  int32 favorite_count = 14;
+}
+
+// An answer to a question on a Stack Exchange site.
+message Answer {
+  // The unique numeric ID of the answer.
+  int64 answer_id = 1;
+  // The numeric ID of the question this answer belongs to.
+  int64 question_id = 2;
+  // The answer body as HTML. Only present if the "withbody" filter is used.
+  string body = 3;
+  // The answer's score (upvotes minus downvotes).
+  int32 score = 4;
+  // Whether this is the accepted answer for the question.
+  bool is_accepted = 5;
+  // The answer author's information.
+  ShallowUser owner = 6;
+  // Creation time as Unix timestamp (seconds since epoch).
+  int64 creation_date = 7;
+  // Last activity time as Unix timestamp.
+  int64 last_activity_date = 8;
+  // A direct link to the answer on the Stack Exchange site.
+  string link = 9;
+}
+
+// A tag on a Stack Exchange site, representing a topic or technology.
+message Tag {
+  // The tag name (e.g. "python", "javascript", "react").
+  string name = 1;
+  // The total number of questions tagged with this tag.
+  int32 count = 2;
+  // Whether this tag has a wiki excerpt (brief description).
+  bool has_synonyms = 3;
+  // Whether moderator-only. Most tags are not.
+  bool is_moderator_only = 4;
+  // Whether this tag requires special privileges to use.
+  bool is_required = 5;
+}
+
+// A simplified user object returned inline with questions and answers.
+// Contains enough information to identify the user without a full profile fetch.
+message ShallowUser {
+  // The user's numeric ID. Use this with GetUser to fetch the full profile.
+  int64 user_id = 1;
+  // The user's display name.
+  string display_name = 2;
+  // The user's current reputation score.
+  int32 reputation = 3;
+  // URL to the user's profile image/avatar.
+  string profile_image = 4;
+  // A direct link to the user's profile page.
+  string link = 5;
+}
+
+// A full user profile on a Stack Exchange site.
+message User {
+  // The user's unique numeric ID.
+  int64 user_id = 1;
+  // The user's display name.
+  string display_name = 2;
+  // The user's current reputation score.
+  int32 reputation = 3;
+  // URL to the user's profile image/avatar.
+  string profile_image = 4;
+  // A direct link to the user's profile page.
+  string link = 5;
+  // Account creation time as Unix timestamp (seconds since epoch).
+  int64 creation_date = 6;
+  // Last access time as Unix timestamp.
+  int64 last_access_date = 7;
+  // The user's location (if provided).
+  string location = 8;
+  // The user's website URL (if provided).
+  string website_url = 9;
+  // The user's "about me" text (HTML).
+  string about_me = 10;
+  // The number of questions the user has asked.
+  int32 question_count = 11;
+  // The number of answers the user has posted.
+  int32 answer_count = 12;
+  // Badge counts broken down by tier.
+  BadgeCounts badge_counts = 13;
+}
+
+// Counts of badges earned by a user, broken down by tier.
+message BadgeCounts {
+  // Number of gold badges (highest tier, rarest).
+  int32 gold = 1;
+  // Number of silver badges (middle tier).
+  int32 silver = 2;
+  // Number of bronze badges (lowest tier, most common).
+  int32 bronze = 3;
+}
+
+// A single reputation change event for a user.
+message ReputationChange {
+  // The type of reputation event (e.g. "post_upvoted", "answer_accepted").
+  string reputation_change_type = 1;
+  // The reputation change amount (positive for gains, negative for losses).
+  int32 reputation_change = 2;
+  // The numeric ID of the post that caused the reputation change.
+  int64 post_id = 3;
+  // The title of the post that caused the change.
+  string title = 4;
+  // A direct link to the post.
+  string link = 5;
+  // When this reputation change occurred as Unix timestamp.
+  int64 on_date = 6;
+}
+
+// --- Request / Response messages ---
+
+// Request to search questions by keyword.
+message SearchQuestionsRequest {
+  // Search term to look for in question titles. Required.
+  string intitle = 1;
+  // Restrict to questions with these tags (semicolon-delimited, e.g. "python;django").
+  string tagged = 2;
+  // Sort order: "activity", "votes", "creation", "relevance" (default "relevance").
+  string sort = 3;
+  // Page number for pagination (1-indexed, default 1).
+  int32 page = 4;
+  // Number of results per page (default 10, max 100).
+  int32 pagesize = 5;
+  // Stack Exchange site to search (default "stackoverflow"). Other examples:
+  // "serverfault", "superuser", "askubuntu", "math", "gaming".
+  string site = 6;
+  // API filter name. Use "withbody" to include question body text.
+  string filter = 7;
+}
+
+message SearchQuestionsResponse {
+  // The list of matching questions.
+  repeated Question items = 1;
+  // Whether there are more results available on subsequent pages.
+  bool has_more = 2;
+  // The number of API requests remaining in your daily quota.
+  int32 quota_remaining = 3;
+}
+
+// Request to get a single question by ID.
+message GetQuestionRequest {
+  // The numeric question ID. Required.
+  int64 id = 1;
+  // Stack Exchange site (default "stackoverflow").
+  string site = 2;
+  // API filter name. Use "withbody" to include question body text.
+  string filter = 3;
+}
+
+message GetQuestionResponse {
+  // The requested question. Null if not found.
+  Question question = 1;
+}
+
+// Request to get answers for a question.
+message GetAnswersRequest {
+  // The numeric question ID whose answers to fetch. Required.
+  int64 question_id = 1;
+  // Sort order: "activity", "votes" (default), "creation".
+  string sort = 2;
+  // Page number for pagination (1-indexed, default 1).
+  int32 page = 3;
+  // Number of results per page (default 10, max 100).
+  int32 pagesize = 4;
+  // Stack Exchange site (default "stackoverflow").
+  string site = 5;
+  // API filter name. Use "withbody" to include answer body text.
+  string filter = 6;
+}
+
+message GetAnswersResponse {
+  // The list of answers for the question.
+  repeated Answer items = 1;
+  // Whether there are more results available on subsequent pages.
+  bool has_more = 2;
+  // The number of API requests remaining in your daily quota.
+  int32 quota_remaining = 3;
+}
+
+// Request to get a user profile.
+message GetUserRequest {
+  // The numeric user ID. Required.
+  int64 id = 1;
+  // Stack Exchange site (default "stackoverflow").
+  string site = 2;
+}
+
+message GetUserResponse {
+  // The requested user profile. Null if not found.
+  User user = 1;
+}
+
+// Request to get popular tags.
+message GetTagsRequest {
+  // Sort order: "popular" (default), "activity", "name".
+  string sort = 1;
+  // Page number for pagination (1-indexed, default 1).
+  int32 page = 2;
+  // Number of results per page (default 10, max 100).
+  int32 pagesize = 3;
+  // Filter tags containing this substring in their name.
+  string inname = 4;
+  // Stack Exchange site (default "stackoverflow").
+  string site = 5;
+}
+
+message GetTagsResponse {
+  // The list of tags.
+  repeated Tag items = 1;
+  // Whether there are more results available on subsequent pages.
+  bool has_more = 2;
+  // The number of API requests remaining in your daily quota.
+  int32 quota_remaining = 3;
+}
+
+// Request to get top questions, optionally filtered by tag.
+message GetTopQuestionsRequest {
+  // Filter by tags (semicolon-delimited, e.g. "python;machine-learning").
+  string tagged = 1;
+  // Sort order: "activity", "votes", "creation", "hot" (default), "week", "month".
+  string sort = 2;
+  // Page number for pagination (1-indexed, default 1).
+  int32 page = 3;
+  // Number of results per page (default 10, max 100).
+  int32 pagesize = 4;
+  // Stack Exchange site (default "stackoverflow").
+  string site = 5;
+  // API filter name. Use "withbody" to include question body text.
+  string filter = 6;
+}
+
+message GetTopQuestionsResponse {
+  // The list of top questions.
+  repeated Question items = 1;
+  // Whether there are more results available on subsequent pages.
+  bool has_more = 2;
+  // The number of API requests remaining in your daily quota.
+  int32 quota_remaining = 3;
+}
+
+// Request for advanced search with multiple filters.
+message SearchAdvancedRequest {
+  // Full-text search query (searches title and body). Use this for broad searches.
+  string q = 1;
+  // Search only in question titles.
+  string title = 2;
+  // Restrict to questions with these tags (semicolon-delimited).
+  string tagged = 3;
+  // Exclude questions with these tags (semicolon-delimited).
+  string nottagged = 4;
+  // Filter by accepted answer status: true = must have accepted answer,
+  // false = must not have accepted answer. Omit to not filter.
+  optional bool accepted = 5;
+  // Minimum number of answers required.
+  int32 answers = 6;
+  // Minimum view count required.
+  int32 views = 7;
+  // Sort order: "activity", "votes", "creation", "relevance" (default "relevance").
+  string sort = 8;
+  // Page number for pagination (1-indexed, default 1).
+  int32 page = 9;
+  // Number of results per page (default 10, max 100).
+  int32 pagesize = 10;
+  // Stack Exchange site (default "stackoverflow").
+  string site = 11;
+  // API filter name. Use "withbody" to include question body text.
+  string filter = 12;
+}
+
+message SearchAdvancedResponse {
+  // The list of matching questions.
+  repeated Question items = 1;
+  // Whether there are more results available on subsequent pages.
+  bool has_more = 2;
+  // The number of API requests remaining in your daily quota.
+  int32 quota_remaining = 3;
+}
+
+// Request to get a user's reputation change history.
+message GetUserReputationRequest {
+  // The numeric user ID. Required.
+  int64 id = 1;
+  // Page number for pagination (1-indexed, default 1).
+  int32 page = 2;
+  // Number of results per page (default 10, max 100).
+  int32 pagesize = 3;
+  // Stack Exchange site (default "stackoverflow").
+  string site = 4;
+}
+
+message GetUserReputationResponse {
+  // The list of reputation change events.
+  repeated ReputationChange items = 1;
+  // Whether there are more results available on subsequent pages.
+  bool has_more = 2;
+  // The number of API requests remaining in your daily quota.
+  int32 quota_remaining = 3;
+}
+
+// Request to find similar questions by title.
+message GetSimilarRequest {
+  // The title string to find similar questions for. Required.
+  string title = 1;
+  // Restrict to questions with these tags (semicolon-delimited).
+  string tagged = 2;
+  // Exclude questions with these tags (semicolon-delimited).
+  string nottagged = 3;
+  // Sort order: "activity", "votes", "creation", "relevance" (default "relevance").
+  string sort = 4;
+  // Page number for pagination (1-indexed, default 1).
+  int32 page = 5;
+  // Number of results per page (default 10, max 100).
+  int32 pagesize = 6;
+  // Stack Exchange site (default "stackoverflow").
+  string site = 7;
+  // API filter name. Use "withbody" to include question body text.
+  string filter = 8;
+}
+
+message GetSimilarResponse {
+  // The list of similar questions.
+  repeated Question items = 1;
+  // Whether there are more results available on subsequent pages.
+  bool has_more = 2;
+  // The number of API requests remaining in your daily quota.
+  int32 quota_remaining = 3;
+}
+
+// Request to get unanswered questions.
+message GetUnansweredRequest {
+  // Filter by tags (semicolon-delimited, e.g. "go;concurrency").
+  string tagged = 1;
+  // Sort order: "activity", "votes", "creation" (default "activity").
+  string sort = 2;
+  // Page number for pagination (1-indexed, default 1).
+  int32 page = 3;
+  // Number of results per page (default 10, max 100).
+  int32 pagesize = 4;
+  // Stack Exchange site (default "stackoverflow").
+  string site = 5;
+  // API filter name. Use "withbody" to include question body text.
+  string filter = 6;
+}
+
+message GetUnansweredResponse {
+  // The list of unanswered questions.
+  repeated Question items = 1;
+  // Whether there are more results available on subsequent pages.
+  bool has_more = 2;
+  // The number of API requests remaining in your daily quota.
+  int32 quota_remaining = 3;
+}

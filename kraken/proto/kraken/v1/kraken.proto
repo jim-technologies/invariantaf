@@ -1,0 +1,638 @@
+syntax = "proto3";
+
+package kraken.v1;
+
+// Kraken Spot REST and Futures REST APIs exposed as MCP tools.
+service KrakenSpotService {
+  // Spot public: /public/Time
+  rpc GetServerTime(GetServerTimeRequest) returns (GetServerTimeResponse);
+
+  // Spot public: /public/SystemStatus
+  rpc GetSystemStatus(GetSystemStatusRequest) returns (GetSystemStatusResponse);
+
+  // Spot public: /public/AssetPairs
+  rpc GetTradableAssetPairs(GetTradableAssetPairsRequest) returns (GetTradableAssetPairsResponse);
+
+  // Spot public: /public/Ticker
+  rpc GetTickerInformation(GetTickerInformationRequest) returns (GetTickerInformationResponse);
+
+  // Spot public: /public/Depth
+  rpc GetOrderBook(GetOrderBookRequest) returns (GetOrderBookResponse);
+
+  // Spot private: /private/Balance
+  rpc GetAccountBalance(GetAccountBalanceRequest) returns (GetAccountBalanceResponse);
+
+  // Spot private: /private/OpenOrders
+  rpc GetOpenOrders(GetOpenOrdersRequest) returns (GetOpenOrdersResponse);
+
+  // Spot private: /private/AddOrder
+  rpc AddOrder(AddOrderRequest) returns (AddOrderResponse);
+
+  // Spot private: /private/CancelOrder
+  rpc CancelOrder(CancelOrderRequest) returns (CancelOrderResponse);
+
+  // Spot private: /private/CancelAll
+  rpc CancelAllOrders(CancelAllOrdersRequest) returns (CancelAllOrdersResponse);
+
+  // Spot private: /private/CancelAllOrdersAfter
+  rpc CancelAllOrdersAfter(CancelAllOrdersAfterRequest) returns (CancelAllOrdersAfterResponse);
+}
+
+service KrakenFuturesService {
+  // Futures public: /instruments
+  rpc GetInstruments(GetInstrumentsRequest) returns (GetInstrumentsResponse);
+
+  // Futures public: /tickers
+  rpc GetTickers(GetTickersRequest) returns (GetTickersResponse);
+
+  // Futures public: /orderbook
+  rpc GetOrderbook(GetOrderbookRequest) returns (GetOrderbookResponse);
+
+  // Futures private: /sendorder
+  rpc SendOrder(SendOrderRequest) returns (SendOrderResponse);
+
+  // Futures private: /cancelorder
+  rpc CancelOrder(CancelFuturesOrderRequest) returns (CancelFuturesOrderResponse);
+
+  // Futures private: /openorders
+  rpc GetOpenOrders(GetFuturesOpenOrdersRequest) returns (GetFuturesOpenOrdersResponse);
+
+  // Futures private: /openpositions
+  rpc GetOpenPositions(GetOpenPositionsRequest) returns (GetOpenPositionsResponse);
+
+  // Futures private: /fills
+  rpc GetFills(GetFillsRequest) returns (GetFillsResponse);
+}
+
+// -----------------------------
+// Spot messages
+// -----------------------------
+
+message GetServerTimeRequest {}
+
+message SpotServerTime {
+  int64 unixtime = 1;
+  string rfc1123 = 2;
+}
+
+message GetServerTimeResponse {
+  SpotServerTime result = 1;
+  repeated string error = 2;
+}
+
+message GetSystemStatusRequest {}
+
+message SpotSystemStatus {
+  string status = 1;
+  string timestamp = 2;
+}
+
+message GetSystemStatusResponse {
+  SpotSystemStatus result = 1;
+  repeated string error = 2;
+}
+
+message GetTradableAssetPairsRequest {
+  string pair = 1;
+  optional string aclass_base = 2;
+  optional string info = 3;
+  optional string country_code = 4;
+}
+
+message SpotFeeLevel {
+  double volume = 1;
+  double fee = 2;
+}
+
+message SpotAssetPair {
+  string altname = 1;
+  string wsname = 2;
+  string aclass_base = 3;
+  string base = 4;
+  string aclass_quote = 5;
+  string quote = 6;
+  string lot = 7;
+  int32 pair_decimals = 8;
+  int32 cost_decimals = 9;
+  int32 lot_decimals = 10;
+  int32 lot_multiplier = 11;
+  repeated int32 leverage_buy = 12;
+  repeated int32 leverage_sell = 13;
+  repeated SpotFeeLevel fees = 14;
+  repeated SpotFeeLevel fees_maker = 15;
+  string fee_volume_currency = 16;
+  int32 margin_call = 17;
+  int32 margin_stop = 18;
+  string ordermin = 19;
+  string costmin = 20;
+  string tick_size = 21;
+  string status = 22;
+  int64 long_position_limit = 23;
+  int64 short_position_limit = 24;
+}
+
+message GetTradableAssetPairsResponse {
+  map<string, SpotAssetPair> result = 1;
+  repeated string error = 2;
+}
+
+message GetTickerInformationRequest {
+  string pair = 1;
+  optional string asset_class = 2;
+}
+
+message SpotPriceLevel {
+  string price = 1;
+  string whole_lot_volume = 2;
+  string lot_volume = 3;
+}
+
+message SpotTradeClose {
+  string price = 1;
+  string lot_volume = 2;
+}
+
+message SpotTwoValue {
+  string today = 1;
+  string last_24h = 2;
+}
+
+message SpotTradeCount {
+  int64 today = 1;
+  int64 last_24h = 2;
+}
+
+message SpotTickerInfo {
+  SpotPriceLevel a = 1;
+  SpotPriceLevel b = 2;
+  SpotTradeClose c = 3;
+  SpotTwoValue v = 4;
+  SpotTwoValue p = 5;
+  SpotTradeCount t = 6;
+  SpotTwoValue l = 7;
+  SpotTwoValue h = 8;
+  string o = 9;
+}
+
+message GetTickerInformationResponse {
+  map<string, SpotTickerInfo> result = 1;
+  repeated string error = 2;
+}
+
+message GetOrderBookRequest {
+  string pair = 1;
+  optional int32 count = 2;
+  optional string asset_class = 3;
+}
+
+message SpotOrderBookLevel {
+  string price = 1;
+  string volume = 2;
+  double timestamp = 3;
+  optional string misc = 4;
+}
+
+message SpotOrderBook {
+  repeated SpotOrderBookLevel asks = 1;
+  repeated SpotOrderBookLevel bids = 2;
+}
+
+message GetOrderBookResponse {
+  map<string, SpotOrderBook> result = 1;
+  repeated string error = 2;
+}
+
+message GetAccountBalanceRequest {
+  optional int64 nonce = 1;
+  optional string rebase_multiplier = 2;
+}
+
+message GetAccountBalanceResponse {
+  map<string, string> result = 1;
+  repeated string error = 2;
+}
+
+message GetOpenOrdersRequest {
+  optional int64 nonce = 1;
+  optional bool trades = 2;
+  optional int32 userref = 3;
+  optional string cl_ord_id = 4;
+  optional string rebase_multiplier = 5;
+}
+
+message SpotOrderDescription {
+  string pair = 1;
+  string type = 2;
+  string ordertype = 3;
+  string price = 4;
+  string price2 = 5;
+  string leverage = 6;
+  string order = 7;
+  string close = 8;
+}
+
+message SpotOpenOrder {
+  optional string refid = 1;
+  optional int32 userref = 2;
+  optional string cl_ord_id = 3;
+  string status = 4;
+  double opentm = 5;
+  double starttm = 6;
+  double expiretm = 7;
+  SpotOrderDescription descr = 8;
+  string vol = 9;
+  string vol_exec = 10;
+  string cost = 11;
+  string fee = 12;
+  string price = 13;
+  string stopprice = 14;
+  string limitprice = 15;
+  string trigger = 16;
+  bool margin = 17;
+  string misc = 18;
+  optional string sender_sub_id = 19;
+  string oflags = 20;
+  repeated string trades = 21;
+}
+
+message SpotOpenOrdersResult {
+  map<string, SpotOpenOrder> open = 1;
+}
+
+message GetOpenOrdersResponse {
+  SpotOpenOrdersResult result = 1;
+  repeated string error = 2;
+}
+
+message AddOrderRequest {
+  optional int64 nonce = 1;
+  optional int32 userref = 2;
+  optional string cl_ord_id = 3;
+  string ordertype = 4;
+  string type = 5;
+  string volume = 6;
+  optional string displayvol = 7;
+  string pair = 8;
+  optional string asset_class = 9;
+  optional string price = 10;
+  optional string price2 = 11;
+  optional string trigger = 12;
+  optional string leverage = 13;
+  optional bool reduce_only = 14;
+  optional string stptype = 15;
+  optional string oflags = 16;
+  optional string timeinforce = 17;
+  optional string starttm = 18;
+  optional string expiretm = 19;
+  optional string close_ordertype = 20;
+  optional string close_price = 21;
+  optional string close_price2 = 22;
+  optional string deadline = 23;
+  optional bool validate = 24;
+}
+
+message SpotAddOrderDescription {
+  string order = 1;
+  string close = 2;
+}
+
+message SpotOrderAdded {
+  SpotAddOrderDescription descr = 1;
+  repeated string txid = 2;
+}
+
+message AddOrderResponse {
+  SpotOrderAdded result = 1;
+  repeated string error = 2;
+}
+
+message CancelOrderRequest {
+  optional int64 nonce = 1;
+  optional string txid = 2;
+  optional int64 txid_int = 3;
+  optional string cl_ord_id = 4;
+}
+
+message SpotOrderCancelled {
+  int32 count = 1;
+  bool pending = 2;
+}
+
+message CancelOrderResponse {
+  SpotOrderCancelled result = 1;
+  repeated string error = 2;
+}
+
+message CancelAllOrdersRequest {
+  optional int64 nonce = 1;
+}
+
+message CancelAllOrdersResponse {
+  SpotOrderCancelled result = 1;
+  repeated string error = 2;
+}
+
+message CancelAllOrdersAfterRequest {
+  optional int64 nonce = 1;
+  int32 timeout = 2;
+}
+
+message SpotCancelAllOrdersAfterResult {
+  string current_time = 1;
+  string trigger_time = 2;
+}
+
+message CancelAllOrdersAfterResponse {
+  SpotCancelAllOrdersAfterResult result = 1;
+  repeated string error = 2;
+}
+
+// -----------------------------
+// Futures messages
+// -----------------------------
+
+message GetInstrumentsRequest {}
+
+message FuturesMarginLevel {
+  optional int64 contracts = 1;
+  optional double num_non_contract_units = 2;
+  double initial_margin = 3;
+  double maintenance_margin = 4;
+}
+
+message FuturesInstrument {
+  optional string category = 1;
+  optional double contract_size = 2;
+  optional double contract_value_trade_precision = 3;
+  optional double funding_rate_coefficient = 4;
+  optional double impact_mid_size = 5;
+  optional string isin = 6;
+  optional string last_trading_time = 7;
+  optional double max_position_size = 8;
+  optional double max_relative_funding_rate = 9;
+  optional string opening_date = 10;
+  optional bool post_only = 11;
+  optional string fee_schedule_uid = 12;
+  string symbol = 13;
+  optional string pair = 14;
+  optional string base = 15;
+  optional string quote = 16;
+  repeated string tags = 17;
+  optional double tick_size = 18;
+  bool tradeable = 19;
+  optional string type = 20;
+  optional string underlying = 21;
+  optional string underlying_future = 22;
+  bool tradfi = 23;
+  optional bool mtf = 24;
+  repeated FuturesMarginLevel retail_margin_levels = 25;
+  repeated FuturesMarginLevel margin_levels = 26;
+}
+
+message GetInstrumentsResponse {
+  string result = 1;
+  string server_time = 2;
+  string error = 3;
+  repeated string errors = 4;
+  repeated FuturesInstrument instruments = 5;
+}
+
+message GetTickersRequest {
+  repeated string symbol = 1;
+}
+
+message FuturesOptionGreeks {
+  optional double iv = 1;
+  optional double delta = 2;
+  optional double gamma = 3;
+  optional double vega = 4;
+  optional double theta = 5;
+  optional double rho = 6;
+}
+
+message FuturesTicker {
+  string symbol = 1;
+  optional string tag = 2;
+  optional string pair = 3;
+  optional double last = 4;
+  optional string last_time = 5;
+  optional double last_size = 6;
+  optional double mark_price = 7;
+  optional double bid = 8;
+  optional double bid_size = 9;
+  optional double ask = 10;
+  optional double ask_size = 11;
+  optional double vol24h = 12;
+  optional double volume_quote = 13;
+  optional double open_interest = 14;
+  optional double open24h = 15;
+  optional double high24h = 16;
+  optional double low24h = 17;
+  optional double extrinsic_value = 18;
+  optional double funding_rate = 19;
+  optional double funding_rate_prediction = 20;
+  optional bool suspended = 21;
+  optional double index_price = 22;
+  optional bool post_only = 23;
+  optional double change24h = 24;
+  optional bool is_underlying_market_closed = 25;
+  optional FuturesOptionGreeks greeks = 26;
+}
+
+message GetTickersResponse {
+  string result = 1;
+  string server_time = 2;
+  string error = 3;
+  repeated string errors = 4;
+  repeated FuturesTicker tickers = 5;
+}
+
+message GetOrderbookRequest {
+  string symbol = 1;
+}
+
+message FuturesBookLevel {
+  double price = 1;
+  double size = 2;
+}
+
+message FuturesOrderBook {
+  repeated FuturesBookLevel asks = 1;
+  repeated FuturesBookLevel bids = 2;
+}
+
+message GetOrderbookResponse {
+  string result = 1;
+  string server_time = 2;
+  string error = 3;
+  repeated string errors = 4;
+  FuturesOrderBook order_book = 5;
+}
+
+message SendOrderRequest {
+  string order_type = 1;
+  string symbol = 2;
+  string side = 3;
+  double size = 4;
+  optional string process_before = 5;
+  optional double limit_price = 6;
+  optional double stop_price = 7;
+  optional string cli_ord_id = 8;
+  optional string trigger_signal = 9;
+  optional bool reduce_only = 10;
+  optional double trailing_stop_max_deviation = 11;
+  optional string trailing_stop_deviation_unit = 12;
+  optional double limit_price_offset_value = 13;
+  optional string limit_price_offset_unit = 14;
+  optional string broker = 15;
+}
+
+message CancelFuturesOrderRequest {
+  optional string process_before = 1;
+  optional string order_id = 2;
+  optional string cli_ord_id = 3;
+}
+
+message GetFuturesOpenOrdersRequest {}
+
+message GetOpenPositionsRequest {}
+
+message GetFillsRequest {
+  optional string last_fill_time = 1;
+}
+
+message FuturesOrderSnapshot {
+  string order_id = 1;
+  optional string cli_ord_id = 2;
+  string type = 3;
+  string symbol = 4;
+  string side = 5;
+  double quantity = 6;
+  double filled = 7;
+  double limit_price = 8;
+  bool reduce_only = 9;
+  string timestamp = 10;
+  string last_update_timestamp = 11;
+}
+
+message FuturesOrderTrigger {
+  string uid = 1;
+  optional string client_id = 2;
+  string type = 3;
+  string symbol = 4;
+  string side = 5;
+  optional double quantity = 6;
+  optional double limit_price = 7;
+  optional double trigger_price = 8;
+  optional string trigger_side = 9;
+  optional string trigger_signal = 10;
+  bool reduce_only = 11;
+  string timestamp = 12;
+  string last_update_timestamp = 13;
+  optional string start_time = 14;
+}
+
+message FuturesOrderEvent {
+  string type = 1;
+  optional string uid = 2;
+  optional string reason = 3;
+  optional string execution_id = 4;
+  optional double price = 5;
+  optional double amount = 6;
+  optional FuturesOrderSnapshot order = 7;
+  optional FuturesOrderSnapshot old = 8;
+  optional FuturesOrderSnapshot new = 9;
+  optional FuturesOrderSnapshot order_prior_execution = 10;
+  optional FuturesOrderSnapshot order_prior_edit = 11;
+  optional FuturesOrderTrigger order_trigger = 12;
+  optional double reduced_quantity = 13;
+  optional double taker_reduced_quantity = 14;
+}
+
+message FuturesOrderStatus {
+  optional string cli_ord_id = 1;
+  repeated FuturesOrderEvent order_events = 2;
+  optional string order_id = 3;
+  optional string received_time = 4;
+  string status = 5;
+}
+
+message SendOrderResponse {
+  string result = 1;
+  string server_time = 2;
+  string error = 3;
+  repeated string errors = 4;
+  FuturesOrderStatus send_status = 5;
+}
+
+message CancelFuturesOrderResponse {
+  string result = 1;
+  string server_time = 2;
+  string error = 3;
+  repeated string errors = 4;
+  FuturesOrderStatus cancel_status = 5;
+}
+
+message FuturesOpenOrder {
+  string order_id = 1;
+  optional string cli_ord_id = 2;
+  string status = 3;
+  string side = 4;
+  string order_type = 5;
+  string symbol = 6;
+  optional double limit_price = 7;
+  optional double stop_price = 8;
+  double filled_size = 9;
+  optional double unfilled_size = 10;
+  bool reduce_only = 11;
+  optional string trigger_signal = 12;
+  string last_update_time = 13;
+  string received_time = 14;
+}
+
+message GetFuturesOpenOrdersResponse {
+  string result = 1;
+  string server_time = 2;
+  string error = 3;
+  repeated string errors = 4;
+  repeated FuturesOpenOrder open_orders = 5;
+}
+
+message FuturesOpenPosition {
+  string symbol = 1;
+  string side = 2;
+  double size = 3;
+  double price = 4;
+  string fill_time = 5;
+  optional double unrealized_funding = 6;
+  optional string pnl_currency = 7;
+  optional double max_fixed_leverage = 8;
+}
+
+message GetOpenPositionsResponse {
+  string result = 1;
+  string server_time = 2;
+  string error = 3;
+  repeated string errors = 4;
+  repeated FuturesOpenPosition open_positions = 5;
+}
+
+message FuturesFill {
+  optional string cli_ord_id = 1;
+  string fill_time = 2;
+  string fill_type = 3;
+  string fill_id = 4;
+  string order_id = 5;
+  double price = 6;
+  string side = 7;
+  double size = 8;
+  string symbol = 9;
+}
+
+message GetFillsResponse {
+  string result = 1;
+  string server_time = 2;
+  string error = 3;
+  repeated string errors = 4;
+  repeated FuturesFill fills = 5;
+}

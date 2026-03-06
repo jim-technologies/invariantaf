@@ -1,0 +1,320 @@
+syntax = "proto3";
+
+package github.v1;
+
+// GitHubService provides access to GitHub's public REST API for
+// repository discovery, user profiles, issues, pull requests, and more.
+//
+// Authentication is **optional**. Without a token you get 60 requests/hour;
+// with a `GITHUB_TOKEN` environment variable set you get 5,000 requests/hour.
+//
+// Use this to search repositories, look up users, browse issues and PRs,
+// check language breakdowns, and monitor your API rate limit.
+service GitHubService {
+
+  // Search GitHub repositories by keyword.
+  //
+  // Finds repositories matching a query string. Results include name,
+  // description, star/fork counts, and primary language. Use this when
+  // you want to discover projects by topic, language, or keyword.
+  // Example queries: "machine learning python", "kubernetes", "awesome-go".
+  rpc SearchRepos(SearchReposRequest) returns (SearchReposResponse);
+
+  // Search GitHub users by keyword.
+  //
+  // Finds users and organizations matching a query string. Results include
+  // login name, avatar URL, and account type. Use this to find specific
+  // developers or organizations on GitHub.
+  rpc SearchUsers(SearchUsersRequest) returns (SearchUsersResponse);
+
+  // Get a user's public profile.
+  //
+  // Returns detailed profile information for a GitHub user including
+  // display name, bio, company, location, follower/following counts,
+  // and number of public repositories. Use this to look up a specific
+  // developer's profile by their username.
+  rpc GetUser(GetUserRequest) returns (GetUserResponse);
+
+  // Get detailed information about a repository.
+  //
+  // Returns comprehensive repository metadata including description,
+  // star/fork/watcher counts, primary language, default branch, license,
+  // and timestamps. Use this when you need full details about a specific
+  // repository identified by owner and repo name.
+  rpc GetRepo(GetRepoRequest) returns (GetRepoResponse);
+
+  // List issues for a repository.
+  //
+  // Returns issues for a given repository with optional filtering by state
+  // (open, closed, all) and labels. Use this to browse a project's issue
+  // tracker. Note: GitHub's API returns pull requests here too — filter
+  // by checking the pull_request field if you only want issues.
+  rpc ListRepoIssues(ListRepoIssuesRequest) returns (ListRepoIssuesResponse);
+
+  // Get a single issue by number.
+  //
+  // Returns full details for one issue including title, body (markdown),
+  // state, labels, assignees, and comment count. Use this when you need
+  // the complete content of a specific issue.
+  rpc GetIssue(GetIssueRequest) returns (GetIssueResponse);
+
+  // List pull requests for a repository.
+  //
+  // Returns pull requests with optional filtering by state (open, closed, all).
+  // Use this to browse a project's pending or merged contributions.
+  rpc ListRepoPulls(ListRepoPullsRequest) returns (ListRepoPullsResponse);
+
+  // Get a single pull request by number.
+  //
+  // Returns full details for one PR including title, body, state, merge status,
+  // diff stats (additions, deletions, changed files), and head/base branches.
+  // Use this when you need the complete content of a specific pull request.
+  rpc GetPull(GetPullRequest) returns (GetPullResponse);
+
+  // Get the language breakdown for a repository.
+  //
+  // Returns a map of programming language names to the number of bytes of
+  // code written in that language. Use this to understand the technology
+  // stack of a project.
+  rpc ListRepoLanguages(ListRepoLanguagesRequest) returns (ListRepoLanguagesResponse);
+
+  // Check the current GitHub API rate limit status.
+  //
+  // Returns remaining requests, total limit, and reset time for the
+  // current authentication context. Use this to monitor usage and avoid
+  // hitting rate limits. Unauthenticated: 60/hr. With token: 5,000/hr.
+  rpc GetRateLimit(GetRateLimitRequest) returns (GetRateLimitResponse);
+}
+
+// --- Domain types ---
+
+message Repository {
+  int64 id = 1;
+  string full_name = 2;
+  string name = 3;
+  string owner_login = 4;
+  string description = 5;
+  string html_url = 6;
+  string language = 7;
+  int32 stargazers_count = 8;
+  int32 forks_count = 9;
+  int32 watchers_count = 10;
+  int32 open_issues_count = 11;
+  string default_branch = 12;
+  string license_name = 13;
+  string created_at = 14;
+  string updated_at = 15;
+  bool fork = 16;
+  bool archived = 17;
+  repeated string topics = 18;
+}
+
+message User {
+  int64 id = 1;
+  string login = 2;
+  string avatar_url = 3;
+  string html_url = 4;
+  // "User" or "Organization".
+  string type = 5;
+  string name = 6;
+  string bio = 7;
+  string company = 8;
+  string location = 9;
+  string email = 10;
+  int32 public_repos = 11;
+  int32 public_gists = 12;
+  int32 followers = 13;
+  int32 following = 14;
+  string created_at = 15;
+}
+
+message Issue {
+  int64 id = 1;
+  int32 number = 2;
+  string title = 3;
+  string body = 4;
+  string state = 5;
+  string html_url = 6;
+  string user_login = 7;
+  repeated string labels = 8;
+  repeated string assignees = 9;
+  int32 comments = 10;
+  string created_at = 11;
+  string updated_at = 12;
+  string closed_at = 13;
+  bool is_pull_request = 14;
+}
+
+message PullRequest {
+  int64 id = 1;
+  int32 number = 2;
+  string title = 3;
+  string body = 4;
+  string state = 5;
+  string html_url = 6;
+  string user_login = 7;
+  bool merged = 8;
+  string merged_at = 9;
+  string head_ref = 10;
+  string base_ref = 11;
+  int32 additions = 12;
+  int32 deletions = 13;
+  int32 changed_files = 14;
+  int32 commits = 15;
+  int32 comments = 16;
+  repeated string labels = 17;
+  repeated string assignees = 18;
+  string created_at = 19;
+  string updated_at = 20;
+}
+
+message Label {
+  string name = 1;
+  string color = 2;
+  string description = 3;
+}
+
+// --- Request / Response messages ---
+
+message SearchReposRequest {
+  // Search query (e.g., "machine learning python", "kubernetes", "org:google").
+  string query = 1;
+  // Sort field: "stars", "forks", "updated", or "help-wanted-issues". Default: best match.
+  string sort = 2;
+  // Sort order: "asc" or "desc". Default "desc".
+  string order = 3;
+  // Results per page (1-100). Default 30.
+  int32 per_page = 4;
+  // Page number (1-based). Default 1.
+  int32 page = 5;
+}
+
+message SearchReposResponse {
+  int32 total_count = 1;
+  repeated Repository items = 2;
+}
+
+message SearchUsersRequest {
+  // Search query (e.g., "torvalds", "type:org kubernetes").
+  string query = 1;
+  // Sort field: "followers", "repositories", "joined". Default: best match.
+  string sort = 2;
+  // Sort order: "asc" or "desc". Default "desc".
+  string order = 3;
+  // Results per page (1-100). Default 30.
+  int32 per_page = 4;
+  // Page number (1-based). Default 1.
+  int32 page = 5;
+}
+
+message SearchUsersResponse {
+  int32 total_count = 1;
+  repeated User items = 2;
+}
+
+message GetUserRequest {
+  // GitHub username (e.g., "torvalds", "octocat").
+  string username = 1;
+}
+
+message GetUserResponse {
+  User user = 1;
+}
+
+message GetRepoRequest {
+  // Repository owner (user or organization login).
+  string owner = 1;
+  // Repository name.
+  string repo = 2;
+}
+
+message GetRepoResponse {
+  Repository repo = 1;
+}
+
+message ListRepoIssuesRequest {
+  // Repository owner.
+  string owner = 1;
+  // Repository name.
+  string repo = 2;
+  // Filter by state: "open", "closed", or "all". Default "open".
+  string state = 3;
+  // Comma-separated list of label names to filter by.
+  string labels = 4;
+  // Results per page (1-100). Default 30.
+  int32 per_page = 5;
+  // Page number (1-based). Default 1.
+  int32 page = 6;
+}
+
+message ListRepoIssuesResponse {
+  repeated Issue issues = 1;
+}
+
+message GetIssueRequest {
+  // Repository owner.
+  string owner = 1;
+  // Repository name.
+  string repo = 2;
+  // Issue number.
+  int32 issue_number = 3;
+}
+
+message GetIssueResponse {
+  Issue issue = 1;
+}
+
+message ListRepoPullsRequest {
+  // Repository owner.
+  string owner = 1;
+  // Repository name.
+  string repo = 2;
+  // Filter by state: "open", "closed", or "all". Default "open".
+  string state = 3;
+  // Results per page (1-100). Default 30.
+  int32 per_page = 4;
+  // Page number (1-based). Default 1.
+  int32 page = 5;
+}
+
+message ListRepoPullsResponse {
+  repeated PullRequest pulls = 1;
+}
+
+message GetPullRequest {
+  // Repository owner.
+  string owner = 1;
+  // Repository name.
+  string repo = 2;
+  // Pull request number.
+  int32 pull_number = 3;
+}
+
+message GetPullResponse {
+  PullRequest pull = 1;
+}
+
+message ListRepoLanguagesRequest {
+  // Repository owner.
+  string owner = 1;
+  // Repository name.
+  string repo = 2;
+}
+
+message ListRepoLanguagesResponse {
+  // Map of language name to bytes of code (e.g., "Python" -> 125000).
+  map<string, int64> languages = 1;
+}
+
+message GetRateLimitRequest {}
+
+message GetRateLimitResponse {
+  // Maximum requests per hour.
+  int32 limit = 1;
+  // Remaining requests in the current window.
+  int32 remaining = 2;
+  // Unix timestamp when the rate limit resets.
+  int64 reset = 3;
+  // Requests used in the current window.
+  int32 used = 4;
+}

@@ -1,0 +1,1843 @@
+syntax = "proto3";
+
+package bybit.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/struct.proto";
+
+// Bybit V5 API (explorer subset) projected as protocol-agnostic RPC tools.
+// Generated from openapi/v5/*.yaml.
+
+service BybitAccountService {
+  // Get Wallet Balance
+  rpc Wallet(AccountWalletRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      get: "/v5/account/wallet-balance"
+    };
+  }
+
+  // Upgrade to Unified Account
+  rpc UpgradeUnifiedAccount(AccountUpgradeUnifiedAccountRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      post: "/v5/account/upgrade-to-uta"
+      body: "body"
+    };
+  }
+
+  // Set Collateral Coin
+  rpc SetCollateral(AccountSetCollateralRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      post: "/v5/account/set-collateral-switch"
+      body: "body"
+    };
+  }
+
+  // Get Borrow History
+  rpc BorrowHistory(AccountBorrowHistoryRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      get: "/v5/account/borrow-history"
+    };
+  }
+
+  // Get Collateral Info
+  rpc CollateralInfo(AccountCollateralInfoRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      get: "/v5/account/collateral-info"
+    };
+  }
+
+  // Get Coin Greeks
+  rpc CoinGreeks(AccountCoinGreeksRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      get: "/v5/account/coin-greeks"
+    };
+  }
+
+  // Get Fee Rate
+  rpc FeeRate(AccountFeeRateRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      get: "/v5/account/fee-rate"
+    };
+  }
+
+  // Get Account Info
+  rpc AccountInfo(AccountAccountInfoRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      get: "/v5/account/info"
+    };
+  }
+
+  // Get Transaction Log
+  rpc TransactionLog(AccountTransactionLogRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      get: "/v5/account/transaction-log"
+    };
+  }
+
+  // Set Margin Mode
+  rpc SetMarginMode(AccountSetMarginModeRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      post: "/v5/account/set-margin-mode"
+      body: "body"
+    };
+  }
+
+  // Set Spot Hedging
+  rpc SetSpotHedge(AccountSetSpotHedgeRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      post: "/v5/account/set-hedging-mode"
+      body: "body"
+    };
+  }
+
+}
+
+service BybitAssetService {
+  // Get Coin Exchange Records
+  rpc Exchange(AssetExchangeRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      get: "/v5/asset/exchange/order-record"
+    };
+  }
+
+  // Get Delivery Record
+  rpc Delivery(AssetDeliveryRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      get: "/v5/asset/delivery-record"
+    };
+  }
+
+  // Get USDC Session Settlement
+  rpc Settlement(AssetSettlementRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      get: "/v5/asset/settlement-record"
+    };
+  }
+
+  // Get Asset Info (Spot)
+  rpc AssetInfo(AssetAssetInfoRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      get: "/v5/asset/transfer/query-asset-info"
+    };
+  }
+
+  // Get All Coins Balance
+  rpc AllBalance(AssetAllBalanceRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      get: "/v5/asset/transfer/query-account-coins-balance"
+    };
+  }
+
+  // Get Single Coin Balance
+  rpc AccountCoinBalance(AssetAccountCoinBalanceRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      get: "/v5/asset/transfer/query-account-coin-balance"
+    };
+  }
+
+  // Get Transferable Coin
+  rpc TransferableCoin(AssetTransferableCoinRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      get: "/v5/asset/transfer/query-transfer-coin-list"
+    };
+  }
+
+  // Create Internal Transfer
+  rpc CreateInterTransfer(AssetCreateInterTransferRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      post: "/v5/asset/transfer/inter-transfer"
+      body: "body"
+    };
+  }
+
+  // Get Internal Transfer Records
+  rpc InterTransferList(AssetInterTransferListRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      get: "/v5/asset/transfer/query-inter-transfer-list"
+    };
+  }
+
+  // Get Sub UID
+  rpc SubUidList(AssetSubUidListRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      get: "/v5/asset/transfer/query-sub-member-list"
+    };
+  }
+
+  // Create Universal Transfer
+  rpc Unitransfer(AssetUnitransferRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      post: "/v5/asset/transfer/universal-transfer"
+      body: "body"
+    };
+  }
+
+  // Get Universal Transfer Records
+  rpc UnitransferList(AssetUnitransferListRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      get: "/v5/asset/transfer/query-universal-transfer-list"
+    };
+  }
+
+  // Get Allowed Deposit Coin Info
+  rpc DepositCoinSpec(AssetDepositCoinSpecRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      get: "/v5/asset/deposit/query-allowed-list"
+    };
+  }
+
+  // Set Deposit Account
+  rpc SetDepositAcct(AssetSetDepositAcctRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      post: "/v5/asset/deposit/deposit-to-account"
+      body: "body"
+    };
+  }
+
+  // Get Deposit Record (on-chain)
+  rpc DepositRecord(AssetDepositRecordRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      get: "/v5/asset/deposit/query-record"
+    };
+  }
+
+  // Get Sub Account Deposit Records (on-chain)
+  rpc SubDepositRecord(AssetSubDepositRecordRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      get: "/v5/asset/deposit/query-sub-member-record"
+    };
+  }
+
+  // Get Internal Deposit Records (off-chain)
+  rpc InternalDepositRecord(AssetInternalDepositRecordRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      get: "/v5/asset/deposit/query-internal-record"
+    };
+  }
+
+  // Get Master Deposit Address
+  rpc MasterDepositAddr(AssetMasterDepositAddrRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      get: "/v5/asset/deposit/query-address"
+    };
+  }
+
+  // Get Sub Deposit Address
+  rpc SubDepositAddr(AssetSubDepositAddrRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      get: "/v5/asset/deposit/query-sub-member-address"
+    };
+  }
+
+  // Get Coin Info
+  rpc CoinInfo(AssetCoinInfoRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      get: "/v5/asset/coin/query-info"
+    };
+  }
+
+  // Get Withdraw Records
+  rpc WithdrawRecord(AssetWithdrawRecordRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      get: "/v5/asset/withdraw/query-record"
+    };
+  }
+
+}
+
+service BybitBackupService {
+  // Switch Cross/Isolated Margin
+  rpc CrossIsolatedMargin(BackupCrossIsolatedMarginRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      post: "/v5/position/switch-isolated"
+      body: "body"
+    };
+  }
+
+  // Switch Position Mode
+  rpc PositionMode(BackupPositionModeRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      post: "/v5/position/switch-mode"
+      body: "body"
+    };
+  }
+
+  // Set Auto Add Margin
+  rpc AutoMargin(BackupAutoMarginRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      post: "/v5/position/set-auto-add-margin"
+      body: "body"
+    };
+  }
+
+}
+
+service BybitLtService {
+  // Get Leverage Token Info
+  rpc LeverageTokenInfo(LtLeverageTokenInfoRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      get: "/v5/spot-lever-token/info"
+    };
+  }
+
+  // Get Leverage Token Market
+  rpc LeverageTokenReference(LtLeverageTokenReferenceRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      get: "/v5/spot-lever-token/reference"
+    };
+  }
+
+  // Purchase
+  rpc Purchase(LtPurchaseRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      post: "/v5/spot-lever-token/purchase"
+      body: "body"
+    };
+  }
+
+  // Redeem
+  rpc Redeem(LtRedeemRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      post: "/v5/spot-lever-token/redeem"
+      body: "body"
+    };
+  }
+
+  // Get Purchase or Redeem Records
+  rpc OrderRecord(LtOrderRecordRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      get: "/v5/spot-lever-token/order-record"
+    };
+  }
+
+}
+
+service BybitMarketService {
+  // Get Bybit Server Time
+  rpc Time(MarketTimeRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      get: "/v5/market/time"
+    };
+  }
+
+  // Get Kline
+  rpc Kline(MarketKlineRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      get: "/v5/market/kline"
+    };
+  }
+
+  // Get Mark Price Kline
+  rpc MarkKline(MarketMarkKlineRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      get: "/v5/market/mark-price-kline"
+    };
+  }
+
+  // Get Index Price Kline
+  rpc IndexKline(MarketIndexKlineRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      get: "/v5/market/index-price-kline"
+    };
+  }
+
+  // Get Premium Index Price Kline
+  rpc PremiumIndexKline(MarketPremiumIndexKlineRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      get: "/v5/market/premium-index-price-kline"
+    };
+  }
+
+  // Get Instrument Info
+  rpc Instrument(MarketInstrumentRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      get: "/v5/market/instruments-info"
+    };
+  }
+
+  // Get Orderbook
+  rpc Orderbook(MarketOrderbookRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      get: "/v5/market/orderbook"
+    };
+  }
+
+  // Get Tickers
+  rpc Tickers(MarketTickersRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      get: "/v5/market/tickers"
+    };
+  }
+
+  // Get Funding Rate History
+  rpc HistoryFundRate(MarketHistoryFundRateRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      get: "/v5/market/funding/history"
+    };
+  }
+
+  // Get Public Recent Trading History
+  rpc RecentTrade(MarketRecentTradeRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      get: "/v5/market/recent-trade"
+    };
+  }
+
+  // Get Open Interest
+  rpc OpenInterest(MarketOpenInterestRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      get: "/v5/market/open-interest"
+    };
+  }
+
+  // Get Historical Volatility
+  rpc Iv(MarketIvRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      get: "/v5/market/historical-volatility"
+    };
+  }
+
+  // Get Insurance
+  rpc Insurance(MarketInsuranceRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      get: "/v5/market/insurance"
+    };
+  }
+
+  // Get Risk Limit
+  rpc RiskLimit(MarketRiskLimitRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      get: "/v5/market/risk-limit"
+    };
+  }
+
+  // Get Delivery Price
+  rpc DeliveryPrice(MarketDeliveryPriceRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      get: "/v5/market/delivery-price"
+    };
+  }
+
+  // Get Long Short Ratio
+  rpc LongShortRatio(MarketLongShortRatioRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      get: "/v5/market/account-ratio"
+    };
+  }
+
+}
+
+service BybitPositionService {
+  // Get Position Info
+  rpc PositionInfo(PositionPositionInfoRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      get: "/v5/position/list"
+    };
+  }
+
+  // Set Leverage
+  rpc Leverage(PositionLeverageRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      post: "/v5/position/set-leverage"
+      body: "body"
+    };
+  }
+
+  // Switch Cross/Isolated Margin
+  rpc CrossIsolate(PositionCrossIsolateRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      post: "/v5/position/switch-isolated"
+      body: "body"
+    };
+  }
+
+  // Set TP/SL Mode
+  rpc TpslMode(PositionTpslModeRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      post: "/v5/position/set-tpsl-mode"
+      body: "body"
+    };
+  }
+
+  // Switch Position Mode
+  rpc PositionMode(PositionPositionModeRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      post: "/v5/position/switch-mode"
+      body: "body"
+    };
+  }
+
+  // Set Risk Limit
+  rpc SetRiskLimit(PositionSetRiskLimitRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      post: "/v5/position/set-risk-limit"
+      body: "body"
+    };
+  }
+
+  // Set Trading Stop
+  rpc TradingStop(PositionTradingStopRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      post: "/v5/position/trading-stop"
+      body: "body"
+    };
+  }
+
+  // Set Auto Add Margin
+  rpc AutoAddMargin(PositionAutoAddMarginRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      post: "/v5/position/set-auto-add-margin"
+      body: "body"
+    };
+  }
+
+  // Add Or Reduce Margin
+  rpc ManualAddMargin(PositionManualAddMarginRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      post: "/v5/position/add-margin"
+      body: "body"
+    };
+  }
+
+  // Get Execution (2 years)
+  rpc Execution(PositionExecutionRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      get: "/v5/execution/list"
+    };
+  }
+
+  // Get Closed PnL
+  rpc ClosePnl(PositionClosePnlRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      get: "/v5/position/closed-pnl"
+    };
+  }
+
+}
+
+service BybitSpotMarginUtaService {
+  // Get VIP Margin Data
+  rpc VipMargin(SpotMarginUtaVipMarginRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      get: "/v5/spot-margin-trade/data"
+    };
+  }
+
+  // Toggle Margin Trade
+  rpc SwitchMode(SpotMarginUtaSwitchModeRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      post: "/v5/spot-margin-trade/switch-mode"
+      body: "body"
+    };
+  }
+
+  // Set Leverage
+  rpc SetLeverage(SpotMarginUtaSetLeverageRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      post: "/v5/spot-margin-trade/set-leverage"
+      body: "body"
+    };
+  }
+
+  // Get Status And Leverage
+  rpc Status(SpotMarginUtaStatusRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      get: "/v5/spot-margin-trade/state"
+    };
+  }
+
+}
+
+service BybitTradeService {
+  // Place Order
+  rpc CreateOrder(TradeCreateOrderRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      post: "/v5/order/create"
+      body: "body"
+    };
+  }
+
+  // Amend Order
+  rpc AmendOrder(TradeAmendOrderRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      post: "/v5/order/amend"
+      body: "body"
+    };
+  }
+
+  // Cancel Order
+  rpc CancelOrder(TradeCancelOrderRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      post: "/v5/order/cancel"
+      body: "body"
+    };
+  }
+
+  // Get Open Orders (real-time)
+  rpc OpenOrder(TradeOpenOrderRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      get: "/v5/order/realtime"
+    };
+  }
+
+  // Cancel All Orders
+  rpc CancelAll(TradeCancelAllRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      post: "/v5/order/cancel-all"
+      body: "body"
+    };
+  }
+
+  // Get Order History (2 years)
+  rpc OrderList(TradeOrderListRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      get: "/v5/order/history"
+    };
+  }
+
+  // Batch Place Order
+  rpc BatchPlace(TradeBatchPlaceRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      post: "/v5/order/create-batch"
+      body: "body"
+    };
+  }
+
+  // Batch Amend Order
+  rpc BatchAmend(TradeBatchAmendRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      post: "/v5/order/amend-batch"
+      body: "body"
+    };
+  }
+
+  // Batch Cancel Order
+  rpc BatchCancel(TradeBatchCancelRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      post: "/v5/order/cancel-batch"
+      body: "body"
+    };
+  }
+
+  // Get Borrow Quota (Spot)
+  rpc QuerySpotQuota(TradeQuerySpotQuotaRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      get: "/v5/order/spot-borrow-check"
+    };
+  }
+
+}
+
+service BybitUserService {
+  // Get API Key Information
+  rpc ApikeyInfo(UserApikeyInfoRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      get: "/v5/user/query-api"
+    };
+  }
+
+  // Get Sub Account All API Keys
+  rpc ListSubApikeys(UserListSubApikeysRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      get: "/v5/user/sub-apikeys"
+    };
+  }
+
+  // Get UID Wallet Type
+  rpc WalletType(UserWalletTypeRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      get: "/v5/user/get-member-type"
+    };
+  }
+
+  // Get Affiliate User Info
+  rpc AffiliateInfo(UserAffiliateInfoRequest) returns (BybitResponse) {
+    option (google.api.http) = {
+      get: "/v5/user/aff-customer-info"
+    };
+  }
+
+}
+
+message BybitResponse {
+  optional int64 retCode = 1;
+  string retMsg = 2;
+  google.protobuf.Value result = 3;
+  google.protobuf.Value retExtInfo = 4;
+  optional int64 time = 5;
+}
+
+message AccountAccountInfoRequest {
+}
+
+message AccountBorrowHistoryRequest {
+  // e.g., USDC, USDT, BTC, ETH
+  optional string currency = 1;
+  // The start timestamp (ms)
+  optional int64 startTime = 2;
+  // The end timestamp (ms)
+  optional int64 endTime = 3;
+  // Limit per page. 1-50
+  optional int64 limit = 4;
+  // Cusor, used for pagiation
+  optional string cursor = 5;
+}
+
+message AccountCoinGreeksRequest {
+  // Base coin
+  optional string baseCoin = 1;
+}
+
+message AccountCollateralInfoRequest {
+  // Collateral asset
+  optional string currency = 1;
+}
+
+message AccountFeeRateRequest {
+  // Product type. working for spot and option
+  string category = 1;
+  // Symbol name. valid for linear,inverse and spot
+  optional string symbol = 2;
+  // Base coin. Valid for option
+  optional string baseCoin = 3;
+}
+
+message AccountSetCollateralRequest {
+  // Request body
+  AccountSetCollateralRequestBody body = 1;
+}
+
+message AccountSetCollateralRequestBody {
+  // coin
+  string coin = 1;
+  // coin
+  string collateralSwitch = 2;
+}
+
+message AccountSetMarginModeRequest {
+  // Request body
+  AccountSetMarginModeRequestBody body = 1;
+}
+
+message AccountSetMarginModeRequestBody {
+  // Margin mode
+  string setMarginMode = 1;
+}
+
+message AccountSetSpotHedgeRequest {
+  // Request body
+  AccountSetSpotHedgeRequestBody body = 1;
+}
+
+message AccountSetSpotHedgeRequestBody {
+  // on or off spot hedging mode
+  string setHedgingMode = 1;
+}
+
+message AccountTransactionLogRequest {
+  // Support `UNIFIED` for now
+  optional string accountType = 1;
+  // Product category
+  optional string category = 2;
+  // Currency
+  optional string currency = 3;
+  // Base coin
+  optional string baseCoin = 4;
+  // Transaction log type
+  optional string type = 5;
+  // The start timestamp (ms)
+  optional int64 startTime = 6;
+  // The end timestamp (ms)
+  optional int64 endTime = 7;
+  // Limit size for each page. 1-50
+  optional int64 limit = 8;
+  // Cursor, used for pagination
+  optional string cursor = 9;
+}
+
+message AccountUpgradeUnifiedAccountRequest {
+  // Request body
+  google.protobuf.Struct body = 1;
+}
+
+message AccountWalletRequest {
+  // Account type
+  string accountType = 1;
+  // Coin name. You can pass mutiple coins like USDT,USDC
+  optional string coin = 2;
+}
+
+message AssetAccountCoinBalanceRequest {
+  // If query sub user balance, please input sub uid
+  optional string memberId = 1;
+  // Account type
+  string accountType = 2;
+  // Coin name
+  string coin = 3;
+  // Query bonus or not. 0=false, 1=true
+  optional int64 withBonus = 4;
+  // Whether query delay withdraw/transfer safe amount. 0：false, 1；true
+  optional int64 withTransferSafeAmount = 5;
+}
+
+message AssetAllBalanceRequest {
+  // If query sub user balance, please input sub uid
+  optional string memberId = 1;
+  // Account type
+  string accountType = 2;
+  // Coin name
+  optional string coin = 3;
+  // Query bonus or not. 0=false, 1=true
+  optional int64 withBonus = 4;
+}
+
+message AssetAssetInfoRequest {
+  // Account type
+  string accountType = 1;
+  // Coin name
+  optional string coin = 2;
+}
+
+message AssetCoinInfoRequest {
+  // Coin name
+  optional string coin = 1;
+}
+
+message AssetCreateInterTransferRequest {
+  // Request body
+  AssetCreateInterTransferRequestBody body = 1;
+}
+
+message AssetCreateInterTransferRequestBody {
+  // UUID
+  string transferId = 1;
+  // Coin
+  string coin = 2;
+  // Amount
+  string amount = 3;
+  // From account type
+  string fromAccountType = 4;
+  // To account type
+  string toAccountType = 5;
+}
+
+message AssetDeliveryRequest {
+  // Product type
+  string category = 1;
+  // Symbol name
+  optional string symbol = 2;
+  // expired date
+  optional string expDate = 3;
+  // 1-50. max 50
+  optional int64 limit = 4;
+  // cursor, used for pagination
+  optional string cursor = 5;
+}
+
+message AssetDepositCoinSpecRequest {
+  // Coin name. coin and chain must be paired if passed
+  optional string coin = 1;
+  // Chain name. coin and chain must be paired if passed
+  optional string chain = 2;
+  // Limit size. 1-35
+  optional int64 limit = 3;
+  // Cursor, used for pagination
+  optional string cursor = 4;
+}
+
+message AssetDepositRecordRequest {
+  // Coin name
+  optional string coin = 1;
+  // The start timestamp (ms)
+  optional int64 startTime = 2;
+  // The end timestamp (ms)
+  optional int64 endTime = 3;
+  // Limit size. 1-50
+  optional int64 limit = 4;
+  // Cursor, used to pagination
+  optional string cursor = 5;
+}
+
+message AssetExchangeRequest {
+  // From coin
+  optional string fromCoin = 1;
+  // To coin
+  optional string toCoin = 2;
+  // Limit size. 1-50
+  int64 limit = 3;
+  // Cursor, used for pagination
+  optional string cursor = 4;
+}
+
+message AssetInterTransferListRequest {
+  // Transfer id
+  optional string transferId = 1;
+  // Coin name
+  optional string coin = 2;
+  // Status
+  optional string status = 3;
+  // The start timestamp (ms)
+  optional int64 startTime = 4;
+  // The end timestamp (ms)
+  optional int64 endTime = 5;
+  // Limit size. 1-50
+  optional int64 limit = 6;
+  // Cursor, used for pagination
+  optional string cursor = 7;
+}
+
+message AssetInternalDepositRecordRequest {
+  // Coin name
+  optional string coin = 1;
+  // The start timestamp (ms)
+  optional int64 startTime = 2;
+  // The end timestamp (ms)
+  optional int64 endTime = 3;
+  // Limit size. 1-50
+  optional int64 limit = 4;
+  // Cursor, used for pagination
+  optional string cursor = 5;
+}
+
+message AssetMasterDepositAddrRequest {
+  // Coin name
+  string coin = 1;
+  // Chain name
+  optional string chainType = 2;
+}
+
+message AssetSetDepositAcctRequest {
+  // Request body
+  AssetSetDepositAcctRequestBody body = 1;
+}
+
+message AssetSetDepositAcctRequestBody {
+  // From account type
+  string AccountType = 1;
+}
+
+message AssetSettlementRequest {
+  // Product type
+  string category = 1;
+  // Symbol name. USDC perp or USDC futures
+  optional string symbol = 2;
+  // 1-50. max 50
+  optional int64 limit = 3;
+  // cursor, used for pagination
+  optional string cursor = 4;
+}
+
+message AssetSubDepositAddrRequest {
+  // Coin name
+  string coin = 1;
+  // Chain name
+  string chainType = 2;
+  // Sub UID
+  string subMemberId = 3;
+}
+
+message AssetSubDepositRecordRequest {
+  // Sub UID
+  string subMemberId = 1;
+  // Coin name
+  optional string coin = 2;
+  // The start timestamp (ms)
+  optional int64 startTime = 3;
+  // The end timestamp (ms)
+  optional int64 endTime = 4;
+  // Limit size. 1-50
+  optional int64 limit = 5;
+  // Cursor, used for pagination
+  optional string cursor = 6;
+}
+
+message AssetSubUidListRequest {
+}
+
+message AssetTransferableCoinRequest {
+  // From account type
+  string fromAccountType = 1;
+  // To account type
+  string toAccountType = 2;
+}
+
+message AssetUnitransferListRequest {
+  // Transfer id
+  optional string transferId = 1;
+  // Coin name
+  optional string coin = 2;
+  // Status
+  optional string status = 3;
+  // The start timestamp (ms)
+  optional int64 startTime = 4;
+  // The end timestamp (ms)
+  optional int64 endTime = 5;
+  // Limit size. 1-50
+  optional int64 limit = 6;
+  // Cursor, used for pagination
+  optional string cursor = 7;
+}
+
+message AssetUnitransferRequest {
+  // Request body
+  AssetUnitransferRequestBody body = 1;
+}
+
+message AssetUnitransferRequestBody {
+  // Transfer id. UUID
+  google.protobuf.Value transferId = 1;
+  // Coin name
+  google.protobuf.Value coin = 2;
+  // Amount
+  google.protobuf.Value amount = 3;
+  // From UID
+  google.protobuf.Value fromMemberId = 4;
+  // To UID
+  int64 toMemberId = 5;
+  // From account type
+  string fromAccountType = 6;
+  // To account type
+  string toAccountType = 7;
+}
+
+message AssetWithdrawRecordRequest {
+  // Withdraw ID
+  optional string withdrawID = 1;
+  // Coin name
+  optional string coin = 2;
+  // Withdraw type. 0=on chain, 1=off chain, 2=all
+  optional int64 withdrawType = 3;
+  // The start timestamp (ms)
+  optional int64 startTime = 4;
+  // The end timestamp (ms)
+  optional int64 endTime = 5;
+  // Limit size. 1-50
+  optional int64 limit = 6;
+  // Cursor, used to pagination
+  optional string cursor = 7;
+}
+
+message BackupAutoMarginRequest {
+  // Request body
+  BackupAutoMarginRequestBody body = 1;
+}
+
+message BackupAutoMarginRequestBody {
+  // Product type.
+  string category = 1;
+  // Symbol name
+  string symbol = 2;
+  // Turn on / off. 0=off, 1=on
+  int64 autoAddMargin = 3;
+  // Position index. 0=one-way-mode, 1=buy-hedge-mode, 2=sell-hedege-mode. <b>REQUIRED</b> for hedge-mode
+  optional int64 positionIdx = 4;
+}
+
+message BackupCrossIsolatedMarginRequest {
+  // Request body
+  BackupCrossIsolatedMarginRequestBody body = 1;
+}
+
+message BackupCrossIsolatedMarginRequestBody {
+  // Product type.
+  string category = 1;
+  // Symbol name
+  string symbol = 2;
+  // Trade mode. 0=crossMargin, 1=isolatedMargin
+  int64 tradeMode = 3;
+  // Buy side leverage. Make sure buyLeverage equals to sellLeverage
+  string buyLeverage = 4;
+  // Sell side leverage. Make sure buyLeverage equals to sellLeverage
+  string sellLeverage = 5;
+}
+
+message BackupPositionModeRequest {
+  // Request body
+  BackupPositionModeRequestBody body = 1;
+}
+
+message BackupPositionModeRequestBody {
+  // Product type.
+  string category = 1;
+  // Symbol name. Either symbol or coin is required
+  optional string symbol = 2;
+  // Coin. Either symbol or coin is required
+  optional string coin = 3;
+  // Position mode. 0=mergedSingle, 3=bothSide
+  string mode = 4;
+}
+
+message LtLeverageTokenInfoRequest {
+  // Levearage coin name. e.g., BTC3L
+  optional string ltCoin = 1;
+}
+
+message LtLeverageTokenReferenceRequest {
+  // Levearage coin name. e.g., BTC3L
+  string ltCoin = 1;
+}
+
+message LtOrderRecordRequest {
+  // Levearage coin name. e.g., BTC3L
+  optional string ltCoin = 1;
+  // Order id
+  optional string orderId = 2;
+  // The start timestamp (ms)
+  optional int64 startTime = 3;
+  // The end timestamp (ms)
+  optional int64 endTime = 4;
+  // Limit size of each page. 1-500
+  optional int64 limit = 5;
+  // LT order type. 1=purchase, 2=redeem
+  optional int64 ltOrderType = 6;
+  // Serial number
+  optional string serialNo = 7;
+}
+
+message LtPurchaseRequest {
+  // Request body
+  LtPurchaseRequestBody body = 1;
+}
+
+message LtPurchaseRequestBody {
+  // Levearage coin name. e.g., BTC3L
+  optional string ltCoin = 1;
+  // Purchase amount
+  optional string ltAmount = 2;
+  // Serial number, customised order id
+  optional string serialNo = 3;
+  google.protobuf.Value required_field = 4;
+}
+
+message LtRedeemRequest {
+  // Request body
+  LtRedeemRequestBody body = 1;
+}
+
+message LtRedeemRequestBody {
+  // Levearage coin name. e.g., BTC3L
+  optional string ltCoin = 1;
+  // Redeem quantity
+  optional string quantity = 2;
+  // Serial number, customised order id
+  optional string serialNo = 3;
+  google.protobuf.Value required_field = 4;
+}
+
+message MarketDeliveryPriceRequest {
+  // Product type. linear, inverse, option
+  string category = 1;
+  // Symbol name
+  optional string symbol = 2;
+  // Base coin, for option only. Return BTC by default
+  optional string baseCoin = 3;
+  // Maximum 200
+  optional string limit = 4;
+  // The cursor, used for pagination
+  optional string cursor = 5;
+}
+
+message MarketHistoryFundRateRequest {
+  // Product type
+  string category = 1;
+  // Symbol name
+  string symbol = 2;
+  // The start timstamp (ms)
+  optional int64 startTime = 3;
+  // The end timstamp (ms)
+  optional int64 endTime = 4;
+  // Maximum 200
+  optional int64 limit = 5;
+}
+
+message MarketIndexKlineRequest {
+  // Product type
+  string category = 1;
+  // Symbol name
+  string symbol = 2;
+  // kline interval
+  string interval = 3;
+  // start timestamp (ms). e.g., 1669852800000 (1 DEC 2022 UTC 0:00)
+  optional int64 start = 4;
+  // end timestamp (ms). e.g., 1671062400000 (15 DEC 2022 UTC 0:00)
+  optional int64 end = 5;
+  // Maximum 1000
+  optional int64 limit = 6;
+}
+
+message MarketInstrumentRequest {
+  // Product type
+  string category = 1;
+  // Symbol name
+  optional string symbol = 2;
+  // Status filter
+  optional string status = 3;
+  // for linear, invere and option ONLY
+  optional string baseCoin = 4;
+  // Maximum 1000. spot does not have pagination
+  optional int64 limit = 5;
+  // pass cursor from the response param "nagePageCursor" to paginate
+  optional string cursor = 6;
+}
+
+message MarketInsuranceRequest {
+  // Coin name
+  optional string coin = 1;
+}
+
+message MarketIvRequest {
+  // Product type
+  string category = 1;
+  // Base coin. If not passed, BTC returned by default
+  optional string baseCoin = 2;
+  // Period. If not passed, it returns 7 days by default. SOL does not have 180 and 270
+  optional int64 period = 3;
+  // The start timstamp (ms)
+  optional int64 startTime = 4;
+  // The end timstamp (ms)
+  optional int64 endTime = 5;
+}
+
+message MarketKlineRequest {
+  // Product type
+  string category = 1;
+  // Symbol name
+  string symbol = 2;
+  // kline interval
+  string interval = 3;
+  // start timestamp (ms). e.g., 1669852800000 (1 DEC 2022 UTC 0:00)
+  optional int64 start = 4;
+  // end timestamp (ms). e.g., 1671062400000 (15 DEC 2022 UTC 0:00)
+  optional int64 end = 5;
+  // Maximum 1000
+  optional int64 limit = 6;
+}
+
+message MarketLongShortRatioRequest {
+  // Product type
+  string category = 1;
+  // Symbol name
+  string symbol = 2;
+  // period
+  string period = 3;
+  // Maximum 500
+  optional int64 limit = 4;
+}
+
+message MarketMarkKlineRequest {
+  // Product type
+  string category = 1;
+  // Symbol name
+  string symbol = 2;
+  // kline interval
+  string interval = 3;
+  // start timestamp (ms). e.g., 1669852800000 (1 DEC 2022 UTC 0:00)
+  optional int64 start = 4;
+  // end timestamp (ms). e.g., 1671062400000 (15 DEC 2022 UTC 0:00)
+  optional int64 end = 5;
+  // Maximum 1000
+  optional int64 limit = 6;
+}
+
+message MarketOpenInterestRequest {
+  // Product type
+  string category = 1;
+  // Symbol name
+  string symbol = 2;
+  // interval time
+  string intervalTime = 3;
+  // The start timstamp (ms)
+  optional int64 startTime = 4;
+  // The end timstamp (ms)
+  optional int64 endTime = 5;
+  // Maximum 200
+  optional int64 limit = 6;
+  // pass cursor from the response param "nagePageCursor" to paginate
+  optional string cursor = 7;
+}
+
+message MarketOrderbookRequest {
+  // Product type
+  string category = 1;
+  // Symbol name
+  string symbol = 2;
+  // spot：1-200，default：1. linear&inverse：1-200，default：25. option：1-25，default：1
+  optional int64 limit = 3;
+}
+
+message MarketPremiumIndexKlineRequest {
+  // Product type
+  string category = 1;
+  // Symbol name
+  string symbol = 2;
+  // kline interval
+  string interval = 3;
+  // start timestamp (ms). e.g., 1669852800000 (1 DEC 2022 UTC 0:00)
+  optional int64 start = 4;
+  // end timestamp (ms). e.g., 1671062400000 (15 DEC 2022 UTC 0:00)
+  optional int64 end = 5;
+  // Maximum 1000
+  optional int64 limit = 6;
+}
+
+message MarketRecentTradeRequest {
+  // Product type
+  string category = 1;
+  // Symbol name.
+  string symbol = 2;
+  // Base coin. Valid for option. Default is BTC
+  optional string baseCoin = 3;
+  // Option type. Valid for option.
+  optional string optionType = 4;
+  // Maximum 60 for spot. Maximum 1000 for others
+  optional int64 limit = 5;
+}
+
+message MarketRiskLimitRequest {
+  // Product type
+  string category = 1;
+  // Symbol name
+  optional string symbol = 2;
+}
+
+message MarketTickersRequest {
+  // Product type
+  string category = 1;
+  // for option ONLY, baseCoin or symbol must be passed when query option
+  optional string baseCoin = 2;
+  // Expiry date. For option only. Default is all, and the parameter format is 25MAR22.
+  optional string expDate = 3;
+  // Symbol name
+  optional string symbol = 4;
+}
+
+message MarketTimeRequest {
+}
+
+message PositionAutoAddMarginRequest {
+  // Request body
+  PositionAutoAddMarginRequestBody body = 1;
+}
+
+message PositionAutoAddMarginRequestBody {
+  // Product type
+  string category = 1;
+  // Symbol name
+  string symbol = 2;
+  // 0 - turn off, 1 - turn on
+  int64 autoAddMargin = 3;
+  // Position index. 0=one-way-mode, 1=buy-hedge-mode, 2=sell-hedege-mode. <b>REQUIRED</b> for hedge-mode
+  int64 positionIdx = 4;
+}
+
+message PositionClosePnlRequest {
+  // Product type
+  string category = 1;
+  // Symbol name
+  optional string symbol = 2;
+  // The start timestamp (ms)
+  optional int64 startTime = 3;
+  // The end timestamp (ms)
+  optional int64 endTime = 4;
+  // 1-200. max 200
+  optional int64 limit = 5;
+  // cursor for pagination
+  optional string cursor = 6;
+}
+
+message PositionCrossIsolateRequest {
+  // Request body
+  PositionCrossIsolateRequestBody body = 1;
+}
+
+message PositionCrossIsolateRequestBody {
+  // Product type
+  string category = 1;
+  // Symbol name
+  string symbol = 2;
+  // 0 - cross margin, 1 - isolated margin
+  int64 tradeMode = 3;
+  // Buy side leverage
+  optional string buyLeverage = 4;
+  // Sell side leverage
+  optional string sellLeverage = 5;
+}
+
+message PositionExecutionRequest {
+  // Product type
+  string category = 1;
+  // Symbol name
+  optional string symbol = 2;
+  // Base coin
+  optional string baseCoin = 3;
+  optional string orderId = 4;
+  // User customised order id
+  optional string orderLinkId = 5;
+  // The start timestamp (ms)
+  optional int64 startTime = 6;
+  // The end timestamp (ms)
+  optional int64 endTime = 7;
+  // Execution type
+  optional string execType = 8;
+  // 1-100. max 100
+  optional int64 limit = 9;
+  // cursor to pagination
+  optional string cursor = 10;
+}
+
+message PositionLeverageRequest {
+  // Request body
+  PositionLeverageRequestBody body = 1;
+}
+
+message PositionLeverageRequestBody {
+  // Product type
+  string category = 1;
+  // Symbol name
+  string symbol = 2;
+  // Buy side leverage
+  optional string buyLeverage = 3;
+  // Sell side leverage
+  optional string sellLeverage = 4;
+}
+
+message PositionManualAddMarginRequest {
+  // Request body
+  PositionManualAddMarginRequestBody body = 1;
+}
+
+message PositionManualAddMarginRequestBody {
+  // Product type
+  string category = 1;
+  // Symbol name
+  string symbol = 2;
+  // 10 - add, -10 - reduce
+  string margin = 3;
+  // Position index. 0=one-way-mode, 1=buy-hedge-mode, 2=sell-hedege-mode. <b>REQUIRED</b> for hedge-mode
+  int64 positionIdx = 4;
+}
+
+message PositionPositionInfoRequest {
+  // Product type
+  string category = 1;
+  // Symbol name
+  optional string symbol = 2;
+  // Base coin. For option only
+  optional string baseCoin = 3;
+  // Used for linear & inverse, symbol or settleCoin is required
+  optional string settleCoin = 4;
+  // 1-200. max 200
+  optional int64 limit = 5;
+  // cursor, used for pagination
+  optional string cursor = 6;
+}
+
+message PositionPositionModeRequest {
+  // Request body
+  PositionPositionModeRequestBody body = 1;
+}
+
+message PositionPositionModeRequestBody {
+  // Product type
+  string category = 1;
+  // Symbol name
+  optional string symbol = 2;
+  // Coin name
+  optional string coin = 3;
+  // Position mode. 0 - Merged single, 3 - Both sides
+  int64 mode = 4;
+}
+
+message PositionSetRiskLimitRequest {
+  // Request body
+  PositionSetRiskLimitRequestBody body = 1;
+}
+
+message PositionSetRiskLimitRequestBody {
+  // Product type
+  string category = 1;
+  // Symbol name
+  string symbol = 2;
+  // Risk limit id
+  int64 riskId = 3;
+  // Position index. 0=one-way-mode, 1=buy-hedge-mode, 2=sell-hedege-mode. <b>REQUIRED</b> for hedge-mode
+  optional int64 positionIdx = 4;
+}
+
+message PositionTpslModeRequest {
+  // Request body
+  PositionTpslModeRequestBody body = 1;
+}
+
+message PositionTpslModeRequestBody {
+  // Product type
+  string category = 1;
+  // Symbol name
+  string symbol = 2;
+  // Full = full position TP/SL, Partial = partial mode tp/sl
+  string tpSlMode = 3;
+}
+
+message PositionTradingStopRequest {
+  // Request body
+  PositionTradingStopRequestBody body = 1;
+}
+
+message PositionTradingStopRequestBody {
+  // Product type
+  string category = 1;
+  // Symbol name
+  string symbol = 2;
+  // Take profit price
+  optional string takeProfit = 3;
+  // Stop loss price
+  optional string stopLoss = 4;
+  // Take profit size
+  optional string tpSize = 5;
+  // Stop loss size
+  optional string slSize = 6;
+  // Take profit trigger price type
+  optional string tpTriggerBy = 7;
+  // Stop loss trigger price type
+  optional string slTriggerBy = 8;
+  // Trailing stop
+  optional string trailingStop = 9;
+  // Trailing stop trigger price
+  optional string activePrice = 10;
+  // Position index. 0=one-way-mode, 1=buy-hedge-mode, 2=sell-hedege-mode. <b>REQUIRED</b> for hedge-mode
+  int64 positionIdx = 11;
+  // The limit order price when take profit price is triggered
+  optional string tpLimitPrice = 12;
+  // The limit order price when stop loss price is triggered
+  optional string slLimitPrice = 13;
+  // The order type when take profit is triggered
+  optional string tpOrderType = 14;
+  // The order type when stop loss is triggered
+  optional string slOrderType = 15;
+}
+
+message SpotMarginUtaSetLeverageRequest {
+  // Request body
+  SpotMarginUtaSetLeverageRequestBody body = 1;
+}
+
+message SpotMarginUtaSetLeverageRequestBody {
+  // Levearge, support 2-10
+  optional int64 leverage = 1;
+  google.protobuf.Value required_field = 2;
+}
+
+message SpotMarginUtaStatusRequest {
+}
+
+message SpotMarginUtaSwitchModeRequest {
+  // Request body
+  SpotMarginUtaSwitchModeRequestBody body = 1;
+}
+
+message SpotMarginUtaSwitchModeRequestBody {
+  // Margin mode. 0=off, 1=on
+  optional int64 spotMarginMode = 1;
+  google.protobuf.Value required_field = 2;
+}
+
+message SpotMarginUtaVipMarginRequest {
+  // VIP level
+  optional string vipLevel = 1;
+  // Coin name
+  optional string currency = 2;
+}
+
+message TradeAmendOrderRequest {
+  // Request body
+  TradeAmendOrderRequestBody body = 1;
+}
+
+message TradeAmendOrderRequestBody {
+  // Product type
+  string category = 1;
+  // Symbol name
+  string symbol = 2;
+  // Either orderId or orderLinkId is required
+  optional string orderId = 3;
+  // Either orderId or orderLinkId is required
+  optional string orderLinkId = 4;
+  // Modify the order qty
+  optional string qty = 5;
+  // Modify the order price
+  optional string price = 6;
+  // Modify option order iv
+  optional string orderIv = 7;
+  // Modify StopOrder trigger price
+  optional string triggerPrice = 8;
+  // Full：TPSL for full size, Partial：TPSL for partial size
+  optional string tpslMode = 9;
+  // Modify take profit price
+  optional string takeProfit = 10;
+  // Modify stop loss price
+  optional string stopLoss = 11;
+  // Modify the type of trigger price
+  optional string triggerBy = 12;
+  // Modify trigger take profit price price type
+  optional string tpTriggerBy = 13;
+  // Modify trigger stop loss price price type
+  optional string slTriggerBy = 14;
+  // The limit order price when take profit price is triggered
+  optional string tpLimitPrice = 15;
+  // The limit order price when stop loss price is triggered
+  optional string slLimitPrice = 16;
+}
+
+message TradeBatchAmendRequest {
+  // Request body
+  TradeBatchAmendRequestBody body = 1;
+}
+
+message TradeBatchAmendRequestBody {
+  // Product type
+  string category = 1;
+  repeated TradeBatchAmendRequestBodyRequestItem request = 2;
+}
+
+message TradeBatchAmendRequestBodyRequestItem {
+  // Symbol name
+  string symbol = 1;
+  // Either orderId or orderLinkId is required
+  optional string orderId = 2;
+  // Either orderId or orderLinkId is required
+  optional string orderLinkId = 3;
+  // Modify the order qty
+  optional string qty = 4;
+  // Modify the order price
+  optional string price = 5;
+  // Modify option order iv
+  optional string orderIv = 6;
+}
+
+message TradeBatchCancelRequest {
+  // Request body
+  TradeBatchCancelRequestBody body = 1;
+}
+
+message TradeBatchCancelRequestBody {
+  // Product type
+  string category = 1;
+  repeated TradeBatchCancelRequestBodyRequestItem request = 2;
+}
+
+message TradeBatchCancelRequestBodyRequestItem {
+  // Symbol name
+  string symbol = 1;
+  // Either orderId or orderLinkId is required
+  optional string orderId = 2;
+  // Either orderId or orderLinkId is required
+  optional string orderLinkId = 3;
+}
+
+message TradeBatchPlaceRequest {
+  // Request body
+  TradeBatchPlaceRequestBody body = 1;
+}
+
+message TradeBatchPlaceRequestBody {
+  // Product type. `linear`, `option`
+  string category = 1;
+  repeated TradeBatchPlaceRequestBodyRequestItem request = 2;
+}
+
+message TradeBatchPlaceRequestBodyRequestItem {
+  // Symbol name
+  string symbol = 1;
+  string side = 2;
+  // Order type
+  string orderType = 3;
+  string qty = 4;
+  optional string price = 5;
+  optional string orderIv = 6;
+  // Time in force
+  string timeInForce = 7;
+  // Position mode. one-way mode only for unified.
+  optional int64 positionIdx = 8;
+  // REQUIRED param when place an option order
+  string orderLinkId = 9;
+  // specify true if a close position order
+  optional bool reduceOnly = 10;
+  // enable market marker protection
+  optional bool mmp = 11;
+  // Smp execution type
+  optional string smpType = 12;
+}
+
+message TradeCancelAllRequest {
+  // Request body
+  TradeCancelAllRequestBody body = 1;
+}
+
+message TradeCancelAllRequestBody {
+  // Product type
+  string category = 1;
+  // Symbol name. **Required** if not passing baseCoin or settleCoin
+  optional string symbol = 2;
+  // Cancel by base coin. **Required** if not passing symbol or settleCoin
+  optional string baseCoin = 3;
+  // Cancel by settle coin. Does not support `spot`. **Required** if not passing symbol or baseCoin
+  optional string settleCoin = 4;
+}
+
+message TradeCancelOrderRequest {
+  // Request body
+  TradeCancelOrderRequestBody body = 1;
+}
+
+message TradeCancelOrderRequestBody {
+  // Product type
+  string category = 1;
+  // Symbol name
+  string symbol = 2;
+  // Either orderId or orderLinkId is required
+  optional string orderId = 3;
+  // Either orderId or orderLinkId is required
+  optional string orderLinkId = 4;
+  // Take profit stop loss or ordinary order. Only valid for spot.
+  optional string orderFilter = 5;
+}
+
+message TradeCreateOrderRequest {
+  // Request body
+  TradeCreateOrderRequestBody body = 1;
+}
+
+message TradeCreateOrderRequestBody {
+  // Product type
+  string category = 1;
+  // Symbol name
+  string symbol = 2;
+  // Whether to loan, only for spot. 0:No;1:Yes.
+  optional int64 isLeverage = 3;
+  string side = 4;
+  // Order type
+  string orderType = 5;
+  // Order qty
+  string qty = 6;
+  // ignore it if Market order
+  optional string price = 7;
+  // param for StopOrder
+  optional string triggerPrice = 8;
+  // param for StopOrder. 1=rise, 2=fall
+  optional int64 triggerDirection = 9;
+  // param for StopOrder
+  optional string triggerBy = 10;
+  // Take profit stop loss, normal order or conditional order. Only valid for spot.
+  optional string orderFilter = 11;
+  // Implied volatility. param for option order
+  optional string orderIv = 12;
+  // Time in force
+  optional string timeInForce = 13;
+  // 0=one-way mode, 1=buy-hedge-mode, 2=sell-hedge-mode
+  optional int64 positionIdx = 14;
+  // required param for option order
+  optional string orderLinkId = 15;
+  // Take profit price
+  optional string takeProfit = 16;
+  // Stop loss price
+  optional string stopLoss = 17;
+  // Trigger take profit price price type
+  optional string tpTriggerBy = 18;
+  // Trigger stop loss price price type
+  optional string slTriggerBy = 19;
+  // specify true if a close position order
+  optional bool reduceOnly = 20;
+  // close on trigger
+  optional bool closeOnTrigger = 21;
+  // Smp execution type
+  optional string smpType = 22;
+  // market marker protection. for option order
+  optional bool mmp = 23;
+  // TP/SL mode
+  optional string tpslMode = 24;
+  // The limit order price when take profit price is triggered
+  optional string tpLimitPrice = 25;
+  // The limit order price when stop loss price is triggered
+  optional string slLimitPrice = 26;
+  // The order type when take profit is triggered
+  optional string tpOrderType = 27;
+  // The order type when stop loss is triggered
+  optional string slOrderType = 28;
+}
+
+message TradeOpenOrderRequest {
+  // Product type
+  string category = 1;
+  // Symbol name
+  optional string symbol = 2;
+  // Base coin
+  optional string baseCoin = 3;
+  // Settle coin. Spot is not available
+  optional string settleCoin = 4;
+  optional string orderId = 5;
+  // User customised order id
+  optional string orderLinkId = 6;
+  // Order filter. Default：all kinds of orders
+  optional string orderFilter = 7;
+  // Whether to only query active orders, if openOnly = 0, only get active orders. If it is 1, return only the order data of the final status (cancelled/rejected/completely filled, etc.) in the last 10 minutes
+  optional int64 openOnly = 8;
+  // 1-50. max 50
+  optional int64 limit = 9;
+  // cursor, used for pagination
+  optional string cursor = 10;
+}
+
+message TradeOrderListRequest {
+  // Product type
+  string category = 1;
+  // Symbol name
+  optional string symbol = 2;
+  // Base coin
+  optional string baseCoin = 3;
+  optional string orderId = 4;
+  // User customised order id
+  optional string orderLinkId = 5;
+  // The start timestamp (ms)
+  optional int64 startTime = 6;
+  // The end timestamp (ms)
+  optional int64 endTime = 7;
+  // Order status
+  optional string orderStatus = 8;
+  // Order filter
+  optional string orderFilter = 9;
+  // 1-50. max 50
+  optional int64 limit = 10;
+  // cursor to pagnition
+  optional string cursor = 11;
+}
+
+message TradeQuerySpotQuotaRequest {
+  // Product type
+  string category = 1;
+  // Symbol name
+  string symbol = 2;
+  // Buy or Sell
+  string side = 3;
+}
+
+message UserAffiliateInfoRequest {
+  // The main UID of referral
+  string uid = 1;
+}
+
+message UserApikeyInfoRequest {
+}
+
+message UserListSubApikeysRequest {
+  // Sub UID
+  string subMemberId = 1;
+  // 1-20. max 20
+  optional int64 limit = 2;
+  // cursor, used for pagination
+  optional string cursor = 3;
+}
+
+message UserWalletTypeRequest {
+  // Main UID or Sub UIDs
+  optional string memberIds = 1;
+}

@@ -1,0 +1,110 @@
+syntax = "proto3";
+
+package stratz.v1;
+
+import "google/protobuf/struct.proto";
+
+// StratzService provides Dota 2 data from the STRATZ GraphQL API.
+//
+// STRATZ runs on a GraphQL endpoint (https://api.stratz.com/graphql), and each
+// RPC below maps to a specific GraphQL operation so AI agents can call it as a
+// typed tool via MCP/CLI/HTTP/gRPC.
+//
+// Authentication:
+// - Set STRATZ_API_KEY in the environment.
+// - The runtime sends Authorization: Bearer <token>.
+service StratzService {
+  // Execute any raw GraphQL query text against STRATZ.
+  //
+  // Use this for custom fields not covered by convenience methods.
+  // Variables should be provided as a JSON object via `variables`.
+  rpc ExecuteRawQuery(ExecuteRawQueryRequest) returns (google.protobuf.Struct);
+
+  // Get high-level summary data for a single match.
+  //
+  // Includes match identifiers, start time, duration, and winner.
+  rpc GetMatchSummary(GetMatchRequest) returns (google.protobuf.Struct);
+
+  // Get all player rows for a match, including hero and lane context.
+  //
+  // Useful when you want per-player KDA and role/lane snapshots.
+  rpc GetMatchPlayers(GetMatchRequest) returns (google.protobuf.Struct);
+
+  // Get lane outcome-style player stats for a match.
+  //
+  // Includes lane, role, net worth per minute, and KDA for each player.
+  rpc GetMatchLaneOutcomes(GetMatchRequest) returns (google.protobuf.Struct);
+
+  // Get Dota Plus hero levels and first-blood timing from a match.
+  //
+  // Useful for hero mastery and match pacing analysis.
+  rpc GetMatchDotaPlusLevels(GetMatchRequest) returns (google.protobuf.Struct);
+
+  // Get recent matches for a player account.
+  //
+  // Supports pagination with `before_match_id` and result size with `take`.
+  rpc GetPlayerRecentMatches(GetPlayerRecentMatchesRequest) returns (google.protobuf.Struct);
+
+  // Get STRATZ hero constants table.
+  //
+  // Returns canonical hero IDs and names from STRATZ constants.
+  rpc GetConstantsHeroes(GetConstantsRequest) returns (google.protobuf.Struct);
+
+  // Get STRATZ item constants table.
+  //
+  // Returns canonical item IDs and names from STRATZ constants.
+  rpc GetConstantsItems(GetConstantsRequest) returns (google.protobuf.Struct);
+
+  // Get STRATZ ability constants table.
+  //
+  // Returns canonical ability IDs and names from STRATZ constants.
+  rpc GetConstantsAbilities(GetConstantsRequest) returns (google.protobuf.Struct);
+
+  // Get neutral item usage stats for a hero from heroStats.
+  //
+  // By default this targets DIVINE_IMMORTAL bracket for the last week.
+  // You can override bracket enum literals and week timestamp.
+  rpc GetHeroNeutralItemStats(GetHeroNeutralItemStatsRequest) returns (google.protobuf.Struct);
+}
+
+message ExecuteRawQueryRequest {
+  // Full GraphQL query text (query or mutation).
+  string query = 1;
+
+  // Variables object supplied to GraphQL request body.
+  google.protobuf.Struct variables = 2;
+
+  // Optional operation name for multi-operation documents.
+  string operation_name = 3;
+}
+
+message GetMatchRequest {
+  // Dota match ID (64-bit integer).
+  int64 match_id = 1;
+}
+
+message GetPlayerRecentMatchesRequest {
+  // Steam account ID for the player.
+  int64 steam_account_id = 1;
+
+  // Number of matches to return (default 10 if omitted).
+  int32 take = 2;
+
+  // Optional cursor for pagination (fetch matches older than this ID).
+  int64 before_match_id = 3;
+}
+
+message GetConstantsRequest {}
+
+message GetHeroNeutralItemStatsRequest {
+  // Hero ID from STRATZ constants.
+  int32 hero_id = 1;
+
+  // Unix timestamp for the week boundary used by heroStats.
+  // If omitted, service defaults to now minus 7 days.
+  int64 week_unix = 2;
+
+  // Optional STRATZ bracket enum literals (e.g., "DIVINE_IMMORTAL").
+  // If omitted, defaults to ["DIVINE_IMMORTAL"].
+  repeated string bracket_basic_ids = 3;
+}

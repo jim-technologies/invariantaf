@@ -1,0 +1,109 @@
+name: CI Python Adapters
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint:
+    name: lint (${{ matrix.adapter }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        adapter:
+          - alpaca
+          - alphavantage
+          - arxiv
+          - bybit
+          - cocktaildb
+          - coingecko
+          - defillama
+          - exchangerate
+          - finnhub
+          - fred
+          - fun
+          - github
+          - hackernews
+          - hyperliquid
+          - kalshi
+          - kraken
+          - lichess
+          - nasa
+          - opendota
+          - openlibrary
+          - openweathermap
+          - packageregistry
+          - pokeapi
+          - polymarket
+          - jsonplaceholder
+          - reddit
+          - secedgar
+          - spacex
+          - stratz
+          - tmdb
+          - wikipedia
+          - xkcd
+    defaults:
+      run:
+        working-directory: ${{ matrix.adapter }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Flox
+        uses: flox/install-flox-action@v2
+
+      - name: Run lint
+        run: flox activate -c "make lint"
+
+  test:
+    name: test (${{ matrix.adapter }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        adapter:
+          - alpaca
+          - alphavantage
+          - arxiv
+          - bybit
+          - cocktaildb
+          - coingecko
+          - defillama
+          - exchangerate
+          - finnhub
+          - fred
+          - fun
+          - github
+          - hackernews
+          - hyperliquid
+          - kalshi
+          - kraken
+          - lichess
+          - nasa
+          - opendota
+          - openlibrary
+          - openweathermap
+          - packageregistry
+          - pokeapi
+          - polymarket
+          - jsonplaceholder
+          - reddit
+          - secedgar
+          - spacex
+          - stratz
+          - tmdb
+          - wikipedia
+          - xkcd
+    defaults:
+      run:
+        working-directory: ${{ matrix.adapter }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Flox
+        uses: flox/install-flox-action@v2
+
+      - name: Run tests
+        run: flox activate -c "make test"

@@ -1,0 +1,259 @@
+syntax = "proto3";
+
+package openlibrary.v1;
+
+// OpenLibraryService provides book, author, and edition data from Open Library,
+// the world's largest open, editable library catalog.
+//
+// All endpoints are **free and require no authentication**.
+// Data covers millions of books, authors, and editions.
+//
+// Use this to search for books, look up authors, find editions by ISBN,
+// and discover trending or recently changed content.
+service OpenLibraryService {
+
+  // Search for books by keyword.
+  //
+  // Full-text search across titles, authors, and subjects.
+  // Returns title, author names, first publish year, ISBNs, cover IDs,
+  // page counts, and subjects for each matching work.
+  rpc SearchBooks(SearchBooksRequest) returns (SearchBooksResponse);
+
+  // Search for books by author name.
+  //
+  // Finds books written by an author matching the given name.
+  // Returns the same fields as SearchBooks but filtered by author.
+  rpc SearchByAuthor(SearchByAuthorRequest) returns (SearchByAuthorResponse);
+
+  // Get books by subject or topic.
+  //
+  // Browse books categorized under a specific subject like "fantasy",
+  // "science_fiction", "history", etc. Use underscores for multi-word subjects.
+  rpc SearchBySubject(SearchBySubjectRequest) returns (SearchBySubjectResponse);
+
+  // Get book details by Open Library work ID.
+  //
+  // Returns detailed information about a work including title, description,
+  // subjects, cover IDs, and creation date. The work_id is the Open Library
+  // identifier (e.g., "OL45883W" for The Lord of the Rings).
+  rpc GetBook(GetBookRequest) returns (GetBookResponse);
+
+  // Get a specific edition by Open Library edition ID.
+  //
+  // Returns edition-specific details including title, publishers, publish date,
+  // ISBNs, page count, and cover IDs. The edition_id is the Open Library
+  // identifier (e.g., "OL7353617M").
+  rpc GetEdition(GetEditionRequest) returns (GetEditionResponse);
+
+  // Get author details by Open Library author ID.
+  //
+  // Returns author information including name, bio, birth/death dates,
+  // photo IDs, and external links. The author_id is the Open Library
+  // identifier (e.g., "OL23919A" for J.R.R. Tolkien).
+  rpc GetAuthor(GetAuthorRequest) returns (GetAuthorResponse);
+
+  // List works by an author.
+  //
+  // Returns a paginated list of works (books) written by the given author.
+  // Each work includes title, cover IDs, and first publish year.
+  rpc GetAuthorWorks(GetAuthorWorksRequest) returns (GetAuthorWorksResponse);
+
+  // Look up a book by ISBN.
+  //
+  // Resolves an ISBN-10 or ISBN-13 to an Open Library edition.
+  // Returns the same edition details as GetEdition.
+  rpc GetBookByISBN(GetBookByISBNRequest) returns (GetBookByISBNResponse);
+
+  // Get recent changes to Open Library.
+  //
+  // Returns the most recent edits made to Open Library records,
+  // including the type of change, author, timestamp, and comment.
+  rpc GetRecentChanges(GetRecentChangesRequest) returns (GetRecentChangesResponse);
+
+  // Get currently trending books on Open Library.
+  //
+  // Returns books that are currently popular/trending on Open Library
+  // based on daily activity, including title, author, cover, and availability.
+  rpc GetTrendingBooks(GetTrendingBooksRequest) returns (GetTrendingBooksResponse);
+}
+
+// --- Domain types ---
+
+message BookResult {
+  string title = 1;
+  repeated string author_name = 2;
+  int32 first_publish_year = 3;
+  repeated string isbn = 4;
+  int32 cover_i = 5;
+  int32 number_of_pages = 6;
+  repeated string subject = 7;
+  string key = 8;
+}
+
+message SubjectWork {
+  string title = 1;
+  repeated string authors = 2;
+  string key = 3;
+  int32 cover_id = 4;
+  int32 edition_count = 5;
+  int32 first_publish_year = 6;
+}
+
+message AuthorLink {
+  string title = 1;
+  string url = 2;
+}
+
+message AuthorWork {
+  string title = 1;
+  string key = 2;
+  repeated int32 covers = 3;
+  int32 first_publish_year = 4;
+}
+
+message RecentChange {
+  string kind = 1;
+  string author = 2;
+  string timestamp = 3;
+  string comment = 4;
+  string id = 5;
+}
+
+message TrendingBook {
+  string title = 1;
+  string author_name = 2;
+  string key = 3;
+  int32 cover_i = 4;
+  int32 first_publish_year = 5;
+  string availability = 6;
+}
+
+// --- Request / Response messages ---
+
+message SearchBooksRequest {
+  // Search query (e.g., "the lord of the rings").
+  string query = 1;
+  // Maximum number of results to return. Default 10.
+  int32 limit = 2;
+}
+
+message SearchBooksResponse {
+  int32 num_found = 1;
+  repeated BookResult books = 2;
+}
+
+message SearchByAuthorRequest {
+  // Author name to search for (e.g., "tolkien").
+  string name = 1;
+  // Maximum number of results to return. Default 10.
+  int32 limit = 2;
+}
+
+message SearchByAuthorResponse {
+  int32 num_found = 1;
+  repeated BookResult books = 2;
+}
+
+message SearchBySubjectRequest {
+  // Subject name (e.g., "fantasy", "science_fiction", "history").
+  string subject = 1;
+  // Maximum number of results to return. Default 10.
+  int32 limit = 2;
+}
+
+message SearchBySubjectResponse {
+  string name = 1;
+  int32 work_count = 2;
+  repeated SubjectWork works = 3;
+}
+
+message GetBookRequest {
+  // Open Library work ID (e.g., "OL45883W").
+  string work_id = 1;
+}
+
+message GetBookResponse {
+  string title = 1;
+  string description = 2;
+  repeated string subjects = 3;
+  repeated int32 covers = 4;
+  string created = 5;
+  string key = 6;
+}
+
+message GetEditionRequest {
+  // Open Library edition ID (e.g., "OL7353617M").
+  string edition_id = 1;
+}
+
+message GetEditionResponse {
+  string title = 1;
+  repeated string publishers = 2;
+  string publish_date = 3;
+  repeated string isbn_13 = 4;
+  repeated string isbn_10 = 5;
+  int32 number_of_pages = 6;
+  repeated int32 covers = 7;
+  string key = 8;
+}
+
+message GetAuthorRequest {
+  // Open Library author ID (e.g., "OL23919A").
+  string author_id = 1;
+}
+
+message GetAuthorResponse {
+  string name = 1;
+  string bio = 2;
+  string birth_date = 3;
+  string death_date = 4;
+  repeated int32 photos = 5;
+  repeated AuthorLink links = 6;
+  string key = 7;
+}
+
+message GetAuthorWorksRequest {
+  // Open Library author ID (e.g., "OL23919A").
+  string author_id = 1;
+  // Maximum number of results to return. Default 10.
+  int32 limit = 2;
+}
+
+message GetAuthorWorksResponse {
+  int32 size = 1;
+  repeated AuthorWork works = 2;
+}
+
+message GetBookByISBNRequest {
+  // ISBN-10 or ISBN-13 (e.g., "9780261103573").
+  string isbn = 1;
+}
+
+message GetBookByISBNResponse {
+  string title = 1;
+  repeated string publishers = 2;
+  string publish_date = 3;
+  repeated string isbn_13 = 4;
+  repeated string isbn_10 = 5;
+  int32 number_of_pages = 6;
+  repeated int32 covers = 7;
+  string key = 8;
+}
+
+message GetRecentChangesRequest {
+  // Maximum number of results to return. Default 10.
+  int32 limit = 1;
+}
+
+message GetRecentChangesResponse {
+  repeated RecentChange changes = 1;
+}
+
+message GetTrendingBooksRequest {
+  // Maximum number of results to return. Default 10.
+  int32 limit = 1;
+}
+
+message GetTrendingBooksResponse {
+  repeated TrendingBook books = 1;
+}

@@ -1,0 +1,286 @@
+syntax = "proto3";
+
+package pokeapi.v1;
+
+// PokeAPIService provides Pokemon data from PokeAPI,
+// the world's most comprehensive Pokemon data source.
+//
+// All endpoints are **free and require no authentication**.
+// Data covers 1,000+ Pokemon, moves, abilities, types, items, and more.
+//
+// Use this to look up Pokemon stats, find type matchups, explore evolution
+// chains, and get detailed info on any Pokemon game mechanic.
+service PokeAPIService {
+
+  // Get detailed information about a specific Pokemon.
+  //
+  // Look up any Pokemon by name or ID (e.g., "pikachu", "25").
+  // Returns types, base stats (HP/Atk/Def/SpA/SpD/Spe), abilities,
+  // height, weight, and sprite URLs.
+  rpc GetPokemon(GetPokemonRequest) returns (GetPokemonResponse);
+
+  // Get species-level information about a Pokemon.
+  //
+  // Returns flavor text, genus, generation, habitat, and whether
+  // the Pokemon is legendary or mythical. Also provides the
+  // evolution chain URL for further lookup.
+  rpc GetPokemonSpecies(GetPokemonSpeciesRequest) returns (GetPokemonSpeciesResponse);
+
+  // Get detailed information about an ability.
+  //
+  // Look up any ability by name or ID (e.g., "static", "overgrow").
+  // Returns the ability's effect description and which Pokemon can have it.
+  rpc GetAbility(GetAbilityRequest) returns (GetAbilityResponse);
+
+  // Get detailed information about a move.
+  //
+  // Look up any move by name or ID (e.g., "thunderbolt", "flamethrower").
+  // Returns power, accuracy, PP, type, damage class, and effect description.
+  rpc GetMove(GetMoveRequest) returns (GetMoveResponse);
+
+  // Get type matchup information.
+  //
+  // Look up any type by name or ID (e.g., "fire", "water", "electric").
+  // Returns full damage relations: double_damage_to, half_damage_to,
+  // no_damage_to, and their defensive counterparts.
+  rpc GetType(GetTypeRequest) returns (GetTypeResponse);
+
+  // Get a full evolution chain.
+  //
+  // Look up by evolution chain ID (numeric). Returns the complete
+  // chain from base form through all evolution stages, including
+  // evolution triggers and conditions.
+  rpc GetEvolutionChain(GetEvolutionChainRequest) returns (GetEvolutionChainResponse);
+
+  // Get information about a Pokemon generation.
+  //
+  // Look up by generation name or ID (e.g., "generation-i", "1").
+  // Returns the main region, and lists of Pokemon species, moves,
+  // and types introduced in that generation.
+  rpc GetGeneration(GetGenerationRequest) returns (GetGenerationResponse);
+
+  // Get detailed information about an item.
+  //
+  // Look up any item by name or ID (e.g., "potion", "master-ball").
+  // Returns the item's effect, category, cost, and sprite URL.
+  rpc GetItem(GetItemRequest) returns (GetItemResponse);
+
+  // Get nature stat modification details.
+  //
+  // Look up any nature by name or ID (e.g., "adamant", "modest").
+  // Returns which stat is increased and which is decreased.
+  rpc GetNature(GetNatureRequest) returns (GetNatureResponse);
+
+  // List Pokemon with pagination.
+  //
+  // Returns a paginated list of all Pokemon with their names and URLs.
+  // Use limit and offset for pagination (default: limit=20, offset=0).
+  rpc ListPokemon(ListPokemonRequest) returns (ListPokemonResponse);
+}
+
+// --- Domain types ---
+
+message PokemonStat {
+  string name = 1;
+  int32 base_stat = 2;
+  int32 effort = 3;
+}
+
+message PokemonAbility {
+  string name = 1;
+  bool is_hidden = 2;
+  int32 slot = 3;
+}
+
+message PokemonType {
+  string name = 1;
+  int32 slot = 2;
+}
+
+message PokemonSprites {
+  string front_default = 1;
+  string front_shiny = 2;
+  string back_default = 3;
+  string back_shiny = 4;
+}
+
+message NamedResource {
+  string name = 1;
+  string url = 2;
+}
+
+message DamageRelations {
+  repeated string double_damage_to = 1;
+  repeated string half_damage_to = 2;
+  repeated string no_damage_to = 3;
+  repeated string double_damage_from = 4;
+  repeated string half_damage_from = 5;
+  repeated string no_damage_from = 6;
+}
+
+message EvolutionLink {
+  string species_name = 1;
+  // Trigger for evolving into this species (e.g., "level-up", "trade", "use-item").
+  string trigger = 2;
+  // Minimum level required, or 0 if not level-based.
+  int32 min_level = 3;
+  // Item needed for evolution, if any.
+  string item = 4;
+  // Next evolutions from this species.
+  repeated EvolutionLink evolves_to = 5;
+}
+
+message AbilityPokemon {
+  string name = 1;
+  bool is_hidden = 2;
+}
+
+// --- Request / Response messages ---
+
+message GetPokemonRequest {
+  // Pokemon name or ID (e.g., "pikachu" or "25").
+  string name_or_id = 1;
+}
+
+message GetPokemonResponse {
+  int32 id = 1;
+  string name = 2;
+  repeated PokemonType types = 3;
+  repeated PokemonStat stats = 4;
+  repeated PokemonAbility abilities = 5;
+  int32 height = 6;
+  int32 weight = 7;
+  PokemonSprites sprites = 8;
+  int32 base_experience = 9;
+  int32 order = 10;
+}
+
+message GetPokemonSpeciesRequest {
+  // Pokemon species name or ID (e.g., "pikachu" or "25").
+  string name_or_id = 1;
+}
+
+message GetPokemonSpeciesResponse {
+  int32 id = 1;
+  string name = 2;
+  string flavor_text = 3;
+  string genus = 4;
+  string generation = 5;
+  string habitat = 6;
+  bool is_legendary = 7;
+  bool is_mythical = 8;
+  string evolution_chain_url = 9;
+  int32 capture_rate = 10;
+  int32 base_happiness = 11;
+  string color = 12;
+  string shape = 13;
+}
+
+message GetAbilityRequest {
+  // Ability name or ID (e.g., "static" or "9").
+  string name_or_id = 1;
+}
+
+message GetAbilityResponse {
+  int32 id = 1;
+  string name = 2;
+  string effect = 3;
+  string short_effect = 4;
+  repeated AbilityPokemon pokemon = 5;
+}
+
+message GetMoveRequest {
+  // Move name or ID (e.g., "thunderbolt" or "85").
+  string name_or_id = 1;
+}
+
+message GetMoveResponse {
+  int32 id = 1;
+  string name = 2;
+  int32 power = 3;
+  int32 accuracy = 4;
+  int32 pp = 5;
+  string type = 6;
+  string damage_class = 7;
+  string effect = 8;
+  string short_effect = 9;
+  int32 priority = 10;
+}
+
+message GetTypeRequest {
+  // Type name or ID (e.g., "fire" or "10").
+  string name_or_id = 1;
+}
+
+message GetTypeResponse {
+  int32 id = 1;
+  string name = 2;
+  DamageRelations damage_relations = 3;
+  repeated string pokemon = 4;
+  repeated string moves = 5;
+}
+
+message GetEvolutionChainRequest {
+  // Evolution chain ID (numeric, e.g., "1").
+  int32 id = 1;
+}
+
+message GetEvolutionChainResponse {
+  int32 id = 1;
+  EvolutionLink chain = 2;
+}
+
+message GetGenerationRequest {
+  // Generation name or ID (e.g., "generation-i" or "1").
+  string name_or_id = 1;
+}
+
+message GetGenerationResponse {
+  int32 id = 1;
+  string name = 2;
+  string main_region = 3;
+  repeated string pokemon_species = 4;
+  repeated string moves = 5;
+  repeated string types = 6;
+}
+
+message GetItemRequest {
+  // Item name or ID (e.g., "potion" or "17").
+  string name_or_id = 1;
+}
+
+message GetItemResponse {
+  int32 id = 1;
+  string name = 2;
+  string effect = 3;
+  string short_effect = 4;
+  string category = 5;
+  int32 cost = 6;
+  string sprite = 7;
+}
+
+message GetNatureRequest {
+  // Nature name or ID (e.g., "adamant" or "2").
+  string name_or_id = 1;
+}
+
+message GetNatureResponse {
+  int32 id = 1;
+  string name = 2;
+  string increased_stat = 3;
+  string decreased_stat = 4;
+}
+
+message ListPokemonRequest {
+  // Number of results to return (default 20, max 10000).
+  int32 limit = 1;
+  // Offset for pagination (default 0).
+  int32 offset = 2;
+}
+
+message ListPokemonResponse {
+  int32 count = 1;
+  string next = 2;
+  string previous = 3;
+  repeated NamedResource results = 4;
+}

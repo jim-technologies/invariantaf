@@ -1,0 +1,107 @@
+syntax = "proto3";
+
+package jsonplaceholder.v1;
+
+import "google/api/annotations.proto";
+
+// JSONPlaceholder provides fake REST API data for testing and prototyping.
+//
+// Free, no authentication required. Data includes posts, comments, users,
+// and todos. Powered by jsonplaceholder.typicode.com.
+//
+// This is a zero-code MCP server: proto definition + connect_http() = done.
+service JsonPlaceholderService {
+
+  // Get a single post by ID.
+  //
+  // Returns the post title, body, and author user ID.
+  // Example: id=1 returns "sunt aut facere repellat provident..."
+  rpc GetPost(GetPostRequest) returns (GetPostResponse) {
+    option (google.api.http) = {
+      get: "/posts/{id}"
+    };
+  }
+
+  // Get a single user by ID.
+  //
+  // Returns the user's name, email, phone, website, and company.
+  // Example: id=1 returns Leanne Graham's profile.
+  rpc GetUser(GetUserRequest) returns (GetUserResponse) {
+    option (google.api.http) = {
+      get: "/users/{id}"
+    };
+  }
+
+  // Get a single todo item by ID.
+  //
+  // Returns the todo title, completion status, and owner user ID.
+  // Example: id=1 returns "delectus aut autem" (not completed).
+  rpc GetTodo(GetTodoRequest) returns (GetTodoResponse) {
+    option (google.api.http) = {
+      get: "/todos/{id}"
+    };
+  }
+
+  // Get a single comment by ID.
+  //
+  // Returns the comment name, email, and body text.
+  // Example: id=1 returns "id labore ex et quam laborum".
+  rpc GetComment(GetCommentRequest) returns (GetCommentResponse) {
+    option (google.api.http) = {
+      get: "/comments/{id}"
+    };
+  }
+}
+
+// --- Request / Response messages ---
+
+message GetPostRequest {
+  // Post ID (1-100).
+  int32 id = 1;
+}
+
+message GetPostResponse {
+  int32 user_id = 1;
+  int32 id = 2;
+  string title = 3;
+  string body = 4;
+}
+
+message GetUserRequest {
+  // User ID (1-10).
+  int32 id = 1;
+}
+
+message GetUserResponse {
+  int32 id = 1;
+  string name = 2;
+  string username = 3;
+  string email = 4;
+  string phone = 5;
+  string website = 6;
+}
+
+message GetTodoRequest {
+  // Todo ID (1-200).
+  int32 id = 1;
+}
+
+message GetTodoResponse {
+  int32 user_id = 1;
+  int32 id = 2;
+  string title = 3;
+  bool completed = 4;
+}
+
+message GetCommentRequest {
+  // Comment ID (1-500).
+  int32 id = 1;
+}
+
+message GetCommentResponse {
+  int32 post_id = 1;
+  int32 id = 2;
+  string name = 3;
+  string email = 4;
+  string body = 5;
+}

@@ -1,0 +1,341 @@
+syntax = "proto3";
+
+package giphy.v1;
+
+option go_package = "github.com/jim-technologies/invariantaf/giphy/giphy/v1;giphypb";
+
+// GiphyService provides access to the Giphy API, the world's largest
+// library of animated GIFs, stickers, and short-form video content.
+//
+// Use this service to search for GIFs and stickers by keyword,
+// browse trending content, translate text into relevant GIFs,
+// retrieve random GIFs, look up specific GIFs by ID, and explore
+// content categories.
+//
+// Authentication is via the GIPHY_API_KEY environment variable.
+// A free public beta key (dc6zaTOxFJmzC) is used if none is set.
+service GiphyService {
+  // Search for GIFs by keyword or phrase.
+  //
+  // Returns a paginated list of GIFs matching the search query,
+  // ranked by relevance. Each result includes the GIF title, URL,
+  // multiple image renditions (original, fixed-width, downsized, etc.),
+  // content rating, and source attribution.
+  //
+  // Use the `limit` and `offset` parameters for pagination.
+  // Default limit is 25, maximum is 50.
+  // The `rating` parameter filters results by content rating (g, pg, pg-13, r).
+  // The `lang` parameter specifies the language for regional content (ISO 639-1).
+  rpc Search(SearchRequest) returns (SearchResponse);
+
+  // Get currently trending GIFs on Giphy.
+  //
+  // Returns a paginated list of the most popular GIFs right now,
+  // updated every 15 minutes. Trending data is sourced from user
+  // engagement, shares, and search activity across the Giphy network.
+  //
+  // Useful for discovery and showing popular content when no search
+  // query is provided. Supports pagination via `limit` and `offset`.
+  rpc Trending(TrendingRequest) returns (TrendingResponse);
+
+  // Get a single GIF by its unique Giphy ID.
+  //
+  // Returns the full GIF object including all image renditions,
+  // metadata (title, source, rating, import datetime, trending datetime),
+  // user attribution, and analytics data.
+  //
+  // Use this when you have a specific GIF ID from a previous search
+  // or shared link. Giphy IDs are alphanumeric strings like "xT9IgzoKnwFNmISR8I".
+  rpc GetGifById(GetGifByIdRequest) returns (GetGifByIdResponse);
+
+  // Get multiple GIFs by their Giphy IDs in a single request.
+  //
+  // Returns an array of full GIF objects for the given IDs.
+  // Accepts up to 50 IDs per request. Any invalid IDs are silently
+  // skipped. The order of results matches the order of the input IDs.
+  //
+  // Efficient for batch lookups, e.g. displaying a user's saved GIF collection.
+  rpc GetGifsByIds(GetGifsByIdsRequest) returns (GetGifsByIdsResponse);
+
+  // Get a single random GIF, optionally filtered by a tag/keyword.
+  //
+  // Returns one randomly selected GIF. If a `tag` is provided,
+  // the random selection is limited to GIFs matching that tag.
+  // The `rating` parameter can further filter by content rating.
+  //
+  // Useful for "I'm feeling lucky" features, random conversation starters,
+  // or injecting variety into displays. Each call returns a different GIF.
+  rpc Random(RandomRequest) returns (RandomResponse);
+
+  // Search for stickers by keyword or phrase.
+  //
+  // Same as Search but returns sticker content instead of GIFs.
+  // Stickers are animated images with transparent backgrounds,
+  // designed for overlaying on other content.
+  //
+  // Supports the same pagination, rating, and language parameters as Search.
+  rpc SearchStickers(SearchStickersRequest) returns (SearchStickersResponse);
+
+  // Get currently trending stickers on Giphy.
+  //
+  // Returns a paginated list of the most popular stickers right now.
+  // Same behavior as Trending but for sticker content.
+  // Stickers have transparent backgrounds and are ideal for overlays.
+  rpc TrendingStickers(TrendingStickersRequest) returns (TrendingStickersResponse);
+
+  // Get a single random sticker, optionally filtered by a tag/keyword.
+  //
+  // Same as Random but returns a sticker instead of a GIF.
+  // Stickers have transparent backgrounds suitable for overlaying
+  // on images, videos, or other content.
+  rpc RandomSticker(RandomStickerRequest) returns (RandomStickerResponse);
+
+  // Translate a word or phrase into the most relevant GIF.
+  //
+  // Uses Giphy's "WeirdnessMeter" algorithm to translate text into
+  // a single GIF. The `weirdness` parameter (0-10) controls how
+  // unexpected/creative the translation is. Lower values return
+  // more literal matches; higher values return more abstract ones.
+  //
+  // Designed for conversational AI, chatbots, and messaging apps
+  // where you want to map a text sentiment to a single GIF response.
+  rpc Translate(TranslateRequest) returns (TranslateResponse);
+
+  // Get a list of GIF content categories on Giphy.
+  //
+  // Returns the top-level categories used to organize GIF content,
+  // such as "Actions", "Adjectives", "Animals", "Anime", etc.
+  // Each category includes a name, a representative GIF, and
+  // subcategories for deeper browsing.
+  //
+  // Useful for building browsable GIF galleries or category-based
+  // navigation interfaces.
+  rpc GetCategories(GetCategoriesRequest) returns (GetCategoriesResponse);
+}
+
+// --- Domain types ---
+
+// Gif represents a single GIF object from the Giphy API.
+message Gif {
+  // The unique Giphy identifier for this GIF (e.g., "xT9IgzoKnwFNmISR8I").
+  string id = 1;
+  // The URL to the Giphy page for this GIF.
+  string url = 2;
+  // The title of the GIF.
+  string title = 3;
+  // The content rating (g, pg, pg-13, r).
+  string rating = 4;
+  // The date this GIF was imported to Giphy (ISO 8601 format).
+  string import_datetime = 5;
+  // The date this GIF started trending, if applicable.
+  string trending_datetime = 6;
+  // The source URL where this GIF was originally found.
+  string source = 7;
+  // A short URL for sharing (e.g., "https://gph.is/abc123").
+  string bitly_url = 8;
+  // The embed URL for iframe embedding.
+  string embed_url = 9;
+  // The username of the Giphy user who uploaded this GIF.
+  string username = 10;
+  // The URL to the original full-size image.
+  string original_url = 11;
+  // Width of the original image in pixels.
+  string original_width = 12;
+  // Height of the original image in pixels.
+  string original_height = 13;
+  // URL of the fixed-width (200px) rendition.
+  string fixed_width_url = 14;
+  // URL of the fixed-height (200px) rendition.
+  string fixed_height_url = 15;
+  // URL of the downsized rendition (under 2MB for previews).
+  string downsized_url = 16;
+  // URL of the preview rendition (under 50KB, small dimensions).
+  string preview_url = 17;
+  // The slug portion of the GIF's Giphy URL.
+  string slug = 18;
+  // The type of content ("gif" or "sticker").
+  string type = 19;
+}
+
+// Pagination holds paging metadata for list responses.
+message Pagination {
+  // Total number of results available.
+  int32 total_count = 1;
+  // Number of results returned in this response.
+  int32 count = 2;
+  // Position offset of the first result in this response.
+  int32 offset = 3;
+}
+
+// Category represents a GIF content category.
+message Category {
+  // The category name (e.g., "Animals", "Actions").
+  string name = 1;
+  // A representative GIF for this category.
+  Gif gif = 2;
+}
+
+// --- Request / Response messages ---
+
+// Request for Search RPC.
+message SearchRequest {
+  // The search query string (e.g., "funny cats", "thumbs up", "mind blown").
+  string query = 1;
+  // Maximum number of GIFs to return (1-50). Defaults to 25.
+  int32 limit = 2;
+  // Results offset for pagination. Defaults to 0.
+  int32 offset = 3;
+  // Content rating filter: "g", "pg", "pg-13", or "r". Defaults to no filter.
+  string rating = 4;
+  // Language code in ISO 639-1 format (e.g., "en", "es", "fr"). Defaults to "en".
+  string lang = 5;
+}
+
+// Response for Search RPC.
+message SearchResponse {
+  // The list of GIFs matching the search query.
+  repeated Gif data = 1;
+  // Pagination metadata.
+  Pagination pagination = 2;
+}
+
+// Request for Trending RPC.
+message TrendingRequest {
+  // Maximum number of GIFs to return (1-50). Defaults to 25.
+  int32 limit = 1;
+  // Results offset for pagination. Defaults to 0.
+  int32 offset = 2;
+  // Content rating filter: "g", "pg", "pg-13", or "r". Defaults to no filter.
+  string rating = 3;
+}
+
+// Response for Trending RPC.
+message TrendingResponse {
+  // The list of currently trending GIFs.
+  repeated Gif data = 1;
+  // Pagination metadata.
+  Pagination pagination = 2;
+}
+
+// Request for GetGifById RPC.
+message GetGifByIdRequest {
+  // The Giphy GIF ID to look up (e.g., "xT9IgzoKnwFNmISR8I").
+  string id = 1;
+}
+
+// Response for GetGifById RPC.
+message GetGifByIdResponse {
+  // The requested GIF object.
+  Gif data = 1;
+}
+
+// Request for GetGifsByIds RPC.
+message GetGifsByIdsRequest {
+  // List of Giphy GIF IDs to look up. Maximum 50 IDs per request.
+  repeated string ids = 1;
+}
+
+// Response for GetGifsByIds RPC.
+message GetGifsByIdsResponse {
+  // The list of GIF objects for the requested IDs.
+  repeated Gif data = 1;
+}
+
+// Request for Random RPC.
+message RandomRequest {
+  // Optional tag/keyword to filter the random selection (e.g., "cats", "happy").
+  string tag = 1;
+  // Content rating filter: "g", "pg", "pg-13", or "r". Defaults to no filter.
+  string rating = 2;
+}
+
+// Response for Random RPC.
+message RandomResponse {
+  // The randomly selected GIF.
+  Gif data = 1;
+}
+
+// Request for SearchStickers RPC.
+message SearchStickersRequest {
+  // The search query string for stickers.
+  string query = 1;
+  // Maximum number of stickers to return (1-50). Defaults to 25.
+  int32 limit = 2;
+  // Results offset for pagination. Defaults to 0.
+  int32 offset = 3;
+  // Content rating filter: "g", "pg", "pg-13", or "r". Defaults to no filter.
+  string rating = 4;
+  // Language code in ISO 639-1 format (e.g., "en", "es"). Defaults to "en".
+  string lang = 5;
+}
+
+// Response for SearchStickers RPC.
+message SearchStickersResponse {
+  // The list of stickers matching the search query.
+  repeated Gif data = 1;
+  // Pagination metadata.
+  Pagination pagination = 2;
+}
+
+// Request for TrendingStickers RPC.
+message TrendingStickersRequest {
+  // Maximum number of stickers to return (1-50). Defaults to 25.
+  int32 limit = 1;
+  // Results offset for pagination. Defaults to 0.
+  int32 offset = 2;
+  // Content rating filter: "g", "pg", "pg-13", or "r". Defaults to no filter.
+  string rating = 3;
+}
+
+// Response for TrendingStickers RPC.
+message TrendingStickersResponse {
+  // The list of currently trending stickers.
+  repeated Gif data = 1;
+  // Pagination metadata.
+  Pagination pagination = 2;
+}
+
+// Request for RandomSticker RPC.
+message RandomStickerRequest {
+  // Optional tag/keyword to filter the random sticker selection.
+  string tag = 1;
+  // Content rating filter: "g", "pg", "pg-13", or "r". Defaults to no filter.
+  string rating = 2;
+}
+
+// Response for RandomSticker RPC.
+message RandomStickerResponse {
+  // The randomly selected sticker.
+  Gif data = 1;
+}
+
+// Request for Translate RPC.
+message TranslateRequest {
+  // The text to translate into a GIF (e.g., "I'm so excited", "good morning").
+  string query = 1;
+  // Weirdness factor from 0 to 10. Higher values return more unexpected GIFs.
+  // 0 = most literal match, 10 = most creative/abstract. Defaults to 0.
+  int32 weirdness = 2;
+  // Content rating filter: "g", "pg", "pg-13", or "r". Defaults to no filter.
+  string rating = 3;
+}
+
+// Response for Translate RPC.
+message TranslateResponse {
+  // The translated GIF.
+  Gif data = 1;
+}
+
+// Request for GetCategories RPC.
+message GetCategoriesRequest {
+  // Maximum number of categories to return. Defaults to 25.
+  int32 limit = 1;
+  // Results offset for pagination. Defaults to 0.
+  int32 offset = 2;
+}
+
+// Response for GetCategories RPC.
+message GetCategoriesResponse {
+  // The list of GIF categories.
+  repeated Category data = 1;
+}

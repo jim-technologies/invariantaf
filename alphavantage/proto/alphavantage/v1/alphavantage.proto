@@ -1,0 +1,341 @@
+syntax = "proto3";
+
+package alphavantage.v1;
+
+// AlphaVantageService provides stock market data, technical indicators,
+// and company fundamentals from Alpha Vantage, a leading provider of
+// free and premium financial market data APIs.
+//
+// Covers US and international equities, ETFs, mutual funds, forex, and crypto.
+// Requires an API key (free at alphavantage.co), set via ALPHA_VANTAGE_API_KEY
+// environment variable. The free tier allows 25 requests per day.
+//
+// Use this to look up stock quotes, analyze price history, compute
+// technical indicators (SMA, RSI, MACD), and retrieve company fundamentals.
+service AlphaVantageService {
+
+  // Get the real-time price quote for a stock or ETF.
+  //
+  // Returns the latest price, change, change percent, volume,
+  // and the most recent trading day. Works for any US-listed ticker
+  // (e.g., "AAPL", "MSFT", "SPY", "QQQ").
+  rpc GetQuote(GetQuoteRequest) returns (GetQuoteResponse);
+
+  // Search for stocks, ETFs, or mutual funds by name or ticker.
+  //
+  // Returns matching symbols with their full names, types, regions,
+  // and currencies. Use this to find the correct ticker symbol
+  // before calling other endpoints.
+  // Example queries: "Apple", "MSFT", "Tesla", "Vanguard S&P 500"
+  rpc SearchSymbol(SearchSymbolRequest) returns (SearchSymbolResponse);
+
+  // Get daily OHLCV (Open-High-Low-Close-Volume) price history for a stock.
+  //
+  // Returns up to 20+ years of daily price bars. Use outputsize="full"
+  // for the complete history or "compact" (default) for the last 100 days.
+  // Ideal for charting, backtesting, and historical analysis.
+  rpc GetDailyTimeSeries(GetDailyTimeSeriesRequest) returns (GetTimeSeriesResponse);
+
+  // Get weekly OHLCV price history for a stock.
+  //
+  // Returns weekly price bars aggregated from daily data.
+  // Each bar covers Monday through Friday. Returns 20+ years of history.
+  // Useful for longer-term trend analysis.
+  rpc GetWeeklyTimeSeries(GetWeeklyTimeSeriesRequest) returns (GetTimeSeriesResponse);
+
+  // Get monthly OHLCV price history for a stock.
+  //
+  // Returns monthly price bars aggregated from daily data.
+  // Each bar covers a full calendar month. Returns 20+ years of history.
+  // Useful for very long-term trend analysis and asset allocation.
+  rpc GetMonthlyTimeSeries(GetMonthlyTimeSeriesRequest) returns (GetTimeSeriesResponse);
+
+  // Get Simple Moving Average (SMA) for a stock.
+  //
+  // Computes the SMA over a specified time period and interval.
+  // Common periods: 20 (short-term), 50 (medium-term), 200 (long-term).
+  // SMA smooths price data to identify trend direction.
+  rpc GetSMA(GetSMARequest) returns (GetIndicatorResponse);
+
+  // Get Relative Strength Index (RSI) for a stock.
+  //
+  // Computes RSI over a specified time period (typically 14).
+  // RSI ranges from 0 to 100: values above 70 suggest overbought conditions,
+  // below 30 suggest oversold. Widely used for momentum analysis.
+  rpc GetRSI(GetRSIRequest) returns (GetIndicatorResponse);
+
+  // Get MACD (Moving Average Convergence Divergence) for a stock.
+  //
+  // Computes the MACD line, signal line, and histogram.
+  // Default parameters: fast=12, slow=26, signal=9.
+  // MACD crossovers are popular buy/sell signals in technical analysis.
+  rpc GetMACD(GetMACDRequest) returns (GetMACDResponse);
+
+  // Get company fundamentals: market cap, P/E ratio, EPS, and more.
+  //
+  // Returns a comprehensive overview of a company including sector,
+  // industry, market capitalization, valuation ratios (P/E, P/B, PEG),
+  // profitability metrics, dividend data, and analyst price targets.
+  // Only works for individual stocks, not ETFs.
+  rpc GetCompanyOverview(GetCompanyOverviewRequest) returns (GetCompanyOverviewResponse);
+
+  // Get quarterly and annual earnings data for a company.
+  //
+  // Returns historical EPS (earnings per share) with reported vs estimated
+  // values and surprise percentages. Covers both annual and quarterly
+  // earnings. Useful for fundamental analysis and earnings tracking.
+  rpc GetEarnings(GetEarningsRequest) returns (GetEarningsResponse);
+}
+
+// --- Domain types ---
+
+message TimeSeriesEntry {
+  // Date string in YYYY-MM-DD format.
+  string date = 1;
+  double open = 2;
+  double high = 3;
+  double low = 4;
+  double close = 5;
+  int64 volume = 6;
+}
+
+message IndicatorEntry {
+  // Date string in YYYY-MM-DD format.
+  string date = 1;
+  double value = 2;
+}
+
+message MACDEntry {
+  // Date string in YYYY-MM-DD format.
+  string date = 1;
+  double macd = 2;
+  double signal = 3;
+  double histogram = 4;
+}
+
+message SymbolMatch {
+  // Ticker symbol (e.g., "AAPL").
+  string symbol = 1;
+  // Full company/fund name.
+  string name = 2;
+  // "Equity", "ETF", "Mutual Fund", etc.
+  string type = 3;
+  // Region (e.g., "United States").
+  string region = 4;
+  // Market open time (e.g., "09:30").
+  string market_open = 5;
+  // Market close time (e.g., "16:00").
+  string market_close = 6;
+  // Timezone (e.g., "UTC-04").
+  string timezone = 7;
+  // Currency (e.g., "USD").
+  string currency = 8;
+  // Match score from 0.0 to 1.0.
+  double match_score = 9;
+}
+
+message AnnualEarnings {
+  // Fiscal year end date (YYYY-MM-DD).
+  string fiscal_date_ending = 1;
+  // Reported annual EPS.
+  double reported_eps = 2;
+}
+
+message QuarterlyEarnings {
+  // Fiscal quarter end date (YYYY-MM-DD).
+  string fiscal_date_ending = 1;
+  // Reported quarterly EPS.
+  double reported_eps = 2;
+  // Analyst consensus EPS estimate.
+  double estimated_eps = 3;
+  // Earnings surprise (reported - estimated).
+  double surprise = 4;
+  // Earnings surprise as a percentage.
+  double surprise_percentage = 5;
+  // Reporting date (YYYY-MM-DD).
+  string reported_date = 6;
+}
+
+// --- Request / Response messages ---
+
+message GetQuoteRequest {
+  // Stock ticker symbol (e.g., "AAPL", "MSFT", "GOOGL").
+  string symbol = 1;
+}
+
+message GetQuoteResponse {
+  // Ticker symbol.
+  string symbol = 1;
+  // Latest price.
+  double price = 2;
+  // Price change from previous close.
+  double change = 3;
+  // Price change as a percentage string (e.g., "1.25%").
+  string change_percent = 4;
+  // Trading volume.
+  int64 volume = 5;
+  // Most recent trading day (YYYY-MM-DD).
+  string latest_trading_day = 6;
+  // Previous close price.
+  double previous_close = 7;
+  // Opening price.
+  double open = 8;
+  // Day high.
+  double high = 9;
+  // Day low.
+  double low = 10;
+}
+
+message SearchSymbolRequest {
+  // Search keywords (e.g., "Apple", "MSFT", "Vanguard").
+  string keywords = 1;
+}
+
+message SearchSymbolResponse {
+  repeated SymbolMatch matches = 1;
+}
+
+message GetDailyTimeSeriesRequest {
+  // Stock ticker symbol (e.g., "AAPL").
+  string symbol = 1;
+  // "compact" (last 100 data points, default) or "full" (20+ years).
+  string outputsize = 2;
+}
+
+message GetWeeklyTimeSeriesRequest {
+  // Stock ticker symbol (e.g., "AAPL").
+  string symbol = 1;
+}
+
+message GetMonthlyTimeSeriesRequest {
+  // Stock ticker symbol (e.g., "AAPL").
+  string symbol = 1;
+}
+
+message GetTimeSeriesResponse {
+  // Metadata: stock symbol.
+  string symbol = 1;
+  // Metadata: last refreshed date.
+  string last_refreshed = 2;
+  // Time series data points, most recent first.
+  repeated TimeSeriesEntry entries = 3;
+}
+
+message GetSMARequest {
+  // Stock ticker symbol (e.g., "AAPL").
+  string symbol = 1;
+  // Time interval: "daily", "weekly", or "monthly". Default "daily".
+  string interval = 2;
+  // Number of data points used to calculate SMA (e.g., 20, 50, 200). Default 20.
+  int32 time_period = 3;
+  // Price type: "close", "open", "high", "low". Default "close".
+  string series_type = 4;
+}
+
+message GetRSIRequest {
+  // Stock ticker symbol (e.g., "AAPL").
+  string symbol = 1;
+  // Time interval: "daily", "weekly", or "monthly". Default "daily".
+  string interval = 2;
+  // Number of data points used to calculate RSI (typically 14). Default 14.
+  int32 time_period = 3;
+  // Price type: "close", "open", "high", "low". Default "close".
+  string series_type = 4;
+}
+
+message GetIndicatorResponse {
+  // Stock symbol.
+  string symbol = 1;
+  // Indicator name (e.g., "SMA", "RSI").
+  string indicator = 2;
+  // Time series of indicator values, most recent first.
+  repeated IndicatorEntry entries = 3;
+}
+
+message GetMACDRequest {
+  // Stock ticker symbol (e.g., "AAPL").
+  string symbol = 1;
+  // Time interval: "daily", "weekly", or "monthly". Default "daily".
+  string interval = 2;
+  // Price type: "close", "open", "high", "low". Default "close".
+  string series_type = 3;
+  // Fast EMA period. Default 12.
+  int32 fast_period = 4;
+  // Slow EMA period. Default 26.
+  int32 slow_period = 5;
+  // Signal line period. Default 9.
+  int32 signal_period = 6;
+}
+
+message GetMACDResponse {
+  // Stock symbol.
+  string symbol = 1;
+  // MACD time series entries, most recent first.
+  repeated MACDEntry entries = 2;
+}
+
+message GetCompanyOverviewRequest {
+  // Stock ticker symbol (e.g., "AAPL", "MSFT").
+  string symbol = 1;
+}
+
+message GetCompanyOverviewResponse {
+  string symbol = 1;
+  string name = 2;
+  string description = 3;
+  string exchange = 4;
+  string currency = 5;
+  string country = 6;
+  string sector = 7;
+  string industry = 8;
+  // Market capitalization in USD.
+  double market_capitalization = 9;
+  // Trailing P/E ratio.
+  double pe_ratio = 10;
+  // PEG ratio.
+  double peg_ratio = 11;
+  // Book value per share.
+  double book_value = 12;
+  // Earnings per share (trailing twelve months).
+  double eps = 13;
+  // Revenue per share (trailing twelve months).
+  double revenue_per_share = 14;
+  // Profit margin.
+  double profit_margin = 15;
+  // Dividend per share (annual).
+  double dividend_per_share = 16;
+  // Dividend yield.
+  double dividend_yield = 17;
+  // 52-week high.
+  double week_high_52 = 18;
+  // 52-week low.
+  double week_low_52 = 19;
+  // 50-day moving average.
+  double moving_average_50 = 20;
+  // 200-day moving average.
+  double moving_average_200 = 21;
+  // Shares outstanding.
+  int64 shares_outstanding = 22;
+  // Price to book ratio.
+  double price_to_book_ratio = 23;
+  // Beta (volatility vs market).
+  double beta = 24;
+  // Analyst target price.
+  double analyst_target_price = 25;
+  // Forward P/E ratio.
+  double forward_pe = 26;
+}
+
+message GetEarningsRequest {
+  // Stock ticker symbol (e.g., "AAPL").
+  string symbol = 1;
+}
+
+message GetEarningsResponse {
+  // Stock symbol.
+  string symbol = 1;
+  // Annual earnings history.
+  repeated AnnualEarnings annual_earnings = 2;
+  // Quarterly earnings history.
+  repeated QuarterlyEarnings quarterly_earnings = 3;
+}

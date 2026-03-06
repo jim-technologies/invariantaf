@@ -1,0 +1,437 @@
+syntax = "proto3";
+
+package unsplash.v1;
+
+option go_package = "github.com/jim-technologies/invariantaf/unsplash/unsplash/v1;unsplashpb";
+
+// UnsplashService provides access to the Unsplash API, the internet's largest
+// source of freely-usable, high-resolution photography.
+//
+// Use this service to search for photos by keyword, browse editorial collections,
+// discover photographers, and retrieve detailed photo metadata including
+// download URLs, EXIF data, and location information.
+//
+// All photos on Unsplash are free to use under the Unsplash License.
+// Authentication is via the UNSPLASH_ACCESS_KEY environment variable.
+service UnsplashService {
+  // Search for photos by keyword or phrase.
+  //
+  // Returns a paginated list of photos matching the search query, ranked by
+  // relevance. Each result includes the photo ID, description, dimensions,
+  // multiple image URLs (raw, full, regular, small, thumb), photographer info,
+  // and engagement metrics (likes, downloads).
+  //
+  // Use `page` and `per_page` for pagination (default 10 results per page,
+  // max 30). Use `order_by` to sort by "relevant" (default) or "latest".
+  // Use `orientation` to filter by "landscape", "portrait", or "squarish".
+  // Use `color` to filter by color tone (e.g., "red", "blue", "black_and_white").
+  rpc SearchPhotos(SearchPhotosRequest) returns (SearchPhotosResponse);
+
+  // Get a single photo by its unique Unsplash ID.
+  //
+  // Returns the full photo object including all image renditions (raw, full,
+  // regular, small, thumb), detailed EXIF data (camera make/model, aperture,
+  // exposure time, focal length, ISO), location information (city, country,
+  // coordinates), photographer profile, tags, and engagement stats.
+  //
+  // Use this when you have a specific photo ID from a previous search or
+  // shared link. Unsplash IDs are alphanumeric strings like "Dwu85P9SOIk".
+  rpc GetPhoto(GetPhotoRequest) returns (GetPhotoResponse);
+
+  // Get one or more random photos, optionally filtered by query, collections,
+  // or topics.
+  //
+  // Returns randomly selected photos from Unsplash. If `query` is provided,
+  // random selection is limited to photos matching that keyword. The `count`
+  // parameter controls how many random photos to return (1-30, default 1).
+  //
+  // Use `orientation` to filter by "landscape", "portrait", or "squarish".
+  // Useful for background images, placeholders, or inspiration feeds.
+  rpc GetRandomPhoto(GetRandomPhotoRequest) returns (GetRandomPhotoResponse);
+
+  // List editorial photos curated by the Unsplash editorial team.
+  //
+  // Returns a paginated list of the latest editorial photos, which are
+  // hand-picked for quality and diversity. Each photo includes full metadata,
+  // image URLs, and photographer attribution.
+  //
+  // Use `page` and `per_page` for pagination (default 10, max 30).
+  // Use `order_by` to sort by "latest" (default), "oldest", or "popular".
+  rpc ListPhotos(ListPhotosRequest) returns (ListPhotosResponse);
+
+  // Search for photo collections by keyword or phrase.
+  //
+  // Returns a paginated list of collections matching the search query.
+  // Each collection includes its title, description, cover photo, total
+  // photo count, and curator information. Collections are curated sets
+  // of photos organized around a theme.
+  //
+  // Use `page` and `per_page` for pagination (default 10, max 30).
+  rpc SearchCollections(SearchCollectionsRequest) returns (SearchCollectionsResponse);
+
+  // Get details of a specific collection by its numeric ID.
+  //
+  // Returns the full collection object including title, description,
+  // total photo count, cover photo, curator profile, and tags.
+  // Use this to get metadata about a collection before fetching its photos.
+  rpc GetCollection(GetCollectionRequest) returns (GetCollectionResponse);
+
+  // Get photos belonging to a specific collection.
+  //
+  // Returns a paginated list of photos in the given collection. Each photo
+  // includes full metadata, image URLs, and photographer attribution.
+  // Photos are returned in the order they were added to the collection.
+  //
+  // Use `page` and `per_page` for pagination (default 10, max 30).
+  rpc GetCollectionPhotos(GetCollectionPhotosRequest) returns (GetCollectionPhotosResponse);
+
+  // Search for Unsplash users (photographers) by keyword.
+  //
+  // Returns a paginated list of user profiles matching the search query.
+  // Each result includes the username, display name, bio, profile image,
+  // portfolio URL, and stats (total photos, likes, collections).
+  //
+  // Use `page` and `per_page` for pagination (default 10, max 30).
+  rpc SearchUsers(SearchUsersRequest) returns (SearchUsersResponse);
+
+  // Get a user's public profile by username.
+  //
+  // Returns the full profile of an Unsplash photographer including their
+  // display name, bio, location, portfolio URL, profile images, social
+  // media links, and aggregate statistics (total photos, likes, downloads,
+  // collections, followers, following).
+  //
+  // Usernames are case-insensitive strings like "johndoe" or "unsplash".
+  rpc GetUser(GetUserRequest) returns (GetUserResponse);
+
+  // Get photos uploaded by a specific user.
+  //
+  // Returns a paginated list of photos by the given username. Each photo
+  // includes full metadata, image URLs, and engagement stats.
+  //
+  // Use `page` and `per_page` for pagination (default 10, max 30).
+  // Use `order_by` to sort by "latest" (default), "oldest", or "popular".
+  // Use `orientation` to filter by "landscape", "portrait", or "squarish".
+  rpc GetUserPhotos(GetUserPhotosRequest) returns (GetUserPhotosResponse);
+}
+
+// --- Domain types ---
+
+// Photo represents a single photo from the Unsplash API.
+message Photo {
+  // The unique Unsplash identifier for this photo (e.g., "Dwu85P9SOIk").
+  string id = 1;
+  // The date this photo was created (ISO 8601 format).
+  string created_at = 2;
+  // The date this photo was last updated (ISO 8601 format).
+  string updated_at = 3;
+  // Width of the photo in pixels.
+  int32 width = 4;
+  // Height of the photo in pixels.
+  int32 height = 5;
+  // A brief text description of the photo.
+  string description = 6;
+  // An alternative text description for accessibility.
+  string alt_description = 7;
+  // The photo's image URLs in various sizes.
+  PhotoUrls urls = 8;
+  // Number of times this photo has been liked.
+  int32 likes = 9;
+  // The photographer who uploaded this photo.
+  User user = 10;
+  // The photo's color as a hex string (e.g., "#6E633A").
+  string color = 11;
+  // Number of times this photo has been downloaded.
+  int32 downloads = 12;
+  // Number of times this photo has been viewed.
+  int32 views = 13;
+  // EXIF metadata (camera, lens, settings).
+  Exif exif = 14;
+  // Location where the photo was taken.
+  Location location = 15;
+  // Tags associated with the photo.
+  repeated Tag tags = 16;
+}
+
+// PhotoUrls contains URLs for various renditions of a photo.
+message PhotoUrls {
+  // The raw image URL with no size constraints. Append query params to resize.
+  string raw = 1;
+  // Full-resolution image URL.
+  string full = 2;
+  // Regular-size image URL (width 1080px).
+  string regular = 3;
+  // Small image URL (width 400px).
+  string small = 4;
+  // Thumbnail image URL (width 200px).
+  string thumb = 5;
+}
+
+// Exif contains camera and exposure metadata for a photo.
+message Exif {
+  // Camera manufacturer (e.g., "Canon", "Nikon", "Sony").
+  string make = 1;
+  // Camera model (e.g., "EOS R5", "D850").
+  string model = 2;
+  // Lens aperture (e.g., "f/2.8").
+  string aperture = 3;
+  // Exposure time (e.g., "1/250").
+  string exposure_time = 4;
+  // Focal length in mm (e.g., "85.0").
+  string focal_length = 5;
+  // ISO sensitivity (e.g., 400).
+  int32 iso = 6;
+}
+
+// Location describes where a photo was taken.
+message Location {
+  // City name (e.g., "Tokyo", "New York").
+  string city = 1;
+  // Country name (e.g., "Japan", "United States").
+  string country = 2;
+  // GPS latitude coordinate.
+  double latitude = 3;
+  // GPS longitude coordinate.
+  double longitude = 4;
+  // Full human-readable location name.
+  string name = 5;
+}
+
+// Tag is a keyword label associated with a photo.
+message Tag {
+  // The tag title (e.g., "nature", "architecture", "portrait").
+  string title = 1;
+}
+
+// User represents an Unsplash photographer or curator.
+message User {
+  // The unique Unsplash user ID.
+  string id = 1;
+  // The user's username (URL-safe handle).
+  string username = 2;
+  // The user's display name.
+  string name = 3;
+  // The user's bio/description.
+  string bio = 4;
+  // The user's geographic location.
+  string location = 5;
+  // URL to the user's external portfolio website.
+  string portfolio_url = 6;
+  // Total number of photos uploaded by this user.
+  int32 total_photos = 7;
+  // Total number of likes received across all photos.
+  int32 total_likes = 8;
+  // Total number of collections curated by this user.
+  int32 total_collections = 9;
+  // URL to the user's small profile image.
+  string profile_image_small = 10;
+  // URL to the user's medium profile image.
+  string profile_image_medium = 11;
+  // URL to the user's large profile image.
+  string profile_image_large = 12;
+  // Total number of downloads across all the user's photos.
+  int32 total_downloads = 13;
+  // Total number of followers.
+  int32 followers_count = 14;
+  // Total number of users this user is following.
+  int32 following_count = 15;
+}
+
+// Collection represents a curated set of photos on Unsplash.
+message Collection {
+  // The unique numeric collection ID.
+  string id = 1;
+  // The collection title.
+  string title = 2;
+  // The collection description.
+  string description = 3;
+  // The date this collection was published (ISO 8601 format).
+  string published_at = 4;
+  // The date this collection was last updated (ISO 8601 format).
+  string updated_at = 5;
+  // Total number of photos in this collection.
+  int32 total_photos = 6;
+  // The cover photo for this collection.
+  Photo cover_photo = 7;
+  // The user who curated this collection.
+  User user = 8;
+  // Tags associated with this collection.
+  repeated Tag tags = 9;
+}
+
+// --- Request / Response messages ---
+
+// Request for SearchPhotos RPC.
+message SearchPhotosRequest {
+  // The search query string (e.g., "sunset beach", "mountain landscape", "coffee shop").
+  string query = 1;
+  // Page number for pagination (starts at 1). Defaults to 1.
+  int32 page = 2;
+  // Number of results per page (1-30). Defaults to 10.
+  int32 per_page = 3;
+  // Sort order: "relevant" (default) or "latest".
+  string order_by = 4;
+  // Filter by photo orientation: "landscape", "portrait", or "squarish".
+  string orientation = 5;
+  // Filter by color tone: "black_and_white", "black", "white", "yellow",
+  // "orange", "red", "purple", "magenta", "green", "teal", "blue".
+  string color = 6;
+}
+
+// Response for SearchPhotos RPC.
+message SearchPhotosResponse {
+  // Total number of matching photos across all pages.
+  int32 total = 1;
+  // Total number of pages available.
+  int32 total_pages = 2;
+  // The list of photos matching the search query.
+  repeated Photo results = 3;
+}
+
+// Request for GetPhoto RPC.
+message GetPhotoRequest {
+  // The Unsplash photo ID to look up (e.g., "Dwu85P9SOIk").
+  string id = 1;
+}
+
+// Response for GetPhoto RPC.
+message GetPhotoResponse {
+  // The requested photo with full metadata.
+  Photo photo = 1;
+}
+
+// Request for GetRandomPhoto RPC.
+message GetRandomPhotoRequest {
+  // Optional search query to narrow random selection (e.g., "nature", "city").
+  string query = 1;
+  // Number of random photos to return (1-30). Defaults to 1.
+  int32 count = 2;
+  // Filter by photo orientation: "landscape", "portrait", or "squarish".
+  string orientation = 3;
+  // Comma-separated list of collection IDs to limit selection.
+  string collections = 4;
+  // Comma-separated list of topic IDs to limit selection.
+  string topics = 5;
+}
+
+// Response for GetRandomPhoto RPC.
+message GetRandomPhotoResponse {
+  // The randomly selected photo(s).
+  repeated Photo photos = 1;
+}
+
+// Request for ListPhotos RPC.
+message ListPhotosRequest {
+  // Page number for pagination (starts at 1). Defaults to 1.
+  int32 page = 1;
+  // Number of results per page (1-30). Defaults to 10.
+  int32 per_page = 2;
+  // Sort order: "latest" (default), "oldest", or "popular".
+  string order_by = 3;
+}
+
+// Response for ListPhotos RPC.
+message ListPhotosResponse {
+  // The list of editorial photos.
+  repeated Photo photos = 1;
+}
+
+// Request for SearchCollections RPC.
+message SearchCollectionsRequest {
+  // The search query string (e.g., "travel", "minimal", "food photography").
+  string query = 1;
+  // Page number for pagination (starts at 1). Defaults to 1.
+  int32 page = 2;
+  // Number of results per page (1-30). Defaults to 10.
+  int32 per_page = 3;
+}
+
+// Response for SearchCollections RPC.
+message SearchCollectionsResponse {
+  // Total number of matching collections across all pages.
+  int32 total = 1;
+  // Total number of pages available.
+  int32 total_pages = 2;
+  // The list of collections matching the search query.
+  repeated Collection results = 3;
+}
+
+// Request for GetCollection RPC.
+message GetCollectionRequest {
+  // The numeric collection ID (e.g., "1234567").
+  string id = 1;
+}
+
+// Response for GetCollection RPC.
+message GetCollectionResponse {
+  // The requested collection with full metadata.
+  Collection collection = 1;
+}
+
+// Request for GetCollectionPhotos RPC.
+message GetCollectionPhotosRequest {
+  // The numeric collection ID (e.g., "1234567").
+  string id = 1;
+  // Page number for pagination (starts at 1). Defaults to 1.
+  int32 page = 2;
+  // Number of results per page (1-30). Defaults to 10.
+  int32 per_page = 3;
+}
+
+// Response for GetCollectionPhotos RPC.
+message GetCollectionPhotosResponse {
+  // The list of photos in the collection.
+  repeated Photo photos = 1;
+}
+
+// Request for SearchUsers RPC.
+message SearchUsersRequest {
+  // The search query string (e.g., "landscape photographer", "portrait artist").
+  string query = 1;
+  // Page number for pagination (starts at 1). Defaults to 1.
+  int32 page = 2;
+  // Number of results per page (1-30). Defaults to 10.
+  int32 per_page = 3;
+}
+
+// Response for SearchUsers RPC.
+message SearchUsersResponse {
+  // Total number of matching users across all pages.
+  int32 total = 1;
+  // Total number of pages available.
+  int32 total_pages = 2;
+  // The list of users matching the search query.
+  repeated User results = 3;
+}
+
+// Request for GetUser RPC.
+message GetUserRequest {
+  // The Unsplash username to look up (e.g., "johndoe", "unsplash").
+  string username = 1;
+}
+
+// Response for GetUser RPC.
+message GetUserResponse {
+  // The requested user profile with full metadata.
+  User user = 1;
+}
+
+// Request for GetUserPhotos RPC.
+message GetUserPhotosRequest {
+  // The Unsplash username (e.g., "johndoe").
+  string username = 1;
+  // Page number for pagination (starts at 1). Defaults to 1.
+  int32 page = 2;
+  // Number of results per page (1-30). Defaults to 10.
+  int32 per_page = 3;
+  // Sort order: "latest" (default), "oldest", or "popular".
+  string order_by = 4;
+  // Filter by photo orientation: "landscape", "portrait", or "squarish".
+  string orientation = 5;
+}
+
+// Response for GetUserPhotos RPC.
+message GetUserPhotosResponse {
+  // The list of photos by the user.
+  repeated Photo photos = 1;
+}

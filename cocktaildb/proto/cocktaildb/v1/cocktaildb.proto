@@ -1,0 +1,239 @@
+syntax = "proto3";
+
+package cocktaildb.v1;
+
+// CocktailDBService provides cocktail recipes, ingredients, and discovery
+// from TheCocktailDB — the world's largest open cocktail database.
+//
+// All endpoints are **free and require no authentication**.
+// Data covers 600+ cocktails, 400+ ingredients, dozens of categories and
+// glass types.
+//
+// Use this to search for cocktail recipes, discover drinks by ingredient
+// or category, get random cocktail suggestions, and look up detailed
+// ingredient information.
+service CocktailDBService {
+
+  // Search for cocktails by name.
+  //
+  // Returns a list of cocktails whose names match the query string.
+  // For example, searching "margarita" returns Margarita, Blue Margarita,
+  // Tommy's Margarita, etc. Each result includes the full recipe with
+  // ingredients and measurements.
+  rpc SearchCocktails(SearchCocktailsRequest) returns (SearchCocktailsResponse);
+
+  // Get a cocktail by its unique ID with the full recipe.
+  //
+  // Returns detailed cocktail information including name, category,
+  // glass type, instructions, image URL, and the complete list of
+  // ingredients with measurements. Use this when you already know
+  // the cocktail's numeric ID.
+  rpc GetCocktail(GetCocktailRequest) returns (GetCocktailResponse);
+
+  // Get a random cocktail.
+  //
+  // Returns a single randomly selected cocktail with the full recipe.
+  // Great for cocktail discovery, "what should I make?" prompts, or
+  // getting inspiration. Each call returns a different cocktail.
+  rpc GetRandomCocktail(GetRandomCocktailRequest) returns (GetRandomCocktailResponse);
+
+  // Find cocktails that contain a specific ingredient.
+  //
+  // Filters the entire cocktail database by a single ingredient name
+  // (e.g., "Vodka", "Gin", "Lime juice"). Returns cocktail names,
+  // IDs, and thumbnail images. Use GetCocktail to fetch the full recipe
+  // for any result.
+  rpc FilterByIngredient(FilterByIngredientRequest) returns (FilterByIngredientResponse);
+
+  // Find cocktails in a specific category.
+  //
+  // Filters cocktails by category such as "Cocktail", "Shot",
+  // "Ordinary Drink", "Punch / Party Drink", "Coffee / Tea", etc.
+  // Use ListCategories to see all available category names.
+  rpc FilterByCategory(FilterByCategoryRequest) returns (FilterByCategoryResponse);
+
+  // Find cocktails served in a specific glass type.
+  //
+  // Filters cocktails by the glass they are traditionally served in,
+  // such as "Cocktail glass", "Highball glass", "Old-fashioned glass",
+  // "Shot glass", "Champagne flute", etc. Use ListGlasses to see all
+  // available glass types.
+  rpc FilterByGlass(FilterByGlassRequest) returns (FilterByGlassResponse);
+
+  // Get all cocktail categories.
+  //
+  // Returns the complete list of cocktail categories used in the
+  // database (e.g., "Cocktail", "Shot", "Ordinary Drink",
+  // "Punch / Party Drink", "Beer", "Soft Drink", etc.).
+  // Use these values with FilterByCategory.
+  rpc ListCategories(ListCategoriesRequest) returns (ListCategoriesResponse);
+
+  // Get all glass types.
+  //
+  // Returns the complete list of glass types used in the database
+  // (e.g., "Cocktail glass", "Highball glass", "Old-fashioned glass",
+  // "Collins glass", "Shot glass", etc.).
+  // Use these values with FilterByGlass.
+  rpc ListGlasses(ListGlassesRequest) returns (ListGlassesResponse);
+
+  // Get all available ingredients.
+  //
+  // Returns the complete list of ingredient names available in the
+  // database (e.g., "Vodka", "Gin", "Rum", "Tequila", "Lime juice",
+  // "Sugar", etc.). Use these values with FilterByIngredient or
+  // SearchIngredient.
+  rpc ListIngredients(ListIngredientsRequest) returns (ListIngredientsResponse);
+
+  // Get detailed information about a specific ingredient.
+  //
+  // Returns the ingredient's full description, type (e.g., "Vodka",
+  // "Fruit"), whether it contains alcohol, and its ABV (alcohol by
+  // volume) percentage. Search by name (e.g., "Vodka", "Gin").
+  rpc SearchIngredient(SearchIngredientRequest) returns (SearchIngredientResponse);
+}
+
+// --- Domain types ---
+
+// A cocktail recipe with ingredients and instructions.
+message Cocktail {
+  // Unique cocktail ID from TheCocktailDB.
+  string id = 1;
+  // Cocktail name (e.g., "Margarita", "Old Fashioned").
+  string name = 2;
+  // Category (e.g., "Cocktail", "Shot", "Ordinary Drink").
+  string category = 3;
+  // Glass type (e.g., "Cocktail glass", "Highball glass").
+  string glass = 4;
+  // Step-by-step mixing instructions in English.
+  string instructions = 5;
+  // URL to an image of the cocktail.
+  string image = 6;
+  // Whether the drink is alcoholic: "Alcoholic", "Non alcoholic", or "Optional alcohol".
+  string alcoholic = 7;
+  // Ordered list of ingredients with measurements.
+  repeated Ingredient ingredients = 8;
+}
+
+// A single ingredient with its measurement in a cocktail recipe.
+message Ingredient {
+  // Ingredient name (e.g., "Tequila", "Lime juice", "Salt").
+  string name = 1;
+  // Measurement (e.g., "1 1/2 oz", "1 dash", "juice of 1/2").
+  string measure = 2;
+}
+
+// A brief cocktail summary returned by filter endpoints.
+message CocktailSummary {
+  // Unique cocktail ID.
+  string id = 1;
+  // Cocktail name.
+  string name = 2;
+  // URL to a thumbnail image of the cocktail.
+  string image = 3;
+}
+
+// Detailed information about a single ingredient.
+message IngredientDetail {
+  // Unique ingredient ID.
+  string id = 1;
+  // Ingredient name (e.g., "Vodka").
+  string name = 2;
+  // Detailed description of the ingredient.
+  string description = 3;
+  // Ingredient type (e.g., "Vodka", "Fruit", "Liqueur").
+  string type = 4;
+  // Whether the ingredient contains alcohol.
+  bool is_alcoholic = 5;
+  // Alcohol by volume percentage (0 for non-alcoholic).
+  string abv = 6;
+}
+
+// --- Request / Response messages ---
+
+message SearchCocktailsRequest {
+  // Cocktail name to search for (e.g., "margarita", "old fashioned").
+  string name = 1;
+}
+
+message SearchCocktailsResponse {
+  // List of cocktails matching the search query.
+  repeated Cocktail cocktails = 1;
+}
+
+message GetCocktailRequest {
+  // TheCocktailDB cocktail ID (e.g., "11007").
+  string id = 1;
+}
+
+message GetCocktailResponse {
+  // The cocktail with full recipe details.
+  Cocktail cocktail = 1;
+}
+
+message GetRandomCocktailRequest {}
+
+message GetRandomCocktailResponse {
+  // A randomly selected cocktail with full recipe details.
+  Cocktail cocktail = 1;
+}
+
+message FilterByIngredientRequest {
+  // Ingredient name to filter by (e.g., "Vodka", "Gin", "Lime juice").
+  string ingredient = 1;
+}
+
+message FilterByIngredientResponse {
+  // Cocktails containing the specified ingredient.
+  repeated CocktailSummary cocktails = 1;
+}
+
+message FilterByCategoryRequest {
+  // Category name (e.g., "Cocktail", "Shot", "Ordinary Drink").
+  string category = 1;
+}
+
+message FilterByCategoryResponse {
+  // Cocktails in the specified category.
+  repeated CocktailSummary cocktails = 1;
+}
+
+message FilterByGlassRequest {
+  // Glass type (e.g., "Cocktail glass", "Highball glass").
+  string glass = 1;
+}
+
+message FilterByGlassResponse {
+  // Cocktails served in the specified glass type.
+  repeated CocktailSummary cocktails = 1;
+}
+
+message ListCategoriesRequest {}
+
+message ListCategoriesResponse {
+  // All available cocktail categories.
+  repeated string categories = 1;
+}
+
+message ListGlassesRequest {}
+
+message ListGlassesResponse {
+  // All available glass types.
+  repeated string glasses = 1;
+}
+
+message ListIngredientsRequest {}
+
+message ListIngredientsResponse {
+  // All available ingredient names.
+  repeated string ingredients = 1;
+}
+
+message SearchIngredientRequest {
+  // Ingredient name to look up (e.g., "Vodka", "Gin").
+  string name = 1;
+}
+
+message SearchIngredientResponse {
+  // Detailed information about the ingredient.
+  IngredientDetail ingredient = 1;
+}

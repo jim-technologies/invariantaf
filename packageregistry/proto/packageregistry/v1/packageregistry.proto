@@ -1,0 +1,256 @@
+syntax = "proto3";
+
+package packageregistry.v1;
+
+// PackageRegistryService provides package metadata from NPM and PyPI,
+// the two largest package registries for JavaScript and Python.
+//
+// All endpoints are **free and require no authentication**.
+// Use this to look up packages, check versions, inspect dependencies,
+// and get download statistics for any NPM or PyPI package.
+service PackageRegistryService {
+
+  // Search for NPM packages by keyword.
+  //
+  // Returns matching packages with name, version, description,
+  // keywords, publish date, publisher info, and links.
+  // Example queries: "react", "express", "typescript"
+  rpc SearchNPM(SearchNPMRequest) returns (SearchNPMResponse);
+
+  // Get detailed metadata for an NPM package.
+  //
+  // Returns comprehensive data including name, latest version,
+  // description, homepage, repository URL, license, maintainers,
+  // dist-tags, and version publish dates.
+  rpc GetNPMPackage(GetNPMPackageRequest) returns (GetNPMPackageResponse);
+
+  // Get weekly download count for an NPM package.
+  //
+  // Returns the total number of downloads in the last week
+  // along with the date range covered.
+  rpc GetNPMDownloads(GetNPMDownloadsRequest) returns (GetNPMDownloadsResponse);
+
+  // List all published versions of an NPM package.
+  //
+  // Returns version strings and their publish timestamps.
+  // Useful for checking release history and frequency.
+  rpc GetNPMVersions(GetNPMVersionsRequest) returns (GetNPMVersionsResponse);
+
+  // Get dependencies for an NPM package.
+  //
+  // Returns the runtime dependencies, devDependencies, and
+  // peerDependencies for the latest (or specified) version.
+  rpc GetNPMDependencies(GetNPMDependenciesRequest) returns (GetNPMDependenciesResponse);
+
+  // Get detailed metadata for a Python package from PyPI.
+  //
+  // Returns name, version, summary, author, license, homepage,
+  // project URLs, Python version requirement, and classifiers.
+  rpc GetPyPIPackage(GetPyPIPackageRequest) returns (GetPyPIPackageResponse);
+
+  // Get metadata for a specific version of a Python package.
+  //
+  // Returns the same fields as GetPyPIPackage but for an exact
+  // version instead of the latest.
+  rpc GetPyPIVersion(GetPyPIVersionRequest) returns (GetPyPIVersionResponse);
+
+  // List all released versions of a Python package.
+  //
+  // Returns version strings with their upload timestamps.
+  // Useful for checking release history and cadence.
+  rpc GetPyPIReleases(GetPyPIReleasesRequest) returns (GetPyPIReleasesResponse);
+
+  // Get recent download statistics for a Python package.
+  //
+  // Returns download counts for the last day, last week,
+  // and last month from pypistats.org.
+  rpc GetPyPIDownloads(GetPyPIDownloadsRequest) returns (GetPyPIDownloadsResponse);
+
+  // Get dependencies for a Python package.
+  //
+  // Returns the requires_dist list (PEP 508 dependency specifiers)
+  // for the latest or specified version. Includes extras markers.
+  rpc GetPyPIDependencies(GetPyPIDependenciesRequest) returns (GetPyPIDependenciesResponse);
+}
+
+// --- Domain types ---
+
+message NPMSearchResult {
+  string name = 1;
+  string version = 2;
+  string description = 3;
+  repeated string keywords = 4;
+  string date = 5;
+  string publisher = 6;
+  string homepage = 7;
+  string repository = 8;
+}
+
+message NPMMaintainer {
+  string name = 1;
+  string email = 2;
+}
+
+message NPMVersionInfo {
+  string version = 1;
+  string date = 2;
+}
+
+message Dependency {
+  string name = 1;
+  string version_spec = 2;
+}
+
+message PyPIProjectURL {
+  string label = 1;
+  string url = 2;
+}
+
+message PyPIReleaseInfo {
+  string version = 1;
+  string upload_date = 2;
+}
+
+// --- NPM Request / Response messages ---
+
+message SearchNPMRequest {
+  // Search query (e.g., "react", "express", "cli tool").
+  string query = 1;
+  // Max results to return (1-250). Default 20.
+  int32 size = 2;
+}
+
+message SearchNPMResponse {
+  repeated NPMSearchResult results = 1;
+  int32 total = 2;
+}
+
+message GetNPMPackageRequest {
+  // NPM package name (e.g., "react", "lodash", "@types/node").
+  string name = 1;
+}
+
+message GetNPMPackageResponse {
+  string name = 1;
+  string latest_version = 2;
+  string description = 3;
+  string license = 4;
+  string homepage = 5;
+  string repository_url = 6;
+  repeated NPMMaintainer maintainers = 7;
+  map<string, string> dist_tags = 8;
+  string created = 9;
+  string last_modified = 10;
+}
+
+message GetNPMDownloadsRequest {
+  // NPM package name.
+  string name = 1;
+}
+
+message GetNPMDownloadsResponse {
+  string package_name = 1;
+  int64 downloads = 2;
+  string start_date = 3;
+  string end_date = 4;
+}
+
+message GetNPMVersionsRequest {
+  // NPM package name.
+  string name = 1;
+}
+
+message GetNPMVersionsResponse {
+  string package_name = 1;
+  repeated NPMVersionInfo versions = 2;
+}
+
+message GetNPMDependenciesRequest {
+  // NPM package name.
+  string name = 1;
+  // Optional version (defaults to "latest").
+  string version = 2;
+}
+
+message GetNPMDependenciesResponse {
+  string package_name = 1;
+  string version = 2;
+  repeated Dependency dependencies = 3;
+  repeated Dependency dev_dependencies = 4;
+  repeated Dependency peer_dependencies = 5;
+}
+
+// --- PyPI Request / Response messages ---
+
+message GetPyPIPackageRequest {
+  // Python package name (e.g., "requests", "flask", "numpy").
+  string name = 1;
+}
+
+message GetPyPIPackageResponse {
+  string name = 1;
+  string version = 2;
+  string summary = 3;
+  string description = 4;
+  string author = 5;
+  string author_email = 6;
+  string license = 7;
+  string home_page = 8;
+  repeated PyPIProjectURL project_urls = 9;
+  string requires_python = 10;
+  repeated string classifiers = 11;
+}
+
+message GetPyPIVersionRequest {
+  // Python package name.
+  string name = 1;
+  // Exact version string (e.g., "2.31.0").
+  string version = 2;
+}
+
+message GetPyPIVersionResponse {
+  string name = 1;
+  string version = 2;
+  string summary = 3;
+  string author = 4;
+  string license = 5;
+  string requires_python = 6;
+  repeated string requires_dist = 7;
+  string upload_date = 8;
+}
+
+message GetPyPIReleasesRequest {
+  // Python package name.
+  string name = 1;
+}
+
+message GetPyPIReleasesResponse {
+  string package_name = 1;
+  repeated PyPIReleaseInfo releases = 2;
+}
+
+message GetPyPIDownloadsRequest {
+  // Python package name.
+  string name = 1;
+}
+
+message GetPyPIDownloadsResponse {
+  string package_name = 1;
+  int64 last_day = 2;
+  int64 last_week = 3;
+  int64 last_month = 4;
+}
+
+message GetPyPIDependenciesRequest {
+  // Python package name.
+  string name = 1;
+  // Optional version (defaults to latest).
+  string version = 2;
+}
+
+message GetPyPIDependenciesResponse {
+  string package_name = 1;
+  string version = 2;
+  repeated string requires_dist = 3;
+  string requires_python = 4;
+}

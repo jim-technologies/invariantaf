@@ -1,0 +1,343 @@
+syntax = "proto3";
+
+package finnhub.v1;
+
+// FinnhubService provides real-time stock market data from Finnhub,
+// a leading financial data platform covering US stocks, forex, and crypto.
+//
+// Requires a free API key from https://finnhub.io (set FINNHUB_API_KEY).
+// Free tier allows 60 API calls per minute.
+//
+// Use this to look up stock quotes, find companies, read market news,
+// check analyst recommendations, and analyze financial metrics.
+service FinnhubService {
+
+  // Get a real-time stock quote with current price, daily change, and high/low.
+  //
+  // Returns the latest price, price change, percent change, daily high/low,
+  // open price, previous close, and timestamp.
+  // Symbol is a stock ticker (e.g., "AAPL", "MSFT", "GOOGL", "TSLA").
+  rpc GetQuote(GetQuoteRequest) returns (GetQuoteResponse);
+
+  // Search for stocks, ETFs, and indices by name or ticker symbol.
+  //
+  // Returns matching symbols with their descriptions, types, and exchanges.
+  // Use this to find the correct ticker symbol for a company.
+  // Example queries: "apple", "MSFT", "tesla", "S&P 500"
+  rpc SearchSymbol(SearchSymbolRequest) returns (SearchSymbolResponse);
+
+  // Get detailed company profile information.
+  //
+  // Returns company name, industry, market capitalization, share outstanding,
+  // IPO date, logo URL, website, exchange, and country.
+  // Useful for fundamental research and understanding what a company does.
+  rpc GetCompanyProfile(GetCompanyProfileRequest) returns (GetCompanyProfileResponse);
+
+  // Get recent news articles for a specific company.
+  //
+  // Returns news with headlines, summaries, source, URL, and publication time.
+  // Requires a date range (from/to in YYYY-MM-DD format).
+  // Great for staying informed about company developments and sentiment.
+  rpc GetCompanyNews(GetCompanyNewsRequest) returns (GetCompanyNewsResponse);
+
+  // Get the earnings calendar for upcoming and past earnings releases.
+  //
+  // Returns companies with their earnings dates, EPS estimates, and actual EPS.
+  // Filter by date range (from/to in YYYY-MM-DD format).
+  // Useful for tracking earnings season and planning around announcements.
+  rpc GetEarningsCalendar(GetEarningsCalendarRequest) returns (GetEarningsCalendarResponse);
+
+  // Get analyst recommendation trends (buy, sell, hold) for a stock.
+  //
+  // Returns monthly aggregated analyst recommendations broken down by
+  // strong buy, buy, hold, sell, and strong sell counts.
+  // Useful for gauging Wall Street sentiment on a stock.
+  rpc GetRecommendationTrends(GetRecommendationTrendsRequest) returns (GetRecommendationTrendsResponse);
+
+  // Get insider trading transactions for a company.
+  //
+  // Returns recent insider buys and sells with transaction details including
+  // the insider's name, share count, value, and filing date.
+  // Insider activity can signal management confidence or concern.
+  rpc GetInsiderTransactions(GetInsiderTransactionsRequest) returns (GetInsiderTransactionsResponse);
+
+  // Get general market news and top headlines.
+  //
+  // Returns the latest financial news articles across the market.
+  // Category can be "general", "forex", "crypto", or "merger".
+  // Useful for getting a broad view of market-moving events.
+  rpc GetMarketNews(GetMarketNewsRequest) returns (GetMarketNewsResponse);
+
+  // Get a list of peer companies (similar stocks in the same industry).
+  //
+  // Returns ticker symbols of companies considered peers.
+  // Useful for comparative analysis and finding related investment opportunities.
+  rpc GetPeers(GetPeersRequest) returns (GetPeersResponse);
+
+  // Get key financial metrics and ratios for a company.
+  //
+  // Returns valuation ratios (P/E, P/B, EV/EBITDA), profitability margins,
+  // growth rates, dividend yield, debt ratios, and 52-week price range.
+  // Essential for fundamental analysis and stock screening.
+  rpc GetBasicFinancials(GetBasicFinancialsRequest) returns (GetBasicFinancialsResponse);
+}
+
+// --- Domain types ---
+
+message SymbolMatch {
+  // Ticker symbol (e.g., "AAPL").
+  string symbol = 1;
+  // Full company/security name.
+  string description = 2;
+  // Display symbol.
+  string display_symbol = 3;
+  // Security type (e.g., "Common Stock", "ETF").
+  string type = 4;
+}
+
+message NewsArticle {
+  // Article headline.
+  string headline = 1;
+  // Brief summary of the article.
+  string summary = 2;
+  // Source publication (e.g., "Reuters", "CNBC").
+  string source = 3;
+  // URL to the full article.
+  string url = 4;
+  // Publication time as Unix timestamp.
+  int64 datetime = 5;
+  // Related ticker symbol.
+  string related = 6;
+  // Article category.
+  string category = 7;
+  // Thumbnail image URL.
+  string image = 8;
+  // Unique article ID.
+  int64 id = 9;
+}
+
+message EarningsEntry {
+  // Ticker symbol.
+  string symbol = 1;
+  // Earnings report date (YYYY-MM-DD).
+  string date = 2;
+  // Reporting hour: "bmo" (before market open), "amc" (after market close).
+  string hour = 3;
+  // Fiscal quarter (1-4).
+  int32 quarter = 4;
+  // Fiscal year.
+  int32 year = 5;
+  // Estimated EPS.
+  double eps_estimate = 6;
+  // Actual reported EPS (0 if not yet reported).
+  double eps_actual = 7;
+  // Revenue estimate in dollars.
+  double revenue_estimate = 8;
+  // Actual reported revenue (0 if not yet reported).
+  double revenue_actual = 9;
+}
+
+message RecommendationTrend {
+  // Period (YYYY-MM-DD).
+  string period = 1;
+  // Number of "strong buy" ratings.
+  int32 strong_buy = 2;
+  // Number of "buy" ratings.
+  int32 buy = 3;
+  // Number of "hold" ratings.
+  int32 hold = 4;
+  // Number of "sell" ratings.
+  int32 sell = 5;
+  // Number of "strong sell" ratings.
+  int32 strong_sell = 6;
+}
+
+message InsiderTransaction {
+  // Insider's full name.
+  string name = 1;
+  // Number of shares transacted.
+  int64 share = 2;
+  // Change in shares held.
+  int64 change = 3;
+  // Filing date (YYYY-MM-DD).
+  string filing_date = 4;
+  // Transaction date (YYYY-MM-DD).
+  string transaction_date = 5;
+  // Transaction code (e.g., "P" for purchase, "S" for sale).
+  string transaction_code = 6;
+  // Transaction price per share.
+  double transaction_price = 7;
+}
+
+// --- Request / Response messages ---
+
+message GetQuoteRequest {
+  // Stock ticker symbol (e.g., "AAPL", "MSFT", "GOOGL").
+  string symbol = 1;
+}
+
+message GetQuoteResponse {
+  // Current price.
+  double current_price = 1;
+  // Price change from previous close.
+  double change = 2;
+  // Percent change from previous close.
+  double percent_change = 3;
+  // Day's high price.
+  double high = 4;
+  // Day's low price.
+  double low = 5;
+  // Day's open price.
+  double open = 6;
+  // Previous close price.
+  double previous_close = 7;
+  // Last update Unix timestamp.
+  int64 timestamp = 8;
+}
+
+message SearchSymbolRequest {
+  // Search query — company name or ticker (e.g., "apple", "MSFT").
+  string query = 1;
+}
+
+message SearchSymbolResponse {
+  // Number of results.
+  int32 count = 1;
+  // Matching symbols.
+  repeated SymbolMatch results = 2;
+}
+
+message GetCompanyProfileRequest {
+  // Stock ticker symbol (e.g., "AAPL").
+  string symbol = 1;
+}
+
+message GetCompanyProfileResponse {
+  // Stock ticker symbol.
+  string ticker = 1;
+  // Company name.
+  string name = 2;
+  // Country of headquarters.
+  string country = 3;
+  // Currency used for trading.
+  string currency = 4;
+  // Stock exchange (e.g., "NASDAQ", "NYSE").
+  string exchange = 5;
+  // Industry classification.
+  string finnhub_industry = 6;
+  // IPO date (YYYY-MM-DD).
+  string ipo = 7;
+  // Company logo URL.
+  string logo = 8;
+  // Market capitalization in dollars.
+  double market_capitalization = 9;
+  // Number of outstanding shares.
+  double share_outstanding = 10;
+  // Company website URL.
+  string weburl = 11;
+  // Company phone number.
+  string phone = 12;
+}
+
+message GetCompanyNewsRequest {
+  // Stock ticker symbol (e.g., "AAPL").
+  string symbol = 1;
+  // Start date in YYYY-MM-DD format.
+  string from_date = 2;
+  // End date in YYYY-MM-DD format.
+  string to_date = 3;
+}
+
+message GetCompanyNewsResponse {
+  repeated NewsArticle articles = 1;
+}
+
+message GetEarningsCalendarRequest {
+  // Start date in YYYY-MM-DD format.
+  string from_date = 1;
+  // End date in YYYY-MM-DD format.
+  string to_date = 2;
+}
+
+message GetEarningsCalendarResponse {
+  repeated EarningsEntry earnings = 1;
+}
+
+message GetRecommendationTrendsRequest {
+  // Stock ticker symbol (e.g., "AAPL").
+  string symbol = 1;
+}
+
+message GetRecommendationTrendsResponse {
+  repeated RecommendationTrend trends = 1;
+}
+
+message GetInsiderTransactionsRequest {
+  // Stock ticker symbol (e.g., "AAPL").
+  string symbol = 1;
+}
+
+message GetInsiderTransactionsResponse {
+  repeated InsiderTransaction transactions = 1;
+}
+
+message GetMarketNewsRequest {
+  // News category: "general", "forex", "crypto", or "merger". Default "general".
+  string category = 1;
+  // Minimum article ID for pagination.
+  int64 min_id = 2;
+}
+
+message GetMarketNewsResponse {
+  repeated NewsArticle articles = 1;
+}
+
+message GetPeersRequest {
+  // Stock ticker symbol (e.g., "AAPL").
+  string symbol = 1;
+}
+
+message GetPeersResponse {
+  // List of peer ticker symbols.
+  repeated string peers = 1;
+}
+
+message GetBasicFinancialsRequest {
+  // Stock ticker symbol (e.g., "AAPL").
+  string symbol = 1;
+  // Metric type. Use "all" for all available metrics.
+  string metric = 2;
+}
+
+message GetBasicFinancialsResponse {
+  // Price-to-earnings ratio (trailing 12 months).
+  double pe_trailing = 1;
+  // Price-to-book ratio (quarterly).
+  double pb_quarterly = 2;
+  // Earnings per share (trailing 12 months).
+  double eps_trailing = 3;
+  // Dividend yield (indicated annual).
+  double dividend_yield_indicated = 4;
+  // 52-week high price.
+  double week_52_high = 5;
+  // 52-week low price.
+  double week_52_low = 6;
+  // Return on equity (trailing 12 months).
+  double roe_trailing = 7;
+  // Total debt-to-equity ratio (quarterly).
+  double total_debt_to_equity_quarterly = 8;
+  // Net profit margin (trailing 12 months).
+  double net_profit_margin_trailing = 9;
+  // Gross margin (trailing 12 months).
+  double gross_margin_trailing = 10;
+  // Operating margin (trailing 12 months).
+  double operating_margin_trailing = 11;
+  // Beta value.
+  double beta = 12;
+  // 10-day average trading volume.
+  double ten_day_average_volume = 13;
+  // Revenue growth (quarterly, year-over-year).
+  double revenue_growth_quarterly_yoy = 14;
+  // Market capitalization.
+  double market_capitalization = 15;
+}

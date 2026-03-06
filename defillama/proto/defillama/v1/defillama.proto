@@ -1,0 +1,315 @@
+syntax = "proto3";
+
+package defillama.v1;
+
+// DefiLlamaService provides DeFi analytics data from DeFiLlama,
+// the largest TVL aggregator for decentralized finance.
+//
+// All endpoints are **free and require no authentication**.
+// Data covers 5,000+ DeFi protocols, 200+ chains, yield farming pools,
+// DEX volumes, protocol fees/revenue, and stablecoin analytics.
+//
+// Use this to analyze DeFi protocol health, compare chain ecosystems,
+// find yield opportunities, and track stablecoin flows.
+service DefiLlamaService {
+
+  // List all DeFi protocols with their current TVL (Total Value Locked).
+  //
+  // Returns every protocol tracked by DeFiLlama with current TVL,
+  // category, chain breakdown, and metadata. Use this to discover
+  // protocols, compare TVL rankings, or find protocols by category.
+  // The list is sorted by TVL descending by default.
+  rpc GetProtocols(GetProtocolsRequest) returns (GetProtocolsResponse);
+
+  // Get detailed information about a specific protocol.
+  //
+  // Returns comprehensive protocol data including TVL history over time,
+  // chain-by-chain TVL breakdown, token holdings, raises, and metadata.
+  // The slug is the protocol's URL-friendly name (e.g., "aave", "uniswap", "lido").
+  // Use this when you need historical TVL data or detailed chain breakdown.
+  rpc GetProtocol(GetProtocolRequest) returns (GetProtocolResponse);
+
+  // Get the current TVL for a single protocol.
+  //
+  // Returns just the current total TVL number for a protocol.
+  // Faster than GetProtocol when you only need the current TVL figure.
+  // The slug is the protocol's URL-friendly name (e.g., "aave", "lido").
+  rpc GetTVL(GetTVLRequest) returns (GetTVLResponse);
+
+  // Get TVL data for all blockchain networks.
+  //
+  // Returns every chain tracked by DeFiLlama with its current TVL,
+  // native token symbol, and chain ID. Use this to compare ecosystem
+  // sizes, track chain growth, and identify emerging chains.
+  rpc GetChains(GetChainsRequest) returns (GetChainsResponse);
+
+  // Get historical total DeFi TVL across all chains.
+  //
+  // Returns daily TVL data points from the beginning of DeFi tracking.
+  // Each data point has a Unix timestamp and the total TVL in USD.
+  // Use this to visualize DeFi growth trends and identify market cycles.
+  rpc GetGlobalTVL(GetGlobalTVLRequest) returns (GetGlobalTVLResponse);
+
+  // List all stablecoins with market cap data.
+  //
+  // Returns every stablecoin tracked by DeFiLlama with current circulating
+  // supply, peg type (USD/EUR/etc.), peg mechanism (fiat-backed, algorithmic,
+  // crypto-backed), and historical comparisons (day/week/month changes).
+  // Use this to monitor stablecoin dominance and capital flows.
+  rpc GetStablecoins(GetStablecoinsRequest) returns (GetStablecoinsResponse);
+
+  // Get yield farming pool data across DeFi.
+  //
+  // Returns yield pools with APY, TVL, underlying tokens, and risk metrics.
+  // Data comes from the yields API and covers lending, staking, LP pools,
+  // and more. Use this to find yield opportunities, compare risk-adjusted
+  // returns, and track yield trends. Pools include prediction data
+  // (stable/up/down) and impermanent loss risk flags.
+  rpc GetYieldPools(GetYieldPoolsRequest) returns (GetYieldPoolsResponse);
+
+  // Get DEX trading volume overview.
+  //
+  // Returns aggregate DEX volume data: total 24h/7d/30d volumes,
+  // percentage changes, and per-protocol volume breakdowns.
+  // Use this to gauge DeFi trading activity, compare DEX market share,
+  // and track volume trends across chains.
+  rpc GetDexVolumes(GetDexVolumesRequest) returns (GetDexVolumesResponse);
+
+  // Get protocol fee and revenue data.
+  //
+  // Returns aggregate fee/revenue data across DeFi: total 24h/7d/30d fees,
+  // percentage changes, and per-protocol breakdowns. Fees represent what
+  // users pay; revenue is what the protocol retains. Use this to evaluate
+  // protocol business models and identify the most profitable protocols.
+  rpc GetFees(GetFeesRequest) returns (GetFeesResponse);
+
+  // Get stablecoin market capitalization by chain.
+  //
+  // Returns each blockchain's total stablecoin market cap.
+  // Use this to identify where stablecoin liquidity is concentrated,
+  // track capital migration between chains, and compare chain adoption.
+  rpc GetStablecoinChains(GetStablecoinChainsRequest) returns (GetStablecoinChainsResponse);
+}
+
+// --- Domain types ---
+
+message Protocol {
+  string id = 1;
+  string name = 2;
+  string symbol = 3;
+  string url = 4;
+  string description = 5;
+  string chain = 6;
+  string logo = 7;
+  string category = 8;
+  repeated string chains = 9;
+  double tvl = 10;
+  double change_1h = 11;
+  double change_1d = 12;
+  double change_7d = 13;
+  string slug = 14;
+  string twitter = 15;
+  double mcap = 16;
+}
+
+message ProtocolDetail {
+  string id = 1;
+  string name = 2;
+  string url = 3;
+  string description = 4;
+  string logo = 5;
+  string symbol = 6;
+  repeated string chains = 7;
+  string gecko_id = 8;
+  string twitter = 9;
+  // Historical TVL data points: date (Unix timestamp) -> TVL in USD.
+  repeated TVLDataPoint tvl = 10;
+  // Current TVL by chain.
+  map<string, double> current_chain_tvls = 11;
+  double mcap = 12;
+  string category = 13;
+}
+
+message TVLDataPoint {
+  // Unix timestamp (seconds).
+  int64 date = 1;
+  // Total TVL in USD at this date.
+  double total_liquidity_usd = 2;
+}
+
+message Chain {
+  string name = 1;
+  double tvl = 2;
+  string token_symbol = 3;
+  string gecko_id = 4;
+  int64 chain_id = 5;
+}
+
+message GlobalTVLDataPoint {
+  // Unix timestamp (seconds).
+  int64 date = 1;
+  double tvl = 2;
+}
+
+message Stablecoin {
+  string id = 1;
+  string name = 2;
+  string symbol = 3;
+  string gecko_id = 4;
+  // Peg type: "peggedUSD", "peggedEUR", etc.
+  string peg_type = 5;
+  // Peg mechanism: "fiat-backed", "algorithmic", "crypto-backed".
+  string peg_mechanism = 6;
+  // Current circulating supply in USD terms.
+  double circulating = 7;
+  double circulating_prev_day = 8;
+  double circulating_prev_week = 9;
+  double circulating_prev_month = 10;
+}
+
+message YieldPool {
+  string pool = 1;
+  string chain = 2;
+  string project = 3;
+  string symbol = 4;
+  double tvl_usd = 5;
+  // Total APY (base + reward).
+  double apy = 6;
+  // Base APY from the protocol itself.
+  double apy_base = 7;
+  // Reward APY from token incentives.
+  double apy_reward = 8;
+  // Whether the pool holds stablecoins.
+  bool stablecoin = 9;
+  // Impermanent loss risk: "yes", "no", or empty.
+  string il_risk = 10;
+  // Exposure type: "single", "multi".
+  string exposure = 11;
+  // APY change over last 1 day.
+  double apy_pct_1d = 12;
+  // APY change over last 7 days.
+  double apy_pct_7d = 13;
+  // APY change over last 30 days.
+  double apy_pct_30d = 14;
+  // Predicted APY direction: "Stable/Up", "Down", etc.
+  string predicted_class = 15;
+  int32 predicted_probability = 16;
+}
+
+message DexProtocol {
+  string name = 1;
+  string slug = 2;
+  string logo = 3;
+  string category = 4;
+  repeated string chains = 5;
+  double total_24h = 6;
+  double total_7d = 7;
+  double total_30d = 8;
+  double change_1d = 9;
+  double change_7d = 10;
+  double change_1m = 11;
+}
+
+message FeesProtocol {
+  string name = 1;
+  string slug = 2;
+  string logo = 3;
+  string category = 4;
+  repeated string chains = 5;
+  double total_24h = 6;
+  double total_7d = 7;
+  double total_30d = 8;
+  double change_1d = 9;
+  double change_7d = 10;
+  double change_1m = 11;
+}
+
+message StablecoinChain {
+  string name = 1;
+  string gecko_id = 2;
+  string token_symbol = 3;
+  // Total stablecoin market cap on this chain in USD.
+  double total_circulating_usd = 4;
+}
+
+// --- Request / Response messages ---
+
+message GetProtocolsRequest {}
+
+message GetProtocolsResponse {
+  repeated Protocol protocols = 1;
+}
+
+message GetProtocolRequest {
+  // Protocol slug (e.g., "aave", "uniswap", "lido").
+  string slug = 1;
+}
+
+message GetProtocolResponse {
+  ProtocolDetail protocol = 1;
+}
+
+message GetTVLRequest {
+  // Protocol slug (e.g., "aave", "uniswap", "lido").
+  string slug = 1;
+}
+
+message GetTVLResponse {
+  // Current TVL in USD.
+  double tvl = 1;
+}
+
+message GetChainsRequest {}
+
+message GetChainsResponse {
+  repeated Chain chains = 1;
+}
+
+message GetGlobalTVLRequest {}
+
+message GetGlobalTVLResponse {
+  repeated GlobalTVLDataPoint data_points = 1;
+}
+
+message GetStablecoinsRequest {}
+
+message GetStablecoinsResponse {
+  repeated Stablecoin stablecoins = 1;
+}
+
+message GetYieldPoolsRequest {}
+
+message GetYieldPoolsResponse {
+  repeated YieldPool pools = 1;
+}
+
+message GetDexVolumesRequest {}
+
+message GetDexVolumesResponse {
+  double total_24h = 1;
+  double total_7d = 2;
+  double total_30d = 3;
+  double change_1d = 4;
+  double change_7d = 5;
+  double change_1m = 6;
+  repeated string all_chains = 7;
+  repeated DexProtocol protocols = 8;
+}
+
+message GetFeesRequest {}
+
+message GetFeesResponse {
+  double total_24h = 1;
+  double total_7d = 2;
+  double total_30d = 3;
+  double change_1d = 4;
+  double change_7d = 5;
+  double change_1m = 6;
+  repeated FeesProtocol protocols = 7;
+}
+
+message GetStablecoinChainsRequest {}
+
+message GetStablecoinChainsResponse {
+  repeated StablecoinChain chains = 1;
+}

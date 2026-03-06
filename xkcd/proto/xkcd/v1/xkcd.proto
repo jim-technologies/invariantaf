@@ -1,0 +1,205 @@
+syntax = "proto3";
+
+package xkcd.v1;
+
+// XKCDService provides access to XKCD comics — the legendary webcomic
+// of romance, sarcasm, math, and language by Randall Munroe.
+//
+// All endpoints are **free and require no authentication**.
+// Data includes 3,000+ comics with titles, alt text, images, and transcripts.
+//
+// Use this to fetch comics by number, get random comics, search by title,
+// browse recent strips, and read community explanations from explainxkcd.
+service XKCDService {
+
+  // Get the latest XKCD comic.
+  //
+  // Returns the most recently published comic with its full metadata
+  // including title, alt text (hover text), image URL, and publish date.
+  rpc GetLatest(GetLatestRequest) returns (GetLatestResponse);
+
+  // Get a specific XKCD comic by its number.
+  //
+  // Every XKCD comic has a unique sequential number starting from 1.
+  // Returns the full comic metadata for the requested number.
+  // Note: comic #404 does not exist (it's a 404 joke).
+  rpc GetComic(GetComicRequest) returns (GetComicResponse);
+
+  // Get a random XKCD comic.
+  //
+  // Fetches the latest comic number, picks a random number between
+  // 1 and max, then returns that comic. Great for discovery.
+  rpc GetRandom(GetRandomRequest) returns (GetRandomResponse);
+
+  // Get a range of consecutive XKCD comics.
+  //
+  // Returns all comics from start_num to end_num (inclusive).
+  // Useful for browsing a sequence of strips.
+  // Maximum range is 50 comics per request.
+  rpc GetRange(GetRangeRequest) returns (GetRangeResponse);
+
+  // Search comics by title substring match.
+  //
+  // Scans recent comics and returns those whose title contains
+  // the query string (case-insensitive). Searches the most recent
+  // `search_count` comics (default 100, max 500).
+  rpc SearchByTitle(SearchByTitleRequest) returns (SearchByTitleResponse);
+
+  // Get the community explanation for a comic from explainxkcd.com.
+  //
+  // Returns the wiki explanation text for the given comic number.
+  // Explanations cover the joke, references, math, and context.
+  rpc GetExplanation(GetExplanationRequest) returns (GetExplanationResponse);
+
+  // Get the total number of XKCD comics published.
+  //
+  // Returns the current latest comic number, which is the total count
+  // of comics (minus #404 which doesn't exist).
+  rpc GetComicCount(GetComicCountRequest) returns (GetComicCountResponse);
+
+  // Get multiple specific comics by their numbers.
+  //
+  // Pass a list of comic numbers and get back all of them.
+  // Useful for fetching a curated set of favorites or references.
+  // Maximum 50 comics per request.
+  rpc GetMultiple(GetMultipleRequest) returns (GetMultipleResponse);
+
+  // Get the N most recent XKCD comics.
+  //
+  // Returns the latest comics in reverse chronological order.
+  // Default count is 10, maximum is 50.
+  rpc GetRecent(GetRecentRequest) returns (GetRecentResponse);
+
+  // Get comics published in a specific month and year.
+  //
+  // Scans recent comics and filters by the given month/year.
+  // Useful for finding what was published during a specific time period.
+  // Searches up to `search_count` recent comics (default 500).
+  rpc GetByDate(GetByDateRequest) returns (GetByDateResponse);
+}
+
+// --- Domain types ---
+
+message Comic {
+  // Sequential comic number (1-based).
+  int32 num = 1;
+  // Comic title.
+  string title = 2;
+  // URL-safe title.
+  string safe_title = 3;
+  // Alt text (hover text / tooltip).
+  string alt = 4;
+  // Image URL (PNG or JPG).
+  string img = 5;
+  // Publish year.
+  string year = 6;
+  // Publish month.
+  string month = 7;
+  // Publish day.
+  string day = 8;
+  // Optional link associated with the comic.
+  string link = 9;
+  // Optional news text.
+  string news = 10;
+  // Comic transcript (may be empty for newer comics).
+  string transcript = 11;
+}
+
+// --- Request / Response messages ---
+
+message GetLatestRequest {}
+
+message GetLatestResponse {
+  Comic comic = 1;
+}
+
+message GetComicRequest {
+  // Comic number to fetch.
+  int32 num = 1;
+}
+
+message GetComicResponse {
+  Comic comic = 1;
+}
+
+message GetRandomRequest {}
+
+message GetRandomResponse {
+  Comic comic = 1;
+}
+
+message GetRangeRequest {
+  // First comic number (inclusive).
+  int32 start_num = 1;
+  // Last comic number (inclusive).
+  int32 end_num = 2;
+}
+
+message GetRangeResponse {
+  repeated Comic comics = 1;
+}
+
+message SearchByTitleRequest {
+  // Search query (case-insensitive substring match on title).
+  string query = 1;
+  // Number of recent comics to search through. Default 100, max 500.
+  int32 search_count = 2;
+}
+
+message SearchByTitleResponse {
+  repeated Comic comics = 1;
+}
+
+message GetExplanationRequest {
+  // Comic number to get explanation for.
+  int32 num = 1;
+}
+
+message GetExplanationResponse {
+  // Comic number.
+  int32 num = 1;
+  // Comic title.
+  string title = 2;
+  // Plain text explanation from explainxkcd wiki.
+  string explanation = 3;
+  // URL to the full explanation page.
+  string url = 4;
+}
+
+message GetComicCountRequest {}
+
+message GetComicCountResponse {
+  // Total number of comics (latest comic number).
+  int32 count = 1;
+}
+
+message GetMultipleRequest {
+  // List of comic numbers to fetch.
+  repeated int32 nums = 1;
+}
+
+message GetMultipleResponse {
+  repeated Comic comics = 1;
+}
+
+message GetRecentRequest {
+  // Number of recent comics to return. Default 10, max 50.
+  int32 count = 1;
+}
+
+message GetRecentResponse {
+  repeated Comic comics = 1;
+}
+
+message GetByDateRequest {
+  // Year to filter by (e.g., 2024).
+  int32 year = 1;
+  // Month to filter by (1-12).
+  int32 month = 2;
+  // Number of recent comics to search through. Default 500.
+  int32 search_count = 3;
+}
+
+message GetByDateResponse {
+  repeated Comic comics = 1;
+}

@@ -1,0 +1,332 @@
+syntax = "proto3";
+
+package spacex.v1;
+
+// SpaceXService provides data about SpaceX launches, rockets, crew, Starlink
+// satellites, and more from the open SpaceX REST API (v4).
+//
+// No authentication is required. All data is public.
+//
+// Use this to look up recent and upcoming launches, get rocket specs,
+// find crew member details, track the Starlink constellation, and query
+// launch pad locations and company information.
+service SpaceXService {
+
+  // Get the most recent SpaceX launch with full details.
+  //
+  // Returns the single latest completed launch including mission name,
+  // date, rocket used, success status, payload info, webcast link, and patch images.
+  // Great for answering "What was the last SpaceX launch?"
+  rpc GetLatestLaunch(GetLatestLaunchRequest) returns (GetLatestLaunchResponse);
+
+  // Get all SpaceX launches (past and future).
+  //
+  // Returns every launch in the SpaceX database with mission name, date,
+  // rocket, success/failure status, and links. Results are not paginated.
+  // Use GetUpcomingLaunches if you only want future scheduled launches.
+  rpc GetLaunches(GetLaunchesRequest) returns (GetLaunchesResponse);
+
+  // Get a specific SpaceX launch by its unique ID.
+  //
+  // Returns full details for a single launch including payloads,
+  // crew, landing info, and media links. The launch ID is the
+  // MongoDB ObjectId string from the SpaceX API.
+  rpc GetLaunch(GetLaunchRequest) returns (GetLaunchResponse);
+
+  // Get all SpaceX rockets (Falcon 1, Falcon 9, Falcon Heavy, Starship).
+  //
+  // Returns specs for every rocket SpaceX has built including height,
+  // diameter, mass, payload capacities, engine details, cost per launch,
+  // and whether the rocket is currently active.
+  rpc GetRockets(GetRocketsRequest) returns (GetRocketsResponse);
+
+  // Get detailed specifications for a specific SpaceX rocket.
+  //
+  // Returns comprehensive data including dimensions, mass, engine count
+  // and type, payload capacity to LEO and GTO, cost per launch, and
+  // first flight date. The rocket ID is a short slug like "falcon9".
+  rpc GetRocket(GetRocketRequest) returns (GetRocketResponse);
+
+  // Get all SpaceX crew members who have flown on Dragon missions.
+  //
+  // Returns name, agency, status (active/retired/unknown), image URL,
+  // Wikipedia link, and the list of launch IDs they participated in.
+  rpc GetCrew(GetCrewRequest) returns (GetCrewResponse);
+
+  // Get Starlink satellite constellation data.
+  //
+  // Returns information about Starlink satellites including version,
+  // orbital parameters (height, latitude, longitude), velocity,
+  // and current status (operational, decayed, etc.).
+  // Warning: this endpoint returns thousands of satellites.
+  rpc GetStarlink(GetStarlinkRequest) returns (GetStarlinkResponse);
+
+  // Get all SpaceX launch pad locations and their status.
+  //
+  // Returns launch pad name, full name, locality, region, latitude/longitude,
+  // number of launch attempts and successes, and operational status.
+  // Includes historic pads (Kwajalein) and active ones (Kennedy, Vandenberg, Starbase).
+  rpc GetLaunchpads(GetLaunchpadsRequest) returns (GetLaunchpadsResponse);
+
+  // Get SpaceX company information.
+  //
+  // Returns company details including founder, CEO, CTO, COO,
+  // number of employees, founding year, valuation, headquarters
+  // address, and links to the website and social media.
+  rpc GetCompanyInfo(GetCompanyInfoRequest) returns (GetCompanyInfoResponse);
+
+  // Get upcoming scheduled SpaceX launches.
+  //
+  // Returns only future launches that have not yet occurred.
+  // Includes scheduled date (which may change), mission name,
+  // rocket, and any known payload or crew details.
+  rpc GetUpcomingLaunches(GetUpcomingLaunchesRequest) returns (GetUpcomingLaunchesResponse);
+}
+
+// --- Domain types ---
+
+message Launch {
+  // Unique launch ID (MongoDB ObjectId).
+  string id = 1;
+  // Mission name (e.g., "Starlink Group 6-14").
+  string name = 2;
+  // UTC date string of the launch.
+  string date_utc = 3;
+  // Unix timestamp of the launch.
+  int64 date_unix = 4;
+  // Whether the launch was successful (null for upcoming).
+  bool success = 5;
+  // Flight number.
+  int32 flight_number = 6;
+  // Rocket ID used for the launch.
+  string rocket = 7;
+  // Short details or mission description.
+  string details = 8;
+  // Whether this launch is upcoming.
+  bool upcoming = 9;
+  // Launch pad ID.
+  string launchpad = 10;
+  // Payload IDs.
+  repeated string payloads = 11;
+  // Crew member IDs.
+  repeated string crew = 12;
+  // Mission patch image (small).
+  string patch_small = 13;
+  // Mission patch image (large).
+  string patch_large = 14;
+  // Webcast URL (usually YouTube).
+  string webcast = 15;
+  // Wikipedia article URL.
+  string wikipedia = 16;
+  // SpaceX article URL.
+  string article = 17;
+}
+
+message Rocket {
+  // Unique rocket ID (slug, e.g., "falcon9").
+  string id = 1;
+  // Rocket name (e.g., "Falcon 9").
+  string name = 2;
+  // Type (e.g., "rocket").
+  string type = 3;
+  // Whether the rocket is currently active.
+  bool active = 4;
+  // Number of rocket stages.
+  int32 stages = 5;
+  // Number of boosters.
+  int32 boosters = 6;
+  // Cost per launch in USD.
+  int64 cost_per_launch = 7;
+  // First flight date string.
+  string first_flight = 8;
+  // Country of origin.
+  string country = 9;
+  // Company that operates the rocket.
+  string company = 10;
+  // Height in meters.
+  double height_meters = 11;
+  // Diameter in meters.
+  double diameter_meters = 12;
+  // Mass in kilograms.
+  double mass_kg = 13;
+  // Payload weight to LEO in kg.
+  double payload_weight_leo_kg = 14;
+  // Payload weight to GTO in kg.
+  double payload_weight_gto_kg = 15;
+  // Number of engines on the first stage.
+  int32 engines_number = 16;
+  // Engine type (e.g., "merlin").
+  string engine_type = 17;
+  // Engine propellant 1.
+  string engine_propellant_1 = 18;
+  // Engine propellant 2.
+  string engine_propellant_2 = 19;
+  // Description of the rocket.
+  string description = 20;
+  // Wikipedia article URL.
+  string wikipedia = 21;
+  // Success rate as a percentage.
+  int32 success_rate_pct = 22;
+}
+
+message CrewMember {
+  // Unique crew member ID.
+  string id = 1;
+  // Full name.
+  string name = 2;
+  // Status: active, inactive, retired, or unknown.
+  string status = 3;
+  // Space agency (e.g., "NASA", "ESA", "JAXA").
+  string agency = 4;
+  // Profile image URL.
+  string image = 5;
+  // Wikipedia article URL.
+  string wikipedia = 6;
+  // Launch IDs this crew member participated in.
+  repeated string launches = 7;
+}
+
+message StarlinkSatellite {
+  // Unique satellite ID.
+  string id = 1;
+  // Satellite version (e.g., "v1.0", "v1.5", "v2.0-mini").
+  string version = 2;
+  // Launch ID that deployed this satellite.
+  string launch = 3;
+  // Orbital height in km.
+  double height_km = 4;
+  // Latitude in degrees.
+  double latitude = 5;
+  // Longitude in degrees.
+  double longitude = 6;
+  // Velocity in km/s.
+  double velocity_kms = 7;
+}
+
+message Launchpad {
+  // Unique launchpad ID.
+  string id = 1;
+  // Short name (e.g., "VAFB SLC 4E").
+  string name = 2;
+  // Full name (e.g., "Vandenberg Space Force Base Space Launch Complex 4E").
+  string full_name = 3;
+  // City / locality.
+  string locality = 4;
+  // Region / state.
+  string region = 5;
+  // Latitude.
+  double latitude = 6;
+  // Longitude.
+  double longitude = 7;
+  // Number of launch attempts from this pad.
+  int32 launch_attempts = 8;
+  // Number of successful launches from this pad.
+  int32 launch_successes = 9;
+  // Current status (e.g., "active", "retired", "under construction").
+  string status = 10;
+}
+
+// --- Request / Response messages ---
+
+message GetLatestLaunchRequest {}
+
+message GetLatestLaunchResponse {
+  Launch launch = 1;
+}
+
+message GetLaunchesRequest {}
+
+message GetLaunchesResponse {
+  repeated Launch launches = 1;
+}
+
+message GetLaunchRequest {
+  // The unique launch ID to look up.
+  string id = 1;
+}
+
+message GetLaunchResponse {
+  Launch launch = 1;
+}
+
+message GetRocketsRequest {}
+
+message GetRocketsResponse {
+  repeated Rocket rockets = 1;
+}
+
+message GetRocketRequest {
+  // The rocket ID (e.g., "falcon9", "falconheavy", "starship").
+  string id = 1;
+}
+
+message GetRocketResponse {
+  Rocket rocket = 1;
+}
+
+message GetCrewRequest {}
+
+message GetCrewResponse {
+  repeated CrewMember crew = 1;
+}
+
+message GetStarlinkRequest {}
+
+message GetStarlinkResponse {
+  repeated StarlinkSatellite satellites = 1;
+}
+
+message GetLaunchpadsRequest {}
+
+message GetLaunchpadsResponse {
+  repeated Launchpad launchpads = 1;
+}
+
+message GetCompanyInfoRequest {}
+
+message GetCompanyInfoResponse {
+  // Company name.
+  string name = 1;
+  // Founder name.
+  string founder = 2;
+  // Year founded.
+  int32 founded = 3;
+  // Number of employees.
+  int32 employees = 4;
+  // Number of vehicles (rockets) built.
+  int32 vehicles = 5;
+  // Number of launch sites.
+  int32 launch_sites = 6;
+  // Number of test sites.
+  int32 test_sites = 7;
+  // CEO name.
+  string ceo = 8;
+  // CTO name.
+  string cto = 9;
+  // COO name.
+  string coo = 10;
+  // CTO of Propulsion.
+  string cto_propulsion = 11;
+  // Company valuation in USD.
+  int64 valuation = 12;
+  // Company summary.
+  string summary = 13;
+  // Headquarters city.
+  string headquarters_city = 14;
+  // Headquarters state.
+  string headquarters_state = 15;
+  // Company website URL.
+  string website = 16;
+  // Flickr photo URL.
+  string flickr = 17;
+  // Twitter handle.
+  string twitter = 18;
+  // Elon Musk's Twitter handle.
+  string elon_twitter = 19;
+}
+
+message GetUpcomingLaunchesRequest {}
+
+message GetUpcomingLaunchesResponse {
+  repeated Launch launches = 1;
+}

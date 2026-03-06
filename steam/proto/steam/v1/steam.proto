@@ -1,0 +1,441 @@
+syntax = "proto3";
+
+package steam.v1;
+
+option go_package = "github.com/jim-technologies/invariantaf/steam/proto/steam/v1";
+
+// SteamService provides access to public Steam Web API data including player
+// profiles, game libraries, achievements, app metadata, friend lists, news,
+// and live player counts.
+//
+// Most endpoints require a Steam Web API key set via the STEAM_API_KEY
+// environment variable. You can get a free key at
+// https://steamcommunity.com/dev/apikey
+//
+// The GetAppDetails endpoint uses the Steam Store API and does not require
+// an API key.
+//
+// All Steam IDs are 64-bit numeric strings (e.g. "76561197960435530").
+// App IDs are numeric identifiers for games/software on Steam (e.g. 440 for
+// Team Fortress 2, 730 for Counter-Strike 2, 570 for Dota 2).
+service SteamService {
+  // Get profile information for one or more Steam players.
+  //
+  // Accepts a comma-separated list of 64-bit Steam IDs (up to 100).
+  // Returns player profiles including display name, avatar URL, profile URL,
+  // online status, last logoff time, and country code.
+  //
+  // Use this to look up basic information about Steam users.
+  //
+  // Steam API: GET ISteamUser/GetPlayerSummaries/v0002
+  // Requires: STEAM_API_KEY
+  rpc GetPlayerSummaries(GetPlayerSummariesRequest) returns (GetPlayerSummariesResponse);
+
+  // Get the list of games owned by a Steam player.
+  //
+  // Returns every game in the player's library with app ID, name, total
+  // playtime in minutes, and playtime in the last two weeks. The player's
+  // profile must be public for this to work.
+  //
+  // Optionally include free-to-play games and app metadata (name, icon URLs).
+  //
+  // Steam API: GET IPlayerService/GetOwnedGames/v0001
+  // Requires: STEAM_API_KEY
+  rpc GetOwnedGames(GetOwnedGamesRequest) returns (GetOwnedGamesResponse);
+
+  // Get games a player has played in the last two weeks.
+  //
+  // Returns recently played games with app ID, name, playtime in the last
+  // two weeks (minutes), and total playtime (minutes). Useful for seeing
+  // what someone is currently into.
+  //
+  // Steam API: GET IPlayerService/GetRecentlyPlayedGames/v0001
+  // Requires: STEAM_API_KEY
+  rpc GetRecentlyPlayedGames(GetRecentlyPlayedGamesRequest) returns (GetRecentlyPlayedGamesResponse);
+
+  // Get a player's achievements for a specific game.
+  //
+  // Returns every achievement for the given app, including the achievement's
+  // API name, display name, description, and whether the player has unlocked
+  // it (with unlock timestamp). The player's profile must be public.
+  //
+  // Steam API: GET ISteamUserStats/GetPlayerAchievements/v0001
+  // Requires: STEAM_API_KEY
+  rpc GetPlayerAchievements(GetPlayerAchievementsRequest) returns (GetPlayerAchievementsResponse);
+
+  // Get detailed metadata about a Steam app (game, DLC, software, etc.).
+  //
+  // Returns the app's name, type, description, developers, publishers,
+  // price, platforms (Windows/Mac/Linux), genres, categories, release date,
+  // Metacritic score, header image URL, and more.
+  //
+  // This uses the Steam Store API, not the Web API, and does NOT require
+  // an API key.
+  //
+  // Steam Store API: GET store.steampowered.com/api/appdetails
+  rpc GetAppDetails(GetAppDetailsRequest) returns (GetAppDetailsResponse);
+
+  // Get the complete list of all apps (games, software, DLC, etc.) on Steam.
+  //
+  // Returns every app with its numeric app ID and name. The list is very
+  // large (100,000+ entries). Use this for building local search indexes
+  // or looking up app IDs by name.
+  //
+  // Steam API: GET ISteamApps/GetAppList/v0002
+  // Does not require an API key.
+  rpc GetAppList(GetAppListRequest) returns (GetAppListResponse);
+
+  // Get the number of players currently in-game for a specific app.
+  //
+  // Returns a single count of how many Steam users are playing the given
+  // game right now. Useful for checking game popularity and peak times.
+  //
+  // Steam API: GET ISteamUserStats/GetNumberOfCurrentPlayers/v0001
+  // Does not require an API key.
+  rpc GetNumberOfCurrentPlayers(GetNumberOfCurrentPlayersRequest) returns (GetNumberOfCurrentPlayersResponse);
+
+  // Get a player's friend list.
+  //
+  // Returns all friends with their Steam ID, the relationship type
+  // (usually "friend"), and the Unix timestamp of when the friendship
+  // was established. The player's profile and friend list must be public.
+  //
+  // Steam API: GET ISteamUser/GetFriendList/v0001
+  // Requires: STEAM_API_KEY
+  rpc GetFriendList(GetFriendListRequest) returns (GetFriendListResponse);
+
+  // Get news articles for a Steam app.
+  //
+  // Returns recent news items (patch notes, announcements, blog posts)
+  // for the given app. Each item includes title, author, URL, contents,
+  // feed label, and publication date.
+  //
+  // Steam API: GET ISteamNews/GetNewsForApp/v0002
+  // Does not require an API key.
+  rpc GetNewsForApp(GetNewsForAppRequest) returns (GetNewsForAppResponse);
+
+  // Get global achievement unlock percentages for a game.
+  //
+  // Returns every achievement for the app with the percentage of all
+  // players who have unlocked it. Useful for finding the rarest or most
+  // common achievements.
+  //
+  // Steam API: GET ISteamUserStats/GetGlobalAchievementPercentagesForApp/v0002
+  // Does not require an API key.
+  rpc GetGlobalAchievementPercentages(GetGlobalAchievementPercentagesRequest) returns (GetGlobalAchievementPercentagesResponse);
+}
+
+// --- Domain types ---
+
+// A Steam player's profile information.
+message PlayerSummary {
+  // 64-bit Steam ID as a string.
+  string steam_id = 1;
+  // Display name chosen by the player.
+  string persona_name = 2;
+  // Full URL to the player's Steam community profile.
+  string profile_url = 3;
+  // URL to the player's avatar image (small, 32x32).
+  string avatar = 4;
+  // URL to the player's avatar image (medium, 64x64).
+  string avatar_medium = 5;
+  // URL to the player's avatar image (full, 184x184).
+  string avatar_full = 6;
+  // Current online status: 0=Offline, 1=Online, 2=Busy, 3=Away, 4=Snooze, 5=Looking to trade, 6=Looking to play.
+  int32 persona_state = 7;
+  // Whether the player's profile is public (3=public, 1=private).
+  int32 community_visibility_state = 8;
+  // Unix timestamp of when the player last logged off.
+  int64 last_logoff = 9;
+  // ISO country code (e.g. "US", "GB", "DE").
+  string country_code = 10;
+  // Unix timestamp of when the account was created.
+  int64 time_created = 11;
+  // The app ID of the game the player is currently playing, if any.
+  string game_id = 12;
+  // Name of the game the player is currently playing, if any.
+  string game_extra_info = 13;
+}
+
+// A game in a player's Steam library.
+message OwnedGame {
+  // Numeric Steam app ID.
+  int32 app_id = 1;
+  // Game name (only present if include_appinfo is true in the request).
+  string name = 2;
+  // Total playtime in minutes across all time.
+  int32 playtime_forever = 3;
+  // Playtime in the last two weeks in minutes.
+  int32 playtime_2weeks = 4;
+  // URL hash for the game's icon image.
+  string img_icon_url = 5;
+}
+
+// A recently played game.
+message RecentlyPlayedGame {
+  // Numeric Steam app ID.
+  int32 app_id = 1;
+  // Game name.
+  string name = 2;
+  // Playtime in the last two weeks in minutes.
+  int32 playtime_2weeks = 3;
+  // Total playtime in minutes across all time.
+  int32 playtime_forever = 4;
+  // URL hash for the game's icon image.
+  string img_icon_url = 5;
+}
+
+// A single player achievement.
+message Achievement {
+  // Internal API name of the achievement.
+  string api_name = 1;
+  // Whether the player has unlocked this achievement.
+  bool achieved = 2;
+  // Unix timestamp of when the achievement was unlocked (0 if not achieved).
+  int64 unlock_time = 3;
+  // Human-readable display name.
+  string name = 4;
+  // Description of how to earn the achievement.
+  string description = 5;
+}
+
+// An entry in the global achievement percentages list.
+message GlobalAchievement {
+  // Internal API name of the achievement.
+  string name = 1;
+  // Percentage of all players who have unlocked this achievement (0.0-100.0).
+  double percent = 2;
+}
+
+// A friend in a player's friend list.
+message Friend {
+  // 64-bit Steam ID of the friend.
+  string steam_id = 1;
+  // Relationship type (usually "friend").
+  string relationship = 2;
+  // Unix timestamp of when the friendship was established.
+  int64 friend_since = 3;
+}
+
+// A news article for a Steam app.
+message NewsItem {
+  // Unique ID for this news item.
+  string gid = 1;
+  // Title of the news article.
+  string title = 2;
+  // URL to the full article.
+  string url = 3;
+  // Author of the article.
+  string author = 4;
+  // Article contents (may contain HTML or BBCode).
+  string contents = 5;
+  // Feed label (e.g. "steam_community_announcements").
+  string feed_label = 6;
+  // Unix timestamp of when the article was published.
+  int64 date = 7;
+  // Name of the feed this item came from.
+  string feed_name = 8;
+}
+
+// An app (game/software/DLC) in the Steam catalog.
+message AppListEntry {
+  // Numeric Steam app ID.
+  int32 app_id = 1;
+  // App name.
+  string name = 2;
+}
+
+// Price information for a Steam app.
+message PriceOverview {
+  // ISO 4217 currency code (e.g. "USD", "EUR", "GBP").
+  string currency = 1;
+  // Current price in cents (e.g. 1999 = $19.99).
+  int32 initial = 2;
+  // Final price after discount in cents.
+  int32 final = 3;
+  // Discount percentage (0-100).
+  int32 discount_percent = 4;
+  // Formatted initial price string (e.g. "$19.99").
+  string initial_formatted = 5;
+  // Formatted final price string (e.g. "$14.99").
+  string final_formatted = 6;
+}
+
+// Platform availability for a Steam app.
+message Platforms {
+  bool windows = 1;
+  bool mac = 2;
+  bool linux = 3;
+}
+
+// Metacritic score information.
+message Metacritic {
+  // Metacritic score (0-100).
+  int32 score = 1;
+  // URL to the Metacritic page.
+  string url = 2;
+}
+
+// Genre classification.
+message Genre {
+  // Genre ID.
+  string id = 1;
+  // Genre description (e.g. "Action", "RPG", "Strategy").
+  string description = 2;
+}
+
+// Detailed app information from the Steam Store API.
+message AppDetails {
+  // Numeric Steam app ID.
+  int32 app_id = 1;
+  // App type: "game", "dlc", "demo", "advertising", "mod", "video".
+  string type = 2;
+  // App name.
+  string name = 3;
+  // Short marketing description.
+  string short_description = 4;
+  // Full detailed description (may contain HTML).
+  string detailed_description = 5;
+  // Developer studio names.
+  repeated string developers = 6;
+  // Publisher names.
+  repeated string publishers = 7;
+  // Price information (null for free games).
+  PriceOverview price_overview = 8;
+  // Platform availability.
+  Platforms platforms = 9;
+  // Metacritic score and URL.
+  Metacritic metacritic = 10;
+  // Genre list.
+  repeated Genre genres = 11;
+  // Release date string (e.g. "Oct 10, 2007").
+  string release_date = 12;
+  // Whether the game is free to play.
+  bool is_free = 13;
+  // URL to the header image (460x215).
+  string header_image = 14;
+  // URL to the app's Steam store page.
+  string website = 15;
+  // Number of recommendations/reviews.
+  int32 recommendations = 16;
+}
+
+// --- Request / Response messages ---
+
+message GetPlayerSummariesRequest {
+  // Comma-separated list of 64-bit Steam IDs (up to 100).
+  // Example: "76561197960435530" or "76561197960435530,76561197960435531"
+  string steam_ids = 1;
+}
+
+message GetPlayerSummariesResponse {
+  repeated PlayerSummary players = 1;
+}
+
+message GetOwnedGamesRequest {
+  // 64-bit Steam ID of the player.
+  string steam_id = 1;
+  // Include game name and icon info in the response. Default false.
+  bool include_appinfo = 2;
+  // Include free-to-play games. Default false.
+  bool include_played_free_games = 3;
+}
+
+message GetOwnedGamesResponse {
+  // Total number of games owned.
+  int32 game_count = 1;
+  repeated OwnedGame games = 2;
+}
+
+message GetRecentlyPlayedGamesRequest {
+  // 64-bit Steam ID of the player.
+  string steam_id = 1;
+  // Maximum number of games to return. Default returns all.
+  int32 count = 2;
+}
+
+message GetRecentlyPlayedGamesResponse {
+  // Total number of recently played games.
+  int32 total_count = 1;
+  repeated RecentlyPlayedGame games = 2;
+}
+
+message GetPlayerAchievementsRequest {
+  // 64-bit Steam ID of the player.
+  string steam_id = 1;
+  // Numeric Steam app ID of the game.
+  int32 app_id = 2;
+  // Language for achievement names/descriptions (e.g. "en", "de", "fr"). Default "en".
+  string language = 3;
+}
+
+message GetPlayerAchievementsResponse {
+  // Name of the game.
+  string game_name = 1;
+  // Steam ID of the player.
+  string steam_id = 2;
+  // Whether the request was successful.
+  bool success = 3;
+  repeated Achievement achievements = 4;
+}
+
+message GetAppDetailsRequest {
+  // Numeric Steam app ID (e.g. 440 for TF2, 730 for CS2, 570 for Dota 2).
+  int32 app_id = 1;
+}
+
+message GetAppDetailsResponse {
+  // Whether the app was found.
+  bool success = 1;
+  // Detailed app information (only present if success is true).
+  AppDetails data = 2;
+}
+
+message GetAppListRequest {}
+
+message GetAppListResponse {
+  repeated AppListEntry apps = 1;
+}
+
+message GetNumberOfCurrentPlayersRequest {
+  // Numeric Steam app ID.
+  int32 app_id = 1;
+}
+
+message GetNumberOfCurrentPlayersResponse {
+  // Number of players currently in-game.
+  int32 player_count = 1;
+}
+
+message GetFriendListRequest {
+  // 64-bit Steam ID of the player.
+  string steam_id = 1;
+}
+
+message GetFriendListResponse {
+  repeated Friend friends = 1;
+}
+
+message GetNewsForAppRequest {
+  // Numeric Steam app ID.
+  int32 app_id = 1;
+  // Maximum number of news items to return. Default 10.
+  int32 count = 2;
+  // Maximum length of the contents field (0 = full content). Default 0.
+  int32 max_length = 3;
+}
+
+message GetNewsForAppResponse {
+  // App ID the news is for.
+  int32 app_id = 1;
+  repeated NewsItem news_items = 2;
+}
+
+message GetGlobalAchievementPercentagesRequest {
+  // Numeric Steam app ID.
+  int32 app_id = 1;
+}
+
+message GetGlobalAchievementPercentagesResponse {
+  repeated GlobalAchievement achievements = 1;
+}

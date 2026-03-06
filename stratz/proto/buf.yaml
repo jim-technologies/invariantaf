@@ -1,0 +1,11 @@
+version: v2
+modules:
+  - path: .
+lint:
+  ignore_only:
+    RPC_REQUEST_RESPONSE_UNIQUE:
+      - stratz/v1/stratz.proto
+    RPC_REQUEST_STANDARD_NAME:
+      - stratz/v1/stratz.proto
+    RPC_RESPONSE_STANDARD_NAME:
+      - stratz/v1/stratz.proto

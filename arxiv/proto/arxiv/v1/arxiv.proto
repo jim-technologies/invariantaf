@@ -1,0 +1,221 @@
+syntax = "proto3";
+
+package arxiv.v1;
+
+// ArxivService provides access to the arXiv academic paper repository,
+// the world's largest open-access preprint server for scientific papers.
+//
+// All endpoints are **free and require no authentication**.
+// Data covers 2M+ papers across physics, mathematics, computer science,
+// quantitative biology, quantitative finance, statistics, and more.
+//
+// Use this to search for papers, discover recent research, look up
+// specific papers by ID, and explore categories of scientific literature.
+service ArxivService {
+
+  // Search papers by query string across all fields.
+  //
+  // Searches titles, abstracts, authors, and categories.
+  // Returns papers with title, summary, authors, categories,
+  // published date, arxiv ID, and PDF link.
+  rpc Search(SearchRequest) returns (SearchResponse);
+
+  // Get a specific paper by its arxiv ID.
+  //
+  // Returns full paper details including title, abstract, authors,
+  // categories, published date, and PDF link.
+  // Example IDs: "2301.00001", "2106.09685", "1706.03762"
+  rpc GetPaper(GetPaperRequest) returns (GetPaperResponse);
+
+  // Search papers by author name.
+  //
+  // Finds papers where the given name appears in the author list.
+  // Supports partial matching (e.g., "Vaswani" or "Ashish Vaswani").
+  rpc SearchByAuthor(SearchByAuthorRequest) returns (SearchByAuthorResponse);
+
+  // Search papers by title keywords.
+  //
+  // Finds papers whose titles contain the given keywords.
+  // Useful for finding specific papers or topics.
+  rpc SearchByTitle(SearchByTitleRequest) returns (SearchByTitleResponse);
+
+  // Search papers by category.
+  //
+  // Finds papers in a specific arxiv category.
+  // Categories include cs.AI, cs.LG, cs.CL, math.CO, physics.hep-th, etc.
+  // Use GetCategories to see all available categories.
+  rpc SearchByCategory(SearchByCategoryRequest) returns (SearchByCategoryResponse);
+
+  // Search papers by abstract content.
+  //
+  // Finds papers whose abstracts contain the given keywords.
+  // Useful for finding papers about specific techniques or concepts.
+  rpc SearchByAbstract(SearchByAbstractRequest) returns (SearchByAbstractResponse);
+
+  // Get recent papers in a category, sorted by submission date.
+  //
+  // Returns the most recently submitted papers in a given category.
+  // Great for staying up to date with the latest research.
+  rpc GetRecent(GetRecentRequest) returns (GetRecentResponse);
+
+  // Get multiple papers by their arxiv IDs in a single request.
+  //
+  // Batch lookup for up to 50 papers at once.
+  // Pass a list of arxiv IDs to retrieve all their details.
+  rpc GetMultiple(GetMultipleRequest) returns (GetMultipleResponse);
+
+  // Advanced search combining multiple fields.
+  //
+  // Build complex queries with optional author, title, abstract,
+  // and category filters combined with AND logic.
+  // At least one field must be provided.
+  rpc AdvancedSearch(AdvancedSearchRequest) returns (AdvancedSearchResponse);
+
+  // Get a reference list of arxiv categories with descriptions.
+  //
+  // Returns a built-in list of arxiv category codes and their
+  // human-readable descriptions. Does not call the arxiv API.
+  // Use this to discover what categories are available for searching.
+  rpc GetCategories(GetCategoriesRequest) returns (GetCategoriesResponse);
+}
+
+// --- Domain types ---
+
+message Paper {
+  // Arxiv paper ID (e.g., "2301.00001v1").
+  string arxiv_id = 1;
+  // Paper title.
+  string title = 2;
+  // Paper abstract/summary.
+  string summary = 3;
+  // List of author names.
+  repeated string authors = 4;
+  // List of arxiv categories (e.g., "cs.AI", "cs.LG").
+  repeated string categories = 5;
+  // Publication date in ISO 8601 format.
+  string published = 6;
+  // Last updated date in ISO 8601 format.
+  string updated = 7;
+  // Direct link to the PDF.
+  string pdf_url = 8;
+  // Link to the arxiv abstract page.
+  string arxiv_url = 9;
+}
+
+message ArxivCategory {
+  // Category code (e.g., "cs.AI").
+  string code = 1;
+  // Human-readable category name (e.g., "Artificial Intelligence").
+  string name = 2;
+  // Brief description of the category scope.
+  string description = 3;
+}
+
+// --- Request / Response messages ---
+
+message SearchRequest {
+  // Search query string (searches all fields).
+  string query = 1;
+  // Maximum number of results to return. Default 10.
+  int32 limit = 2;
+}
+
+message SearchResponse {
+  repeated Paper papers = 1;
+}
+
+message GetPaperRequest {
+  // Arxiv paper ID (e.g., "2301.00001" or "2301.00001v1").
+  string arxiv_id = 1;
+}
+
+message GetPaperResponse {
+  Paper paper = 1;
+}
+
+message SearchByAuthorRequest {
+  // Author name to search for (e.g., "Vaswani" or "Ashish Vaswani").
+  string author = 1;
+  // Maximum number of results. Default 10.
+  int32 limit = 2;
+}
+
+message SearchByAuthorResponse {
+  repeated Paper papers = 1;
+}
+
+message SearchByTitleRequest {
+  // Title keywords to search for.
+  string title = 1;
+  // Maximum number of results. Default 10.
+  int32 limit = 2;
+}
+
+message SearchByTitleResponse {
+  repeated Paper papers = 1;
+}
+
+message SearchByCategoryRequest {
+  // Arxiv category code (e.g., "cs.AI", "cs.LG", "math.CO").
+  string category = 1;
+  // Maximum number of results. Default 10.
+  int32 limit = 2;
+}
+
+message SearchByCategoryResponse {
+  repeated Paper papers = 1;
+}
+
+message SearchByAbstractRequest {
+  // Keywords to search for in abstracts.
+  string query = 1;
+  // Maximum number of results. Default 10.
+  int32 limit = 2;
+}
+
+message SearchByAbstractResponse {
+  repeated Paper papers = 1;
+}
+
+message GetRecentRequest {
+  // Arxiv category code (e.g., "cs.AI", "cs.LG").
+  string category = 1;
+  // Maximum number of results. Default 10.
+  int32 limit = 2;
+}
+
+message GetRecentResponse {
+  repeated Paper papers = 1;
+}
+
+message GetMultipleRequest {
+  // List of arxiv paper IDs to retrieve.
+  repeated string arxiv_ids = 1;
+}
+
+message GetMultipleResponse {
+  repeated Paper papers = 1;
+}
+
+message AdvancedSearchRequest {
+  // Author name filter (optional).
+  string author = 1;
+  // Title keywords filter (optional).
+  string title = 2;
+  // Abstract keywords filter (optional).
+  string abstract = 3;
+  // Category filter (optional, e.g., "cs.AI").
+  string category = 4;
+  // Maximum number of results. Default 10.
+  int32 limit = 5;
+}
+
+message AdvancedSearchResponse {
+  repeated Paper papers = 1;
+}
+
+message GetCategoriesRequest {}
+
+message GetCategoriesResponse {
+  repeated ArxivCategory categories = 1;
+}

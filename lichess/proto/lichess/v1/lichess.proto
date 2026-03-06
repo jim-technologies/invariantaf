@@ -1,0 +1,367 @@
+syntax = "proto3";
+
+package lichess.v1;
+
+// LichessService provides chess data from Lichess.org, the free, open-source
+// chess server with millions of active players.
+//
+// All endpoints are **free and require no authentication**.
+// Data covers player profiles, game history, puzzles, leaderboards,
+// cloud engine evaluations, and more.
+//
+// Use this to look up chess players, analyze games, solve puzzles,
+// check leaderboards, and get engine evaluations for positions.
+service LichessService {
+
+  // Get a chess player's profile including their ratings, game count, and online status.
+  // Use this to look up any Lichess player by username.
+  //
+  // Returns the player's username, bio, ratings across all time controls
+  // (bullet, blitz, rapid, classical, etc.), total games played, win/draw/loss
+  // counts, and whether they are currently online.
+  //
+  // Lichess API: GET /api/user/{username}
+  rpc GetUser(GetUserRequest) returns (GetUserResponse);
+
+  // Get a player's rating history across all game types over time.
+  // Use this to see how a player's rating has changed over months and years.
+  //
+  // Returns arrays of date/rating points for each variant the player has
+  // played (bullet, blitz, rapid, classical, correspondence, puzzle, etc.).
+  // Each point contains year, month, day, and the rating on that date.
+  //
+  // Lichess API: GET /api/user/{username}/rating-history
+  rpc GetUserRatingHistory(GetUserRatingHistoryRequest) returns (GetUserRatingHistoryResponse);
+
+  // Get recent games played by a user.
+  // Use this to review a player's recent game history with full move data.
+  //
+  // Returns a list of games with players, ratings, moves, opening names,
+  // time controls, and results. Supports filtering by rated/casual and
+  // by time control (perfType). Default limit is 10 games.
+  //
+  // Lichess API: GET /api/games/user/{username}
+  rpc GetUserGames(GetUserGamesRequest) returns (GetUserGamesResponse);
+
+  // Get a specific game by its game ID.
+  // Use this to fetch full details of a single chess game including all moves.
+  //
+  // Returns the complete game record: players with ratings, moves in UCI/SAN
+  // format, opening classification, clock times, game result, and metadata.
+  //
+  // Lichess API: GET /game/export/{gameId}
+  rpc GetGame(GetGameRequest) returns (GetGameResponse);
+
+  // Get today's daily chess puzzle.
+  // Use this to fetch the current Lichess puzzle of the day.
+  //
+  // Returns the puzzle with its FEN position, solution moves (in UCI format),
+  // rating, themes (e.g. "fork", "pin", "mateIn2"), and the game it came from.
+  //
+  // Lichess API: GET /api/puzzle/daily
+  rpc GetDailyPuzzle(GetDailyPuzzleRequest) returns (GetDailyPuzzleResponse);
+
+  // Get a specific puzzle by its ID.
+  // Use this to look up any Lichess puzzle by its numeric ID.
+  //
+  // Returns the puzzle position (FEN), solution moves, rating, popularity,
+  // themes, and a link to the source game.
+  //
+  // Lichess API: GET /api/puzzle/{id}
+  rpc GetPuzzle(GetPuzzleRequest) returns (GetPuzzleResponse);
+
+  // Get the top players leaderboard for a specific time control.
+  // Use this to see who the best players are in bullet, blitz, rapid, etc.
+  //
+  // Returns a ranked list of top players with their usernames, ratings,
+  // titles (GM, IM, FM, etc.), and online status. Supports all variants:
+  // bullet, blitz, rapid, classical, ultraBullet, chess960, crazyhouse, etc.
+  //
+  // Lichess API: GET /api/player/top/{nb}/{perfType}
+  rpc GetLeaderboard(GetLeaderboardRequest) returns (GetLeaderboardResponse);
+
+  // Get cloud engine evaluation for a chess position.
+  // Use this to get Stockfish analysis for any position given as a FEN string.
+  //
+  // Returns the best moves (principal variations), evaluation in centipawns
+  // or mate distance, search depth, and number of nodes analyzed.
+  // Evaluations come from Lichess's cloud analysis database.
+  //
+  // Lichess API: GET /api/cloud-eval?fen={fen}
+  rpc GetCloudEval(GetCloudEvalRequest) returns (GetCloudEvalResponse);
+
+  // Get the count of currently online players on Lichess.
+  // Use this to check how many people are currently playing on the site.
+  //
+  // Returns a single count of connected users.
+  //
+  // Lichess API: GET /api/user/count
+  rpc GetOnline(GetOnlineRequest) returns (GetOnlineResponse);
+
+  // Get information about a Lichess team (club).
+  // Use this to look up a team by its ID and see its description, member count, and leaders.
+  //
+  // Returns the team's name, description, number of members, leader usernames,
+  // and whether the team is open for anyone to join.
+  //
+  // Lichess API: GET /api/team/{teamId}
+  rpc GetTeam(GetTeamRequest) returns (GetTeamResponse);
+}
+
+// --- Domain types ---
+
+// Performance rating in a specific time control or variant.
+message PerfRating {
+  // Number of games played in this category.
+  int32 games = 1;
+  // Current rating.
+  int32 rating = 2;
+  // Rating deviation (lower = more certain).
+  int32 rd = 3;
+  // Progress (rating change over recent games).
+  int32 prog = 4;
+  // Whether the rating is provisional.
+  bool prov = 5;
+}
+
+// A single data point in rating history.
+message RatingPoint {
+  int32 year = 1;
+  // Month (1-12).
+  int32 month = 2;
+  // Day of month (1-31).
+  int32 day = 3;
+  int32 rating = 4;
+}
+
+// Rating history for a single variant/time control.
+message RatingHistoryEntry {
+  // Variant name (e.g., "Bullet", "Blitz", "Rapid", "Puzzle").
+  string name = 1;
+  repeated RatingPoint points = 2;
+}
+
+// A player in a game, with their rating at the time.
+message GamePlayer {
+  string username = 1;
+  int32 rating = 2;
+  // Rating change after this game (e.g., +5, -3).
+  int32 rating_diff = 3;
+}
+
+// A chess game record.
+message Game {
+  // Lichess game ID (8 characters).
+  string id = 1;
+  // Whether the game was rated.
+  bool rated = 2;
+  // Variant name (e.g., "standard", "chess960").
+  string variant = 3;
+  // Speed category (e.g., "bullet", "blitz", "rapid", "classical").
+  string speed = 4;
+  // Performance type (e.g., "bullet", "blitz", "rapid").
+  string perf = 5;
+  // Game creation timestamp in milliseconds.
+  int64 created_at = 6;
+  // Last move timestamp in milliseconds.
+  int64 last_move_at = 7;
+  // Game status (e.g., "mate", "resign", "draw", "stalemate", "timeout", "outoftime").
+  string status = 8;
+  // White player.
+  GamePlayer white = 9;
+  // Black player.
+  GamePlayer black = 10;
+  // Space-separated moves in SAN notation.
+  string moves = 11;
+  // Opening ECO code (e.g., "B20").
+  string opening_eco = 12;
+  // Opening name (e.g., "Sicilian Defense").
+  string opening_name = 13;
+  // Clock initial time in seconds.
+  int32 clock_initial = 14;
+  // Clock increment in seconds.
+  int32 clock_increment = 15;
+  // Winner: "white", "black", or empty for draw.
+  string winner = 16;
+}
+
+// A chess puzzle.
+message Puzzle {
+  // Puzzle ID.
+  string id = 1;
+  // Puzzle rating (difficulty).
+  int32 rating = 2;
+  // Number of times this puzzle has been played.
+  int32 plays = 3;
+  // FEN of the initial puzzle position (after the setup move).
+  string initial_fen = 4;
+  // Solution moves in UCI format (e.g., ["e2e4", "d7d5"]).
+  repeated string solution = 5;
+  // Puzzle themes (e.g., "fork", "pin", "mateIn2", "middlegame").
+  repeated string themes = 6;
+  // The initial ply in the source game.
+  int32 initial_ply = 7;
+  // Source game ID.
+  string game_id = 8;
+}
+
+// A player entry in a leaderboard.
+message LeaderboardPlayer {
+  // Lichess username.
+  string username = 1;
+  // FIDE title if any (e.g., "GM", "IM", "FM", "CM", "WGM").
+  string title = 2;
+  // Current rating in this category.
+  int32 rating = 3;
+  // Whether the player is currently online.
+  bool online = 4;
+}
+
+// A principal variation (line of best play) from engine analysis.
+message PrincipalVariation {
+  // Space-separated moves in UCI notation.
+  string moves = 1;
+  // Evaluation in centipawns (from white's perspective).
+  int32 cp = 2;
+  // Mate in N moves (positive = white mates, negative = black mates). 0 if not a mate.
+  int32 mate = 3;
+}
+
+// --- Request / Response messages ---
+
+message GetUserRequest {
+  // Lichess username (case-insensitive).
+  string username = 1;
+}
+
+message GetUserResponse {
+  string id = 1;
+  string username = 2;
+  // Player's bio/about text.
+  string bio = 3;
+  // FIDE title if any (e.g., "GM", "IM").
+  string title = 4;
+  // Country code (e.g., "US", "FR").
+  string country = 5;
+  // Whether the player is currently online.
+  bool online = 6;
+  // Total number of games played.
+  int32 total_games = 7;
+  // Total time spent playing in seconds.
+  int64 play_time = 8;
+  // Account creation timestamp in milliseconds.
+  int64 created_at = 9;
+  // URL to the player's profile.
+  string url = 10;
+  // Ratings per variant.
+  map<string, PerfRating> perfs = 11;
+}
+
+message GetUserRatingHistoryRequest {
+  // Lichess username (case-insensitive).
+  string username = 1;
+}
+
+message GetUserRatingHistoryResponse {
+  repeated RatingHistoryEntry history = 1;
+}
+
+message GetUserGamesRequest {
+  // Lichess username (case-insensitive).
+  string username = 1;
+  // Maximum number of games to return (default 10).
+  int32 max = 2;
+  // Only include rated games if true.
+  bool rated = 3;
+  // Filter by time control: "bullet", "blitz", "rapid", "classical", "correspondence",
+  // "chess960", "crazyhouse", "antichess", "atomic", "horde", "kingOfTheHill",
+  // "racingKings", "threeCheck", "ultraBullet".
+  string perf_type = 4;
+}
+
+message GetUserGamesResponse {
+  repeated Game games = 1;
+}
+
+message GetGameRequest {
+  // Lichess game ID (8-character alphanumeric string).
+  string game_id = 1;
+}
+
+message GetGameResponse {
+  Game game = 1;
+}
+
+message GetDailyPuzzleRequest {}
+
+message GetDailyPuzzleResponse {
+  Puzzle puzzle = 1;
+}
+
+message GetPuzzleRequest {
+  // Puzzle ID (alphanumeric string, e.g., "K69di").
+  string id = 1;
+}
+
+message GetPuzzleResponse {
+  Puzzle puzzle = 1;
+}
+
+message GetLeaderboardRequest {
+  // Number of players to return (max 200). Default 10.
+  int32 nb = 1;
+  // Performance type: "bullet", "blitz", "rapid", "classical", "ultraBullet",
+  // "chess960", "crazyhouse", "antichess", "atomic", "horde",
+  // "kingOfTheHill", "racingKings", "threeCheck".
+  string perf_type = 2;
+}
+
+message GetLeaderboardResponse {
+  repeated LeaderboardPlayer users = 1;
+}
+
+message GetCloudEvalRequest {
+  // FEN string of the position to evaluate.
+  // Example: "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1"
+  string fen = 1;
+  // Number of principal variations to return (1-5). Default 1.
+  int32 multi_pv = 2;
+}
+
+message GetCloudEvalResponse {
+  // The FEN that was evaluated.
+  string fen = 1;
+  // Number of kilonodes searched.
+  int64 knodes = 2;
+  // Search depth reached.
+  int32 depth = 3;
+  // Principal variations (best lines of play).
+  repeated PrincipalVariation pvs = 4;
+}
+
+message GetOnlineRequest {}
+
+message GetOnlineResponse {
+  // Number of players currently connected to Lichess.
+  int32 count = 1;
+}
+
+message GetTeamRequest {
+  // Team ID (slug from the team URL, e.g., "lichess-swiss").
+  string team_id = 1;
+}
+
+message GetTeamResponse {
+  string id = 1;
+  string name = 2;
+  // Team description (may contain markdown).
+  string description = 3;
+  // Number of team members.
+  int32 nb_members = 4;
+  // Leader usernames.
+  repeated string leaders = 5;
+  // Whether the team is open for anyone to join.
+  bool open = 6;
+  // URL to the team page.
+  string url = 7;
+}

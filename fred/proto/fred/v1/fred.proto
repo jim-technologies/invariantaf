@@ -1,0 +1,296 @@
+syntax = "proto3";
+
+package fred.v1;
+
+// FREDService provides access to the Federal Reserve Economic Data (FRED) API,
+// the most comprehensive source of U.S. economic data maintained by the
+// Federal Reserve Bank of St. Louis.
+//
+// FRED contains 800,000+ economic time series from 100+ sources covering
+// GDP, inflation, employment, interest rates, housing, trade, and more.
+//
+// Requires a free API key from https://fred.stlouisfed.org/docs/api/api_key.html
+// Set the FRED_API_KEY environment variable.
+//
+// Key series IDs to know:
+//   GDP       — Gross Domestic Product (quarterly)
+//   CPIAUCSL  — Consumer Price Index for All Urban Consumers (monthly, inflation measure)
+//   UNRATE    — Civilian Unemployment Rate (monthly)
+//   FEDFUNDS  — Federal Funds Effective Rate (monthly, the Fed's key interest rate)
+//   DGS10     — 10-Year Treasury Constant Maturity Rate (daily)
+//   SP500     — S&P 500 Index (daily)
+//   M2SL      — M2 Money Stock (monthly)
+//   PAYEMS    — Total Nonfarm Payrolls (monthly, jobs report)
+//   HOUST     — Housing Starts (monthly)
+//   DEXUSEU   — U.S. / Euro Foreign Exchange Rate (daily)
+service FREDService {
+
+  // Get metadata for an economic data series.
+  //
+  // Returns title, frequency, units, seasonal adjustment, and date range
+  // for a single FRED series. Use this to understand what a series measures
+  // before pulling its data.
+  //
+  // Popular series: GDP, CPIAUCSL (CPI/inflation), UNRATE (unemployment),
+  // FEDFUNDS (fed funds rate), DGS10 (10-year treasury yield), PAYEMS (nonfarm payrolls).
+  rpc GetSeries(GetSeriesRequest) returns (GetSeriesResponse);
+
+  // Get the actual data points (observations) for a series over time.
+  //
+  // This is the core endpoint for time series data. Returns date/value pairs
+  // for any FRED series. Supports date range filtering and sorting.
+  //
+  // Example: Get monthly CPI readings from 2020 to present with
+  // series_id="CPIAUCSL", observation_start="2020-01-01".
+  rpc GetSeriesObservations(GetSeriesObservationsRequest) returns (GetSeriesObservationsResponse);
+
+  // Search for economic data series by keywords.
+  //
+  // FRED has 800,000+ series. Use this to find the right series ID
+  // for any economic concept. Returns matching series with titles,
+  // frequencies, and popularity rankings.
+  //
+  // Example queries: "inflation", "unemployment rate", "housing starts",
+  // "consumer confidence", "money supply", "treasury yield".
+  rpc SearchSeries(SearchSeriesRequest) returns (SearchSeriesResponse);
+
+  // Get a FRED category by ID.
+  //
+  // Categories organize FRED's 800K+ series into a browsable hierarchy.
+  // The root category is ID 0. Use GetCategoryChildren to navigate down.
+  //
+  // Example categories: 32991 (Prices), 32992 (Money, Banking, & Finance),
+  // 1 (Production & Business Activity).
+  rpc GetCategory(GetCategoryRequest) returns (GetCategoryResponse);
+
+  // Get child categories of a parent category.
+  //
+  // Navigate the FRED category tree. Start from root (category_id=0)
+  // and drill down to find series organized by topic.
+  rpc GetCategoryChildren(GetCategoryChildrenRequest) returns (GetCategoryChildrenResponse);
+
+  // Get all series within a FRED category.
+  //
+  // Returns the list of data series that belong to a given category,
+  // with metadata like title, frequency, and units.
+  rpc GetCategorySeries(GetCategorySeriesRequest) returns (GetCategorySeriesResponse);
+
+  // Get metadata for an economic data release.
+  //
+  // Releases are scheduled publications of economic data, like the
+  // "Employment Situation" (jobs report), "GDP", or "Consumer Price Index".
+  // Returns the release name, link, and notes.
+  rpc GetRelease(GetReleaseRequest) returns (GetReleaseResponse);
+
+  // Get release dates for an economic data release.
+  //
+  // Find out when the next jobs report, GDP estimate, or CPI reading
+  // will be published. Critical for trading around economic events.
+  // Returns past and upcoming release dates.
+  rpc GetReleaseDates(GetReleaseDatesRequest) returns (GetReleaseDatesResponse);
+
+  // Get all series associated with an economic data release.
+  //
+  // A single release (e.g., "Employment Situation") may contain
+  // dozens of series (unemployment rate, payrolls, hours worked, etc.).
+  // Use this to discover all data published as part of a release.
+  rpc GetReleaseSeries(GetReleaseSeriesRequest) returns (GetReleaseSeriesResponse);
+
+  // Get the categories that a series belongs to.
+  //
+  // Shows where a series fits in FRED's category hierarchy.
+  // For example, GDP belongs to "Gross Domestic Product" under
+  // "National Accounts" > "National Income & Product Accounts".
+  rpc GetSeriesCategories(GetSeriesCategoriesRequest) returns (GetSeriesCategoriesResponse);
+}
+
+// --- Domain types ---
+
+message Series {
+  // FRED series ID (e.g., "GDP", "CPIAUCSL", "UNRATE").
+  string id = 1;
+  // Human-readable title (e.g., "Gross Domestic Product").
+  string title = 2;
+  // Data frequency: "Daily", "Weekly", "Monthly", "Quarterly", "Annual".
+  string frequency = 3;
+  // Units of measurement (e.g., "Billions of Dollars", "Percent").
+  string units = 4;
+  // Seasonal adjustment: "Seasonally Adjusted", "Not Seasonally Adjusted".
+  string seasonal_adjustment = 5;
+  // Last updated timestamp (e.g., "2024-01-15 08:01:03-06").
+  string last_updated = 6;
+  // Earliest available observation date (YYYY-MM-DD).
+  string observation_start = 7;
+  // Latest available observation date (YYYY-MM-DD).
+  string observation_end = 8;
+  // Detailed description and methodology notes.
+  string notes = 9;
+  // Popularity rank (lower = more popular). 0 if not available.
+  int32 popularity = 10;
+}
+
+message Observation {
+  // Date of the observation (YYYY-MM-DD).
+  string date = 1;
+  // Value as string (FRED returns "." for missing values).
+  string value = 2;
+}
+
+message FREDCategory {
+  // Category ID.
+  int32 id = 1;
+  // Category name.
+  string name = 2;
+  // Parent category ID (0 for root).
+  int32 parent_id = 3;
+}
+
+message Release {
+  // Release ID.
+  int32 id = 1;
+  // Release name (e.g., "Employment Situation").
+  string name = 2;
+  // URL to the release page.
+  string link = 3;
+  // Description or notes about the release.
+  string notes = 4;
+  // Whether the release is associated with a press release.
+  bool press_release = 5;
+}
+
+message ReleaseDate {
+  // Release ID.
+  int32 release_id = 1;
+  // Release name.
+  string release_name = 2;
+  // Date of the release (YYYY-MM-DD).
+  string date = 3;
+}
+
+// --- Request / Response messages ---
+
+message GetSeriesRequest {
+  // FRED series ID (e.g., "GDP", "CPIAUCSL", "UNRATE", "FEDFUNDS", "DGS10").
+  string series_id = 1;
+}
+
+message GetSeriesResponse {
+  // The series metadata.
+  Series series = 1;
+}
+
+message GetSeriesObservationsRequest {
+  // FRED series ID (e.g., "GDP", "CPIAUCSL").
+  string series_id = 1;
+  // Start date filter (YYYY-MM-DD). Optional.
+  string observation_start = 2;
+  // End date filter (YYYY-MM-DD). Optional.
+  string observation_end = 3;
+  // Sort order: "asc" (oldest first, default) or "desc" (newest first).
+  string sort_order = 4;
+  // Maximum number of observations to return. Default 100000.
+  int32 limit = 5;
+}
+
+message GetSeriesObservationsResponse {
+  repeated Observation observations = 1;
+}
+
+message SearchSeriesRequest {
+  // Search keywords (e.g., "inflation", "unemployment rate").
+  string search_text = 1;
+  // Maximum number of results. Default 100.
+  int32 limit = 2;
+  // Result offset for pagination.
+  int32 offset = 3;
+  // Sort order: "search_rank" (default), "series_id_asc", "title_asc",
+  // "popularity_desc", "last_updated_desc".
+  string order_by = 4;
+}
+
+message SearchSeriesResponse {
+  repeated Series results = 1;
+  // Total number of matching series (may be more than returned).
+  int32 count = 2;
+}
+
+message GetCategoryRequest {
+  // Category ID. Use 0 for the root category.
+  int32 category_id = 1;
+}
+
+message GetCategoryResponse {
+  FREDCategory category = 1;
+}
+
+message GetCategoryChildrenRequest {
+  // Parent category ID. Use 0 for top-level categories.
+  int32 category_id = 1;
+}
+
+message GetCategoryChildrenResponse {
+  repeated FREDCategory categories = 1;
+}
+
+message GetCategorySeriesRequest {
+  // Category ID to list series for.
+  int32 category_id = 1;
+  // Maximum number of results. Default 1000.
+  int32 limit = 2;
+  // Result offset for pagination.
+  int32 offset = 3;
+  // Sort order: "series_id", "title", "popularity" (default), "last_updated".
+  string order_by = 4;
+}
+
+message GetCategorySeriesResponse {
+  repeated Series seriess = 1;
+}
+
+message GetReleaseRequest {
+  // Release ID.
+  int32 release_id = 1;
+}
+
+message GetReleaseResponse {
+  Release release = 1;
+}
+
+message GetReleaseDatesRequest {
+  // Release ID.
+  int32 release_id = 1;
+  // Maximum number of dates to return.
+  int32 limit = 2;
+  // Result offset for pagination.
+  int32 offset = 3;
+  // Sort order: "asc" (default) or "desc".
+  string sort_order = 4;
+}
+
+message GetReleaseDatesResponse {
+  repeated ReleaseDate release_dates = 1;
+}
+
+message GetReleaseSeriesRequest {
+  // Release ID.
+  int32 release_id = 1;
+  // Maximum number of results.
+  int32 limit = 2;
+  // Result offset for pagination.
+  int32 offset = 3;
+  // Sort order: "series_id", "title", "popularity" (default), "last_updated".
+  string order_by = 4;
+}
+
+message GetReleaseSeriesResponse {
+  repeated Series seriess = 1;
+}
+
+message GetSeriesCategoriesRequest {
+  // FRED series ID (e.g., "GDP").
+  string series_id = 1;
+}
+
+message GetSeriesCategoriesResponse {
+  repeated FREDCategory categories = 1;
+}

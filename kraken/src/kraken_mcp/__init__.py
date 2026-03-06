@@ -1,0 +1,1 @@
+"""Kraken MCP package."""

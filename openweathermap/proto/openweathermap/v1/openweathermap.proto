@@ -1,0 +1,310 @@
+syntax = "proto3";
+
+package openweathermap.v1;
+
+// OpenWeatherMapService provides weather data from OpenWeatherMap,
+// one of the most popular weather data providers.
+//
+// All endpoints require an API key passed as `appid` query parameter.
+// Set the OPENWEATHERMAP_API_KEY environment variable.
+//
+// Use this to check current weather, forecasts, air quality,
+// UV index, geocoding, and historical weather data.
+service OpenWeatherMapService {
+
+  // Get current weather conditions for a city.
+  //
+  // Returns temperature, feels_like, humidity, pressure, wind speed,
+  // weather description, and icon. Units are metric (Celsius, m/s).
+  // Example city: "London", "New York", "Tokyo,JP"
+  rpc GetCurrentWeather(GetCurrentWeatherRequest) returns (GetCurrentWeatherResponse);
+
+  // Get current weather conditions by geographic coordinates.
+  //
+  // Same data as GetCurrentWeather but looked up by latitude/longitude.
+  // Use GetGeocode first to convert city names to coordinates if needed.
+  rpc GetCurrentWeatherByCoords(GetCurrentWeatherByCoordsRequest) returns (GetCurrentWeatherResponse);
+
+  // Get 5-day / 3-hour weather forecast for a city.
+  //
+  // Returns a list of forecast items every 3 hours for the next 5 days.
+  // Each item includes temperature, humidity, wind, weather description.
+  rpc GetForecast(GetForecastRequest) returns (GetForecastResponse);
+
+  // Get air quality data for a location.
+  //
+  // Returns air quality index (AQI 1-5) and concentrations of
+  // CO, NO2, O3, PM2.5, PM10 and other pollutants.
+  // Requires latitude and longitude coordinates.
+  rpc GetAirQuality(GetAirQualityRequest) returns (GetAirQualityResponse);
+
+  // Get the current UV index for a location.
+  //
+  // Returns the UV index value for the given coordinates.
+  // UV index ranges: 0-2 low, 3-5 moderate, 6-7 high, 8-10 very high, 11+ extreme.
+  rpc GetUVIndex(GetUVIndexRequest) returns (GetUVIndexResponse);
+
+  // Geocode a city name to latitude/longitude coordinates.
+  //
+  // Returns up to 5 matching locations with their coordinates,
+  // country codes, and state information.
+  // Example queries: "London", "New York,US", "Paris,FR"
+  rpc GetGeocode(GetGeocodeRequest) returns (GetGeocodeResponse);
+
+  // Reverse geocode coordinates to location names.
+  //
+  // Given latitude and longitude, returns up to 5 matching location
+  // names with country codes and state information.
+  rpc GetReverseGeocode(GetReverseGeocodeRequest) returns (GetReverseGeocodeResponse);
+
+  // Get comprehensive weather data using One Call API 3.0.
+  //
+  // Returns current conditions, minutely precipitation for 1 hour,
+  // hourly forecast for 48 hours, daily forecast for 8 days,
+  // and government weather alerts. Requires coordinates.
+  rpc GetOneCall(GetOneCallRequest) returns (GetOneCallResponse);
+
+  // Get historical weather data for a specific time.
+  //
+  // Returns weather data for a past date/time using One Call 3.0 timemachine.
+  // Requires coordinates and a Unix timestamp.
+  rpc GetHistoricalWeather(GetHistoricalWeatherRequest) returns (GetHistoricalWeatherResponse);
+
+  // Get weather map tile URL for overlay maps.
+  //
+  // Constructs the URL for weather overlay map tiles.
+  // Available layers: clouds_new, precipitation_new, pressure_new,
+  // wind_new, temp_new. Uses standard web map tile coordinates (z/x/y).
+  rpc GetWeatherMap(GetWeatherMapRequest) returns (GetWeatherMapResponse);
+}
+
+// --- Domain types ---
+
+message WeatherCondition {
+  int32 id = 1;
+  string main = 2;
+  string description = 3;
+  string icon = 4;
+}
+
+message CurrentWeather {
+  double temp = 1;
+  double feels_like = 2;
+  double temp_min = 3;
+  double temp_max = 4;
+  int32 humidity = 5;
+  int32 pressure = 6;
+  double wind_speed = 7;
+  int32 wind_deg = 8;
+  int32 clouds = 9;
+  int32 visibility = 10;
+  repeated WeatherCondition weather = 11;
+  string city_name = 12;
+  string country = 13;
+  int64 sunrise = 14;
+  int64 sunset = 15;
+  int64 dt = 16;
+  double lat = 17;
+  double lon = 18;
+}
+
+message ForecastItem {
+  int64 dt = 1;
+  double temp = 2;
+  double feels_like = 3;
+  double temp_min = 4;
+  double temp_max = 5;
+  int32 humidity = 6;
+  int32 pressure = 7;
+  double wind_speed = 8;
+  int32 wind_deg = 9;
+  int32 clouds = 10;
+  repeated WeatherCondition weather = 11;
+  double pop = 12;
+  string dt_txt = 13;
+}
+
+message AirQualityData {
+  int32 aqi = 1;
+  double co = 2;
+  double no = 3;
+  double no2 = 4;
+  double o3 = 5;
+  double so2 = 6;
+  double pm2_5 = 7;
+  double pm10 = 8;
+  double nh3 = 9;
+  int64 dt = 10;
+}
+
+message GeoLocation {
+  string name = 1;
+  double lat = 2;
+  double lon = 3;
+  string country = 4;
+  string state = 5;
+}
+
+message HourlyForecast {
+  int64 dt = 1;
+  double temp = 2;
+  double feels_like = 3;
+  int32 humidity = 4;
+  int32 pressure = 5;
+  double wind_speed = 6;
+  int32 wind_deg = 7;
+  int32 clouds = 8;
+  double pop = 9;
+  repeated WeatherCondition weather = 10;
+  double uvi = 11;
+}
+
+message DailyForecast {
+  int64 dt = 1;
+  double temp_day = 2;
+  double temp_night = 3;
+  double temp_min = 4;
+  double temp_max = 5;
+  double feels_like_day = 6;
+  double feels_like_night = 7;
+  int32 humidity = 8;
+  int32 pressure = 9;
+  double wind_speed = 10;
+  int32 wind_deg = 11;
+  int32 clouds = 12;
+  double pop = 13;
+  double uvi = 14;
+  repeated WeatherCondition weather = 15;
+  int64 sunrise = 16;
+  int64 sunset = 17;
+  string summary = 18;
+}
+
+message WeatherAlert {
+  string sender_name = 1;
+  string event = 2;
+  int64 start = 3;
+  int64 end = 4;
+  string description = 5;
+}
+
+message MinutelyPrecipitation {
+  int64 dt = 1;
+  double precipitation = 2;
+}
+
+// --- Request / Response messages ---
+
+message GetCurrentWeatherRequest {
+  // City name, optionally with country code (e.g., "London", "New York,US").
+  string city = 1;
+}
+
+message GetCurrentWeatherResponse {
+  CurrentWeather weather = 1;
+}
+
+message GetCurrentWeatherByCoordsRequest {
+  double lat = 1;
+  double lon = 2;
+}
+
+message GetForecastRequest {
+  // City name, optionally with country code.
+  string city = 1;
+}
+
+message GetForecastResponse {
+  repeated ForecastItem items = 1;
+  string city_name = 2;
+  string country = 3;
+}
+
+message GetAirQualityRequest {
+  double lat = 1;
+  double lon = 2;
+}
+
+message GetAirQualityResponse {
+  AirQualityData data = 1;
+}
+
+message GetUVIndexRequest {
+  double lat = 1;
+  double lon = 2;
+}
+
+message GetUVIndexResponse {
+  double uv_index = 1;
+  int64 dt = 2;
+  double lat = 3;
+  double lon = 4;
+}
+
+message GetGeocodeRequest {
+  // City name to geocode (e.g., "London", "New York,US").
+  string city = 1;
+  // Maximum number of results (1-5). Default 5.
+  int32 limit = 2;
+}
+
+message GetGeocodeResponse {
+  repeated GeoLocation locations = 1;
+}
+
+message GetReverseGeocodeRequest {
+  double lat = 1;
+  double lon = 2;
+  // Maximum number of results (1-5). Default 5.
+  int32 limit = 3;
+}
+
+message GetReverseGeocodeResponse {
+  repeated GeoLocation locations = 1;
+}
+
+message GetOneCallRequest {
+  double lat = 1;
+  double lon = 2;
+}
+
+message GetOneCallResponse {
+  CurrentWeather current = 1;
+  repeated MinutelyPrecipitation minutely = 2;
+  repeated HourlyForecast hourly = 3;
+  repeated DailyForecast daily = 4;
+  repeated WeatherAlert alerts = 5;
+  double lat = 6;
+  double lon = 7;
+  string timezone = 8;
+}
+
+message GetHistoricalWeatherRequest {
+  double lat = 1;
+  double lon = 2;
+  // Unix timestamp for the historical data point.
+  int64 dt = 3;
+}
+
+message GetHistoricalWeatherResponse {
+  CurrentWeather data = 1;
+  double lat = 2;
+  double lon = 3;
+  string timezone = 4;
+}
+
+message GetWeatherMapRequest {
+  // Map layer: clouds_new, precipitation_new, pressure_new, wind_new, temp_new.
+  string layer = 1;
+  // Zoom level (0-18).
+  int32 z = 2;
+  // Tile x coordinate.
+  int32 x = 3;
+  // Tile y coordinate.
+  int32 y = 4;
+}
+
+message GetWeatherMapResponse {
+  // The constructed tile URL.
+  string url = 1;
+}

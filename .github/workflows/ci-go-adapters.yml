@@ -1,0 +1,34 @@
+name: CI Go Adapters
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint-test:
+    name: lint+test (${{ matrix.adapter }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        adapter:
+          - dockerhub
+          - giphy
+          - stackexchange
+          - steam
+          - unsplash
+    defaults:
+      run:
+        working-directory: ${{ matrix.adapter }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Flox
+        uses: flox/install-flox-action@v2
+
+      - name: Run lint
+        run: flox activate -c "make lint"
+
+      - name: Run tests
+        run: flox activate -c "make test"

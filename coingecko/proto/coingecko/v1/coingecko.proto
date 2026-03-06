@@ -1,0 +1,344 @@
+syntax = "proto3";
+
+package coingecko.v1;
+
+// CoinGeckoService provides cryptocurrency market data from CoinGecko,
+// the world's largest independent crypto data aggregator.
+//
+// All endpoints are **free and require no authentication**.
+// Data covers 15,000+ coins, 1,000+ exchanges, NFTs, and DeFi.
+//
+// Use this to check prices, discover trending coins, analyze markets,
+// and get historical price data for any cryptocurrency.
+service CoinGeckoService {
+
+  // Get current prices for one or more coins.
+  //
+  // Fast price lookup by coin ID (e.g., "bitcoin", "ethereum", "solana").
+  // Optionally includes market cap, 24h volume, and 24h price change.
+  // Use Search to find coin IDs if you don't know them.
+  rpc GetPrice(GetPriceRequest) returns (GetPriceResponse);
+
+  // Search for coins, exchanges, and categories by keyword.
+  //
+  // Use this to find the CoinGecko ID for any cryptocurrency.
+  // Returns matching coins with their IDs, symbols, and market cap ranks.
+  // Example queries: "bitcoin", "shiba", "uniswap", "layer 2"
+  rpc Search(SearchRequest) returns (SearchResponse);
+
+  // Get trending coins, NFTs, and categories in the last 24 hours.
+  //
+  // Returns the top 15 trending coins by search popularity,
+  // top 7 trending NFTs, and top 6 trending categories.
+  // Great for discovering what the market is paying attention to.
+  rpc GetTrending(GetTrendingRequest) returns (GetTrendingResponse);
+
+  // Get a ranked list of coins by market cap.
+  //
+  // Returns coins sorted by market cap with current prices,
+  // 24h changes, volume, and supply data. Supports pagination
+  // and filtering by category.
+  rpc GetMarkets(GetMarketsRequest) returns (GetMarketsResponse);
+
+  // Get detailed information about a specific coin.
+  //
+  // Returns comprehensive data including description, links,
+  // market data, community stats, and developer activity.
+  // The coin_id is the CoinGecko slug (e.g., "bitcoin", "ethereum").
+  rpc GetCoin(GetCoinRequest) returns (GetCoinResponse);
+
+  // Get historical price chart data for a coin.
+  //
+  // Returns price, market cap, and volume over time.
+  // Granularity is automatic: 5-min for 1 day, hourly for 1-90 days,
+  // daily for 90+ days.
+  rpc GetMarketChart(GetMarketChartRequest) returns (GetMarketChartResponse);
+
+  // Get OHLC (Open-High-Low-Close) candlestick data for a coin.
+  //
+  // Returns candlestick data at daily granularity.
+  // Useful for technical analysis and charting.
+  rpc GetOHLC(GetOHLCRequest) returns (GetOHLCResponse);
+
+  // Get global cryptocurrency market statistics.
+  //
+  // Returns total market cap, 24h volume, BTC dominance,
+  // number of active cryptocurrencies, and market cap changes.
+  rpc GetGlobal(GetGlobalRequest) returns (GetGlobalResponse);
+
+  // Get a list of coin categories with market data.
+  //
+  // Returns categories like "DeFi", "Layer 2", "Meme Tokens"
+  // with their total market caps, volumes, and 24h changes.
+  rpc GetCategories(GetCategoriesRequest) returns (GetCategoriesResponse);
+
+  // Get BTC exchange rates against all supported currencies.
+  //
+  // Returns Bitcoin's price in 60+ fiat and crypto currencies.
+  // Useful for currency conversion calculations.
+  rpc GetExchangeRates(GetExchangeRatesRequest) returns (GetExchangeRatesResponse);
+}
+
+// --- Domain types ---
+
+message CoinPrice {
+  string coin_id = 1;
+  double price = 2;
+  double market_cap = 3;
+  double volume_24h = 4;
+  double change_24h = 5;
+  int64 last_updated = 6;
+}
+
+message CoinMarket {
+  string id = 1;
+  string symbol = 2;
+  string name = 3;
+  string image = 4;
+  double current_price = 5;
+  double market_cap = 6;
+  int32 market_cap_rank = 7;
+  double total_volume = 8;
+  double high_24h = 9;
+  double low_24h = 10;
+  double price_change_24h = 11;
+  double price_change_percentage_24h = 12;
+  double circulating_supply = 13;
+  double total_supply = 14;
+  double max_supply = 15;
+  double ath = 16;
+  double ath_change_percentage = 17;
+  string ath_date = 18;
+  double atl = 19;
+  double atl_change_percentage = 20;
+  string atl_date = 21;
+  string last_updated = 22;
+}
+
+message SearchCoin {
+  string id = 1;
+  string name = 2;
+  string symbol = 3;
+  int32 market_cap_rank = 4;
+  string thumb = 5;
+  string large = 6;
+}
+
+message SearchExchange {
+  string id = 1;
+  string name = 2;
+  string market_type = 3;
+  string thumb = 4;
+}
+
+message SearchCategory {
+  string id = 1;
+  string name = 2;
+}
+
+message TrendingCoin {
+  string id = 1;
+  string name = 2;
+  string symbol = 3;
+  int32 market_cap_rank = 4;
+  string thumb = 5;
+  double price_btc = 6;
+  int32 score = 7;
+}
+
+message TrendingNFT {
+  string id = 1;
+  string name = 2;
+  string symbol = 3;
+  string thumb = 4;
+}
+
+message TrendingCategory {
+  string id = 1;
+  string name = 2;
+  int32 coins_count = 3;
+}
+
+message TimestampValue {
+  // Unix timestamp in milliseconds.
+  int64 timestamp = 1;
+  double value = 2;
+}
+
+message OHLC {
+  // Unix timestamp in milliseconds.
+  int64 timestamp = 1;
+  double open = 2;
+  double high = 3;
+  double low = 4;
+  double close = 5;
+}
+
+message Category {
+  string id = 1;
+  string name = 2;
+  double market_cap = 3;
+  double market_cap_change_24h = 4;
+  double volume_24h = 5;
+  repeated string top_3_coins = 6;
+  string updated_at = 7;
+}
+
+message ExchangeRate {
+  string name = 1;
+  string unit = 2;
+  double value = 3;
+  // "fiat", "crypto", or "commodity".
+  string type = 4;
+}
+
+// --- Request / Response messages ---
+
+message GetPriceRequest {
+  // Comma-separated coin IDs (e.g., "bitcoin,ethereum,solana").
+  string ids = 1;
+  // Currency to show prices in. Default "usd".
+  string vs_currency = 2;
+  // Include market cap data.
+  bool include_market_cap = 3;
+  // Include 24h volume data.
+  bool include_24h_vol = 4;
+  // Include 24h price change.
+  bool include_24h_change = 5;
+}
+
+message GetPriceResponse {
+  repeated CoinPrice prices = 1;
+}
+
+message SearchRequest {
+  // Search query (e.g., "bitcoin", "shiba", "layer 2").
+  string query = 1;
+}
+
+message SearchResponse {
+  repeated SearchCoin coins = 1;
+  repeated SearchExchange exchanges = 2;
+  repeated SearchCategory categories = 3;
+}
+
+message GetTrendingRequest {}
+
+message GetTrendingResponse {
+  repeated TrendingCoin coins = 1;
+  repeated TrendingNFT nfts = 2;
+  repeated TrendingCategory categories = 3;
+}
+
+message GetMarketsRequest {
+  // Currency to show prices in. Default "usd".
+  string vs_currency = 1;
+  // Filter by category (e.g., "decentralized-finance-defi", "meme-token").
+  string category = 2;
+  // Sort order: "market_cap_desc", "volume_desc", "id_asc", etc. Default "market_cap_desc".
+  string order = 3;
+  // Results per page (1-250). Default 100.
+  int32 per_page = 4;
+  // Page number (1-based). Default 1.
+  int32 page = 5;
+}
+
+message GetMarketsResponse {
+  repeated CoinMarket coins = 1;
+}
+
+message GetCoinRequest {
+  // CoinGecko coin ID (e.g., "bitcoin", "ethereum").
+  string coin_id = 1;
+}
+
+message GetCoinResponse {
+  string id = 1;
+  string symbol = 2;
+  string name = 3;
+  string description = 4;
+  string image = 5;
+  int32 market_cap_rank = 6;
+  // Current price in USD.
+  double current_price_usd = 7;
+  double market_cap_usd = 8;
+  double total_volume_usd = 9;
+  double high_24h_usd = 10;
+  double low_24h_usd = 11;
+  double price_change_percentage_24h = 12;
+  double price_change_percentage_7d = 13;
+  double price_change_percentage_30d = 14;
+  double circulating_supply = 15;
+  double total_supply = 16;
+  double max_supply = 17;
+  double ath_usd = 18;
+  double ath_change_percentage = 19;
+  string ath_date = 20;
+  string genesis_date = 21;
+  // Homepage URL.
+  string homepage = 22;
+  // Blockchain explorer URL.
+  string blockchain_site = 23;
+  // Subreddit URL.
+  string subreddit_url = 24;
+  repeated string categories = 25;
+  double sentiment_votes_up_percentage = 26;
+  int32 watchlist_users = 27;
+}
+
+message GetMarketChartRequest {
+  // CoinGecko coin ID (e.g., "bitcoin").
+  string coin_id = 1;
+  // Currency for price data. Default "usd".
+  string vs_currency = 2;
+  // Number of days of data (1, 7, 14, 30, 90, 180, 365, or "max").
+  string days = 3;
+}
+
+message GetMarketChartResponse {
+  repeated TimestampValue prices = 1;
+  repeated TimestampValue market_caps = 2;
+  repeated TimestampValue total_volumes = 3;
+}
+
+message GetOHLCRequest {
+  // CoinGecko coin ID.
+  string coin_id = 1;
+  // Currency. Default "usd".
+  string vs_currency = 2;
+  // Number of days: "1", "7", "14", "30", "90", "180", "365", or "max".
+  string days = 3;
+}
+
+message GetOHLCResponse {
+  repeated OHLC candles = 1;
+}
+
+message GetGlobalRequest {}
+
+message GetGlobalResponse {
+  int32 active_cryptocurrencies = 1;
+  int32 markets = 2;
+  double total_market_cap_usd = 3;
+  double total_volume_usd = 4;
+  double btc_dominance = 5;
+  double eth_dominance = 6;
+  double market_cap_change_percentage_24h = 7;
+  int64 updated_at = 8;
+}
+
+message GetCategoriesRequest {
+  // Sort order: "market_cap_desc", "market_cap_asc", "name_desc", "name_asc". Default "market_cap_desc".
+  string order = 1;
+}
+
+message GetCategoriesResponse {
+  repeated Category categories = 1;
+}
+
+message GetExchangeRatesRequest {}
+
+message GetExchangeRatesResponse {
+  // Map of currency code to exchange rate (e.g., "usd" -> rate).
+  map<string, ExchangeRate> rates = 1;
+}

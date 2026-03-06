@@ -1,0 +1,194 @@
+syntax = "proto3";
+
+package fun.v1;
+
+// FunService combines several fun, free APIs into one service.
+//
+// Includes dad jokes, trivia questions, inspirational quotes,
+// dog images, and cat facts. All endpoints are free and require
+// no authentication.
+service FunService {
+
+  // Get a random dad joke.
+  //
+  // Returns a single random dad joke from icanhazdadjoke.com.
+  // Great for lightening the mood or testing your groan reflex.
+  rpc GetDadJoke(GetDadJokeRequest) returns (GetDadJokeResponse);
+
+  // Search for dad jokes by keyword.
+  //
+  // Search the dad joke database by a search term.
+  // Returns matching jokes with pagination info.
+  rpc SearchDadJokes(SearchDadJokesRequest) returns (SearchDadJokesResponse);
+
+  // Get random trivia questions.
+  //
+  // Returns trivia questions from the Open Trivia Database.
+  // Optionally filter by category, difficulty, and question type.
+  // Categories: 9=General Knowledge, 18=Computers, 21=Sports, 22=Geography, 23=History.
+  // Difficulty: easy, medium, hard. Type: multiple, boolean.
+  rpc GetTrivia(GetTriviaRequest) returns (GetTriviaResponse);
+
+  // List all available trivia categories.
+  //
+  // Returns the full list of trivia categories with their IDs.
+  // Use the category ID when requesting trivia questions.
+  rpc GetTriviaCategories(GetTriviaCategoriesRequest) returns (GetTriviaCategoriesResponse);
+
+  // Get a random inspirational quote.
+  //
+  // Returns a random quote with its author and tags.
+  // Great for daily inspiration or motivational displays.
+  rpc GetRandomQuote(GetRandomQuoteRequest) returns (GetRandomQuoteResponse);
+
+  // Search for quotes by content.
+  //
+  // Search the quote database by keywords in the quote text.
+  // Returns matching quotes with authors and tags.
+  rpc SearchQuotes(SearchQuotesRequest) returns (SearchQuotesResponse);
+
+  // Get a random dog image.
+  //
+  // Returns a random dog image URL from the Dog CEO API.
+  // The image is from any random breed.
+  rpc GetRandomDogImage(GetRandomDogImageRequest) returns (GetRandomDogImageResponse);
+
+  // Get a random dog image for a specific breed.
+  //
+  // Returns a random dog image URL for the given breed.
+  // Use ListDogBreeds to find valid breed names.
+  // Example breeds: "labrador", "poodle", "husky", "corgi".
+  rpc GetDogImageByBreed(GetDogImageByBreedRequest) returns (GetDogImageByBreedResponse);
+
+  // List all available dog breeds.
+  //
+  // Returns all dog breeds and their sub-breeds.
+  // Use breed names with GetDogImageByBreed.
+  rpc ListDogBreeds(ListDogBreedsRequest) returns (ListDogBreedsResponse);
+
+  // Get a random cat fact.
+  //
+  // Returns a random fun fact about cats.
+  // Perfect for cat lovers and trivia enthusiasts.
+  rpc GetRandomCatFact(GetRandomCatFactRequest) returns (GetRandomCatFactResponse);
+}
+
+// --- Domain types ---
+
+message DadJoke {
+  string id = 1;
+  string joke = 2;
+  int32 status = 3;
+}
+
+message TriviaQuestion {
+  string category = 1;
+  string type = 2;
+  string difficulty = 3;
+  string question = 4;
+  string correct_answer = 5;
+  repeated string incorrect_answers = 6;
+}
+
+message TriviaCategory {
+  int32 id = 1;
+  string name = 2;
+}
+
+message Quote {
+  string id = 1;
+  string content = 2;
+  string author = 3;
+  repeated string tags = 4;
+  int32 length = 5;
+}
+
+message DogBreed {
+  string breed = 1;
+  repeated string sub_breeds = 2;
+}
+
+// --- Request / Response messages ---
+
+message GetDadJokeRequest {}
+
+message GetDadJokeResponse {
+  DadJoke joke = 1;
+}
+
+message SearchDadJokesRequest {
+  // Search term to find jokes containing this text.
+  string query = 1;
+  // Maximum number of results to return. Default 20.
+  int32 limit = 2;
+}
+
+message SearchDadJokesResponse {
+  repeated DadJoke jokes = 1;
+  int32 total = 2;
+}
+
+message GetTriviaRequest {
+  // Number of questions to return (1-50). Default 1.
+  int32 amount = 1;
+  // Category ID (e.g., 9=General, 18=Computers, 21=Sports, 22=Geography, 23=History).
+  int32 category = 2;
+  // Difficulty: "easy", "medium", "hard".
+  string difficulty = 3;
+  // Question type: "multiple" (4 choices) or "boolean" (true/false).
+  string type = 4;
+}
+
+message GetTriviaResponse {
+  repeated TriviaQuestion questions = 1;
+}
+
+message GetTriviaCategoriesRequest {}
+
+message GetTriviaCategoriesResponse {
+  repeated TriviaCategory categories = 1;
+}
+
+message GetRandomQuoteRequest {}
+
+message GetRandomQuoteResponse {
+  Quote quote = 1;
+}
+
+message SearchQuotesRequest {
+  // Search query to find quotes containing this text.
+  string query = 1;
+}
+
+message SearchQuotesResponse {
+  repeated Quote quotes = 1;
+  int32 total = 2;
+}
+
+message GetRandomDogImageRequest {}
+
+message GetRandomDogImageResponse {
+  string image_url = 1;
+}
+
+message GetDogImageByBreedRequest {
+  // Dog breed name (e.g., "labrador", "poodle", "husky").
+  string breed = 1;
+}
+
+message GetDogImageByBreedResponse {
+  string image_url = 1;
+}
+
+message ListDogBreedsRequest {}
+
+message ListDogBreedsResponse {
+  repeated DogBreed breeds = 1;
+}
+
+message GetRandomCatFactRequest {}
+
+message GetRandomCatFactResponse {
+  string fact = 1;
+  int32 length = 2;
+}

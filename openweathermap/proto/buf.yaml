@@ -1,0 +1,9 @@
+version: v2
+modules:
+  - path: .
+lint:
+  ignore_only:
+    RPC_REQUEST_RESPONSE_UNIQUE:
+      - openweathermap/v1/openweathermap.proto
+    RPC_RESPONSE_STANDARD_NAME:
+      - openweathermap/v1/openweathermap.proto

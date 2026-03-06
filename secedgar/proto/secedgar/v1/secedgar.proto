@@ -1,0 +1,392 @@
+syntax = "proto3";
+
+package secedgar.v1;
+
+// SECEdgarService provides access to the U.S. Securities and Exchange Commission's
+// EDGAR (Electronic Data Gathering, Analysis, and Retrieval) system.
+//
+// EDGAR is the primary system for companies and others submitting documents
+// under the Securities Act of 1933, the Securities Exchange Act of 1934,
+// the Trust Indenture Act of 1939, and the Investment Company Act of 1940.
+//
+// All endpoints are **free and require no authentication**.
+// The SEC requires a User-Agent header with contact info — set via
+// SEC_EDGAR_USER_AGENT env var (e.g., "MyApp/1.0 (email@example.com)").
+//
+// Use this to search for companies, look up financial filings (10-K, 10-Q, 8-K),
+// retrieve XBRL financial data (revenue, net income, assets), track insider
+// transactions, and monitor institutional holdings.
+service SECEdgarService {
+
+  // Search for companies by name, ticker, or keyword.
+  //
+  // Performs a full-text search against the SEC EDGAR company index.
+  // Returns matching companies with their CIK numbers, tickers, and entity names.
+  // Use the CIK from results to call GetCompanyFilings or GetCompanyFacts.
+  // Example queries: "Apple", "AAPL", "Tesla", "blockchain"
+  rpc SearchCompany(SearchCompanyRequest) returns (SearchCompanyResponse);
+
+  // Get recent filings for a company by CIK number.
+  //
+  // Returns the company's recent SEC filings (10-K annual reports,
+  // 10-Q quarterly reports, 8-K current reports, proxy statements, etc.)
+  // with filing dates, accession numbers, and document URLs.
+  // The CIK can be found via SearchCompany or GetTickerToCIK.
+  rpc GetCompanyFilings(GetCompanyFilingsRequest) returns (GetCompanyFilingsResponse);
+
+  // Get all XBRL financial facts for a company.
+  //
+  // Returns structured financial data extracted from XBRL-tagged filings:
+  // revenue, net income, total assets, stockholders' equity, EPS, and more.
+  // Each fact includes the value, unit, time period, and source filing.
+  // This is the richest source of machine-readable financial data from SEC filings.
+  // Uses US-GAAP taxonomy by default. CIK must be the 10-digit zero-padded number.
+  rpc GetCompanyFacts(GetCompanyFactsRequest) returns (GetCompanyFactsResponse);
+
+  // Get a single financial concept's values over time for a company.
+  //
+  // Retrieves the historical time series for one specific financial metric,
+  // e.g., "Revenues", "NetIncomeLoss", "Assets", "StockholdersEquity".
+  // Useful for tracking how a single metric changes across quarterly/annual filings.
+  // The taxonomy is typically "us-gaap" and concept names are PascalCase
+  // (e.g., "Revenues", "NetIncomeLoss", "EarningsPerShareBasic").
+  rpc GetCompanyConcept(GetCompanyConceptRequest) returns (GetCompanyConceptResponse);
+
+  // Full-text search across all SEC filings.
+  //
+  // Searches the content of filings (10-K, 10-Q, 8-K, etc.) for specific terms.
+  // Returns matching filings with snippets showing where the term appears.
+  // Supports date range filtering. Useful for finding filings that mention
+  // specific topics, risks, products, or events.
+  // Example queries: "artificial intelligence", "climate risk", "cybersecurity incident"
+  rpc SearchFullText(SearchFullTextRequest) returns (SearchFullTextResponse);
+
+  // Get details of a specific filing by accession number.
+  //
+  // Returns metadata and document list for a single SEC filing.
+  // The accession number uniquely identifies each filing
+  // (format: "0000320193-23-000077" or "000032019323000077").
+  // Use this to get the direct URL to the filing document.
+  rpc GetFiling(GetFilingRequest) returns (GetFilingResponse);
+
+  // Get insider trading (Form 4) data for a company.
+  //
+  // Returns recent insider transactions — stock purchases and sales
+  // by company officers, directors, and 10% owners. Includes the
+  // insider's name, title, transaction date, number of shares,
+  // price, and whether it was a buy or sell.
+  // Insider buying can signal confidence; unusual selling may signal concern.
+  rpc GetInsiderTransactions(GetInsiderTransactionsRequest) returns (GetInsiderTransactionsResponse);
+
+  // Get 13F institutional holdings data for a company.
+  //
+  // Returns institutional investors (hedge funds, mutual funds, etc.)
+  // that hold positions in the company, based on quarterly 13F filings.
+  // Includes the institution name, number of shares held, and market value.
+  // Useful for tracking "smart money" positions and ownership concentration.
+  rpc GetInstitutionalHoldings(GetInstitutionalHoldingsRequest) returns (GetInstitutionalHoldingsResponse);
+
+  // Look up a company's CIK number from its ticker symbol.
+  //
+  // Converts a stock ticker (e.g., "AAPL", "TSLA", "MSFT") to the
+  // SEC's Central Index Key (CIK) number. The CIK is required for
+  // most other EDGAR API calls. Also returns the company name.
+  rpc GetTickerToCIK(GetTickerToCIKRequest) returns (GetTickerToCIKResponse);
+
+  // Get the most recent filings across all companies.
+  //
+  // Returns a feed of the latest SEC filings from all companies,
+  // optionally filtered by form type (e.g., "10-K", "8-K", "4").
+  // Useful for monitoring new filings in real-time.
+  rpc GetRecentFilings(GetRecentFilingsRequest) returns (GetRecentFilingsResponse);
+}
+
+// --- Domain types ---
+
+message Company {
+  // Central Index Key — unique SEC identifier for the entity.
+  string cik = 1;
+  // Legal entity name as registered with the SEC.
+  string name = 2;
+  // Stock ticker symbol (e.g., "AAPL").
+  string ticker = 3;
+  // Stock exchange (e.g., "Nasdaq", "NYSE").
+  string exchange = 4;
+}
+
+message Filing {
+  // Unique accession number (e.g., "0000320193-23-000077").
+  string accession_number = 1;
+  // Form type (e.g., "10-K", "10-Q", "8-K", "4", "SC 13G").
+  string form_type = 2;
+  // Date the filing was submitted (YYYY-MM-DD).
+  string filing_date = 3;
+  // Brief description or title of the filing.
+  string description = 4;
+  // URL to the primary filing document.
+  string document_url = 5;
+  // CIK of the filer.
+  string cik = 6;
+  // Company name of the filer.
+  string company_name = 7;
+  // Reporting date / period of report (YYYY-MM-DD).
+  string report_date = 8;
+}
+
+message FinancialFact {
+  // The XBRL concept name (e.g., "Revenues", "NetIncomeLoss").
+  string concept = 1;
+  // Human-readable label for the concept.
+  string label = 2;
+  // The reported value.
+  double value = 3;
+  // Unit of measurement (e.g., "USD", "shares", "pure").
+  string unit = 4;
+  // Start date of the reporting period (YYYY-MM-DD).
+  string start_date = 5;
+  // End date of the reporting period (YYYY-MM-DD).
+  string end_date = 6;
+  // The filing date (YYYY-MM-DD).
+  string filed = 7;
+  // The form type from which this fact was extracted.
+  string form = 8;
+  // Accession number of the source filing.
+  string accession_number = 9;
+  // Fiscal year.
+  int32 fiscal_year = 10;
+  // Fiscal period (e.g., "FY", "Q1", "Q2", "Q3", "Q4").
+  string fiscal_period = 11;
+}
+
+message InsiderTransaction {
+  // Name of the insider (officer, director, or 10% owner).
+  string insider_name = 1;
+  // Title or relationship (e.g., "CEO", "CFO", "Director", "10% Owner").
+  string title = 2;
+  // Date of the transaction (YYYY-MM-DD).
+  string transaction_date = 3;
+  // Transaction type — "P" for purchase, "S" for sale, "A" for award/grant.
+  string transaction_type = 4;
+  // Number of shares transacted.
+  double shares = 5;
+  // Price per share.
+  double price_per_share = 6;
+  // Total value of the transaction.
+  double total_value = 7;
+  // Shares owned after the transaction.
+  double shares_owned_after = 8;
+}
+
+message InstitutionalHolding {
+  // Name of the institutional investor.
+  string institution_name = 1;
+  // Number of shares held.
+  int64 shares = 2;
+  // Market value of the holding in USD.
+  double value_usd = 3;
+  // Date of the 13F report (YYYY-MM-DD).
+  string report_date = 4;
+  // CIK of the institutional filer.
+  string institution_cik = 5;
+}
+
+message FilingDocument {
+  // Document filename.
+  string filename = 1;
+  // Description of the document.
+  string description = 2;
+  // Document type (e.g., "10-K", "EX-21", "GRAPHIC").
+  string type = 3;
+  // Size in bytes.
+  int64 size = 4;
+  // URL to the document.
+  string url = 5;
+}
+
+// --- Request / Response messages ---
+
+message SearchCompanyRequest {
+  // Search query — company name, ticker, or keyword (e.g., "Apple", "AAPL").
+  string query = 1;
+  // Maximum number of results to return. Default 10.
+  int32 limit = 2;
+}
+
+message SearchCompanyResponse {
+  repeated Company companies = 1;
+}
+
+message GetCompanyFilingsRequest {
+  // SEC Central Index Key (CIK) — the unique identifier for the company.
+  // Can be provided with or without zero-padding (e.g., "320193" or "0000320193").
+  string cik = 1;
+  // Filter by form type (e.g., "10-K", "10-Q", "8-K"). Leave empty for all types.
+  string form_type = 2;
+  // Maximum number of filings to return. Default 40.
+  int32 limit = 3;
+}
+
+message GetCompanyFilingsResponse {
+  // Company name.
+  string company_name = 1;
+  // CIK number (zero-padded to 10 digits).
+  string cik = 2;
+  // Recent filings.
+  repeated Filing filings = 3;
+  // Total number of filings available.
+  int32 total_filings = 4;
+}
+
+message GetCompanyFactsRequest {
+  // SEC CIK number (e.g., "320193" for Apple). Will be zero-padded automatically.
+  string cik = 1;
+}
+
+message GetCompanyFactsResponse {
+  // CIK number (zero-padded).
+  string cik = 1;
+  // Company name.
+  string company_name = 2;
+  // All financial facts extracted from XBRL filings.
+  repeated FinancialFact facts = 3;
+}
+
+message GetCompanyConceptRequest {
+  // SEC CIK number (e.g., "320193" for Apple).
+  string cik = 1;
+  // XBRL taxonomy — typically "us-gaap" for US companies, "ifrs-full" for international.
+  string taxonomy = 2;
+  // XBRL concept name in PascalCase (e.g., "Revenues", "NetIncomeLoss",
+  // "Assets", "StockholdersEquity", "EarningsPerShareBasic").
+  string concept = 3;
+}
+
+message GetCompanyConceptResponse {
+  // CIK number (zero-padded).
+  string cik = 1;
+  // XBRL taxonomy.
+  string taxonomy = 2;
+  // Concept name.
+  string concept = 3;
+  // Human-readable label.
+  string label = 4;
+  // Description of the concept.
+  string description = 5;
+  // Historical values for this concept.
+  repeated FinancialFact values = 6;
+}
+
+message SearchFullTextRequest {
+  // Search query — keywords to search in filing content
+  // (e.g., "artificial intelligence", "climate risk").
+  string query = 1;
+  // Filter by form type (e.g., "10-K", "8-K"). Leave empty for all types.
+  string form_type = 2;
+  // Start date for filing date range filter (YYYY-MM-DD).
+  string start_date = 3;
+  // End date for filing date range filter (YYYY-MM-DD).
+  string end_date = 4;
+  // Maximum number of results. Default 10.
+  int32 limit = 5;
+}
+
+message SearchFullTextResponse {
+  // Total number of matching filings.
+  int32 total_hits = 1;
+  // Matching filings with context snippets.
+  repeated FullTextHit hits = 2;
+}
+
+message FullTextHit {
+  // Accession number of the filing.
+  string accession_number = 1;
+  // Company name.
+  string company_name = 2;
+  // CIK of the filer.
+  string cik = 3;
+  // Form type (e.g., "10-K", "8-K").
+  string form_type = 4;
+  // Filing date (YYYY-MM-DD).
+  string filing_date = 5;
+  // URL to the filing.
+  string document_url = 6;
+  // Snippet of text showing the search term in context.
+  string snippet = 7;
+}
+
+message GetFilingRequest {
+  // Accession number of the filing (e.g., "0000320193-23-000077").
+  // Dashes are optional — "000032019323000077" also works.
+  string accession_number = 1;
+}
+
+message GetFilingResponse {
+  // Accession number.
+  string accession_number = 1;
+  // Form type.
+  string form_type = 2;
+  // Filing date.
+  string filing_date = 3;
+  // Company name.
+  string company_name = 4;
+  // CIK of the filer.
+  string cik = 5;
+  // Description of the filing.
+  string description = 6;
+  // Documents included in the filing.
+  repeated FilingDocument documents = 7;
+}
+
+message GetInsiderTransactionsRequest {
+  // SEC CIK number for the company (e.g., "320193" for Apple).
+  string cik = 1;
+  // Maximum number of transactions to return. Default 20.
+  int32 limit = 2;
+}
+
+message GetInsiderTransactionsResponse {
+  // Company name.
+  string company_name = 1;
+  // Recent insider transactions.
+  repeated InsiderTransaction transactions = 2;
+}
+
+message GetInstitutionalHoldingsRequest {
+  // SEC CIK number for the company (e.g., "320193" for Apple).
+  string cik = 1;
+  // Maximum number of holders to return. Default 20.
+  int32 limit = 2;
+}
+
+message GetInstitutionalHoldingsResponse {
+  // Company name.
+  string company_name = 1;
+  // Institutional holders.
+  repeated InstitutionalHolding holdings = 2;
+}
+
+message GetTickerToCIKRequest {
+  // Stock ticker symbol (e.g., "AAPL", "TSLA", "MSFT").
+  string ticker = 1;
+}
+
+message GetTickerToCIKResponse {
+  // CIK number (zero-padded to 10 digits).
+  string cik = 1;
+  // Company name.
+  string company_name = 2;
+  // Ticker symbol (normalized to uppercase).
+  string ticker = 3;
+}
+
+message GetRecentFilingsRequest {
+  // Filter by form type (e.g., "10-K", "8-K", "4"). Leave empty for all types.
+  string form_type = 1;
+  // Maximum number of results. Default 20.
+  int32 limit = 2;
+}
+
+message GetRecentFilingsResponse {
+  // Recent filings across all companies.
+  repeated Filing filings = 1;
+}

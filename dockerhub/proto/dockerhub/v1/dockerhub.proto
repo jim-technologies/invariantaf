@@ -1,0 +1,415 @@
+syntax = "proto3";
+
+package dockerhub.v1;
+
+option go_package = "github.com/jim-technologies/invariantaf/dockerhub/dockerhub/v1";
+
+// Docker Hub public API. Provides read-only access to Docker Hub repositories,
+// tags, images, categories, and extensions. No authentication required for
+// public data. Use this to search for container images, inspect available tags,
+// check image sizes, and discover popular Docker content.
+service DockerHubService {
+  // Search Docker Hub for repositories matching a query string.
+  // Returns matching repositories with name, description, star count,
+  // pull count, and whether the image is official or automated.
+  // Example: search for "nginx" to find all nginx-related images.
+  rpc SearchRepositories(SearchRepositoriesRequest) returns (SearchRepositoriesResponse);
+
+  // Get detailed information about a specific repository.
+  // Returns the full description, star count, pull count, last updated date,
+  // and other metadata. Requires the namespace (e.g. "library" for official
+  // images, or a username/org) and the repository name.
+  // Example: namespace="library", name="nginx" for the official nginx image.
+  rpc GetRepository(GetRepositoryRequest) returns (GetRepositoryResponse);
+
+  // List all tags for a repository with pagination support.
+  // Returns tag names, image sizes, last updated timestamps, and digest info.
+  // Use page_size and page to paginate through large tag lists.
+  // Example: get all tags for library/nginx to see available versions.
+  rpc GetTags(GetTagsRequest) returns (GetTagsResponse);
+
+  // Get detailed information about a specific tag in a repository.
+  // Returns the tag name, full size, last updated time, and image digest.
+  // Example: get details for the "latest" tag of library/nginx.
+  rpc GetTag(GetTagRequest) returns (GetTagResponse);
+
+  // List all repositories in a given namespace (user or organization).
+  // Returns repository names, descriptions, star and pull counts.
+  // Use page_size and page for pagination.
+  // Example: namespace="library" lists all official Docker images.
+  rpc GetNamespaceRepositories(GetNamespaceRepositoriesRequest) returns (GetNamespaceRepositoriesResponse);
+
+  // Get the most popular official Docker images from the "library" namespace.
+  // These are the curated, Docker-official images like nginx, postgres, redis.
+  // Returns repository names, descriptions, star and pull counts.
+  // Use page_size and page for pagination.
+  rpc GetTopImages(GetTopImagesRequest) returns (GetTopImagesResponse);
+
+  // Get the automated build history for a repository.
+  // Returns build records with status, creation date, and build tags.
+  // Only available for repositories with automated builds configured.
+  // Example: check build history for a repository to see recent build results.
+  rpc GetBuildHistory(GetBuildHistoryRequest) returns (GetBuildHistoryResponse);
+
+  // Get the Dockerfile content for a repository with automated builds.
+  // Returns the raw Dockerfile text used to build the image.
+  // Only available for repositories with automated builds configured.
+  // Example: inspect how an image is built by reading its Dockerfile.
+  rpc GetDockerfileContent(GetDockerfileContentRequest) returns (GetDockerfileContentResponse);
+
+  // Get the list of Docker Hub content categories.
+  // Returns category names and slugs used to organize images on Docker Hub.
+  // Useful for browsing images by category (e.g. databases, web servers).
+  rpc GetCategories(GetCategoriesRequest) returns (GetCategoriesResponse);
+
+  // Get the Docker extensions catalog.
+  // Returns available Docker Desktop extensions with names, descriptions,
+  // publishers, and install counts. Extensions add functionality to Docker
+  // Desktop (e.g. monitoring, security scanning, Kubernetes management).
+  rpc GetExtensions(GetExtensionsRequest) returns (GetExtensionsResponse);
+}
+
+// Request to search Docker Hub repositories.
+message SearchRepositoriesRequest {
+  // The search query string. Searches repository names and descriptions.
+  string query = 1;
+
+  // Maximum number of results to return per page. Default is 25.
+  int32 page_size = 2;
+
+  // Page number for pagination (1-based). Default is 1.
+  int32 page = 3;
+}
+
+// Response containing search results.
+message SearchRepositoriesResponse {
+  // Total number of matching repositories.
+  int32 count = 1;
+
+  // List of matching repositories.
+  repeated RepositorySearchResult results = 2;
+}
+
+// A repository returned from a search query.
+message RepositorySearchResult {
+  // Full repository name including namespace (e.g. "library/nginx").
+  string repo_name = 1;
+
+  // Short description of the repository.
+  string short_description = 2;
+
+  // Number of stars the repository has received.
+  int32 star_count = 3;
+
+  // Total number of times the image has been pulled.
+  int64 pull_count = 4;
+
+  // Whether this is a Docker Official Image.
+  bool is_official = 5;
+
+  // Whether this repository uses automated builds.
+  bool is_automated = 6;
+}
+
+// Request to get a specific repository.
+message GetRepositoryRequest {
+  // The namespace (e.g. "library" for official images, or a username/org).
+  string namespace = 1;
+
+  // The repository name (e.g. "nginx").
+  string name = 2;
+}
+
+// Response with repository details.
+message GetRepositoryResponse {
+  // The namespace of the repository.
+  string namespace = 1;
+
+  // The repository name.
+  string name = 2;
+
+  // Full description (may contain markdown).
+  string full_description = 3;
+
+  // Short description.
+  string description = 4;
+
+  // Number of stars.
+  int32 star_count = 5;
+
+  // Total pull count.
+  int64 pull_count = 6;
+
+  // ISO 8601 timestamp of last update.
+  string last_updated = 7;
+
+  // Whether this is a Docker Official Image.
+  bool is_official = 8;
+
+  // Whether this repository uses automated builds.
+  bool is_automated = 9;
+
+  // Repository status (e.g. active).
+  int32 status = 10;
+}
+
+// Request to list tags for a repository.
+message GetTagsRequest {
+  // The namespace (e.g. "library").
+  string namespace = 1;
+
+  // The repository name (e.g. "nginx").
+  string name = 2;
+
+  // Maximum number of tags to return per page. Default is 25.
+  int32 page_size = 3;
+
+  // Page number for pagination (1-based). Default is 1.
+  int32 page = 4;
+}
+
+// Response with a list of tags.
+message GetTagsResponse {
+  // Total number of tags.
+  int32 count = 1;
+
+  // List of tags.
+  repeated Tag results = 2;
+
+  // URL for the next page of results, if any.
+  string next = 3;
+
+  // URL for the previous page of results, if any.
+  string previous = 4;
+}
+
+// A tag for a Docker image.
+message Tag {
+  // Tag name (e.g. "latest", "1.25", "alpine").
+  string name = 1;
+
+  // Full compressed size in bytes.
+  int64 full_size = 2;
+
+  // ISO 8601 timestamp of when this tag was last updated.
+  string last_updated = 3;
+
+  // Content digest (e.g. "sha256:abc123...").
+  string digest = 4;
+}
+
+// Request to get a specific tag.
+message GetTagRequest {
+  // The namespace (e.g. "library").
+  string namespace = 1;
+
+  // The repository name (e.g. "nginx").
+  string name = 2;
+
+  // The tag name (e.g. "latest").
+  string tag = 3;
+}
+
+// Response with tag details.
+message GetTagResponse {
+  // Tag name.
+  string name = 1;
+
+  // Full compressed size in bytes.
+  int64 full_size = 2;
+
+  // ISO 8601 timestamp of when this tag was last updated.
+  string last_updated = 3;
+
+  // Content digest.
+  string digest = 4;
+}
+
+// Request to list repositories in a namespace.
+message GetNamespaceRepositoriesRequest {
+  // The namespace to list repositories for (e.g. "library", "bitnami").
+  string namespace = 1;
+
+  // Maximum number of results per page. Default is 25.
+  int32 page_size = 2;
+
+  // Page number for pagination (1-based). Default is 1.
+  int32 page = 3;
+}
+
+// Response with repositories in the namespace.
+message GetNamespaceRepositoriesResponse {
+  // Total number of repositories in the namespace.
+  int32 count = 1;
+
+  // List of repositories.
+  repeated NamespaceRepository results = 2;
+
+  // URL for the next page of results, if any.
+  string next = 3;
+
+  // URL for the previous page of results, if any.
+  string previous = 4;
+}
+
+// A repository within a namespace.
+message NamespaceRepository {
+  // Repository name.
+  string name = 1;
+
+  // The namespace.
+  string namespace = 2;
+
+  // Short description.
+  string description = 3;
+
+  // Number of stars.
+  int32 star_count = 4;
+
+  // Total pull count.
+  int64 pull_count = 5;
+
+  // ISO 8601 timestamp of last update.
+  string last_updated = 6;
+
+  // Whether this is a Docker Official Image.
+  bool is_official = 7;
+}
+
+// Request to get top (most popular) official images.
+message GetTopImagesRequest {
+  // Maximum number of results per page. Default is 25.
+  int32 page_size = 1;
+
+  // Page number for pagination (1-based). Default is 1.
+  int32 page = 2;
+}
+
+// Response with top official images.
+message GetTopImagesResponse {
+  // Total number of official images.
+  int32 count = 1;
+
+  // List of official image repositories.
+  repeated NamespaceRepository results = 2;
+
+  // URL for the next page of results, if any.
+  string next = 3;
+
+  // URL for the previous page of results, if any.
+  string previous = 4;
+}
+
+// Request to get build history for a repository.
+message GetBuildHistoryRequest {
+  // The namespace (e.g. "library").
+  string namespace = 1;
+
+  // The repository name.
+  string name = 2;
+
+  // Maximum number of results per page. Default is 25.
+  int32 page_size = 3;
+
+  // Page number for pagination (1-based). Default is 1.
+  int32 page = 4;
+}
+
+// Response with build history.
+message GetBuildHistoryResponse {
+  // Total number of build records.
+  int32 count = 1;
+
+  // List of build records.
+  repeated BuildRecord results = 2;
+}
+
+// A single automated build record.
+message BuildRecord {
+  // Build ID.
+  string id = 1;
+
+  // Build status (e.g. "Success", "Error").
+  string status = 2;
+
+  // ISO 8601 timestamp of build creation.
+  string created_date = 3;
+
+  // ISO 8601 timestamp of last update.
+  string last_updated = 4;
+
+  // Docker tag built (e.g. "latest").
+  string build_tag = 5;
+}
+
+// Request to get Dockerfile content.
+message GetDockerfileContentRequest {
+  // The namespace (e.g. "library").
+  string namespace = 1;
+
+  // The repository name.
+  string name = 2;
+}
+
+// Response with Dockerfile content.
+message GetDockerfileContentResponse {
+  // The raw Dockerfile text content.
+  string contents = 1;
+}
+
+// Request to get Docker Hub categories.
+message GetCategoriesRequest {}
+
+// Response with Docker Hub categories.
+message GetCategoriesResponse {
+  // List of categories.
+  repeated Category categories = 1;
+}
+
+// A Docker Hub content category.
+message Category {
+  // Category name (e.g. "Databases", "Web Servers").
+  string name = 1;
+
+  // URL-friendly slug for the category.
+  string slug = 2;
+}
+
+// Request to get Docker extensions.
+message GetExtensionsRequest {
+  // Maximum number of results per page. Default is 25.
+  int32 page_size = 1;
+
+  // Page number for pagination (1-based). Default is 1.
+  int32 page = 2;
+}
+
+// Response with Docker extensions.
+message GetExtensionsResponse {
+  // Total number of extensions.
+  int32 count = 1;
+
+  // List of extensions.
+  repeated Extension results = 2;
+}
+
+// A Docker Desktop extension.
+message Extension {
+  // Extension name.
+  string name = 1;
+
+  // URL-friendly slug.
+  string slug = 2;
+
+  // Extension description.
+  string description = 3;
+
+  // Publisher name.
+  string publisher = 4;
+
+  // ISO 8601 timestamp of creation.
+  string created_at = 5;
+
+  // ISO 8601 timestamp of last update.
+  string updated_at = 6;
+}

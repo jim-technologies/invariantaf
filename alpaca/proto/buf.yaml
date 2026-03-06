@@ -1,0 +1,7 @@
+version: v2
+modules:
+  - path: .
+lint:
+  ignore_only:
+    RPC_RESPONSE_STANDARD_NAME:
+      - alpaca/v1/alpaca.proto

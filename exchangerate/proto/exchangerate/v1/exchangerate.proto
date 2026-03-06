@@ -1,0 +1,222 @@
+syntax = "proto3";
+
+package exchangerate.v1;
+
+// ExchangeRateService provides foreign exchange rate data from the Frankfurter API,
+// backed by the European Central Bank.
+//
+// All endpoints are **free and require no authentication**.
+// Data covers 30+ currencies with daily updates from the ECB.
+//
+// Use this to check exchange rates, convert between currencies,
+// get historical rates, and analyze rate trends over time.
+service ExchangeRateService {
+
+  // Get the latest exchange rates for a base currency.
+  //
+  // Returns today's rates from the ECB for the given base currency
+  // against all available target currencies. Defaults to EUR if no base specified.
+  rpc GetLatestRates(GetLatestRatesRequest) returns (GetLatestRatesResponse);
+
+  // Get the latest rates for specific target currencies.
+  //
+  // Like GetLatestRates but filtered to only the currencies you need.
+  // Pass a comma-separated list of currency codes (e.g., "USD,GBP,JPY").
+  rpc GetLatestForCurrencies(GetLatestForCurrenciesRequest) returns (GetLatestForCurrenciesResponse);
+
+  // Convert an amount from one currency to another at the latest rate.
+  //
+  // Returns the converted amount using today's ECB exchange rate.
+  // Specify the source currency, target currency, and amount.
+  rpc Convert(ConvertRequest) returns (ConvertResponse);
+
+  // Get exchange rates for a specific historical date.
+  //
+  // Returns rates as they were on the given date (YYYY-MM-DD format).
+  // ECB data goes back to 1999-01-04.
+  rpc GetHistoricalRates(GetHistoricalRatesRequest) returns (GetHistoricalRatesResponse);
+
+  // Get a time series of exchange rates between two dates.
+  //
+  // Returns daily rates for the specified date range.
+  // Useful for charting and trend analysis.
+  rpc GetTimeSeries(GetTimeSeriesRequest) returns (GetTimeSeriesResponse);
+
+  // List all supported currencies with their full names.
+  //
+  // Returns a map of currency codes to currency names
+  // (e.g., "USD" -> "United States Dollar").
+  rpc ListCurrencies(ListCurrenciesRequest) returns (ListCurrenciesResponse);
+
+  // Get historical rates for specific target currencies on a given date.
+  //
+  // Like GetHistoricalRates but filtered to only the currencies you need.
+  rpc GetHistoricalForCurrencies(GetHistoricalForCurrenciesRequest) returns (GetHistoricalForCurrenciesResponse);
+
+  // Convert an amount between currencies at a historical rate.
+  //
+  // Like Convert but uses the exchange rate from a specific date.
+  rpc ConvertHistorical(ConvertHistoricalRequest) returns (ConvertHistoricalResponse);
+
+  // Get a time series for a specific currency pair.
+  //
+  // Returns daily rates between two dates for a single currency pair.
+  // Useful for tracking how one currency moved against another.
+  rpc GetTimeSeriesForPair(GetTimeSeriesForPairRequest) returns (GetTimeSeriesForPairResponse);
+
+  // Get all latest rates with the default EUR base.
+  //
+  // Simple convenience method — returns today's rates with EUR as the base.
+  // No parameters required.
+  rpc GetLatestAll(GetLatestAllRequest) returns (GetLatestAllResponse);
+}
+
+// --- Request / Response messages ---
+
+message GetLatestRatesRequest {
+  // Base currency code (e.g., "EUR", "USD"). Default "EUR".
+  string base = 1;
+}
+
+message GetLatestRatesResponse {
+  // The base currency used.
+  string base = 1;
+  // The date of the rates (YYYY-MM-DD).
+  string date = 2;
+  // Map of currency code to exchange rate.
+  map<string, double> rates = 3;
+}
+
+message GetLatestForCurrenciesRequest {
+  // Base currency code. Default "EUR".
+  string base = 1;
+  // Comma-separated target currency codes (e.g., "USD,GBP,JPY").
+  string symbols = 2;
+}
+
+message GetLatestForCurrenciesResponse {
+  string base = 1;
+  string date = 2;
+  map<string, double> rates = 3;
+}
+
+message ConvertRequest {
+  // Source currency code (e.g., "USD").
+  string from = 1;
+  // Target currency code (e.g., "EUR").
+  string to = 2;
+  // Amount to convert.
+  double amount = 3;
+}
+
+message ConvertResponse {
+  string base = 1;
+  string date = 2;
+  // Map with single entry: target currency -> converted amount.
+  map<string, double> rates = 3;
+  double amount = 4;
+}
+
+message GetHistoricalRatesRequest {
+  // Date in YYYY-MM-DD format.
+  string date = 1;
+  // Base currency code. Default "EUR".
+  string base = 2;
+}
+
+message GetHistoricalRatesResponse {
+  string base = 1;
+  string date = 2;
+  map<string, double> rates = 3;
+}
+
+message GetTimeSeriesRequest {
+  // Start date (YYYY-MM-DD).
+  string start_date = 1;
+  // End date (YYYY-MM-DD).
+  string end_date = 2;
+  // Base currency code. Default "EUR".
+  string base = 3;
+  // Comma-separated target currency codes. Optional.
+  string symbols = 4;
+}
+
+// A single day's rates within a time series.
+message DailyRates {
+  string date = 1;
+  map<string, double> rates = 2;
+}
+
+message GetTimeSeriesResponse {
+  string base = 1;
+  string start_date = 2;
+  string end_date = 3;
+  // Daily rates keyed by date.
+  repeated DailyRates daily_rates = 4;
+}
+
+message ListCurrenciesRequest {}
+
+message ListCurrenciesResponse {
+  // Map of currency code to currency name (e.g., "USD" -> "United States Dollar").
+  map<string, string> currencies = 1;
+}
+
+message GetHistoricalForCurrenciesRequest {
+  // Date in YYYY-MM-DD format.
+  string date = 1;
+  // Base currency code. Default "EUR".
+  string base = 2;
+  // Comma-separated target currency codes.
+  string symbols = 3;
+}
+
+message GetHistoricalForCurrenciesResponse {
+  string base = 1;
+  string date = 2;
+  map<string, double> rates = 3;
+}
+
+message ConvertHistoricalRequest {
+  // Date in YYYY-MM-DD format.
+  string date = 1;
+  // Source currency code.
+  string from = 2;
+  // Target currency code.
+  string to = 3;
+  // Amount to convert.
+  double amount = 4;
+}
+
+message ConvertHistoricalResponse {
+  string base = 1;
+  string date = 2;
+  map<string, double> rates = 3;
+  double amount = 4;
+}
+
+message GetTimeSeriesForPairRequest {
+  // Start date (YYYY-MM-DD).
+  string start_date = 1;
+  // End date (YYYY-MM-DD).
+  string end_date = 2;
+  // Source currency code (base).
+  string from = 3;
+  // Target currency code.
+  string to = 4;
+}
+
+message GetTimeSeriesForPairResponse {
+  string base = 1;
+  string start_date = 2;
+  string end_date = 3;
+  repeated DailyRates daily_rates = 4;
+}
+
+message GetLatestAllRequest {}
+
+message GetLatestAllResponse {
+  string base = 1;
+  string date = 2;
+  map<string, double> rates = 3;
+}

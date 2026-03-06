@@ -1,0 +1,626 @@
+syntax = "proto3";
+
+package polymarket.v1;
+
+import "google/api/annotations.proto";
+
+// PolymarketGammaService proxies public market discovery endpoints from Gamma.
+service PolymarketGammaService {
+  // Search markets, events, and profiles.
+  rpc Search(SearchRequest) returns (SearchResponse) {
+    option (google.api.http) = {
+      get: "/public-search"
+      response_body: "data"
+    };
+  }
+
+  // List events with optional pagination and filters.
+  rpc ListEvents(ListEventsRequest) returns (ListEventsResponse) {
+    option (google.api.http) = {
+      get: "/events"
+      response_body: "data"
+    };
+  }
+
+  // Get a single event by slug.
+  rpc GetEvent(GetEventRequest) returns (GetEventResponse) {
+    option (google.api.http) = {
+      get: "/events/slug/{slug}"
+      response_body: "data"
+    };
+  }
+
+  // Get a single event by event id.
+  rpc GetEventById(GetEventByIdRequest) returns (GetEventByIdResponse) {
+    option (google.api.http) = {
+      get: "/events/{id}"
+      response_body: "data"
+    };
+  }
+
+  // List markets with optional filters (slug, condition_id, active, closed).
+  rpc GetMarket(GetMarketRequest) returns (GetMarketResponse) {
+    option (google.api.http) = {
+      get: "/markets"
+      response_body: "data"
+    };
+  }
+
+  // Get a single market by market id.
+  rpc GetMarketById(GetMarketByIdRequest) returns (GetMarketByIdResponse) {
+    option (google.api.http) = {
+      get: "/markets/{id}"
+      response_body: "data"
+    };
+  }
+}
+
+// PolymarketClobService proxies CLOB pricing/trading endpoints.
+service PolymarketClobService {
+  // Get orderbook levels for a token id.
+  rpc GetOrderbook(GetOrderbookRequest) returns (GetOrderbookResponse) {
+    option (google.api.http) = {
+      get: "/book"
+      response_body: "data"
+    };
+  }
+
+  // Get the best price for a token id and side (BUY/SELL).
+  rpc GetPrice(GetPriceRequest) returns (GetPriceResponse) {
+    option (google.api.http) = {
+      get: "/price"
+      response_body: "data"
+    };
+  }
+
+  // Get midpoint for a token id.
+  rpc GetMidpoint(GetMidpointRequest) returns (GetMidpointResponse) {
+    option (google.api.http) = {
+      get: "/midpoint"
+      response_body: "data"
+    };
+  }
+
+  // Get spread for a token id.
+  rpc GetSpread(GetSpreadRequest) returns (GetSpreadResponse) {
+    option (google.api.http) = {
+      get: "/spread"
+      response_body: "data"
+    };
+  }
+
+  // Get historical prices for a token id.
+  rpc GetPriceHistory(GetPriceHistoryRequest) returns (GetPriceHistoryResponse) {
+    option (google.api.http) = {
+      get: "/prices-history"
+      response_body: "data"
+    };
+  }
+
+  // Place an order. Requires CLOB L2 auth headers.
+  rpc PlaceOrder(PlaceOrderRequest) returns (PlaceOrderResponse) {
+    option (google.api.http) = {
+      post: "/order"
+      body: "*"
+      response_body: "data"
+    };
+  }
+
+  // SDK-style create+sign+post flow. Requires CLOB L2 auth headers.
+  rpc CreateAndPostOrder(CreateAndPostOrderRequest) returns (CreateAndPostOrderResponse);
+
+  // Cancel one order by body payload. Requires CLOB L2 auth headers.
+  rpc CancelOrder(CancelOrderRequest) returns (CancelOrderResponse) {
+    option (google.api.http) = {
+      delete: "/order"
+      body: "*"
+      response_body: "data"
+    };
+  }
+
+  // Cancel all open orders. Requires CLOB L2 auth headers.
+  rpc CancelAllOrders(CancelAllOrdersRequest) returns (CancelAllOrdersResponse) {
+    option (google.api.http) = {
+      delete: "/cancel-all"
+      response_body: "data"
+    };
+  }
+
+  // Get open orders. Requires CLOB L2 auth headers.
+  rpc GetOpenOrders(GetOpenOrdersRequest) returns (GetOpenOrdersResponse) {
+    option (google.api.http) = {
+      get: "/data/orders"
+      response_body: "data"
+    };
+  }
+
+  // Get trades. Requires CLOB L2 auth headers.
+  rpc GetTrades(GetTradesRequest) returns (GetTradesResponse) {
+    option (google.api.http) = {
+      get: "/data/trades"
+      response_body: "data"
+    };
+  }
+
+  // Get balance and allowance. Requires CLOB L2 auth headers.
+  rpc GetBalance(GetBalanceRequest) returns (GetBalanceResponse) {
+    option (google.api.http) = {
+      get: "/balance-allowance"
+      response_body: "data"
+    };
+  }
+
+  // Get balance and allowance. Docs-aligned method name.
+  rpc GetBalanceAllowance(GetBalanceRequest) returns (GetBalanceResponse) {
+    option (google.api.http) = {
+      get: "/balance-allowance"
+      response_body: "data"
+    };
+  }
+}
+
+// PolymarketDataService proxies public analytics/profile endpoints.
+service PolymarketDataService {
+  // Get positions for a user wallet.
+  rpc GetPositions(GetPositionsRequest) returns (GetPositionsResponse) {
+    option (google.api.http) = {
+      get: "/positions"
+      response_body: "data"
+    };
+  }
+
+  // Get leaderboard entries for the requested time window.
+  rpc GetLeaderboard(GetLeaderboardRequest) returns (GetLeaderboardResponse) {
+    option (google.api.http) = {
+      get: "/v1/leaderboard"
+      response_body: "data"
+    };
+  }
+}
+
+message SearchRequest {
+  string q = 1;
+  int32 limit = 2;
+  int32 offset = 3;
+  optional bool mode = 4;
+  optional bool filter_tags = 5;
+}
+
+message SearchResponse {
+  SearchResultSet data = 1;
+}
+
+message ListEventsRequest {
+  int32 limit = 1;
+  int32 offset = 2;
+  optional bool active = 3;
+  optional bool closed = 4;
+  string tag = 5;
+  string order = 6;
+}
+
+message ListEventsResponse {
+  repeated Event data = 1;
+}
+
+message GetEventRequest {
+  string slug = 1;
+}
+
+message GetEventResponse {
+  Event data = 1;
+}
+
+message GetEventByIdRequest {
+  string id = 1;
+}
+
+message GetEventByIdResponse {
+  Event data = 1;
+}
+
+message GetMarketRequest {
+  string slug = 1;
+  string condition_id = 2;
+  int32 limit = 3;
+  int32 offset = 4;
+  optional bool active = 5;
+  optional bool closed = 6;
+}
+
+message GetMarketResponse {
+  repeated Market data = 1;
+}
+
+message GetMarketByIdRequest {
+  string id = 1;
+}
+
+message GetMarketByIdResponse {
+  Market data = 1;
+}
+
+message GetOrderbookRequest {
+  string token_id = 1;
+}
+
+message GetOrderbookResponse {
+  OrderBookSummary data = 1;
+}
+
+message GetPriceRequest {
+  string token_id = 1;
+  string side = 2;
+}
+
+message GetPriceResponse {
+  MarketPrice data = 1;
+}
+
+message GetMidpointRequest {
+  string token_id = 1;
+}
+
+message GetMidpointResponse {
+  MidpointPrice data = 1;
+}
+
+message GetSpreadRequest {
+  string token_id = 1;
+}
+
+message GetSpreadResponse {
+  SpreadPrice data = 1;
+}
+
+message GetPriceHistoryRequest {
+  string market = 1;
+  string interval = 2;
+  int32 fidelity = 3;
+  int64 startTs = 4;
+  int64 endTs = 5;
+}
+
+message GetPriceHistoryResponse {
+  PriceHistory data = 1;
+}
+
+message PlaceOrderRequest {
+  SignedOrderInput order = 1;
+  optional string order_type = 2;
+  optional bool post_only = 3;
+}
+
+message PlaceOrderResponse {
+  PlaceOrderResult data = 1;
+}
+
+message CreateAndPostOrderRequest {
+  string token_id = 1;
+  double price = 2;
+  double size = 3;
+  string side = 4;
+  optional int32 fee_rate_bps = 5;
+  optional int64 nonce = 6;
+  optional int64 expiration = 7;
+  optional string taker = 8;
+  optional string tick_size = 9;
+  optional bool neg_risk = 10;
+}
+
+message CreateAndPostOrderResponse {
+  PlaceOrderResult data = 1;
+}
+
+message CancelOrderRequest {
+  string order_id = 1;
+}
+
+message CancelOrderResponse {
+  CancelOrdersResult data = 1;
+}
+
+message CancelAllOrdersRequest {}
+
+message CancelAllOrdersResponse {
+  CancelOrdersResult data = 1;
+}
+
+message GetOpenOrdersRequest {
+  string market = 1;
+  string asset_id = 2;
+  string id = 3;
+  string next_cursor = 4;
+}
+
+message GetOpenOrdersResponse {
+  repeated OpenOrder data = 1;
+}
+
+message GetTradesRequest {
+  string market = 1;
+  string asset_id = 2;
+  string after = 3;
+  string before = 4;
+  string maker_address = 5;
+  string id = 6;
+  string next_cursor = 7;
+}
+
+message GetTradesResponse {
+  repeated Trade data = 1;
+}
+
+message GetBalanceRequest {
+  string asset_type = 1;
+  string token_id = 2;
+  optional int32 signature_type = 3;
+}
+
+message GetBalanceResponse {
+  BalanceAllowance data = 1;
+}
+
+message GetPositionsRequest {
+  string user = 1;
+  double sizeThreshold = 2;
+  string market = 3;
+  string eventId = 4;
+}
+
+message GetPositionsResponse {
+  repeated Position data = 1;
+}
+
+message GetLeaderboardRequest {
+  string interval = 1;
+  int32 limit = 2;
+  int32 offset = 3;
+}
+
+message GetLeaderboardResponse {
+  repeated LeaderboardEntry data = 1;
+}
+
+message EventTag {
+  string id = 1;
+  string label = 2;
+  string slug = 3;
+  bool force_show = 4;
+  string created_at = 5;
+  string updated_at = 6;
+  string deleted_at = 7;
+  string published_at = 8;
+}
+
+message MarketToken {
+  string token_id = 1;
+  string outcome = 2;
+  double price = 3;
+  bool winner = 4;
+}
+
+message Market {
+  string id = 1;
+  string question = 2;
+  string condition_id = 3;
+  string slug = 4;
+  bool active = 5;
+  bool closed = 6;
+  bool archived = 7;
+  bool accepting_orders = 8;
+  string accepting_order_timestamp = 9;
+  double minimum_order_size = 10;
+  double minimum_tick_size = 11;
+  double liquidity = 12;
+  double volume = 13;
+  string clob_token_ids = 14;
+  repeated MarketToken tokens = 15;
+}
+
+message Event {
+  string id = 1;
+  string slug = 2;
+  string ticker = 3;
+  string title = 4;
+  string description = 5;
+  string start_date = 6;
+  string creation_date = 7;
+  string end_date = 8;
+  string image = 9;
+  string icon = 10;
+  bool active = 11;
+  bool closed = 12;
+  bool archived = 13;
+  bool featured = 14;
+  bool restricted = 15;
+  bool new = 16;
+  double volume = 17;
+  double liquidity = 18;
+  double open_interest = 19;
+  double volume24hr = 20;
+  repeated EventTag tags = 21;
+  repeated Market markets = 22;
+}
+
+message SearchProfile {
+  string pseudonym = 1;
+  string name = 2;
+  string profile_image = 3;
+  string profile_image_thumbnail = 4;
+  string bio = 5;
+  string reward_rate = 6;
+}
+
+message SearchResultSet {
+  repeated Event events = 1;
+  repeated Market markets = 2;
+  repeated SearchProfile profiles = 3;
+}
+
+message PriceLevel {
+  double price = 1;
+  double size = 2;
+}
+
+message OrderBookSummary {
+  string market = 1;
+  string asset_id = 2;
+  string timestamp = 3;
+  string hash = 4;
+  repeated PriceLevel bids = 5;
+  repeated PriceLevel asks = 6;
+  double min_order_size = 7;
+  double tick_size = 8;
+  bool neg_risk = 9;
+  double last_trade_price = 10;
+}
+
+message MarketPrice {
+  double price = 1;
+}
+
+message MidpointPrice {
+  double mid = 1;
+}
+
+message SpreadPrice {
+  double spread = 1;
+}
+
+message PriceHistoryPoint {
+  int64 t = 1;
+  double p = 2;
+}
+
+message PriceHistory {
+  repeated PriceHistoryPoint history = 1;
+}
+
+// SDK-style signed order shape consumed by py-clob-client post_order.
+message SignedOrderInput {
+  string salt = 1;
+  string maker = 2;
+  string signer = 3;
+  string taker = 4;
+  string token_id = 5 [json_name = "tokenId"];
+  string maker_amount = 6 [json_name = "makerAmount"];
+  string taker_amount = 7 [json_name = "takerAmount"];
+  string expiration = 8;
+  string nonce = 9;
+  string fee_rate_bps = 10 [json_name = "feeRateBps"];
+  string side = 11;
+  int32 signature_type = 12 [json_name = "signatureType"];
+  string signature = 13;
+}
+
+message PlaceOrderResult {
+  bool success = 1;
+  string error_msg = 2 [json_name = "errorMsg"];
+  string status = 3;
+  string order_id = 4 [json_name = "orderID"];
+  repeated string transactions_hashes = 5 [json_name = "transactionsHashes"];
+  string making_amount = 6 [json_name = "makingAmount"];
+  string taking_amount = 7 [json_name = "takingAmount"];
+}
+
+message CancelOrdersResult {
+  repeated string canceled = 1;
+  map<string, string> not_canceled = 2;
+}
+
+message OpenOrder {
+  string id = 1;
+  string status = 2;
+  string market = 3;
+  string asset_id = 4;
+  double price = 5;
+  double size = 6;
+  double original_size = 7;
+  string outcome = 8;
+  string side = 9;
+  string owner = 10;
+  string maker_address = 11;
+  string expiration = 12;
+  string order_type = 13;
+  string created_at = 14;
+}
+
+message OpenOrdersPage {
+  int32 limit = 1;
+  int32 count = 2;
+  string next_cursor = 3;
+  repeated OpenOrder data = 4;
+}
+
+message Trade {
+  string id = 1;
+  string status = 2;
+  string market = 3;
+  string asset_id = 4;
+  double price = 5;
+  double size = 6;
+  string side = 7;
+  string outcome = 8;
+  string owner = 9;
+  string maker_address = 10;
+  string matched_at = 11;
+}
+
+message TradesPage {
+  int32 limit = 1;
+  int32 count = 2;
+  string next_cursor = 3;
+  repeated Trade data = 4;
+}
+
+message BalanceAllowance {
+  string balance = 1;
+  string allowance = 2;
+  map<string, string> allowances = 3;
+}
+
+message Position {
+  string proxy_wallet = 1;
+  string asset = 2;
+  string condition_id = 3;
+  double size = 4;
+  double avg_price = 5;
+  double initial_value = 6;
+  double current_value = 7;
+  double cash_pnl = 8;
+  double percent_pnl = 9;
+  double total_bought = 10;
+  double avg_buy_price = 11;
+  double total_sold = 12;
+  double avg_sell_price = 13;
+  bool negative_risk = 14;
+  string end_date_iso = 15;
+  string event_slug = 16;
+  string icon = 17;
+  string outcome = 18;
+  string title = 19;
+}
+
+message ProfileImageOptimized {
+  string image_30px = 1;
+  string image_50px = 2;
+  string image_120px = 3;
+  string image_200px = 4;
+  string image_300px = 5;
+  string image_400px = 6;
+}
+
+message LeaderboardEntry {
+  string proxy_wallet = 1;
+  string pseudonym = 2;
+  string name = 3;
+  string bio = 4;
+  string profile_image = 5;
+  ProfileImageOptimized profile_image_optimized = 6;
+  double volume = 7;
+  double profits = 8;
+  double pnl = 9;
+  double percent_pnl = 10;
+  int32 markets_traded = 11;
+}

@@ -1,0 +1,1840 @@
+syntax = "proto3";
+
+package opendota.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/struct.proto";
+
+// OpenDotaService exposes every GET/POST operation from the OpenDota OpenAPI spec.
+//
+// Request messages include explicit path params plus optional `query` and `body` structs.
+// Responses use typed data messages derived from the OpenDota OpenAPI spec.
+service OpenDotaService {
+  // Benchmarks of average stat values for a hero
+  rpc GetBenchmarks(GetBenchmarksRequest) returns (GetBenchmarksResponse) {
+    option (google.api.http) = {
+      get: "/benchmarks"
+      response_body: "data"
+    };
+  }
+
+  // Get static game data mirrored from the dotaconstants repository.
+  rpc GetConstantsResource(GetConstantsResourceRequest) returns (GetConstantsResourceResponse) {
+    option (google.api.http) = {
+      get: "/constants/{resource}"
+      response_body: "data"
+    };
+  }
+
+  // Distributions of MMR data by bracket and country
+  rpc GetDistributions(GetDistributionsRequest) returns (GetDistributionsResponse) {
+    option (google.api.http) = {
+      get: "/distributions"
+      response_body: "data"
+    };
+  }
+
+  // Submit arbitrary SQL queries to the database
+  rpc GetExplorer(GetExplorerRequest) returns (GetExplorerResponse) {
+    option (google.api.http) = {
+      get: "/explorer"
+      response_body: "data"
+    };
+  }
+
+  // Finds recent matches by heroes played
+  rpc GetFindMatches(GetFindMatchesRequest) returns (GetFindMatchesResponse) {
+    option (google.api.http) = {
+      get: "/findMatches"
+      response_body: "data"
+    };
+  }
+
+  // Get service health data
+  rpc GetHealth(GetHealthRequest) returns (GetHealthResponse) {
+    option (google.api.http) = {
+      get: "/health"
+      response_body: "data"
+    };
+  }
+
+  // Get stats about hero performance in recent matches
+  rpc GetHeroStats(GetHeroStatsRequest) returns (GetHeroStatsResponse) {
+    option (google.api.http) = {
+      get: "/heroStats"
+      response_body: "data"
+    };
+  }
+
+  // Get hero data
+  rpc GetHeroes(GetHeroesRequest) returns (GetHeroesResponse) {
+    option (google.api.http) = {
+      get: "/heroes"
+      response_body: "data"
+    };
+  }
+
+  // Get hero performance over a range of match durations
+  rpc GetHeroDurations(GetHeroDurationsRequest) returns (GetHeroDurationsResponse) {
+    option (google.api.http) = {
+      get: "/heroes/{hero_id}/durations"
+      response_body: "data"
+    };
+  }
+
+  // Get item popularity of hero categoried by start, early, mid and late game, analyzed from professional games
+  rpc GetHeroItemPopularity(GetHeroItemPopularityRequest) returns (GetHeroItemPopularityResponse) {
+    option (google.api.http) = {
+      get: "/heroes/{hero_id}/itemPopularity"
+      response_body: "data"
+    };
+  }
+
+  // Get recent matches with a hero
+  rpc GetHeroMatches(GetHeroMatchesRequest) returns (GetHeroMatchesResponse) {
+    option (google.api.http) = {
+      get: "/heroes/{hero_id}/matches"
+      response_body: "data"
+    };
+  }
+
+  // Get results against other heroes for a hero
+  rpc GetHeroMatchups(GetHeroMatchupsRequest) returns (GetHeroMatchupsResponse) {
+    option (google.api.http) = {
+      get: "/heroes/{hero_id}/matchups"
+      response_body: "data"
+    };
+  }
+
+  // Get players who have played this hero
+  rpc GetHeroPlayers(GetHeroPlayersRequest) returns (GetHeroPlayersResponse) {
+    option (google.api.http) = {
+      get: "/heroes/{hero_id}/players"
+      response_body: "data"
+    };
+  }
+
+  // Get league data
+  rpc GetLeagues(GetLeaguesRequest) returns (GetLeaguesResponse) {
+    option (google.api.http) = {
+      get: "/leagues"
+      response_body: "data"
+    };
+  }
+
+  // Get data for a league
+  rpc GetLeague(GetLeagueRequest) returns (GetLeagueResponse) {
+    option (google.api.http) = {
+      get: "/leagues/{league_id}"
+      response_body: "data"
+    };
+  }
+
+  // Get match IDs for a league (including amateur leagues)
+  rpc GetLeagueMatchIds(GetLeagueMatchIdsRequest) returns (GetLeagueMatchIdsResponse) {
+    option (google.api.http) = {
+      get: "/leagues/{league_id}/matchIds"
+      response_body: "data"
+    };
+  }
+
+  // Get matches for a league (excluding amateur leagues)
+  rpc GetLeagueMatches(GetLeagueMatchesRequest) returns (GetLeagueMatchesResponse) {
+    option (google.api.http) = {
+      get: "/leagues/{league_id}/matches"
+      response_body: "data"
+    };
+  }
+
+  // Get teams for a league
+  rpc GetLeagueTeams(GetLeagueTeamsRequest) returns (GetLeagueTeamsResponse) {
+    option (google.api.http) = {
+      get: "/leagues/{league_id}/teams"
+      response_body: "data"
+    };
+  }
+
+  // Get top currently ongoing live games
+  rpc GetLive(GetLiveRequest) returns (GetLiveResponse) {
+    option (google.api.http) = {
+      get: "/live"
+      response_body: "data"
+    };
+  }
+
+  // Match data
+  rpc GetMatch(GetMatchRequest) returns (GetMatchResponse) {
+    option (google.api.http) = {
+      get: "/matches/{match_id}"
+      response_body: "data"
+    };
+  }
+
+  // Site metadata
+  rpc GetMetadata(GetMetadataRequest) returns (GetMetadataResponse) {
+    option (google.api.http) = {
+      get: "/metadata"
+      response_body: "data"
+    };
+  }
+
+  // Get list of parsed match IDs
+  rpc GetParsedMatches(GetParsedMatchesRequest) returns (GetParsedMatchesResponse) {
+    option (google.api.http) = {
+      get: "/parsedMatches"
+      response_body: "data"
+    };
+  }
+
+  // Player data
+  rpc GetPlayer(GetPlayerRequest) returns (GetPlayerResponse) {
+    option (google.api.http) = {
+      get: "/players/{account_id}"
+      response_body: "data"
+    };
+  }
+
+  // Counts in categories
+  rpc GetPlayerCounts(GetPlayerCountsRequest) returns (GetPlayerCountsResponse) {
+    option (google.api.http) = {
+      get: "/players/{account_id}/counts"
+      response_body: "data"
+    };
+  }
+
+  // Heroes played
+  rpc GetPlayerHeroes(GetPlayerHeroesRequest) returns (GetPlayerHeroesResponse) {
+    option (google.api.http) = {
+      get: "/players/{account_id}/heroes"
+      response_body: "data"
+    };
+  }
+
+  // Distribution of matches in a single stat
+  rpc GetPlayerHistogramsField(GetPlayerHistogramsFieldRequest) returns (GetPlayerHistogramsFieldResponse) {
+    option (google.api.http) = {
+      get: "/players/{account_id}/histograms/{field}"
+      response_body: "data"
+    };
+  }
+
+  // Matches played (full history, and supports column selection)
+  rpc GetPlayerMatches(GetPlayerMatchesRequest) returns (GetPlayerMatchesResponse) {
+    option (google.api.http) = {
+      get: "/players/{account_id}/matches"
+      response_body: "data"
+    };
+  }
+
+  // Players played with
+  rpc GetPlayerPeers(GetPlayerPeersRequest) returns (GetPlayerPeersResponse) {
+    option (google.api.http) = {
+      get: "/players/{account_id}/peers"
+      response_body: "data"
+    };
+  }
+
+  // Pro players played with
+  rpc GetPlayerPros(GetPlayerProsRequest) returns (GetPlayerProsResponse) {
+    option (google.api.http) = {
+      get: "/players/{account_id}/pros"
+      response_body: "data"
+    };
+  }
+
+  // Player hero rankings
+  rpc GetPlayerRankings(GetPlayerRankingsRequest) returns (GetPlayerRankingsResponse) {
+    option (google.api.http) = {
+      get: "/players/{account_id}/rankings"
+      response_body: "data"
+    };
+  }
+
+  // Returns a history of the player rank tier/medal changes (replaces MMR)
+  rpc GetPlayerRatings(GetPlayerRatingsRequest) returns (GetPlayerRatingsResponse) {
+    option (google.api.http) = {
+      get: "/players/{account_id}/ratings"
+      response_body: "data"
+    };
+  }
+
+  // Recent matches played (limited number of results)
+  rpc GetPlayerRecentMatches(GetPlayerRecentMatchesRequest) returns (GetPlayerRecentMatchesResponse) {
+    option (google.api.http) = {
+      get: "/players/{account_id}/recentMatches"
+      response_body: "data"
+    };
+  }
+
+  // Refresh player match history (up to 500), medal (rank), and profile name
+  rpc PostPlayerRefresh(PostPlayerRefreshRequest) returns (PostPlayerRefreshResponse) {
+    option (google.api.http) = {
+      post: "/players/{account_id}/refresh"
+      body: "body"
+      response_body: "data"
+    };
+  }
+
+  // Totals in stats
+  rpc GetPlayerTotals(GetPlayerTotalsRequest) returns (GetPlayerTotalsResponse) {
+    option (google.api.http) = {
+      get: "/players/{account_id}/totals"
+      response_body: "data"
+    };
+  }
+
+  // Wards placed in matches played
+  rpc GetPlayerWardmap(GetPlayerWardmapRequest) returns (GetPlayerWardmapResponse) {
+    option (google.api.http) = {
+      get: "/players/{account_id}/wardmap"
+      response_body: "data"
+    };
+  }
+
+  // Win/Loss count
+  rpc GetPlayerWinLoss(GetPlayerWinLossRequest) returns (GetPlayerWinLossResponse) {
+    option (google.api.http) = {
+      get: "/players/{account_id}/wl"
+      response_body: "data"
+    };
+  }
+
+  // Words said/read in matches played
+  rpc GetPlayerWordcloud(GetPlayerWordcloudRequest) returns (GetPlayerWordcloudResponse) {
+    option (google.api.http) = {
+      get: "/players/{account_id}/wordcloud"
+      response_body: "data"
+    };
+  }
+
+  // Get list of pro matches
+  rpc GetProMatches(GetProMatchesRequest) returns (GetProMatchesResponse) {
+    option (google.api.http) = {
+      get: "/proMatches"
+      response_body: "data"
+    };
+  }
+
+  // Get list of pro players
+  rpc GetProPlayers(GetProPlayersRequest) returns (GetProPlayersResponse) {
+    option (google.api.http) = {
+      get: "/proPlayers"
+      response_body: "data"
+    };
+  }
+
+  // Get list of randomly sampled public matches
+  rpc GetPublicMatches(GetPublicMatchesRequest) returns (GetPublicMatchesResponse) {
+    option (google.api.http) = {
+      get: "/publicMatches"
+      response_body: "data"
+    };
+  }
+
+  // Top players by hero
+  rpc GetRankings(GetRankingsRequest) returns (GetRankingsResponse) {
+    option (google.api.http) = {
+      get: "/rankings"
+      response_body: "data"
+    };
+  }
+
+  // Get top performances in a stat
+  rpc GetRecordsField(GetRecordsFieldRequest) returns (GetRecordsFieldResponse) {
+    option (google.api.http) = {
+      get: "/records/{field}"
+      response_body: "data"
+    };
+  }
+
+  // Get parse request state
+  rpc GetRequestJobId(GetRequestJobIdRequest) returns (GetRequestJobIdResponse) {
+    option (google.api.http) = {
+      get: "/request/{jobId}"
+      response_body: "data"
+    };
+  }
+
+  // Submit a new parse request. This call counts as 10 calls for rate limit (but not billing) purposes.
+  rpc PostRequestMatchId(PostRequestMatchIdRequest) returns (PostRequestMatchIdResponse) {
+    option (google.api.http) = {
+      post: "/request/{match_id}"
+      body: "body"
+      response_body: "data"
+    };
+  }
+
+  // Win rates for certain item timings on a hero for items that cost at least 1400 gold
+  rpc GetScenariosItemTimings(GetScenariosItemTimingsRequest) returns (GetScenariosItemTimingsResponse) {
+    option (google.api.http) = {
+      get: "/scenarios/itemTimings"
+      response_body: "data"
+    };
+  }
+
+  // Win rates for heroes in certain lane roles
+  rpc GetScenariosLaneRoles(GetScenariosLaneRolesRequest) returns (GetScenariosLaneRolesResponse) {
+    option (google.api.http) = {
+      get: "/scenarios/laneRoles"
+      response_body: "data"
+    };
+  }
+
+  // Miscellaneous team scenarios
+  rpc GetScenariosMisc(GetScenariosMiscRequest) returns (GetScenariosMiscResponse) {
+    option (google.api.http) = {
+      get: "/scenarios/misc"
+      response_body: "data"
+    };
+  }
+
+  // Get database schema
+  rpc GetSchema(GetSchemaRequest) returns (GetSchemaResponse) {
+    option (google.api.http) = {
+      get: "/schema"
+      response_body: "data"
+    };
+  }
+
+  // Search players by personaname.
+  rpc SearchPlayers(SearchPlayersRequest) returns (SearchPlayersResponse) {
+    option (google.api.http) = {
+      get: "/search"
+      response_body: "data"
+    };
+  }
+
+  // Get team data
+  rpc GetTeams(GetTeamsRequest) returns (GetTeamsResponse) {
+    option (google.api.http) = {
+      get: "/teams"
+      response_body: "data"
+    };
+  }
+
+  // Get data for a team
+  rpc GetTeam(GetTeamRequest) returns (GetTeamResponse) {
+    option (google.api.http) = {
+      get: "/teams/{team_id}"
+      response_body: "data"
+    };
+  }
+
+  // Get heroes for a team
+  rpc GetTeamHeroes(GetTeamHeroesRequest) returns (GetTeamHeroesResponse) {
+    option (google.api.http) = {
+      get: "/teams/{team_id}/heroes"
+      response_body: "data"
+    };
+  }
+
+  // Get matches for a team
+  rpc GetTeamMatches(GetTeamMatchesRequest) returns (GetTeamMatchesResponse) {
+    option (google.api.http) = {
+      get: "/teams/{team_id}/matches"
+      response_body: "data"
+    };
+  }
+
+  // Get players who have played for a team
+  rpc GetTeamPlayers(GetTeamPlayersRequest) returns (GetTeamPlayersResponse) {
+    option (google.api.http) = {
+      get: "/teams/{team_id}/players"
+      response_body: "data"
+    };
+  }
+
+  // Get list of highly ranked players
+  rpc GetTopPlayers(GetTopPlayersRequest) returns (GetTopPlayersResponse) {
+    option (google.api.http) = {
+      get: "/topPlayers"
+      response_body: "data"
+    };
+  }
+}
+
+
+// ─── Typed data messages from the OpenDota OpenAPI spec ───
+
+message BenchmarksResponse {
+  message Result {
+    message GoldPerMinEntry {
+      double percentile = 1;  // percentile
+      double value = 2;  // value
+    }
+
+    message XpPerMinEntry {
+      double percentile = 1;  // percentile
+      double value = 2;  // value
+    }
+
+    message KillsPerMinEntry {
+      double percentile = 1;  // percentile
+      double value = 2;  // value
+    }
+
+    message LastHitsPerMinEntry {
+      double percentile = 1;  // percentile
+      double value = 2;  // value
+    }
+
+    message HeroDamagePerMinEntry {
+      double percentile = 1;  // percentile
+      double value = 2;  // value
+    }
+
+    message HeroHealingPerMinEntry {
+      double percentile = 1;  // percentile
+      double value = 2;  // value
+    }
+
+    message TowerDamageEntry {
+      double percentile = 1;  // percentile
+      int64 value = 2;  // value
+    }
+
+    repeated GoldPerMinEntry gold_per_min = 1;
+    repeated XpPerMinEntry xp_per_min = 2;
+    repeated KillsPerMinEntry kills_per_min = 3;
+    repeated LastHitsPerMinEntry last_hits_per_min = 4;
+    repeated HeroDamagePerMinEntry hero_damage_per_min = 5;
+    repeated HeroHealingPerMinEntry hero_healing_per_min = 6;
+    repeated TowerDamageEntry tower_damage = 7;
+  }
+
+  int64 hero_id = 1;  // The ID value of the hero played
+  Result result = 2;  // result
+}
+
+message DistributionsResponse {
+  message Ranks {
+    message RowsEntry {
+      int64 bin = 1;  // bin
+      int64 bin_name = 2;  // bin_name
+      int64 count = 3;  // count
+      int64 cumulative_sum = 4;  // cumulative_sum
+    }
+
+    message Sum {
+      int64 count = 1;  // count
+    }
+
+    repeated RowsEntry rows = 1;  // rows
+    Sum sum = 2;  // sum
+  }
+
+  Ranks ranks = 1;  // ranks
+}
+
+message HeroDurationsResponse {
+  string duration_bin = 1;  // Lower bound of number of seconds the match lasted
+  int64 games_played = 2;  // Number of games played
+  int64 wins = 3;  // Number of wins
+}
+
+message HeroItemPopularityResponse {
+  message StartGameItems {
+    int64 item = 1;  // Number of item bought
+  }
+
+  message EarlyGameItems {
+    int64 item = 1;  // Number of item bought
+  }
+
+  message MidGameItems {
+    int64 item = 1;  // Number of item bought
+  }
+
+  message LateGameItems {
+    int64 item = 1;  // Number of item bought
+  }
+
+  StartGameItems start_game_items = 1;  // Items bought before game started
+  EarlyGameItems early_game_items = 2;  // Items bought in the first 10 min of the game, with cost at least 700
+  MidGameItems mid_game_items = 3;  // Items bought between 10 and 25 min of the game, with cost at least 2000
+  LateGameItems late_game_items = 4;  // Items bought at least 25 min after game started, with cost at least 4000
+}
+
+message HeroMatchupsResponse {
+  int64 hero_id = 1;  // The ID value of the hero played
+  int64 games_played = 2;  // Number of games played
+  int64 wins = 3;  // Number of games won
+}
+
+message HeroObjectResponse {
+  int64 id = 1;  // The ID value of the hero played
+  string name = 2;  // Dota hero command name
+  string localized_name = 3;  // Hero name
+  string primary_attr = 4;  // Hero primary shorthand attribute name, e.g. 'agi'
+  string attack_type = 5;  // Hero attack type, either 'Melee' or 'Ranged'
+  repeated string roles = 6;
+}
+
+message HeroStatsResponse {
+  int64 id = 1;  // The ID value of the hero played
+  string name = 2;  // Dota hero command name
+  string localized_name = 3;  // Hero name
+  string primary_attr = 4;  // primary_attr
+  string attack_type = 5;  // attack_type
+  repeated string roles = 6;  // roles
+  string img = 7;  // img
+  string icon = 8;  // icon
+  int64 base_health = 9;  // base_health
+  double base_health_regen = 10;  // base_health_regen
+  int64 base_mana = 11;  // base_mana
+  int64 base_mana_regen = 12;  // base_mana_regen
+  int64 base_armor = 13;  // base_armor
+  int64 base_mr = 14;  // base_mr
+  int64 base_attack_min = 15;  // base_attack_min
+  int64 base_attack_max = 16;  // base_attack_max
+  int64 base_str = 17;  // base_str
+  int64 base_agi = 18;  // base_agi
+  int64 base_int = 19;  // base_int
+  double str_gain = 20;  // str_gain
+  double agi_gain = 21;  // agi_gain
+  double int_gain = 22;  // int_gain
+  int64 attack_range = 23;  // attack_range
+  int64 projectile_speed = 24;  // projectile_speed
+  double attack_rate = 25;  // attack_rate
+  int64 base_attack_time = 26;  // base_attack_time
+  double attack_point = 27;  // attack_point
+  int64 move_speed = 28;  // move_speed
+  double turn_rate = 29;  // turn_rate
+  bool cm_enabled = 30;  // cm_enabled
+  int64 legs = 31;  // legs
+  int64 day_vision = 32;  // day_vision
+  int64 night_vision = 33;  // night_vision
+  int64 hero_id = 34;  // The ID value of the hero played
+  int64 turbo_picks = 35;  // Picks in Turbo mode this month
+  int64 turbo_wins = 36;  // Wins in Turbo mode this month
+  int64 pro_ban = 37;  // pro_ban
+  int64 pro_win = 38;  // pro_win
+  int64 pro_pick = 39;  // pro_pick
+  int64 rank_1_pick = 40 [json_name = "1_pick"];  // Herald picks
+  int64 rank_1_win = 41 [json_name = "1_win"];  // Herald wins
+  int64 rank_2_pick = 42 [json_name = "2_pick"];  // Guardian picks
+  int64 rank_2_win = 43 [json_name = "2_win"];  // Guardian wins
+  int64 rank_3_pick = 44 [json_name = "3_pick"];  // Crusader picks
+  int64 rank_3_win = 45 [json_name = "3_win"];  // Crusader wins
+  int64 rank_4_pick = 46 [json_name = "4_pick"];  // Archon picks
+  int64 rank_4_win = 47 [json_name = "4_win"];  // Archon wins
+  int64 rank_5_pick = 48 [json_name = "5_pick"];  // Legend picks
+  int64 rank_5_win = 49 [json_name = "5_win"];  // Legend wins
+  int64 rank_6_pick = 50 [json_name = "6_pick"];  // Ancient picks
+  int64 rank_6_win = 51 [json_name = "6_win"];  // Ancient wins
+  int64 rank_7_pick = 52 [json_name = "7_pick"];  // Divine picks
+  int64 rank_7_win = 53 [json_name = "7_win"];  // Divine wins
+  int64 rank_8_pick = 54 [json_name = "8_pick"];  // Immortal picks
+  int64 rank_8_win = 55 [json_name = "8_win"];  // Immortal wins
+}
+
+message LeagueObjectResponse {
+  int64 leagueid = 1;  // leagueid
+  string ticket = 2;  // ticket
+  string banner = 3;  // banner
+  string tier = 4;  // tier
+  string name = 5;  // League name
+}
+
+message MatchObjectResponse {
+  int64 match_id = 1;  // The ID number of the match assigned by Valve
+  int64 duration = 2;  // Duration of the game in seconds
+  int64 start_time = 3;  // The Unix timestamp at which the game started
+  int64 radiant_team_id = 4;  // The Radiant's team_id
+  string radiant_name = 5;  // The Radiant's team name
+  int64 dire_team_id = 6;  // The Dire's team_id
+  string dire_name = 7;  // The Dire's team name
+  int64 leagueid = 8;  // Identifier for the league the match took place in
+  string league_name = 9;  // Name of league the match took place in
+  int64 series_id = 10;  // Identifier for the series of the match
+  int64 series_type = 11;  // Type of series the match was
+  int64 radiant_score = 12;  // Number of kills the Radiant team had when the match ended
+  int64 dire_score = 13;  // Number of kills the Dire team had when the match ended
+  bool radiant_win = 14;  // Boolean indicating whether Radiant won the match
+  bool radiant = 15;  // Whether the team/player/hero was on Radiant
+}
+
+message MatchResponse {
+  message ChatEntry {
+    int64 time = 1;  // Time in seconds at which the message was said
+    string unit = 2;  // Name of the player who sent the message
+    string key = 3;  // The message the player sent
+    int64 slot = 4;  // slot
+    int64 player_slot = 5;  // Which slot the player is in. 0-127 are Radiant, 128-255 are Dire
+  }
+
+  message DraftTimingsEntry {
+    int64 order = 1;  // order
+    bool pick = 2;  // pick
+    int64 active_team = 3;  // active_team
+    int64 hero_id = 4;  // The ID value of the hero played
+    int64 player_slot = 5;  // Which slot the player is in. 0-127 are Radiant, 128-255 are Dire
+    int64 extra_time = 6;  // extra_time
+    int64 total_time_taken = 7;  // total_time_taken
+  }
+
+  message PicksBansEntry {
+    bool is_pick = 1;  // Boolean indicating whether the choice is a pick or a ban
+    int64 hero_id = 2;  // The ID value of the hero played
+    int64 team = 3;  // The team that picked or banned the hero
+    int64 order = 4;  // The order of the pick or ban
+  }
+
+  message PlayersEntry {
+    message BuybackLogEntry {
+      int64 time = 1;  // Time in seconds the buyback occurred
+      int64 slot = 2;  // slot
+      int64 player_slot = 3;  // Which slot the player is in. 0-127 are Radiant, 128-255 are Dire
+    }
+
+    message ConnectionLogEntry {
+      int64 time = 1;  // Game time in seconds the event ocurred
+      string event = 2;  // Event that occurred
+      int64 player_slot = 3;  // Which slot the player is in. 0-127 are Radiant, 128-255 are Dire
+    }
+
+    message KillsLogEntry {
+      int64 time = 1;  // Time in seconds the player killed the hero
+      string key = 2;  // Hero killed
+    }
+
+    message PurchaseLogEntry {
+      int64 time = 1;  // Time in seconds the item was bought
+      string key = 2;  // String item ID
+      int64 charges = 3;  // Integer amount of charges
+    }
+
+    message RunesLogEntry {
+      int64 time = 1;  // Time in seconds rune picked up
+      int64 key = 2;  // key
+    }
+
+    message CosmeticsEntry {
+      int64 item_id = 1;
+      string name = 2;  // name
+      string prefab = 3;
+      string creation_date = 4;
+      string image_inventory = 5;
+      string image_path = 6;
+      string item_description = 7;
+      string item_name = 8;
+      string item_rarity = 9;
+      string item_type_name = 10;
+      string used_by_heroes = 11;
+    }
+
+    message NeutralTokensLogEntry {
+      int64 time = 1;  // Time in seconds at which the token was dropped
+      string key = 2;  // Type of token dropped
+    }
+
+    message NeutralItemHistoryEntry {
+      int64 time = 1;  // Time in seconds at which the item was crafted
+      string item_neutral = 2;  // Neutral item name
+      string item_neutral_enhancement = 3;  // Neutral enhancement name
+    }
+
+    int64 match_id = 1;  // The ID number of the match assigned by Valve
+    int64 player_slot = 2;  // Which slot the player is in. 0-127 are Radiant, 128-255 are Dire
+    repeated int64 ability_upgrades_arr = 3;  // An array describing how abilities were upgraded
+    google.protobuf.Struct ability_uses = 4;  // Object containing information on how many times the played used their abilities
+    google.protobuf.Struct ability_targets = 5;  // Object containing information on who the player used their abilities on
+    google.protobuf.Struct damage_targets = 6;  // Object containing information on how and how much damage the player dealt to other heroes
+    int64 account_id = 7;  // The player account ID
+    google.protobuf.Struct actions = 8;  // Object containing information on how many and what type of actions the player issued to their hero
+    repeated google.protobuf.Struct additional_units = 9;  // Object containing information on additional units the player had under their control
+    int64 assists = 10;  // Number of assists the player had
+    int64 backpack_0 = 11;  // Item in backpack slot 0
+    int64 backpack_1 = 12;  // Item in backpack slot 1
+    int64 backpack_2 = 13;  // Item in backpack slot 2
+    repeated BuybackLogEntry buyback_log = 14;  // Array containing information about buybacks
+    int64 camps_stacked = 15;  // Number of camps stacked
+    repeated ConnectionLogEntry connection_log = 16;  // Array containing information about the player's disconnections and reconnections
+    int64 creeps_stacked = 17;  // Number of creeps stacked
+    google.protobuf.Struct damage = 18;  // Object containing information about damage dealt by the player to different units
+    google.protobuf.Struct damage_inflictor = 19;  // Object containing information about about the sources of this player's damage to heroes
+    google.protobuf.Struct damage_inflictor_received = 20;  // Object containing information about the sources of damage received by this player from heroes
+    google.protobuf.Struct damage_taken = 21;  // Object containing information about from whom the player took damage
+    int64 deaths = 22;  // Number of deaths
+    int64 denies = 23;  // Number of denies
+    repeated int64 dn_t = 24;  // Array containing number of denies at different times of the match
+    int64 gold = 25;  // Gold at the end of the game
+    int64 gold_per_min = 26;  // Gold Per Minute obtained by this player
+    google.protobuf.Struct gold_reasons = 27;  // Object containing information on how the player gainined gold over the course of the match
+    int64 gold_spent = 28;  // How much gold the player spent
+    repeated int64 gold_t = 29;  // Array containing total gold at different times of the match
+    int64 hero_damage = 30;  // Hero Damage Dealt
+    int64 hero_healing = 31;  // Hero Healing Done
+    google.protobuf.Struct hero_hits = 32;  // Object containing information on how many ticks of damages the hero inflicted with different spells and damage inflictors
+    int64 hero_id = 33;  // The ID value of the hero played
+    int64 item_0 = 34;  // Item in the player's first slot
+    int64 item_1 = 35;  // Item in the player's second slot
+    int64 item_2 = 36;  // Item in the player's third slot
+    int64 item_3 = 37;  // Item in the player's fourth slot
+    int64 item_4 = 38;  // Item in the player's fifth slot
+    int64 item_5 = 39;  // Item in the player's sixth slot
+    google.protobuf.Struct item_uses = 40;  // Object containing information about how many times a player used items
+    google.protobuf.Struct kill_streaks = 41;  // Object containing information about the player's killstreaks
+    google.protobuf.Struct killed = 42;  // Object containing information about what units the player killed
+    google.protobuf.Struct killed_by = 43;  // Object containing information about who killed the player
+    int64 kills = 44;  // Number of kills
+    repeated KillsLogEntry kills_log = 45;  // Array containing information on which hero the player killed at what time
+    google.protobuf.Struct lane_pos = 46;  // Object containing information on lane position
+    int64 last_hits = 47;  // Number of last hits
+    int64 leaver_status = 48;  // Integer describing whether or not the player left the game. 0: didn't leave. 1: left safely. 2+: Abandoned
+    int64 level = 49;  // Level at the end of the game
+    repeated int64 lh_t = 50;  // Array describing last hits at each minute in the game
+    google.protobuf.Struct life_state = 51;  // life_state
+    google.protobuf.Struct max_hero_hit = 52;  // Object with information on the highest damage instance the player inflicted
+    google.protobuf.Struct multi_kills = 53;  // Object with information on the number of the number of multikills the player had
+    google.protobuf.Struct obs = 54;  // Object with information on where the player placed observer wards. The location takes the form (outer number, inner number) and are from ~64-192.
+    repeated google.protobuf.Struct obs_left_log = 55;  // obs_left_log
+    repeated google.protobuf.Struct obs_log = 56;  // Object containing information on when and where the player placed observer wards
+    int64 obs_placed = 57;  // Total number of observer wards placed
+    int64 party_id = 58;  // party_id
+    repeated google.protobuf.Struct permanent_buffs = 59;  // Array describing permanent buffs the player had at the end of the game. List of constants can be found here: https://github.com/odota/dotaconstants/blob/master/json/permanent_buffs.json
+    int64 hero_variant = 60;  // 1-indexed facet, see https://github.com/odota/dotaconstants/blob/master/build/hero_abilities.json
+    int64 pings = 61;  // Total number of pings
+    google.protobuf.Struct purchase = 62;  // Object containing information on the items the player purchased
+    repeated PurchaseLogEntry purchase_log = 63;  // Object containing information on when items were purchased
+    int64 rune_pickups = 64;  // Number of runes picked up
+    google.protobuf.Struct runes = 65;  // Object with information about which runes the player picked up
+    repeated RunesLogEntry runes_log = 66;  // Array with information on when runes were picked up
+    google.protobuf.Struct sen = 67;  // Object with information on where sentries were placed. The location takes the form (outer number, inner number) and are from ~64-192.
+    repeated google.protobuf.Struct sen_left_log = 68;  // Array containing information on when and where the player placed sentries
+    repeated google.protobuf.Struct sen_log = 69;  // Array with information on when and where sentries were placed by the player
+    int64 sen_placed = 70;  // How many sentries were placed by the player
+    double stuns = 71;  // Total stun duration of all stuns by the player
+    repeated int64 times = 72;  // Time in seconds corresponding to the time of entries of other arrays in the match.
+    int64 tower_damage = 73;  // Total tower damage done by the player
+    int64 xp_per_min = 74;  // Experience Per Minute obtained by the player
+    google.protobuf.Struct xp_reasons = 75;  // Object containing information on the sources of this player's experience
+    repeated int64 xp_t = 76;  // Experience at each minute of the game
+    string personaname = 77;  // Player's Steam name
+    string name = 78;  // name
+    string last_login = 79;  // Time of player's last login
+    bool radiant_win = 80;  // Boolean indicating whether Radiant won the match
+    int64 start_time = 81;  // The Unix timestamp at which the game started
+    int64 duration = 82;  // Duration of the game in seconds
+    int64 cluster = 83;  // cluster
+    int64 lobby_type = 84;  // Integer corresponding to lobby type of match. List of constants can be found here: https://github.com/odota/dotaconstants/blob/master/json/lobby_type.json
+    int64 game_mode = 85;  // Integer corresponding to game mode played. List of constants can be found here: https://github.com/odota/dotaconstants/blob/master/json/game_mode.json
+    int64 patch = 86;  // Patch ID, from dotaconstants
+    int64 region = 87;  // Integer corresponding to the region the game was played on
+    bool isRadiant = 88;  // Boolean for whether or not the player is on Radiant
+    int64 win = 89;  // Binary integer representing whether or not the player won
+    int64 lose = 90;  // Binary integer representing whether or not the player lost
+    int64 total_gold = 91;  // Total gold at the end of the game
+    int64 total_xp = 92;  // Total experience at the end of the game
+    double kills_per_min = 93;  // Number of kills per minute
+    double kda = 94;  // kda
+    int64 abandons = 95;  // abandons
+    int64 neutral_kills = 96;  // Total number of neutral creeps killed
+    int64 tower_kills = 97;  // Total number of tower kills the player had
+    int64 courier_kills = 98;  // Total number of courier kills the player had
+    int64 lane_kills = 99;  // Total number of lane creeps killed by the player
+    int64 hero_kills = 100;  // Total number of heroes killed by the player
+    int64 observer_kills = 101;  // Total number of observer wards killed by the player
+    int64 sentry_kills = 102;  // Total number of sentry wards killed by the player
+    int64 roshan_kills = 103;  // Total number of roshan kills (last hit on roshan) the player had
+    int64 necronomicon_kills = 104;  // Total number of Necronomicon creeps killed by the player
+    int64 ancient_kills = 105;  // Total number of Ancient creeps killed by the player
+    int64 buyback_count = 106;  // Total number of buyback the player used
+    int64 observer_uses = 107;  // Number of observer wards used
+    int64 sentry_uses = 108;  // Number of sentry wards used
+    double lane_efficiency = 109;  // lane_efficiency
+    double lane_efficiency_pct = 110;  // lane_efficiency_pct
+    int64 lane = 111;  // Integer referring to which lane the hero laned in
+    int64 lane_role = 112;  // lane_role
+    bool is_roaming = 113;  // Boolean referring to whether or not the player roamed
+    google.protobuf.Struct purchase_time = 114;  // Object with information on when the player last purchased an item
+    google.protobuf.Struct first_purchase_time = 115;  // Object with information on when the player first puchased an item
+    google.protobuf.Struct item_win = 116;  // Object with information on whether or not the item won
+    google.protobuf.Struct item_usage = 117;  // Object containing binary integers the tell whether the item was purchased by the player (note: this is always 1)
+    int64 purchase_tpscroll = 118;  // Total number of TP scrolls purchased by the player
+    int64 actions_per_min = 119;  // Actions per minute
+    int64 life_state_dead = 120;  // life_state_dead
+    int64 rank_tier = 121;  // The rank tier of the player. Tens place indicates rank, ones place indicates stars.
+    repeated CosmeticsEntry cosmetics = 122;  // cosmetics
+    google.protobuf.Struct benchmarks = 123;  // Object containing information on certain benchmarks like GPM, XPM, KDA, tower damage, etc
+    repeated NeutralTokensLogEntry neutral_tokens_log = 124;  // Object containing information on neutral tokens drops
+    repeated NeutralItemHistoryEntry neutral_item_history = 125;  // Object containing information on neutral item history
+  }
+
+  message PausesEntry {
+    int64 time = 1;  // Time in seconds at which pause started
+    int64 duration = 2;  // The duration of the pause
+  }
+
+  int64 match_id = 1;  // The ID number of the match assigned by Valve
+  int64 barracks_status_dire = 2;  // Bitmask. An integer that represents a binary of which barracks are still standing. 63 would mean all barracks still stand at the end of the game.
+  int64 barracks_status_radiant = 3;  // Bitmask. An integer that represents a binary of which barracks are still standing. 63 would mean all barracks still stand at the end of the game.
+  repeated ChatEntry chat = 4;  // Array containing information on the chat of the game
+  int64 cluster = 5;  // cluster
+  google.protobuf.Struct cosmetics = 6;  // cosmetics
+  int64 dire_score = 7;  // Number of kills the Dire team had when the match ended
+  repeated DraftTimingsEntry draft_timings = 8;  // draft_timings
+  int64 duration = 9;  // Duration of the game in seconds
+  int64 engine = 10;  // engine
+  int64 first_blood_time = 11;  // Time in seconds at which first blood occurred
+  int64 game_mode = 12;  // Integer corresponding to game mode played. List of constants can be found here: https://github.com/odota/dotaconstants/blob/master/json/game_mode.json
+  int64 human_players = 13;  // Number of human players in the game
+  int64 leagueid = 14;  // leagueid
+  int64 lobby_type = 15;  // Integer corresponding to lobby type of match. List of constants can be found here: https://github.com/odota/dotaconstants/blob/master/json/lobby_type.json
+  int64 match_seq_num = 16;  // match_seq_num
+  int64 negative_votes = 17;  // Number of negative votes the replay received in the in-game client
+  repeated google.protobuf.Struct objectives = 18;  // objectives
+  repeated PicksBansEntry picks_bans = 19;  // Array containing information on the draft. Each item contains a boolean relating to whether the choice is a pick or a ban, the hero ID, the team the picked or banned it, and the order.
+  int64 positive_votes = 20;  // Number of positive votes the replay received in the in-game client
+  repeated double radiant_gold_adv = 21;  // Array of the Radiant gold advantage at each minute in the game. A negative number means that Radiant is behind, and thus it is their gold disadvantage. 
+  int64 radiant_score = 22;  // Number of kills the Radiant team had when the match ended
+  bool radiant_win = 23;  // Boolean indicating whether Radiant won the match
+  repeated double radiant_xp_adv = 24;  // Array of the Radiant experience advantage at each minute in the game. A negative number means that Radiant is behind, and thus it is their experience disadvantage. 
+  int64 start_time = 25;  // The Unix timestamp at which the game started
+  repeated google.protobuf.Struct teamfights = 26;  // teamfights
+  int64 tower_status_dire = 27;  // Bitmask. An integer that represents a binary of which Dire towers are still standing.
+  int64 tower_status_radiant = 28;  // Bitmask. An integer that represents a binary of which Radiant towers are still standing.
+  int64 version = 29;  // Parse version, used internally by OpenDota
+  int64 replay_salt = 30;  // replay_salt
+  int64 series_id = 31;  // series_id
+  int64 series_type = 32;  // series_type
+  google.protobuf.Struct radiant_team = 33;  // radiant_team
+  google.protobuf.Struct dire_team = 34;  // dire_team
+  google.protobuf.Struct league = 35;  // league
+  int64 skill = 36;  // Skill bracket assigned by Valve (Normal, High, Very High)
+  repeated PlayersEntry players = 37;  // Array of information on individual players
+  int64 patch = 38;  // Patch ID, from dotaconstants
+  int64 region = 39;  // Integer corresponding to the region the game was played on
+  google.protobuf.Struct all_word_counts = 40;  // Word counts of the all chat messages in the player's games
+  google.protobuf.Struct my_word_counts = 41;  // Word counts of the player's all chat messages
+  int64 throw = 42;  // Maximum gold advantage of the player's team if they lost the match
+  int64 comeback = 43;  // Maximum gold disadvantage of the player's team if they won the match
+  int64 loss = 44;  // Maximum gold disadvantage of the player's team if they lost the match
+  int64 win = 45;  // Maximum gold advantage of the player's team if they won the match
+  string replay_url = 46;  // replay_url
+  repeated PausesEntry pauses = 47;  // Array containing information about pauses during the game. Each item contains the time and duration of the pause.
+}
+
+message MetadataResponse {
+  google.protobuf.Struct banner = 1;  // banner
+}
+
+message ParsedMatchesResponse {
+  int64 match_id = 1;  // The ID number of the match assigned by Valve
+}
+
+message PlayerCountsResponse {
+  google.protobuf.Struct leaver_status = 1;  // Integer describing whether or not the player left the game. 0: didn't leave. 1: left safely. 2+: Abandoned
+  google.protobuf.Struct game_mode = 2;  // Integer corresponding to game mode played. List of constants can be found here: https://github.com/odota/dotaconstants/blob/master/json/game_mode.json
+  google.protobuf.Struct lobby_type = 3;  // Integer corresponding to lobby type of match. List of constants can be found here: https://github.com/odota/dotaconstants/blob/master/json/lobby_type.json
+  google.protobuf.Struct lane_role = 4;  // lane_role
+  google.protobuf.Struct region = 5;  // Integer corresponding to the region the game was played on
+  google.protobuf.Struct patch = 6;  // Patch ID, from dotaconstants
+}
+
+message PlayerHeroesResponse {
+  int64 hero_id = 1;  // The ID value of the hero played
+  int64 last_played = 2;  // last_played
+  int64 games = 3;  // games
+  int64 win = 4;  // win
+  int64 with_games = 5;  // with_games
+  int64 with_win = 6;  // with_win
+  int64 against_games = 7;  // against_games
+  int64 against_win = 8;  // against_win
+}
+
+message PlayerMatchesResponse {
+  int64 match_id = 1;  // The ID number of the match assigned by Valve
+  int64 player_slot = 2;  // Which slot the player is in. 0-127 are Radiant, 128-255 are Dire
+  bool radiant_win = 3;  // Boolean indicating whether Radiant won the match
+  int64 duration = 4;  // Duration of the game in seconds
+  int64 game_mode = 5;  // Integer corresponding to game mode played. List of constants can be found here: https://github.com/odota/dotaconstants/blob/master/json/game_mode.json
+  int64 lobby_type = 6;  // Integer corresponding to lobby type of match. List of constants can be found here: https://github.com/odota/dotaconstants/blob/master/json/lobby_type.json
+  int64 hero_id = 7;  // The ID value of the hero played
+  int64 start_time = 8;  // The Unix timestamp at which the game started
+  int64 version = 9;  // version
+  int64 kills = 10;  // Total kills the player had at the end of the game
+  int64 deaths = 11;  // Total deaths the player had at the end of the game
+  int64 assists = 12;  // Total assists the player had at the end of the game
+  int64 skill = 13;  // Skill bracket assigned by Valve (Normal, High, Very High)
+  int64 average_rank = 14;  // Average rank of players with public match data
+  int64 leaver_status = 15;  // Integer describing whether or not the player left the game. 0: didn't leave. 1: left safely. 2+: Abandoned
+  int64 party_size = 16;  // Size of the player's party
+  int64 hero_variant = 17;  // 1-indexed facet, see https://github.com/odota/dotaconstants/blob/master/build/hero_abilities.json
+}
+
+message PlayerObjectResponse {
+  int64 account_id = 1;  // The player account ID
+  string steamid = 2;  // Player's steam identifier
+  string avatar = 3;  // Steam picture URL (small picture)
+  string avatarmedium = 4;  // Steam picture URL (medium picture)
+  string avatarfull = 5;  // Steam picture URL (full picture)
+  string profileurl = 6;  // Steam profile URL
+  string personaname = 7;  // Player's Steam name
+  string last_login = 8;  // Date and time of last login to OpenDota
+  string full_history_time = 9;  // Date and time of last request to refresh player's match history
+  int64 cheese = 10;  // Amount of dollars the player has donated to OpenDota
+  bool fh_unavailable = 11;  // Whether the refresh of player' match history failed
+  string loccountrycode = 12;  // Player's country identifier, e.g. US
+  string name = 13;  // Verified player name, e.g. 'Miracle-'
+  string country_code = 14;  // Player's country code
+  int64 fantasy_role = 15;  // Player's ingame role (core: 1 or support: 2)
+  int64 team_id = 16;  // Player's team identifier
+  string team_name = 17;  // Team name
+  string team_tag = 18;  // Player's team shorthand tag, e.g. 'EG'
+  bool is_locked = 19;  // Whether the roster lock is active
+  bool is_pro = 20;  // Whether the player is professional or not
+  int64 locked_until = 21;  // When the roster lock will end
+  int64 computed_mmr = 22;  // Rating estimate based on ranked matches
+}
+
+message PlayerPeersResponse {
+  int64 account_id = 1;  // The player account ID
+  int64 last_played = 2;  // last_played
+  int64 win = 3;  // win
+  int64 games = 4;  // games
+  int64 with_win = 5;  // with_win
+  int64 with_games = 6;  // with_games
+  int64 against_win = 7;  // against_win
+  int64 against_games = 8;  // against_games
+  int64 with_gpm_sum = 9;  // with_gpm_sum
+  int64 with_xpm_sum = 10;  // with_xpm_sum
+  string personaname = 11;  // Player's Steam name
+  string name = 12;  // name
+  bool is_contributor = 13;  // is_contributor
+  bool is_subscriber = 14;  // is_subscriber
+  string last_login = 15;  // last_login
+  string avatar = 16;  // avatar
+  string avatarfull = 17;  // avatarfull
+}
+
+message PlayerProsResponse {
+  int64 account_id = 1;  // The player account ID
+  string name = 2;  // name
+  string country_code = 3;  // country_code
+  int64 fantasy_role = 4;  // fantasy_role
+  int64 team_id = 5;  // team_id
+  string team_name = 6;  // Team name
+  string team_tag = 7;  // team_tag
+  bool is_locked = 8;  // is_locked
+  bool is_pro = 9;  // is_pro
+  int64 locked_until = 10;  // locked_until
+  string steamid = 11;  // steamid
+  string avatar = 12;  // avatar
+  string avatarmedium = 13;  // avatarmedium
+  string avatarfull = 14;  // avatarfull
+  string profileurl = 15;  // profileurl
+  string last_login = 16;  // last_login
+  string full_history_time = 17;  // full_history_time
+  int64 cheese = 18;  // cheese
+  bool fh_unavailable = 19;  // fh_unavailable
+  string loccountrycode = 20;  // loccountrycode
+  int64 last_played = 21;  // last_played
+  int64 win = 22;  // win
+  int64 games = 23;  // games
+  int64 with_win = 24;  // with_win
+  int64 with_games = 25;  // with_games
+  int64 against_win = 26;  // against_win
+  int64 against_games = 27;  // against_games
+  int64 with_gpm_sum = 28;  // with_gpm_sum
+  int64 with_xpm_sum = 29;  // with_xpm_sum
+}
+
+message PlayerRankingsResponse {
+  int64 hero_id = 1;  // The ID value of the hero played
+  double score = 2;  // Hero score
+  double percent_rank = 3;  // percent_rank
+  int64 card = 4;  // numeric_rank
+}
+
+message PlayerRatingsResponse {
+  int64 account_id = 1;  // The player account ID
+  int64 match_id = 2;  // The ID number of the match assigned by Valve
+  int64 solo_competitive_rank = 3;  // solo_competitive_rank
+  int64 competitive_rank = 4;  // competitive_rank
+  int64 time = 5;  // time
+}
+
+message PlayerRecentMatchesResponse {
+  int64 match_id = 1;  // The ID number of the match assigned by Valve
+  int64 player_slot = 2;  // Which slot the player is in. 0-127 are Radiant, 128-255 are Dire
+  bool radiant_win = 3;  // Boolean indicating whether Radiant won the match
+  int64 duration = 4;  // Duration of the game in seconds
+  int64 game_mode = 5;  // Integer corresponding to game mode played. List of constants can be found here: https://github.com/odota/dotaconstants/blob/master/json/game_mode.json
+  int64 lobby_type = 6;  // Integer corresponding to lobby type of match. List of constants can be found here: https://github.com/odota/dotaconstants/blob/master/json/lobby_type.json
+  int64 hero_id = 7;  // The ID value of the hero played
+  int64 start_time = 8;  // The Unix timestamp at which the game started
+  int64 version = 9;  // version
+  int64 kills = 10;  // Total kills the player had at the end of the match
+  int64 deaths = 11;  // Total deaths the player had at the end of the match
+  int64 assists = 12;  // Total assists the player had at the end of the match
+  int64 skill = 13;  // Skill bracket assigned by Valve (Normal, High, Very High). If the skill is unknown, will return null.
+  int64 average_rank = 14;  // Average rank of players with public match data
+  int64 xp_per_min = 15;  // Experience Per Minute obtained by the player
+  int64 gold_per_min = 16;  // Average gold per minute of the player
+  int64 hero_damage = 17;  // Total hero damage to enemy heroes
+  int64 hero_healing = 18;  // Total healing of ally heroes
+  int64 last_hits = 19;  // Total last hits the player had at the end of the match
+  int64 lane = 20;  // Integer corresponding to which lane the player laned in for the match
+  int64 lane_role = 21;  // lane_role
+  bool is_roaming = 22;  // Boolean describing whether or not the player roamed
+  int64 cluster = 23;  // cluster
+  int64 leaver_status = 24;  // Integer describing whether or not the player left the game. 0: didn't leave. 1: left safely. 2+: Abandoned
+  int64 party_size = 25;  // Size of the players party. If not in a party, will return 1.
+  int64 hero_variant = 26;  // 1-indexed facet, see https://github.com/odota/dotaconstants/blob/master/build/hero_abilities.json
+}
+
+message PlayerTotalsResponse {
+  string field = 1;  // field
+  int64 n = 2;  // number
+  double sum = 3;  // sum
+}
+
+message PlayerWardMapResponse {
+  google.protobuf.Struct obs = 1;  // obs
+  google.protobuf.Struct sen = 2;  // sen
+}
+
+message PlayerWinLossResponse {
+  int64 win = 1;  // Number of wins
+  int64 lose = 2;  // Number of loses
+}
+
+message PlayerWordCloudResponse {
+  google.protobuf.Struct my_word_counts = 1;  // my_word_counts
+  google.protobuf.Struct all_word_counts = 2;  // all_word_counts
+}
+
+message PlayersResponse {
+  message AliasesEntry {
+    string personaname = 1;  // The name used by the player
+    string name_since = 2;  // The date the name was used since
+  }
+
+  message Profile {
+    int64 account_id = 1;  // The player account ID
+    string personaname = 2;  // Player's Steam name
+    string name = 3;  // name
+    bool plus = 4;  // Boolean indicating status of current Dota Plus subscription
+    int64 cheese = 5;  // cheese
+    string steamid = 6;  // steamid
+    string avatar = 7;  // avatar
+    string avatarmedium = 8;  // avatarmedium
+    string avatarfull = 9;  // avatarfull
+    string profileurl = 10;  // profileurl
+    string last_login = 11;  // last_login
+    string loccountrycode = 12;  // loccountrycode
+    bool is_contributor = 13;  // Boolean indicating if the user contributed to the development of OpenDota
+    bool is_subscriber = 14;  // Boolean indicating if the user subscribed to OpenDota
+  }
+
+  double rank_tier = 1;  // The player's Dota medal/rank
+  double leaderboard_rank = 2;  // The player's rank on the Dota leaderboard (if Immortal)
+  double computed_mmr = 3;  // Rating estimate based on ranked matches
+  int64 computed_mmr_turbo = 4;  // Rating estimate based on turbo matches
+  repeated AliasesEntry aliases = 5;  // List of names the player has used on Steam
+  Profile profile = 6;  // profile
+}
+
+message PublicMatchesResponse {
+  int64 match_id = 1;  // The ID number of the match assigned by Valve
+  int64 match_seq_num = 2;  // match_seq_num
+  bool radiant_win = 3;  // Boolean indicating whether Radiant won the match
+  int64 start_time = 4;  // The Unix timestamp at which the game started
+  int64 duration = 5;  // Duration of the game in seconds
+  int64 lobby_type = 6;
+  int64 game_mode = 7;
+  int64 avg_rank_tier = 8;
+  int64 num_rank_tier = 9;
+  int64 cluster = 10;
+  repeated int64 radiant_team = 11;  // radiant_team
+  repeated int64 dire_team = 12;  // dire_team
+}
+
+message RankingsResponse {
+  message RankingsEntry {
+    int64 account_id = 1;  // The player account ID
+    double score = 2;  // Score
+    string steamid = 3;  // steamid
+    string avatar = 4;  // avatar
+    string avatarmedium = 5;  // avatarmedium
+    string avatarfull = 6;  // avatarfull
+    string profileurl = 7;  // profileurl
+    string personaname = 8;  // Player's Steam name
+    string last_login = 9;  // last_login
+    string full_history_time = 10;  // full_history_time
+    int64 cheese = 11;  // cheese
+    bool fh_unavailable = 12;  // fh_unavailable
+    string loccountrycode = 13;  // loccountrycode
+    int64 rank_tier = 14;  // rank_tier
+  }
+
+  int64 hero_id = 1;  // The ID value of the hero played
+  repeated RankingsEntry rankings = 2;  // rankings
+}
+
+message RecordsResponse {
+  int64 match_id = 1;  // The ID number of the match assigned by Valve
+  int64 start_time = 2;  // The Unix timestamp at which the game started
+  int64 hero_id = 3;  // The ID value of the hero played
+  int64 score = 4;  // Record score
+}
+
+message ScenarioItemTimingsResponse {
+  int64 hero_id = 1;  // The ID value of the hero played
+  string item = 2;  // Purchased item
+  int64 time = 3;  // Ingame time in seconds before the item was purchased
+  string games = 4;  // The number of games where the hero bought this item before this time
+  string wins = 5;  // The number of games won where the hero bought this item before this time
+}
+
+message ScenarioLaneRolesResponse {
+  int64 hero_id = 1;  // The ID value of the hero played
+  int64 lane_role = 2;  // The hero's lane role
+  int64 time = 3;  // Maximum game length in seconds
+  string games = 4;  // The number of games where the hero played in this lane role
+  string wins = 5;  // The number of games won where the hero played in this lane role
+}
+
+message ScenarioMiscResponse {
+  string scenario = 1;  // The scenario's name or description
+  bool is_radiant = 2;  // Boolean indicating whether Radiant executed this scenario
+  int64 region = 3;  // Region the game was played in
+  string games = 4;  // The number of games where this scenario occurred
+  string wins = 5;  // The number of games won where this scenario occured
+}
+
+message SchemaResponse {
+  string table_name = 1;  // table_name
+  string column_name = 2;  // column_name
+  string data_type = 3;  // data_type
+}
+
+message SearchResponse {
+  int64 account_id = 1;  // The player account ID
+  string avatarfull = 2;  // avatarfull
+  string personaname = 3;  // Player's Steam name
+  string last_match_time = 4;  // last_match_time. May not be present or null.
+  double similarity = 5;  // similarity
+}
+
+message TeamHeroesResponse {
+  int64 hero_id = 1;  // The ID value of the hero played
+  string name = 2;  // Hero name
+  int64 games_played = 3;  // Number of games played
+  int64 wins = 4;  // Number of wins
+}
+
+message TeamMatchObjectResponse {
+  int64 match_id = 1;  // The ID number of the match assigned by Valve
+  bool radiant = 2;  // Whether the team/player/hero was on Radiant
+  bool radiant_win = 3;  // Boolean indicating whether Radiant won the match
+  int64 radiant_score = 4;  // Number of kills the Radiant team had when the match ended
+  int64 dire_score = 5;  // Number of kills the Dire team had when the match ended
+  int64 duration = 6;  // Duration of the game in seconds
+  int64 start_time = 7;  // The Unix timestamp at which the game started
+  int64 leagueid = 8;  // Identifier for the league the match took place in
+  string league_name = 9;  // Name of league the match took place in
+  int64 cluster = 10;  // cluster
+  int64 opposing_team_id = 11;  // Opposing team identifier
+  string opposing_team_name = 12;  // Opposing team name, e.g. 'Evil Geniuses'
+  string opposing_team_logo = 13;  // Opposing team logo url
+}
+
+message TeamObjectResponse {
+  int64 team_id = 1;  // Team's identifier
+  double rating = 2;  // The Elo rating of the team
+  int64 wins = 3;  // The number of games won by this team
+  int64 losses = 4;  // The number of losses by this team
+  int64 last_match_time = 5;  // The Unix timestamp of the last match played by this team
+  string name = 6;  // Team name
+  string tag = 7;  // The team tag/abbreviation
+}
+
+message TeamPlayersResponse {
+  int64 account_id = 1;  // The player account ID
+  string name = 2;  // name
+  int64 games_played = 3;  // Number of games played
+  int64 wins = 4;  // Number of wins
+  bool is_current_team_member = 5;  // If this player is on the current roster
+}
+
+// ─── Request messages ───
+
+message GetBenchmarksRequest {
+  // Optional query string parameters as JSON object.
+  google.protobuf.Struct query = 1;
+}
+
+message GetConstantsResourceRequest {
+  // Resource name e.g. `heroes`. [List of resources](https://github.com/odota/dotaconstants/tree/master/build)
+  string resource = 1;
+  // Optional query string parameters as JSON object.
+  google.protobuf.Struct query = 2;
+}
+
+message GetDistributionsRequest {
+  // Optional query string parameters as JSON object.
+  google.protobuf.Struct query = 1;
+}
+
+message GetExplorerRequest {
+  // Optional query string parameters as JSON object.
+  google.protobuf.Struct query = 1;
+}
+
+message GetFindMatchesRequest {
+  // Optional query string parameters as JSON object.
+  google.protobuf.Struct query = 1;
+}
+
+message GetHealthRequest {
+  // Optional query string parameters as JSON object.
+  google.protobuf.Struct query = 1;
+}
+
+message GetHeroStatsRequest {
+  // Optional query string parameters as JSON object.
+  google.protobuf.Struct query = 1;
+}
+
+message GetHeroesRequest {
+  // Optional query string parameters as JSON object.
+  google.protobuf.Struct query = 1;
+}
+
+message GetHeroDurationsRequest {
+  // Hero ID
+  int64 hero_id = 1;
+  // Optional query string parameters as JSON object.
+  google.protobuf.Struct query = 2;
+}
+
+message GetHeroItemPopularityRequest {
+  // Hero ID
+  int64 hero_id = 1;
+  // Optional query string parameters as JSON object.
+  google.protobuf.Struct query = 2;
+}
+
+message GetHeroMatchesRequest {
+  // Hero ID
+  int64 hero_id = 1;
+  // Optional query string parameters as JSON object.
+  google.protobuf.Struct query = 2;
+}
+
+message GetHeroMatchupsRequest {
+  // Hero ID
+  int64 hero_id = 1;
+  // Optional query string parameters as JSON object.
+  google.protobuf.Struct query = 2;
+}
+
+message GetHeroPlayersRequest {
+  // Hero ID
+  int64 hero_id = 1;
+  // Optional query string parameters as JSON object.
+  google.protobuf.Struct query = 2;
+}
+
+message GetLeaguesRequest {
+  // Optional query string parameters as JSON object.
+  google.protobuf.Struct query = 1;
+}
+
+message GetLeagueRequest {
+  // League ID
+  int64 league_id = 1;
+  // Optional query string parameters as JSON object.
+  google.protobuf.Struct query = 2;
+}
+
+message GetLeagueMatchIdsRequest {
+  // League ID
+  int64 league_id = 1;
+  // Optional query string parameters as JSON object.
+  google.protobuf.Struct query = 2;
+}
+
+message GetLeagueMatchesRequest {
+  // League ID
+  int64 league_id = 1;
+  // Optional query string parameters as JSON object.
+  google.protobuf.Struct query = 2;
+}
+
+message GetLeagueTeamsRequest {
+  // League ID
+  int64 league_id = 1;
+  // Optional query string parameters as JSON object.
+  google.protobuf.Struct query = 2;
+}
+
+message GetLiveRequest {
+  // Optional query string parameters as JSON object.
+  google.protobuf.Struct query = 1;
+}
+
+message GetMatchRequest {
+  int64 match_id = 1;
+  // Optional query string parameters as JSON object.
+  google.protobuf.Struct query = 2;
+}
+
+message GetMetadataRequest {
+  // Optional query string parameters as JSON object.
+  google.protobuf.Struct query = 1;
+}
+
+message GetParsedMatchesRequest {
+  // Optional query string parameters as JSON object.
+  google.protobuf.Struct query = 1;
+}
+
+message GetPlayerRequest {
+  // Steam32 account ID
+  int64 account_id = 1;
+  // Optional query string parameters as JSON object.
+  google.protobuf.Struct query = 2;
+}
+
+message GetPlayerCountsRequest {
+  // Steam32 account ID
+  int64 account_id = 1;
+  // Optional query string parameters as JSON object.
+  google.protobuf.Struct query = 2;
+}
+
+message GetPlayerHeroesRequest {
+  // Steam32 account ID
+  int64 account_id = 1;
+  // Optional query string parameters as JSON object.
+  google.protobuf.Struct query = 2;
+}
+
+message GetPlayerHistogramsFieldRequest {
+  // Steam32 account ID
+  int64 account_id = 1;
+  // Field to aggregate on
+  string field = 2;
+  // Optional query string parameters as JSON object.
+  google.protobuf.Struct query = 3;
+}
+
+message GetPlayerMatchesRequest {
+  // Steam32 account ID
+  int64 account_id = 1;
+  // Optional query string parameters as JSON object.
+  google.protobuf.Struct query = 2;
+}
+
+message GetPlayerPeersRequest {
+  // Steam32 account ID
+  int64 account_id = 1;
+  // Optional query string parameters as JSON object.
+  google.protobuf.Struct query = 2;
+}
+
+message GetPlayerProsRequest {
+  // Steam32 account ID
+  int64 account_id = 1;
+  // Optional query string parameters as JSON object.
+  google.protobuf.Struct query = 2;
+}
+
+message GetPlayerRankingsRequest {
+  // Steam32 account ID
+  int64 account_id = 1;
+  // Optional query string parameters as JSON object.
+  google.protobuf.Struct query = 2;
+}
+
+message GetPlayerRatingsRequest {
+  // Steam32 account ID
+  int64 account_id = 1;
+  // Optional query string parameters as JSON object.
+  google.protobuf.Struct query = 2;
+}
+
+message GetPlayerRecentMatchesRequest {
+  // Steam32 account ID
+  int64 account_id = 1;
+  // Optional query string parameters as JSON object.
+  google.protobuf.Struct query = 2;
+}
+
+message PostPlayerRefreshRequest {
+  // Steam32 account ID
+  int64 account_id = 1;
+  // Optional query string parameters as JSON object.
+  google.protobuf.Struct query = 2;
+  // Optional JSON body payload.
+  google.protobuf.Struct body = 3;
+}
+
+message GetPlayerTotalsRequest {
+  // Steam32 account ID
+  int64 account_id = 1;
+  // Optional query string parameters as JSON object.
+  google.protobuf.Struct query = 2;
+}
+
+message GetPlayerWardmapRequest {
+  // Steam32 account ID
+  int64 account_id = 1;
+  // Optional query string parameters as JSON object.
+  google.protobuf.Struct query = 2;
+}
+
+message GetPlayerWinLossRequest {
+  // Steam32 account ID
+  int64 account_id = 1;
+  // Optional query string parameters as JSON object.
+  google.protobuf.Struct query = 2;
+}
+
+message GetPlayerWordcloudRequest {
+  // Steam32 account ID
+  int64 account_id = 1;
+  // Optional query string parameters as JSON object.
+  google.protobuf.Struct query = 2;
+}
+
+message GetProMatchesRequest {
+  // Optional query string parameters as JSON object.
+  google.protobuf.Struct query = 1;
+}
+
+message GetProPlayersRequest {
+  // Optional query string parameters as JSON object.
+  google.protobuf.Struct query = 1;
+}
+
+message GetPublicMatchesRequest {
+  // Optional query string parameters as JSON object.
+  google.protobuf.Struct query = 1;
+}
+
+message GetRankingsRequest {
+  // Optional query string parameters as JSON object.
+  google.protobuf.Struct query = 1;
+}
+
+message GetRecordsFieldRequest {
+  // Field name to query
+  string field = 1;
+  // Optional query string parameters as JSON object.
+  google.protobuf.Struct query = 2;
+}
+
+message GetRequestJobIdRequest {
+  // The job ID to query.
+  string job_id = 1;
+  // Optional query string parameters as JSON object.
+  google.protobuf.Struct query = 2;
+}
+
+message PostRequestMatchIdRequest {
+  int64 match_id = 1;
+  // Optional query string parameters as JSON object.
+  google.protobuf.Struct query = 2;
+  // Optional JSON body payload.
+  google.protobuf.Struct body = 3;
+}
+
+message GetScenariosItemTimingsRequest {
+  // Optional query string parameters as JSON object.
+  google.protobuf.Struct query = 1;
+}
+
+message GetScenariosLaneRolesRequest {
+  // Optional query string parameters as JSON object.
+  google.protobuf.Struct query = 1;
+}
+
+message GetScenariosMiscRequest {
+  // Optional query string parameters as JSON object.
+  google.protobuf.Struct query = 1;
+}
+
+message GetSchemaRequest {
+  // Optional query string parameters as JSON object.
+  google.protobuf.Struct query = 1;
+}
+
+message SearchPlayersRequest {
+  // Optional query string parameters as JSON object.
+  google.protobuf.Struct query = 1;
+}
+
+message GetTeamsRequest {
+  // Optional query string parameters as JSON object.
+  google.protobuf.Struct query = 1;
+}
+
+message GetTeamRequest {
+  // Team ID
+  int64 team_id = 1;
+  // Optional query string parameters as JSON object.
+  google.protobuf.Struct query = 2;
+}
+
+message GetTeamHeroesRequest {
+  // Team ID
+  int64 team_id = 1;
+  // Optional query string parameters as JSON object.
+  google.protobuf.Struct query = 2;
+}
+
+message GetTeamMatchesRequest {
+  // Team ID
+  int64 team_id = 1;
+  // Optional query string parameters as JSON object.
+  google.protobuf.Struct query = 2;
+}
+
+message GetTeamPlayersRequest {
+  // Team ID
+  int64 team_id = 1;
+  // Optional query string parameters as JSON object.
+  google.protobuf.Struct query = 2;
+}
+
+message GetTopPlayersRequest {
+  // Optional query string parameters as JSON object.
+  google.protobuf.Struct query = 1;
+}
+
+// ─── Response messages (typed from OpenAPI spec) ───
+
+message GetBenchmarksResponse {
+  BenchmarksResponse data = 1;
+}
+
+message GetConstantsResourceResponse {
+  // Raw endpoint response payload.
+  google.protobuf.Value data = 1;
+}
+
+message GetDistributionsResponse {
+  DistributionsResponse data = 1;
+}
+
+message GetExplorerResponse {
+  // Raw endpoint response payload.
+  google.protobuf.Struct data = 1;
+}
+
+message GetFindMatchesResponse {
+  // Raw endpoint response payload.
+  google.protobuf.Value data = 1;
+}
+
+message GetHealthResponse {
+  // Raw endpoint response payload.
+  google.protobuf.Struct data = 1;
+}
+
+message GetHeroDurationsResponse {
+  repeated HeroDurationsResponse data = 1;
+}
+
+message GetHeroItemPopularityResponse {
+  HeroItemPopularityResponse data = 1;
+}
+
+message GetHeroMatchesResponse {
+  repeated MatchObjectResponse data = 1;
+}
+
+message GetHeroMatchupsResponse {
+  repeated HeroMatchupsResponse data = 1;
+}
+
+message GetHeroPlayersResponse {
+  // Array of arrays of player objects.
+  google.protobuf.Value data = 1;
+}
+
+message GetHeroStatsResponse {
+  repeated HeroStatsResponse data = 1;
+}
+
+message GetHeroesResponse {
+  repeated HeroObjectResponse data = 1;
+}
+
+message GetLeagueMatchIdsResponse {
+  repeated string data = 1;
+}
+
+message GetLeagueMatchesResponse {
+  MatchObjectResponse data = 1;
+}
+
+message GetLeagueResponse {
+  repeated LeagueObjectResponse data = 1;
+}
+
+message GetLeagueTeamsResponse {
+  TeamObjectResponse data = 1;
+}
+
+message GetLeaguesResponse {
+  repeated LeagueObjectResponse data = 1;
+}
+
+message GetLiveResponse {
+  // Raw endpoint response payload.
+  google.protobuf.Value data = 1;
+}
+
+message GetMatchResponse {
+  MatchResponse data = 1;
+}
+
+message GetMetadataResponse {
+  MetadataResponse data = 1;
+}
+
+message GetParsedMatchesResponse {
+  repeated ParsedMatchesResponse data = 1;
+}
+
+message GetPlayerCountsResponse {
+  PlayerCountsResponse data = 1;
+}
+
+message GetPlayerHeroesResponse {
+  repeated PlayerHeroesResponse data = 1;
+}
+
+message GetPlayerHistogramsFieldResponse {
+  // Raw endpoint response payload.
+  google.protobuf.Value data = 1;
+}
+
+message GetPlayerMatchesResponse {
+  repeated PlayerMatchesResponse data = 1;
+}
+
+message GetPlayerPeersResponse {
+  repeated PlayerPeersResponse data = 1;
+}
+
+message GetPlayerProsResponse {
+  repeated PlayerProsResponse data = 1;
+}
+
+message GetPlayerRankingsResponse {
+  repeated PlayerRankingsResponse data = 1;
+}
+
+message GetPlayerRatingsResponse {
+  repeated PlayerRatingsResponse data = 1;
+}
+
+message GetPlayerRecentMatchesResponse {
+  repeated PlayerRecentMatchesResponse data = 1;
+}
+
+message GetPlayerResponse {
+  PlayersResponse data = 1;
+}
+
+message GetPlayerTotalsResponse {
+  repeated PlayerTotalsResponse data = 1;
+}
+
+message GetPlayerWardmapResponse {
+  PlayerWardMapResponse data = 1;
+}
+
+message GetPlayerWinLossResponse {
+  PlayerWinLossResponse data = 1;
+}
+
+message GetPlayerWordcloudResponse {
+  PlayerWordCloudResponse data = 1;
+}
+
+message GetProMatchesResponse {
+  repeated MatchObjectResponse data = 1;
+}
+
+message GetProPlayersResponse {
+  repeated PlayerObjectResponse data = 1;
+}
+
+message GetPublicMatchesResponse {
+  repeated PublicMatchesResponse data = 1;
+}
+
+message GetRankingsResponse {
+  RankingsResponse data = 1;
+}
+
+message GetRecordsFieldResponse {
+  repeated RecordsResponse data = 1;
+}
+
+message GetRequestJobIdResponse {
+  // Raw endpoint response payload.
+  google.protobuf.Struct data = 1;
+}
+
+message GetScenariosItemTimingsResponse {
+  repeated ScenarioItemTimingsResponse data = 1;
+}
+
+message GetScenariosLaneRolesResponse {
+  repeated ScenarioLaneRolesResponse data = 1;
+}
+
+message GetScenariosMiscResponse {
+  repeated ScenarioMiscResponse data = 1;
+}
+
+message GetSchemaResponse {
+  repeated SchemaResponse data = 1;
+}
+
+message GetTeamHeroesResponse {
+  TeamHeroesResponse data = 1;
+}
+
+message GetTeamMatchesResponse {
+  TeamMatchObjectResponse data = 1;
+}
+
+message GetTeamPlayersResponse {
+  TeamPlayersResponse data = 1;
+}
+
+message GetTeamResponse {
+  TeamObjectResponse data = 1;
+}
+
+message GetTeamsResponse {
+  repeated TeamObjectResponse data = 1;
+}
+
+message GetTopPlayersResponse {
+  repeated PlayerObjectResponse data = 1;
+}
+
+message PostPlayerRefreshResponse {
+  // Raw endpoint response payload.
+  google.protobuf.Value data = 1;
+}
+
+message PostRequestMatchIdResponse {
+  // Raw endpoint response payload.
+  google.protobuf.Struct data = 1;
+}
+
+message SearchPlayersResponse {
+  repeated SearchResponse data = 1;
+}
+

@@ -1,0 +1,397 @@
+syntax = "proto3";
+
+package hyperliquid.v1;
+
+// Hyperliquid perpetual futures DEX. Provides market data, account info,
+// and authenticated trading on the Hyperliquid L1 chain.
+service HyperliquidService {
+  // Get exchange metadata — the full list of tradable perpetual assets
+  // with their size decimals, max leverage, and fee tiers.
+  // No authentication required.
+  rpc GetMeta(GetMetaRequest) returns (GetMetaResponse);
+
+  // Get mid prices for every listed asset, e.g. {"BTC": "67432.5", "ETH": "3521.2"}.
+  // Useful for scanning the market or computing portfolio value.
+  // No authentication required.
+  rpc GetAllMids(GetAllMidsRequest) returns (GetAllMidsResponse);
+
+  // Get the L2 order book for a single asset. Returns up to 20 bid/ask levels
+  // with price and size at each level. Use this to check liquidity and spread
+  // before placing orders.
+  // No authentication required.
+  rpc GetOrderbook(GetOrderbookRequest) returns (GetOrderbookResponse);
+
+  // Get OHLCV candlestick data for charting and technical analysis.
+  // Supports intervals from 1 minute to 1 month.
+  // No authentication required.
+  rpc GetCandles(GetCandlesRequest) returns (GetCandlesResponse);
+
+  // Get the full account state — margin summary, open positions with entry
+  // prices, unrealized PnL, liquidation prices, and cross-margin details.
+  // This is the primary way to check "how is my portfolio doing?"
+  // No authentication required (but needs the wallet address).
+  rpc GetAccountState(GetAccountStateRequest) returns (GetAccountStateResponse);
+
+  // Get open orders for an account. Shows all resting limit orders with
+  // their prices, sizes, sides, and order IDs.
+  // No authentication required (but needs the wallet address).
+  rpc GetOpenOrders(GetOpenOrdersRequest) returns (GetOpenOrdersResponse);
+
+  // Get recent trade fills (executions) for an account.
+  // Shows price, size, side, fee, and realized PnL for each fill.
+  // No authentication required (but needs the wallet address).
+  rpc GetFills(GetFillsRequest) returns (GetFillsResponse);
+
+  // Place a limit or market order. Requires authentication (private key).
+  // Returns the order status — whether it was placed, filled, or rejected.
+  rpc PlaceOrder(PlaceOrderRequest) returns (PlaceOrderResponse);
+
+  // Cancel an open order by its order ID. Requires authentication.
+  rpc CancelOrder(CancelOrderRequest) returns (CancelOrderResponse);
+
+  // Quick market buy or sell with slippage tolerance.
+  // Simpler than PlaceOrder — just specify the coin, direction, and size.
+  // Requires authentication.
+  rpc MarketOpen(MarketOpenRequest) returns (MarketOpenResponse);
+
+  // Close an entire position at market price with slippage tolerance.
+  // Requires authentication.
+  rpc MarketClose(MarketCloseRequest) returns (MarketCloseResponse);
+
+  // Set leverage for an asset. Choose cross-margin or isolated with a
+  // specific leverage multiplier (e.g. 10x). Requires authentication.
+  rpc UpdateLeverage(UpdateLeverageRequest) returns (UpdateLeverageResponse);
+
+  // Transfer USDC to another address on Hyperliquid L1.
+  // Requires authentication.
+  rpc Transfer(TransferRequest) returns (TransferResponse);
+}
+
+// Candle interval for OHLCV data.
+enum CandleInterval {
+  CANDLE_INTERVAL_UNSPECIFIED = 0;
+  // 1-minute candles.
+  CANDLE_INTERVAL_1M = 1;
+  // 5-minute candles.
+  CANDLE_INTERVAL_5M = 2;
+  // 15-minute candles.
+  CANDLE_INTERVAL_15M = 3;
+  // 1-hour candles.
+  CANDLE_INTERVAL_1H = 4;
+  // 4-hour candles.
+  CANDLE_INTERVAL_4H = 5;
+  // 1-day candles.
+  CANDLE_INTERVAL_1D = 6;
+}
+
+// Order side — buy or sell.
+enum Side {
+  SIDE_UNSPECIFIED = 0;
+  // Buy / go long.
+  SIDE_BUY = 1;
+  // Sell / go short.
+  SIDE_SELL = 2;
+}
+
+// Time-in-force for limit orders.
+enum TimeInForce {
+  TIME_IN_FORCE_UNSPECIFIED = 0;
+  // Good-til-canceled — stays on the book until filled or canceled.
+  TIME_IN_FORCE_GTC = 1;
+  // Immediate-or-cancel — fills what it can, cancels the rest.
+  TIME_IN_FORCE_IOC = 2;
+  // Add-liquidity-only (post-only) — rejected if it would cross the spread.
+  TIME_IN_FORCE_ALO = 3;
+}
+
+// --- Market Data ---
+
+message GetMetaRequest {}
+
+message GetMetaResponse {
+  // List of all tradable perpetual assets.
+  repeated AssetInfo assets = 1;
+}
+
+// Metadata about a tradable perpetual asset.
+message AssetInfo {
+  // Ticker symbol, e.g. "BTC", "ETH", "SOL".
+  string name = 1;
+  // Number of significant figures for order sizes.
+  int32 size_decimals = 2;
+  // Maximum allowed leverage, e.g. 50.
+  int32 max_leverage = 3;
+}
+
+message GetAllMidsRequest {}
+
+message GetAllMidsResponse {
+  // Mid prices keyed by asset name, e.g. {"BTC": "67432.5", "ETH": "3521.2"}.
+  map<string, string> mids = 1;
+}
+
+message GetOrderbookRequest {
+  // Asset ticker symbol, e.g. "BTC".
+  string coin = 1;
+}
+
+message GetOrderbookResponse {
+  // Bid levels, sorted best (highest) first.
+  repeated OrderbookLevel bids = 1;
+  // Ask levels, sorted best (lowest) first.
+  repeated OrderbookLevel asks = 2;
+}
+
+// A single price level in the order book.
+message OrderbookLevel {
+  // Price at this level, e.g. "67430.0".
+  string price = 1;
+  // Total size at this level, e.g. "1.234".
+  string size = 2;
+}
+
+message GetCandlesRequest {
+  // Asset ticker symbol, e.g. "BTC".
+  string coin = 1;
+  // Candle interval (1m, 5m, 15m, 1h, 4h, 1d).
+  CandleInterval interval = 2;
+  // Start time as Unix timestamp in milliseconds.
+  int64 start_time = 3;
+  // End time as Unix timestamp in milliseconds.
+  int64 end_time = 4;
+}
+
+message GetCandlesResponse {
+  // Candlestick data points.
+  repeated Candle candles = 1;
+}
+
+// A single OHLCV candlestick.
+message Candle {
+  // Candle open time as Unix timestamp in milliseconds.
+  int64 time = 1;
+  // Opening price.
+  string open = 2;
+  // Highest price.
+  string high = 3;
+  // Lowest price.
+  string low = 4;
+  // Closing price.
+  string close = 5;
+  // Volume traded during this candle.
+  string volume = 6;
+}
+
+// --- Account Data ---
+
+message GetAccountStateRequest {
+  // Wallet address (42-character hex), e.g. "0xabc...123".
+  string address = 1;
+}
+
+message GetAccountStateResponse {
+  // Total account value in USD.
+  string account_value = 1;
+  // Total margin used.
+  string margin_used = 2;
+  // Withdrawable balance.
+  string withdrawable = 3;
+  // Open perpetual positions.
+  repeated Position positions = 4;
+  // Cross-margin summary (total notional, raw USD, account value).
+  CrossMarginSummary cross_margin_summary = 5;
+}
+
+// An open perpetual position.
+message Position {
+  // Asset ticker, e.g. "BTC".
+  string coin = 1;
+  // Position size — positive for long, negative for short.
+  string size = 2;
+  // Average entry price.
+  string entry_price = 3;
+  // Estimated liquidation price (empty if cross-margin with large buffer).
+  string liquidation_price = 4;
+  // Unrealized PnL in USD.
+  string unrealized_pnl = 5;
+  // Return on equity as a ratio (e.g. 0.05 = 5% gain).
+  string return_on_equity = 6;
+  // Current leverage being used.
+  string leverage = 7;
+  // Margin allocated to this position.
+  string margin_used = 8;
+}
+
+// Cross-margin account summary.
+message CrossMarginSummary {
+  // Total account value.
+  string account_value = 1;
+  // Total notional value of open positions.
+  string total_notional = 2;
+  // Total margin used.
+  string total_margin_used = 3;
+  // Raw USD balance (deposits - withdrawals + realized PnL).
+  string total_raw_usd = 4;
+}
+
+message GetOpenOrdersRequest {
+  // Wallet address (42-character hex), e.g. "0xabc...123".
+  string address = 1;
+}
+
+message GetOpenOrdersResponse {
+  // Currently active (resting) orders.
+  repeated OpenOrder orders = 1;
+}
+
+// An active resting order.
+message OpenOrder {
+  // Asset ticker, e.g. "BTC".
+  string coin = 1;
+  // Order side — buy or sell.
+  Side side = 2;
+  // Limit price.
+  string limit_price = 3;
+  // Order size.
+  string size = 4;
+  // Order ID (use this to cancel or modify).
+  int64 order_id = 5;
+  // Order creation timestamp in milliseconds.
+  int64 timestamp = 6;
+}
+
+message GetFillsRequest {
+  // Wallet address (42-character hex), e.g. "0xabc...123".
+  string address = 1;
+}
+
+message GetFillsResponse {
+  // Recent trade fills.
+  repeated Fill fills = 1;
+}
+
+// A trade execution (fill).
+message Fill {
+  // Asset ticker, e.g. "BTC".
+  string coin = 1;
+  // Execution price.
+  string price = 2;
+  // Executed size.
+  string size = 3;
+  // Side of the fill.
+  Side side = 4;
+  // Execution timestamp in milliseconds.
+  int64 time = 5;
+  // Fee paid (negative = rebate).
+  string fee = 6;
+  // Realized PnL from closing a position (0 for opens).
+  string closed_pnl = 7;
+}
+
+// --- Trading ---
+
+message PlaceOrderRequest {
+  // Asset ticker, e.g. "BTC".
+  string coin = 1;
+  // Buy or sell.
+  Side side = 2;
+  // Order size in base asset units, e.g. "0.01" for 0.01 BTC.
+  string size = 3;
+  // Limit price. For market orders via IOC, set above/below market.
+  string price = 4;
+  // Time-in-force: GTC (default), IOC, or ALO (post-only).
+  TimeInForce time_in_force = 5;
+  // If true, the order can only reduce an existing position.
+  bool reduce_only = 6;
+}
+
+message PlaceOrderResponse {
+  // Whether the order was accepted.
+  bool success = 1;
+  // Order ID if placed successfully.
+  int64 order_id = 2;
+  // Order status: "filled", "resting", "error".
+  string status = 3;
+  // Error message if the order was rejected.
+  string error = 4;
+}
+
+message CancelOrderRequest {
+  // Asset ticker, e.g. "BTC".
+  string coin = 1;
+  // Order ID to cancel (from PlaceOrder response or GetOpenOrders).
+  int64 order_id = 2;
+}
+
+message CancelOrderResponse {
+  // Whether the cancellation succeeded.
+  bool success = 1;
+  // Error message if cancellation failed.
+  string error = 2;
+}
+
+message MarketOpenRequest {
+  // Asset ticker, e.g. "BTC".
+  string coin = 1;
+  // Buy (long) or sell (short).
+  Side side = 2;
+  // Position size in base asset units, e.g. "0.01" for 0.01 BTC.
+  string size = 3;
+  // Slippage tolerance as a decimal, e.g. 0.01 = 1%. Default 1%.
+  optional double slippage = 4;
+}
+
+message MarketOpenResponse {
+  // Whether the market order executed.
+  bool success = 1;
+  // Order status details.
+  string status = 2;
+  // Error message if rejected.
+  string error = 3;
+}
+
+message MarketCloseRequest {
+  // Asset ticker to close, e.g. "BTC". Closes the entire position.
+  string coin = 1;
+  // Slippage tolerance as a decimal, e.g. 0.01 = 1%. Default 1%.
+  optional double slippage = 2;
+}
+
+message MarketCloseResponse {
+  // Whether the position was closed.
+  bool success = 1;
+  // Close status details.
+  string status = 2;
+  // Error message if failed.
+  string error = 3;
+}
+
+message UpdateLeverageRequest {
+  // Asset ticker, e.g. "BTC".
+  string coin = 1;
+  // Leverage multiplier, e.g. 10 for 10x.
+  int32 leverage = 2;
+  // If true, use cross-margin. If false, use isolated margin.
+  bool is_cross = 3;
+}
+
+message UpdateLeverageResponse {
+  // Whether leverage was updated.
+  bool success = 1;
+  // Error message if failed.
+  string error = 2;
+}
+
+message TransferRequest {
+  // Recipient address (42-character hex), e.g. "0xabc...123".
+  string destination = 1;
+  // Amount in USD to transfer, e.g. "100.0".
+  string amount = 2;
+}
+
+message TransferResponse {
+  // Whether the transfer was initiated.
+  bool success = 1;
+  // Error message if failed.
+  string error = 2;
+}

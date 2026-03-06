@@ -1,0 +1,9 @@
+version: v2
+modules:
+  - path: .
+lint:
+  ignore_only:
+    RPC_REQUEST_RESPONSE_UNIQUE:
+      - alphavantage/v1/alphavantage.proto
+    RPC_RESPONSE_STANDARD_NAME:
+      - alphavantage/v1/alphavantage.proto
