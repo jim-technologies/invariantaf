@@ -20,10 +20,7 @@ jobs:
           - unsplash
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/checkout@v4
-        with:
-          repository: jim-technologies/invariantprotocol
-          path: ../invariantprotocol
+      - run: git clone --depth 1 https://github.com/jim-technologies/invariantprotocol.git ../invariantprotocol
 
       - uses: actions/cache@v4
         with:
