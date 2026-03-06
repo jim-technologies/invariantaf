@@ -20,6 +20,10 @@ jobs:
           - unsplash
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: jim-technologies/invariantprotocol
+          path: ../invariantprotocol
 
       - uses: actions/cache@v4
         with:
