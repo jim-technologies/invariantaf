@@ -15,6 +15,7 @@ jobs:
         adapter:
           - dockerhub
           - giphy
+          - googlesheets
           - stackexchange
           - steam
           - unsplash

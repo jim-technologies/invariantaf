@@ -1,0 +1,283 @@
+syntax = "proto3";
+
+package googlesheets.v1;
+
+option go_package = "github.com/jim-technologies/invariantaf/googlesheets/googlesheets/v1";
+
+// Google Sheets API v4. Create, read, update, and delete spreadsheets, sheets,
+// and cell values. Requires a GOOGLE_API_KEY for read-only access to public
+// sheets, or GOOGLE_SERVICE_ACCOUNT_KEY (base64-encoded JSON) for full
+// read/write access to private sheets.
+service GoogleSheetsService {
+  // Get spreadsheet metadata including title, sheets list, and properties.
+  // Returns the spreadsheet title, locale, and metadata for each sheet
+  // (name, index, row/column count). Does not return cell values.
+  rpc GetSpreadsheet(GetSpreadsheetRequest) returns (GetSpreadsheetResponse);
+
+  // Create a new spreadsheet with a given title and optional sheet names.
+  // Returns the new spreadsheet ID and URL. Requires service account auth.
+  rpc CreateSpreadsheet(CreateSpreadsheetRequest) returns (CreateSpreadsheetResponse);
+
+  // Read cell values from a range in A1 notation (e.g. "Sheet1!A1:C10").
+  // Returns a 2D array of cell values as strings.
+  rpc GetValues(GetValuesRequest) returns (GetValuesResponse);
+
+  // Read cell values from multiple ranges in a single request.
+  // More efficient than multiple GetValues calls.
+  rpc BatchGetValues(BatchGetValuesRequest) returns (BatchGetValuesResponse);
+
+  // Write cell values to a range in A1 notation.
+  // Provide values as a 2D array of strings. Requires service account auth.
+  rpc UpdateValues(UpdateValuesRequest) returns (UpdateValuesResponse);
+
+  // Append rows after the last row with data in a sheet or range.
+  // Values are added below existing data. Requires service account auth.
+  rpc AppendValues(AppendValuesRequest) returns (AppendValuesResponse);
+
+  // Write cell values to multiple ranges in a single request.
+  // More efficient than multiple UpdateValues calls. Requires service account auth.
+  rpc BatchUpdateValues(BatchUpdateValuesRequest) returns (BatchUpdateValuesResponse);
+
+  // Clear all values from a range (formatting is preserved).
+  // Requires service account auth.
+  rpc ClearValues(ClearValuesRequest) returns (ClearValuesResponse);
+
+  // Clear values from multiple ranges in a single request.
+  // Requires service account auth.
+  rpc BatchClearValues(BatchClearValuesRequest) returns (BatchClearValuesResponse);
+
+  // Add a new sheet (tab) to an existing spreadsheet.
+  // Specify the title and optionally row/column counts. Requires service account auth.
+  rpc AddSheet(AddSheetRequest) returns (AddSheetResponse);
+
+  // Delete a sheet (tab) from a spreadsheet by its sheet ID (not name).
+  // Use GetSpreadsheet to find sheet IDs. Requires service account auth.
+  rpc DeleteSheet(DeleteSheetRequest) returns (DeleteSheetResponse);
+
+  // Duplicate a sheet within the same spreadsheet.
+  // Creates a copy with a new name. Requires service account auth.
+  rpc DuplicateSheet(DuplicateSheetRequest) returns (DuplicateSheetResponse);
+}
+
+message GetSpreadsheetRequest {
+  // The spreadsheet ID (from the URL).
+  string spreadsheet_id = 1;
+}
+
+message GetSpreadsheetResponse {
+  // The spreadsheet ID.
+  string spreadsheet_id = 1;
+  // The spreadsheet title.
+  string title = 2;
+  // The spreadsheet locale (e.g. "en_US").
+  string locale = 3;
+  // The URL to open the spreadsheet in Google Sheets.
+  string spreadsheet_url = 4;
+  // Metadata for each sheet in the spreadsheet.
+  repeated SheetProperties sheets = 5;
+}
+
+message SheetProperties {
+  // The numeric sheet ID.
+  int32 sheet_id = 1;
+  // The sheet title (tab name).
+  string title = 2;
+  // The zero-based index of this sheet.
+  int32 index = 3;
+  // Number of rows in the sheet.
+  int32 row_count = 4;
+  // Number of columns in the sheet.
+  int32 column_count = 5;
+}
+
+message CreateSpreadsheetRequest {
+  // Title for the new spreadsheet.
+  string title = 1;
+  // Optional sheet names to create. If empty, a single "Sheet1" is created.
+  repeated string sheet_names = 2;
+}
+
+message CreateSpreadsheetResponse {
+  // The ID of the new spreadsheet.
+  string spreadsheet_id = 1;
+  // The URL to open the new spreadsheet.
+  string spreadsheet_url = 2;
+}
+
+message GetValuesRequest {
+  // The spreadsheet ID.
+  string spreadsheet_id = 1;
+  // The A1 notation range to read (e.g. "Sheet1!A1:C10", "A1:B5").
+  string range = 2;
+}
+
+message GetValuesResponse {
+  // The range that was read (may be expanded by the API).
+  string range = 1;
+  // 2D array of cell values. Each Row contains a list of cell strings.
+  repeated Row values = 2;
+}
+
+message Row {
+  // Cell values in this row.
+  repeated string cells = 1;
+}
+
+message BatchGetValuesRequest {
+  // The spreadsheet ID.
+  string spreadsheet_id = 1;
+  // List of A1 notation ranges to read.
+  repeated string ranges = 2;
+}
+
+message BatchGetValuesResponse {
+  // The spreadsheet ID.
+  string spreadsheet_id = 1;
+  // Results for each requested range.
+  repeated ValueRange value_ranges = 2;
+}
+
+message ValueRange {
+  // The range of this result.
+  string range = 1;
+  // 2D array of cell values.
+  repeated Row values = 2;
+}
+
+message UpdateValuesRequest {
+  // The spreadsheet ID.
+  string spreadsheet_id = 1;
+  // The A1 notation range to write (e.g. "Sheet1!A1:C3").
+  string range = 2;
+  // 2D array of values to write.
+  repeated Row values = 3;
+}
+
+message UpdateValuesResponse {
+  // The range that was updated.
+  string updated_range = 1;
+  // Number of rows updated.
+  int32 updated_rows = 2;
+  // Number of columns updated.
+  int32 updated_columns = 3;
+  // Total number of cells updated.
+  int32 updated_cells = 4;
+}
+
+message AppendValuesRequest {
+  // The spreadsheet ID.
+  string spreadsheet_id = 1;
+  // The A1 notation range to search for data (rows appended after last row).
+  string range = 2;
+  // Rows to append.
+  repeated Row values = 3;
+}
+
+message AppendValuesResponse {
+  // The range where data was appended.
+  string updated_range = 1;
+  // Number of rows appended.
+  int32 updated_rows = 2;
+  // Number of columns in appended data.
+  int32 updated_columns = 3;
+  // Total cells written.
+  int32 updated_cells = 4;
+}
+
+message BatchUpdateValuesRequest {
+  // The spreadsheet ID.
+  string spreadsheet_id = 1;
+  // List of ranges and values to write.
+  repeated RangeValues data = 2;
+}
+
+message RangeValues {
+  // The A1 notation range.
+  string range = 1;
+  // 2D array of values to write.
+  repeated Row values = 2;
+}
+
+message BatchUpdateValuesResponse {
+  // The spreadsheet ID.
+  string spreadsheet_id = 1;
+  // Total number of rows updated across all ranges.
+  int32 total_updated_rows = 2;
+  // Total number of columns updated.
+  int32 total_updated_columns = 3;
+  // Total number of cells updated.
+  int32 total_updated_cells = 4;
+}
+
+message ClearValuesRequest {
+  // The spreadsheet ID.
+  string spreadsheet_id = 1;
+  // The A1 notation range to clear.
+  string range = 2;
+}
+
+message ClearValuesResponse {
+  // The range that was cleared.
+  string cleared_range = 1;
+}
+
+message BatchClearValuesRequest {
+  // The spreadsheet ID.
+  string spreadsheet_id = 1;
+  // List of A1 notation ranges to clear.
+  repeated string ranges = 2;
+}
+
+message BatchClearValuesResponse {
+  // The spreadsheet ID.
+  string spreadsheet_id = 1;
+  // Ranges that were cleared.
+  repeated string cleared_ranges = 2;
+}
+
+message AddSheetRequest {
+  // The spreadsheet ID.
+  string spreadsheet_id = 1;
+  // Title for the new sheet.
+  string title = 2;
+  // Optional row count (default 1000).
+  int32 row_count = 3;
+  // Optional column count (default 26).
+  int32 column_count = 4;
+}
+
+message AddSheetResponse {
+  // The numeric ID of the new sheet.
+  int32 sheet_id = 1;
+  // The title of the new sheet.
+  string title = 2;
+  // The index of the new sheet.
+  int32 index = 3;
+}
+
+message DeleteSheetRequest {
+  // The spreadsheet ID.
+  string spreadsheet_id = 1;
+  // The numeric sheet ID to delete (use GetSpreadsheet to find IDs).
+  int32 sheet_id = 2;
+}
+
+message DeleteSheetResponse {}
+
+message DuplicateSheetRequest {
+  // The spreadsheet ID.
+  string spreadsheet_id = 1;
+  // The numeric sheet ID to duplicate.
+  int32 source_sheet_id = 2;
+  // Title for the new copy. If empty, defaults to "Copy of {original}".
+  string new_sheet_name = 3;
+}
+
+message DuplicateSheetResponse {
+  // The numeric ID of the new sheet.
+  int32 sheet_id = 1;
+  // The title of the new sheet.
+  string title = 2;
+  // The index of the new sheet.
+  int32 index = 3;
+}
