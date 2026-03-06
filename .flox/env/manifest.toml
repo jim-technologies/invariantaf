@@ -20,6 +20,7 @@ buf.pkg-path = "buf"
 uv.pkg-path = "uv"
 ruff.pkg-path = "ruff"
 go.pkg-path = "go"
+gcc.pkg-path = "gcc"
 # gum.pkg-path = "gum"
 # gum.version = "^0.14.5"
 
@@ -37,6 +38,8 @@ go.pkg-path = "go"
 ## -------------------------------------------------------------------
 [hook]
 on-activate = '''
+  export LIBSTDCPP_DIR="$(dirname "$(gcc --print-file-name=libstdc++.so.6)")"
+  export LD_LIBRARY_PATH="$LIBSTDCPP_DIR${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
   export GOBIN="$FLOX_ENV_CACHE/bin"
   mkdir -p "$GOBIN"
   export PATH="$GOBIN:$PATH"

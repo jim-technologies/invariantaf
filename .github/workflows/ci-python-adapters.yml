@@ -45,23 +45,36 @@ jobs:
           - tmdb
           - wikipedia
           - xkcd
-    defaults:
-      run:
-        working-directory: ${{ matrix.adapter }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Flox
-        uses: flox/install-flox-action@v2
+      - uses: actions/cache@v4
+        with:
+          path: /nix/store
+          key: nix-${{ runner.os }}-${{ hashFiles('.flox/env/manifest.lock', '.flox/env/manifest.toml') }}
+          restore-keys: nix-${{ runner.os }}-
 
-      - name: Run lint
-        run: flox activate -c "make lint"
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: uv-${{ runner.os }}-${{ matrix.adapter }}-${{ hashFiles(format('{0}/uv.lock', matrix.adapter), format('{0}/pyproject.toml', matrix.adapter)) }}
+          restore-keys: |
+            uv-${{ runner.os }}-${{ matrix.adapter }}-
+            uv-${{ runner.os }}-
+
+      - uses: flox/install-flox-action@v2
+      - uses: flox/activate-action@v1
+        with:
+          command: |
+            cd ${{ matrix.adapter }}
+            make lint
 
   test:
     name: test (${{ matrix.adapter }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
+      max-parallel: 8
       matrix:
         adapter:
           - alpaca
@@ -96,14 +109,28 @@ jobs:
           - tmdb
           - wikipedia
           - xkcd
-    defaults:
-      run:
-        working-directory: ${{ matrix.adapter }}
+    env:
+      UV_LINK_MODE: copy
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Flox
-        uses: flox/install-flox-action@v2
+      - uses: actions/cache@v4
+        with:
+          path: /nix/store
+          key: nix-${{ runner.os }}-${{ hashFiles('.flox/env/manifest.lock', '.flox/env/manifest.toml') }}
+          restore-keys: nix-${{ runner.os }}-
 
-      - name: Run tests
-        run: flox activate -c "make test"
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: uv-${{ runner.os }}-${{ matrix.adapter }}-${{ hashFiles(format('{0}/uv.lock', matrix.adapter), format('{0}/pyproject.toml', matrix.adapter)) }}
+          restore-keys: |
+            uv-${{ runner.os }}-${{ matrix.adapter }}-
+            uv-${{ runner.os }}-
+
+      - uses: flox/install-flox-action@v2
+      - uses: flox/activate-action@v1
+        with:
+          command: |
+            cd ${{ matrix.adapter }}
+            make test

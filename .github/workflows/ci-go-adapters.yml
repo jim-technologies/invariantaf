@@ -18,17 +18,24 @@ jobs:
           - stackexchange
           - steam
           - unsplash
-    defaults:
-      run:
-        working-directory: ${{ matrix.adapter }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Flox
-        uses: flox/install-flox-action@v2
+      - uses: actions/cache@v4
+        with:
+          path: /nix/store
+          key: nix-${{ runner.os }}-${{ hashFiles('.flox/env/manifest.lock', '.flox/env/manifest.toml') }}
+          restore-keys: nix-${{ runner.os }}-
 
-      - name: Run lint
-        run: flox activate -c "make lint"
+      - uses: flox/install-flox-action@v2
+      - uses: flox/activate-action@v1
+        with:
+          command: |
+            cd ${{ matrix.adapter }}
+            make lint
 
-      - name: Run tests
-        run: flox activate -c "make test"
+      - uses: flox/activate-action@v1
+        with:
+          command: |
+            cd ${{ matrix.adapter }}
+            make test
