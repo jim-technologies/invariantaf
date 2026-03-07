@@ -3,7 +3,7 @@ module github.com/jim-technologies/invariantaf/dockerhub
 go 1.25.5
 
 require (
-	github.com/jim-technologies/invariantprotocol/go v0.0.0
+	github.com/jim-technologies/invariantprotocol/go v0.0.1
 	google.golang.org/protobuf v1.36.11
 )
 
@@ -16,5 +16,3 @@ require (
 	google.golang.org/grpc v1.79.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-replace github.com/jim-technologies/invariantprotocol/go => ../../invariantprotocol/go
