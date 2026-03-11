@@ -1,0 +1,1927 @@
+syntax = "proto3";
+
+package quicknode.v1;
+
+option go_package = "github.com/jim-technologies/invariantaf/quicknode/quicknode/v1";
+
+// QuickNode Console API. Manage RPC endpoints, view billing, usage metrics,
+// rate limits, security settings, and supported chains. Requires
+// QUICKNODE_API_KEY with CONSOLE_REST permission.
+service QuickNodeConsoleService {
+  // List all supported blockchain chains and networks.
+  rpc ListChains(ListChainsRequest) returns (ListChainsResponse);
+
+  // List all RPC endpoints in the account.
+  rpc ListEndpoints(ListEndpointsRequest) returns (ListEndpointsResponse);
+
+  // Create a new RPC endpoint for a specific chain and network.
+  rpc CreateEndpoint(CreateEndpointRequest) returns (Endpoint);
+
+  // Get details of a specific RPC endpoint by ID.
+  rpc GetEndpoint(GetEndpointRequest) returns (Endpoint);
+
+  // Update an existing RPC endpoint (name, add-ons).
+  rpc UpdateEndpoint(UpdateEndpointRequest) returns (Endpoint);
+
+  // Delete (archive) an RPC endpoint by ID.
+  rpc DeleteEndpoint(DeleteEndpointRequest) returns (DeleteEndpointResponse);
+
+  // Pause or unpause an RPC endpoint.
+  rpc UpdateEndpointStatus(UpdateEndpointStatusRequest) returns (Endpoint);
+
+  // Get performance metrics for an endpoint (method calls, response times, status breakdowns).
+  rpc GetEndpointMetrics(GetEndpointMetricsRequest) returns (GetEndpointMetricsResponse);
+
+  // Get request logs for an endpoint within a time range.
+  rpc GetEndpointLogs(GetEndpointLogsRequest) returns (GetEndpointLogsResponse);
+
+  // Get detailed information about a specific logged request.
+  rpc GetEndpointLogDetails(GetEndpointLogDetailsRequest) returns (LogDetail);
+
+  // Get total RPC usage within a time range.
+  rpc GetRPCUsage(GetRPCUsageRequest) returns (GetRPCUsageResponse);
+
+  // Get RPC usage broken down by individual endpoint.
+  rpc GetRPCUsageByEndpoint(GetRPCUsageRequest) returns (GetRPCUsageByEndpointResponse);
+
+  // Get RPC usage broken down by RPC method.
+  rpc GetRPCUsageByMethod(GetRPCUsageRequest) returns (GetRPCUsageByMethodResponse);
+
+  // Get RPC usage broken down by blockchain network.
+  rpc GetRPCUsageByChain(GetRPCUsageRequest) returns (GetRPCUsageByChainResponse);
+
+  // List billing invoices.
+  rpc ListInvoices(ListInvoicesRequest) returns (ListInvoicesResponse);
+
+  // List billing payments.
+  rpc ListPayments(ListPaymentsRequest) returns (ListPaymentsResponse);
+
+  // Get method-level rate limits for an endpoint.
+  rpc GetMethodRateLimits(GetMethodRateLimitsRequest) returns (GetMethodRateLimitsResponse);
+
+  // Update global rate limits (requests per second/minute/day) for an endpoint.
+  rpc UpdateRateLimits(UpdateRateLimitsRequest) returns (UpdateRateLimitsResponse);
+
+  // Create a method-level rate limit for an endpoint.
+  rpc CreateMethodRateLimit(CreateMethodRateLimitRequest) returns (MethodRateLimit);
+
+  // Update a method-level rate limit.
+  rpc UpdateMethodRateLimit(UpdateMethodRateLimitRequest) returns (MethodRateLimit);
+
+  // Delete a method-level rate limit.
+  rpc DeleteMethodRateLimit(DeleteMethodRateLimitRequest) returns (DeleteMethodRateLimitResponse);
+
+  // Get security options for an endpoint (token auth, JWT, IP allowlist, referrer, domain mask).
+  rpc GetSecurityOptions(GetSecurityOptionsRequest) returns (SecurityOptions);
+
+  // Update security options for an endpoint.
+  rpc UpdateSecurityOptions(UpdateSecurityOptionsRequest) returns (SecurityOptions);
+
+  // Create a domain mask for an endpoint.
+  rpc CreateDomainMask(CreateDomainMaskRequest) returns (DomainMask);
+
+  // Add an IP address to the endpoint allowlist.
+  rpc CreateIPAllowlist(CreateIPAllowlistRequest) returns (IPAllowlistEntry);
+
+  // Create a JWT authentication token for an endpoint.
+  rpc CreateJWT(CreateJWTRequest) returns (JWTEntry);
+
+  // Add a referrer to the endpoint allowlist.
+  rpc CreateReferrer(CreateReferrerRequest) returns (ReferrerEntry);
+
+  // Create an authentication token for an endpoint.
+  rpc CreateToken(CreateTokenRequest) returns (TokenEntry);
+
+  // Delete a domain mask from an endpoint.
+  rpc DeleteDomainMask(DeleteDomainMaskRequest) returns (DeleteSecurityEntryResponse);
+
+  // Delete an IP from the endpoint allowlist.
+  rpc DeleteIPAllowlist(DeleteIPAllowlistRequest) returns (DeleteSecurityEntryResponse);
+
+  // Delete a JWT from an endpoint.
+  rpc DeleteJWT(DeleteJWTRequest) returns (DeleteSecurityEntryResponse);
+
+  // Delete a referrer from an endpoint.
+  rpc DeleteReferrer(DeleteReferrerRequest) returns (DeleteSecurityEntryResponse);
+
+  // Delete an authentication token from an endpoint.
+  rpc DeleteToken(DeleteTokenRequest) returns (DeleteSecurityEntryResponse);
+
+  // Get tags for an endpoint.
+  rpc GetEndpointTags(GetEndpointTagsRequest) returns (GetEndpointTagsResponse);
+
+  // Create a tag for an endpoint.
+  rpc CreateEndpointTag(CreateEndpointTagRequest) returns (EndpointTag);
+}
+
+// QuickNode Streams API. Create and manage real-time blockchain data streams
+// with filter functions. Requires QUICKNODE_API_KEY.
+service QuickNodeStreamsService {
+  // Create a new blockchain data stream with optional filter function.
+  rpc CreateStream(CreateStreamRequest) returns (Stream);
+
+  // List all streams with pagination.
+  rpc ListStreams(ListStreamsRequest) returns (ListStreamsResponse);
+
+  // Get a stream by ID.
+  rpc GetStream(GetStreamRequest) returns (Stream);
+
+  // Update a stream configuration.
+  rpc UpdateStream(UpdateStreamRequest) returns (Stream);
+
+  // Delete a stream by ID.
+  rpc DeleteStream(DeleteStreamRequest) returns (DeleteStreamResponse);
+
+  // Delete all streams.
+  rpc DeleteAllStreams(DeleteAllStreamsRequest) returns (DeleteAllStreamsResponse);
+
+  // Pause an active stream.
+  rpc PauseStream(PauseStreamRequest) returns (Stream);
+
+  // Activate a paused stream.
+  rpc ActivateStream(ActivateStreamRequest) returns (Stream);
+
+  // Get the count of currently enabled streams.
+  rpc GetEnabledStreamCount(GetEnabledStreamCountRequest) returns (GetEnabledStreamCountResponse);
+
+  // Test a stream filter function against sample data.
+  rpc TestStreamFilter(TestStreamFilterRequest) returns (TestStreamFilterResponse);
+}
+
+// QuickNode Webhooks API. Create and manage event-driven webhooks with
+// expression-based filters. Requires QUICKNODE_API_KEY.
+service QuickNodeWebhooksService {
+  // Create a webhook from a template.
+  rpc CreateWebhook(CreateWebhookRequest) returns (Webhook);
+
+  // List all active webhooks.
+  rpc ListWebhooks(ListWebhooksRequest) returns (ListWebhooksResponse);
+
+  // Get details of a specific webhook.
+  rpc GetWebhook(GetWebhookRequest) returns (Webhook);
+
+  // Update webhook configuration.
+  rpc UpdateWebhook(UpdateWebhookRequest) returns (Webhook);
+
+  // Update a template-created webhook.
+  rpc UpdateTemplateWebhook(UpdateTemplateWebhookRequest) returns (Webhook);
+
+  // Delete a specific webhook.
+  rpc DeleteWebhook(DeleteWebhookRequest) returns (DeleteWebhookResponse);
+
+  // Delete all webhooks.
+  rpc DeleteAllWebhooks(DeleteAllWebhooksRequest) returns (DeleteAllWebhooksResponse);
+
+  // Activate a paused webhook.
+  rpc ActivateWebhook(ActivateWebhookRequest) returns (Webhook);
+
+  // Pause an active webhook.
+  rpc PauseWebhook(PauseWebhookRequest) returns (Webhook);
+
+  // Get the count of currently enabled webhooks.
+  rpc GetEnabledWebhookCount(GetEnabledWebhookCountRequest) returns (GetEnabledWebhookCountResponse);
+}
+
+// QuickNode Key-Value Store API. Persistent key-value storage for lists and
+// sets, useful for tracking addresses, token IDs, and other blockchain data.
+// Items are case-sensitive. Requires QUICKNODE_API_KEY.
+service QuickNodeKeyValueService {
+  // Create a new list.
+  rpc CreateList(CreateKVListRequest) returns (KVList);
+
+  // Retrieve all list keys.
+  rpc ListLists(ListKVListsRequest) returns (ListKVListsResponse);
+
+  // Retrieve items from a specific list.
+  rpc GetList(GetKVListRequest) returns (KVList);
+
+  // Add or remove items from a list.
+  rpc UpdateList(UpdateKVListRequest) returns (KVList);
+
+  // Add a single item to a list.
+  rpc AddListItem(AddKVListItemRequest) returns (KVList);
+
+  // Check if a list contains a specific item. Items are case-sensitive.
+  rpc CheckListContains(CheckKVListContainsRequest) returns (CheckKVListContainsResponse);
+
+  // Remove a specific item from a list.
+  rpc DeleteListItem(DeleteKVListItemRequest) returns (DeleteKVListItemResponse);
+
+  // Delete an entire list.
+  rpc DeleteList(DeleteKVListRequest) returns (DeleteKVListResponse);
+
+  // Create a new key-value set.
+  rpc CreateSet(CreateKVSetRequest) returns (KVSet);
+
+  // Retrieve all set keys.
+  rpc ListSets(ListKVSetsRequest) returns (ListKVSetsResponse);
+
+  // Retrieve a set value by key.
+  rpc GetSet(GetKVSetRequest) returns (KVSet);
+
+  // Bulk create or delete sets.
+  rpc BulkCreateSets(BulkCreateKVSetsRequest) returns (BulkCreateKVSetsResponse);
+
+  // Delete a set by key.
+  rpc DeleteSet(DeleteKVSetRequest) returns (DeleteKVSetResponse);
+}
+
+// QuickNode IPFS API. Upload, pin, and manage objects on IPFS.
+// Requires QUICKNODE_API_KEY.
+service QuickNodeIPFSService {
+  // Upload an object to IPFS.
+  rpc UploadObject(UploadIPFSObjectRequest) returns (IPFSObject);
+
+  // Pin an existing IPFS object by CID.
+  rpc PinObject(PinIPFSObjectRequest) returns (IPFSPinnedObject);
+
+  // List all pinned objects with pagination.
+  rpc ListPinnedObjects(ListIPFSPinnedObjectsRequest) returns (ListIPFSPinnedObjectsResponse);
+
+  // Get a pinned object by request ID.
+  rpc GetPinnedObject(GetIPFSPinnedObjectRequest) returns (IPFSPinnedObject);
+
+  // Get an object by request ID.
+  rpc GetObject(GetIPFSObjectRequest) returns (IPFSObject);
+
+  // Update a pinned object's metadata.
+  rpc UpdatePinnedObject(UpdateIPFSPinnedObjectRequest) returns (IPFSPinnedObject);
+
+  // Delete (unpin) a pinned object.
+  rpc DeletePinnedObject(DeleteIPFSPinnedObjectRequest) returns (DeleteIPFSPinnedObjectResponse);
+
+  // Get IPFS account usage (bandwidth, storage metrics).
+  rpc GetIPFSUsage(GetIPFSUsageRequest) returns (GetIPFSUsageResponse);
+}
+
+// QuickNode Token & NFT API v2. Enhanced EVM RPC methods for fetching NFTs,
+// token balances, transaction history, contract ABIs, block data, and ENS
+// resolution. Also includes single-flight RPC, block timestamp lookup,
+// multi-region broadcast, and Solana priority fee estimation.
+// Requires QUICKNODE_ENDPOINT_URL pointing to an endpoint with these add-ons enabled.
+service QuickNodeTokenNFTService {
+  // Fetch all NFTs (ERC-721 & ERC-1155) owned by a wallet address.
+  // Supports pagination and filtering by contract addresses.
+  rpc FetchNFTs(FetchNFTsRequest) returns (FetchNFTsResponse);
+
+  // Fetch NFTs within a specific collection by contract address.
+  rpc FetchNFTsByCollection(FetchNFTsByCollectionRequest) returns (FetchNFTsByCollectionResponse);
+
+  // Get high-level details about an NFT collection (name, description, floor price).
+  rpc FetchNFTCollectionDetails(FetchNFTCollectionDetailsRequest) returns (FetchNFTCollectionDetailsResponse);
+
+  // Get transfer history for a specific NFT (by contract address and token ID).
+  rpc GetTransfersByNFT(GetTransfersByNFTRequest) returns (GetTransfersByNFTResponse);
+
+  // Verify if a wallet owns specific NFTs. Returns which NFTs from the list are owned.
+  rpc VerifyNFTsOwner(VerifyNFTsOwnerRequest) returns (VerifyNFTsOwnerResponse);
+
+  // Get ERC-20 token balances for a wallet address.
+  rpc GetWalletTokenBalance(GetWalletTokenBalanceRequest) returns (GetWalletTokenBalanceResponse);
+
+  // Get ERC-20 token transactions for a wallet address.
+  rpc GetWalletTokenTransactions(GetWalletTokenTransactionsRequest) returns (GetWalletTokenTransactionsResponse);
+
+  // Get token metadata (name, symbol, decimals, total supply) by contract address.
+  rpc GetTokenMetadataByContractAddress(GetTokenMetadataByContractAddressRequest) returns (TokenMetadata);
+
+  // Get token metadata by token symbol.
+  rpc GetTokenMetadataBySymbol(GetTokenMetadataBySymbolRequest) returns (GetTokenMetadataBySymbolResponse);
+
+  // Get transactions for a wallet address with pagination.
+  rpc GetTransactionsByAddress(GetTransactionsByAddressRequest) returns (GetTransactionsByAddressResponse);
+
+  // Get the ABI for a verified smart contract.
+  rpc GetContractABI(GetContractABIRequest) returns (GetContractABIResponse);
+
+  // Get all transaction receipts for a block in a single call (Single Flight RPC).
+  rpc GetReceipts(GetReceiptsRequest) returns (GetReceiptsResponse);
+
+  // Get block data with all transaction receipts in a single call (Single Flight RPC).
+  rpc GetBlockWithReceipts(GetBlockWithReceiptsRequest) returns (GetBlockWithReceiptsResponse);
+
+  // Get the block number at or before a given Unix timestamp.
+  rpc GetBlockFromTimestamp(GetBlockFromTimestampRequest) returns (GetBlockFromTimestampResponse);
+
+  // Get all blocks within a Unix timestamp range.
+  rpc GetBlocksInTimestampRange(GetBlocksInTimestampRangeRequest) returns (GetBlocksInTimestampRangeResponse);
+
+  // Resolve an ENS name to an address or reverse-resolve an address to an ENS name.
+  rpc ResolveENS(ResolveENSRequest) returns (ResolveENSResponse);
+
+  // Broadcast a signed raw transaction across multiple geographic regions for faster propagation.
+  rpc BroadcastRawTransaction(BroadcastRawTransactionRequest) returns (BroadcastRawTransactionResponse);
+
+  // Estimate Solana priority fees in percentiles (low/medium/high/extreme/recommended).
+  // Requires a Solana endpoint with the Priority Fee API add-on.
+  rpc EstimatePriorityFees(EstimatePriorityFeesRequest) returns (EstimatePriorityFeesResponse);
+}
+
+// QuickNode Solana Digital Asset Standard (DAS) API. Query compressed and
+// standard Solana assets, Merkle proofs, token accounts, and NFT editions.
+// Requires QUICKNODE_ENDPOINT_URL pointing to a Solana endpoint with DAS enabled.
+service QuickNodeSolanaDASService {
+  // Get metadata for a single compressed or standard Solana asset by ID.
+  rpc GetAsset(GetDASAssetRequest) returns (DASAsset);
+
+  // Get metadata for multiple assets in a single call.
+  rpc GetAssets(GetDASAssetsRequest) returns (GetDASAssetsResponse);
+
+  // Get the Merkle proof for a compressed asset.
+  rpc GetAssetProof(GetDASAssetProofRequest) returns (DASAssetProof);
+
+  // Get Merkle proofs for multiple compressed assets.
+  rpc GetAssetProofs(GetDASAssetProofsRequest) returns (GetDASAssetProofsResponse);
+
+  // Get assets controlled by a specific authority address.
+  rpc GetAssetsByAuthority(GetDASAssetsByAuthorityRequest) returns (GetDASAssetsListResponse);
+
+  // Get assets created by a specific creator address.
+  rpc GetAssetsByCreator(GetDASAssetsByCreatorRequest) returns (GetDASAssetsListResponse);
+
+  // Get assets by group identifier (e.g. collection).
+  rpc GetAssetsByGroup(GetDASAssetsByGroupRequest) returns (GetDASAssetsListResponse);
+
+  // Get assets owned by a specific wallet address.
+  rpc GetAssetsByOwner(GetDASAssetsByOwnerRequest) returns (GetDASAssetsListResponse);
+
+  // List transaction signatures for a compressed asset.
+  rpc GetAssetSignatures(GetDASAssetSignaturesRequest) returns (GetDASAssetSignaturesResponse);
+
+  // Query token accounts by mint address or owner address.
+  rpc GetTokenAccounts(GetDASTokenAccountsRequest) returns (GetDASTokenAccountsResponse);
+
+  // Get edition NFTs of a master NFT.
+  rpc GetNftEditions(GetDASNftEditionsRequest) returns (GetDASNftEditionsResponse);
+
+  // Search for assets matching specific parameters (owner, creator, collection, etc.).
+  rpc SearchAssets(SearchDASAssetsRequest) returns (GetDASAssetsListResponse);
+}
+
+// ─── Console Messages ────────────────────────────────────────────────────────
+
+message ListChainsRequest {}
+
+message ListChainsResponse {
+  repeated Chain chains = 1;
+}
+
+message Chain {
+  // Chain name (e.g. "ethereum").
+  string name = 1;
+  // Network name (e.g. "mainnet").
+  string network = 2;
+  // Current status.
+  string status = 3;
+}
+
+message ListEndpointsRequest {}
+
+message ListEndpointsResponse {
+  repeated Endpoint endpoints = 1;
+}
+
+message Endpoint {
+  // Unique endpoint ID.
+  string id = 1;
+  // User-assigned name.
+  string name = 2;
+  // Blockchain chain.
+  string chain = 3;
+  // Network (mainnet, testnet, etc.).
+  string network = 4;
+  // HTTP URL for the endpoint.
+  string http_url = 5;
+  // WebSocket URL for the endpoint.
+  string wss_url = 6;
+  // Status (active, paused, archived).
+  string status = 7;
+  // Creation timestamp.
+  string created_at = 8;
+  // Plan type.
+  string plan = 9;
+}
+
+message CreateEndpointRequest {
+  // Name for the new endpoint.
+  string name = 1;
+  // Blockchain chain (e.g. "ethereum", "solana").
+  string chain = 2;
+  // Network (e.g. "mainnet", "sepolia").
+  string network = 3;
+}
+
+message GetEndpointRequest {
+  // Endpoint ID.
+  string endpoint_id = 1;
+}
+
+message UpdateEndpointRequest {
+  // Endpoint ID.
+  string endpoint_id = 1;
+  // New name for the endpoint.
+  string name = 2;
+}
+
+message DeleteEndpointRequest {
+  // Endpoint ID to archive.
+  string endpoint_id = 1;
+}
+
+message DeleteEndpointResponse {}
+
+message UpdateEndpointStatusRequest {
+  // Endpoint ID.
+  string endpoint_id = 1;
+  // New status: "active" or "paused".
+  string status = 2;
+}
+
+message GetEndpointMetricsRequest {
+  // Endpoint ID.
+  string endpoint_id = 1;
+}
+
+message GetEndpointMetricsResponse {
+  // Total method calls.
+  int64 total_calls = 1;
+  // Total successful responses (2xx).
+  int64 success_count = 2;
+  // Total error responses (4xx/5xx).
+  int64 error_count = 3;
+  // Max response time in milliseconds.
+  double max_response_time_ms = 4;
+  // Average response time in milliseconds.
+  double avg_response_time_ms = 5;
+}
+
+message GetEndpointLogsRequest {
+  // Endpoint ID.
+  string endpoint_id = 1;
+  // Start time (ISO 8601 or Unix timestamp).
+  string from = 2;
+  // End time (ISO 8601 or Unix timestamp).
+  string to = 3;
+}
+
+message GetEndpointLogsResponse {
+  repeated LogEntry logs = 1;
+}
+
+message LogEntry {
+  // Unique request ID.
+  string request_id = 1;
+  // RPC method name.
+  string method = 2;
+  // HTTP status code.
+  int32 status_code = 3;
+  // Response time in milliseconds.
+  double response_time_ms = 4;
+  // Timestamp of the request.
+  string timestamp = 5;
+}
+
+message GetEndpointLogDetailsRequest {
+  // Endpoint ID.
+  string endpoint_id = 1;
+  // Request ID from the logs.
+  string request_id = 2;
+}
+
+message LogDetail {
+  // Unique request ID.
+  string request_id = 1;
+  // RPC method name.
+  string method = 2;
+  // HTTP status code.
+  int32 status_code = 3;
+  // Response time in milliseconds.
+  double response_time_ms = 4;
+  // Timestamp of the request.
+  string timestamp = 5;
+  // Request body (JSON string).
+  string request_body = 6;
+  // Response body (JSON string).
+  string response_body = 7;
+}
+
+message GetRPCUsageRequest {
+  // Start time (ISO 8601 or Unix timestamp).
+  string from = 1;
+  // End time (ISO 8601 or Unix timestamp).
+  string to = 2;
+}
+
+message GetRPCUsageResponse {
+  // Total number of API credits used.
+  int64 total_credits = 1;
+  // Total number of requests.
+  int64 total_requests = 2;
+}
+
+message GetRPCUsageByEndpointResponse {
+  repeated EndpointUsage endpoints = 1;
+}
+
+message EndpointUsage {
+  // Endpoint ID.
+  string endpoint_id = 1;
+  // Endpoint name.
+  string name = 2;
+  // Credits used by this endpoint.
+  int64 credits = 3;
+  // Requests made to this endpoint.
+  int64 requests = 4;
+}
+
+message GetRPCUsageByMethodResponse {
+  repeated MethodUsage methods = 1;
+}
+
+message MethodUsage {
+  // RPC method name.
+  string method = 1;
+  // Credits used by this method.
+  int64 credits = 2;
+  // Number of calls to this method.
+  int64 requests = 3;
+}
+
+message GetRPCUsageByChainResponse {
+  repeated ChainUsage chains = 1;
+}
+
+message ChainUsage {
+  // Chain name.
+  string chain = 1;
+  // Network name.
+  string network = 2;
+  // Credits used on this chain/network.
+  int64 credits = 3;
+  // Requests on this chain/network.
+  int64 requests = 4;
+}
+
+message ListInvoicesRequest {}
+
+message ListInvoicesResponse {
+  repeated Invoice invoices = 1;
+}
+
+message Invoice {
+  // Invoice ID.
+  string id = 1;
+  // Amount in cents.
+  int64 amount = 2;
+  // Currency code.
+  string currency = 3;
+  // Invoice status.
+  string status = 4;
+  // Invoice date.
+  string date = 5;
+}
+
+message ListPaymentsRequest {}
+
+message ListPaymentsResponse {
+  repeated Payment payments = 1;
+}
+
+message Payment {
+  // Payment ID.
+  string id = 1;
+  // Amount in cents.
+  int64 amount = 2;
+  // Currency code.
+  string currency = 3;
+  // Payment status.
+  string status = 4;
+  // Payment date.
+  string date = 5;
+}
+
+message GetMethodRateLimitsRequest {
+  // Endpoint ID.
+  string endpoint_id = 1;
+}
+
+message GetMethodRateLimitsResponse {
+  repeated MethodRateLimit limits = 1;
+}
+
+message MethodRateLimit {
+  // Rate limit ID.
+  string id = 1;
+  // RPC method name.
+  string method = 2;
+  // Requests per second limit.
+  int32 rps = 3;
+  // Requests per minute limit.
+  int32 rpm = 4;
+  // Requests per day limit.
+  int32 rpd = 5;
+}
+
+message UpdateRateLimitsRequest {
+  // Endpoint ID.
+  string endpoint_id = 1;
+  // Requests per second limit.
+  int32 rps = 2;
+  // Requests per minute limit.
+  int32 rpm = 3;
+  // Requests per day limit.
+  int32 rpd = 4;
+}
+
+message UpdateRateLimitsResponse {
+  // Requests per second limit.
+  int32 rps = 1;
+  // Requests per minute limit.
+  int32 rpm = 2;
+  // Requests per day limit.
+  int32 rpd = 3;
+}
+
+message CreateMethodRateLimitRequest {
+  // Endpoint ID.
+  string endpoint_id = 1;
+  // RPC method name to rate limit.
+  string method = 2;
+  // Requests per second limit.
+  int32 rps = 3;
+  // Requests per minute limit.
+  int32 rpm = 4;
+  // Requests per day limit.
+  int32 rpd = 5;
+}
+
+message UpdateMethodRateLimitRequest {
+  // Endpoint ID.
+  string endpoint_id = 1;
+  // Rate limit ID to update.
+  string method_rate_limit_id = 2;
+  // New RPC method name.
+  string method = 3;
+  // New requests per second limit.
+  int32 rps = 4;
+  // New requests per minute limit.
+  int32 rpm = 5;
+  // New requests per day limit.
+  int32 rpd = 6;
+}
+
+message DeleteMethodRateLimitRequest {
+  // Endpoint ID.
+  string endpoint_id = 1;
+  // Rate limit ID to delete.
+  string method_rate_limit_id = 2;
+}
+
+message DeleteMethodRateLimitResponse {}
+
+message GetSecurityOptionsRequest {
+  // Endpoint ID.
+  string endpoint_id = 1;
+}
+
+message SecurityOptions {
+  // Whether token authentication is enabled.
+  bool token_auth_enabled = 1;
+  // Whether JWT authentication is enabled.
+  bool jwt_auth_enabled = 2;
+  // Whether IP allowlist is enabled.
+  bool ip_allowlist_enabled = 3;
+  // Whether referrer allowlist is enabled.
+  bool referrer_allowlist_enabled = 4;
+  // Whether domain mask is enabled.
+  bool domain_mask_enabled = 5;
+}
+
+message UpdateSecurityOptionsRequest {
+  // Endpoint ID.
+  string endpoint_id = 1;
+  // Enable or disable token authentication.
+  bool token_auth_enabled = 2;
+  // Enable or disable JWT authentication.
+  bool jwt_auth_enabled = 3;
+  // Enable or disable IP allowlist.
+  bool ip_allowlist_enabled = 4;
+  // Enable or disable referrer allowlist.
+  bool referrer_allowlist_enabled = 5;
+  // Enable or disable domain mask.
+  bool domain_mask_enabled = 6;
+}
+
+message CreateDomainMaskRequest {
+  // Endpoint ID.
+  string endpoint_id = 1;
+  // Domain mask pattern.
+  string domain = 2;
+}
+
+message DomainMask {
+  // Domain mask ID.
+  string id = 1;
+  // Domain mask pattern.
+  string domain = 2;
+}
+
+message CreateIPAllowlistRequest {
+  // Endpoint ID.
+  string endpoint_id = 1;
+  // IP address to allow.
+  string ip = 2;
+}
+
+message IPAllowlistEntry {
+  // Entry ID.
+  string id = 1;
+  // Allowed IP address.
+  string ip = 2;
+}
+
+message CreateJWTRequest {
+  // Endpoint ID.
+  string endpoint_id = 1;
+  // Optional name for the JWT.
+  string name = 2;
+}
+
+message JWTEntry {
+  // JWT ID.
+  string id = 1;
+  // JWT token value.
+  string token = 2;
+  // JWT name.
+  string name = 3;
+}
+
+message CreateReferrerRequest {
+  // Endpoint ID.
+  string endpoint_id = 1;
+  // Referrer URL pattern.
+  string referrer = 2;
+}
+
+message ReferrerEntry {
+  // Entry ID.
+  string id = 1;
+  // Referrer URL pattern.
+  string referrer = 2;
+}
+
+message CreateTokenRequest {
+  // Endpoint ID.
+  string endpoint_id = 1;
+  // Optional name for the token.
+  string name = 2;
+}
+
+message TokenEntry {
+  // Token ID.
+  string id = 1;
+  // Authentication token value.
+  string token = 2;
+  // Token name.
+  string name = 3;
+}
+
+message DeleteDomainMaskRequest {
+  // Endpoint ID.
+  string endpoint_id = 1;
+  // Domain mask ID.
+  string domain_mask_id = 2;
+}
+
+message DeleteIPAllowlistRequest {
+  // Endpoint ID.
+  string endpoint_id = 1;
+  // IP allowlist entry ID.
+  string ip_id = 2;
+}
+
+message DeleteJWTRequest {
+  // Endpoint ID.
+  string endpoint_id = 1;
+  // JWT ID.
+  string jwt_id = 2;
+}
+
+message DeleteReferrerRequest {
+  // Endpoint ID.
+  string endpoint_id = 1;
+  // Referrer entry ID.
+  string referrer_id = 2;
+}
+
+message DeleteTokenRequest {
+  // Endpoint ID.
+  string endpoint_id = 1;
+  // Token ID.
+  string token_id = 2;
+}
+
+message DeleteSecurityEntryResponse {}
+
+message GetEndpointTagsRequest {
+  // Endpoint ID.
+  string endpoint_id = 1;
+}
+
+message GetEndpointTagsResponse {
+  repeated EndpointTag tags = 1;
+}
+
+message EndpointTag {
+  // Tag ID.
+  string id = 1;
+  // Tag key.
+  string key = 2;
+  // Tag value.
+  string value = 3;
+}
+
+message CreateEndpointTagRequest {
+  // Endpoint ID.
+  string endpoint_id = 1;
+  // Tag key.
+  string key = 2;
+  // Tag value.
+  string value = 3;
+}
+
+// ─── Streams Messages ────────────────────────────────────────────────────────
+
+message Stream {
+  // Stream ID.
+  string id = 1;
+  // Stream name.
+  string name = 2;
+  // Blockchain network (e.g. "ethereum-mainnet").
+  string network = 3;
+  // Dataset type (e.g. "block", "receipts").
+  string dataset = 4;
+  // JavaScript filter function code.
+  string filter_function = 5;
+  // Deployment region.
+  string region = 6;
+  // Stream status (active, paused).
+  string status = 7;
+  // Destination URL.
+  string destination = 8;
+  // Destination type (webhook, s3, postgres, etc.).
+  string destination_type = 9;
+  // Batch size for dataset deliveries.
+  int32 dataset_batch_size = 10;
+  // Whether elastic batching is enabled.
+  bool elastic_batch_enabled = 11;
+  // Whether to include stream metadata in payloads.
+  bool include_stream_metadata = 12;
+  // Creation timestamp.
+  string created_at = 13;
+  // Last updated timestamp.
+  string updated_at = 14;
+}
+
+message CreateStreamRequest {
+  // Stream name.
+  string name = 1;
+  // Blockchain network (e.g. "ethereum-mainnet").
+  string network = 2;
+  // Dataset type (e.g. "block", "receipts").
+  string dataset = 3;
+  // JavaScript filter function code.
+  string filter_function = 4;
+  // Deployment region.
+  string region = 5;
+  // Destination URL.
+  string destination = 6;
+  // Batch size for dataset deliveries.
+  int32 dataset_batch_size = 7;
+  // Whether elastic batching is enabled.
+  bool elastic_batch_enabled = 8;
+  // Whether to include stream metadata in payloads.
+  bool include_stream_metadata = 9;
+  // Initial status: "active" or "paused".
+  string status = 10;
+}
+
+message ListStreamsRequest {
+  // Maximum number of streams to return.
+  int32 limit = 1;
+  // Offset for pagination.
+  int32 offset = 2;
+}
+
+message ListStreamsResponse {
+  repeated Stream streams = 1;
+  // Total number of streams.
+  int32 total = 2;
+}
+
+message GetStreamRequest {
+  // Stream ID.
+  string stream_id = 1;
+}
+
+message UpdateStreamRequest {
+  // Stream ID.
+  string stream_id = 1;
+  // New stream name.
+  string name = 2;
+  // New filter function code.
+  string filter_function = 3;
+  // New destination URL.
+  string destination = 4;
+  // New status.
+  string status = 5;
+}
+
+message DeleteStreamRequest {
+  // Stream ID.
+  string stream_id = 1;
+}
+
+message DeleteStreamResponse {}
+
+message DeleteAllStreamsRequest {}
+
+message DeleteAllStreamsResponse {}
+
+message PauseStreamRequest {
+  // Stream ID.
+  string stream_id = 1;
+}
+
+message ActivateStreamRequest {
+  // Stream ID.
+  string stream_id = 1;
+}
+
+message GetEnabledStreamCountRequest {}
+
+message GetEnabledStreamCountResponse {
+  // Number of currently enabled streams.
+  int32 count = 1;
+}
+
+message TestStreamFilterRequest {
+  // Blockchain network.
+  string network = 1;
+  // Dataset type.
+  string dataset = 2;
+  // JavaScript filter function code to test.
+  string filter_function = 3;
+}
+
+message TestStreamFilterResponse {
+  // Whether the filter function is valid.
+  bool valid = 1;
+  // Error message if invalid.
+  string error = 2;
+  // Sample output from the filter function (JSON string).
+  string output = 3;
+}
+
+// ─── Webhooks Messages ───────────────────────────────────────────────────────
+
+message Webhook {
+  // Webhook ID.
+  string id = 1;
+  // Webhook name.
+  string name = 2;
+  // Webhook URL.
+  string url = 3;
+  // Blockchain network.
+  string network = 4;
+  // Filter expression.
+  string expression = 5;
+  // Webhook status.
+  string status = 6;
+  // Template ID (if created from template).
+  string template_id = 7;
+  // Creation timestamp.
+  string created_at = 8;
+}
+
+message CreateWebhookRequest {
+  // Template ID to create webhook from.
+  string template_id = 1;
+  // Webhook name.
+  string name = 2;
+  // Destination URL.
+  string url = 3;
+  // Blockchain network.
+  string network = 4;
+  // Filter expression.
+  string expression = 5;
+}
+
+message ListWebhooksRequest {}
+
+message ListWebhooksResponse {
+  repeated Webhook webhooks = 1;
+}
+
+message GetWebhookRequest {
+  // Webhook ID.
+  string webhook_id = 1;
+}
+
+message UpdateWebhookRequest {
+  // Webhook ID.
+  string webhook_id = 1;
+  // New name.
+  string name = 2;
+  // New URL.
+  string url = 3;
+  // New expression.
+  string expression = 4;
+}
+
+message UpdateTemplateWebhookRequest {
+  // Webhook ID.
+  string webhook_id = 1;
+  // New name.
+  string name = 2;
+  // New URL.
+  string url = 3;
+  // New expression.
+  string expression = 4;
+}
+
+message DeleteWebhookRequest {
+  // Webhook ID.
+  string webhook_id = 1;
+}
+
+message DeleteWebhookResponse {}
+
+message DeleteAllWebhooksRequest {}
+
+message DeleteAllWebhooksResponse {}
+
+message ActivateWebhookRequest {
+  // Webhook ID.
+  string webhook_id = 1;
+}
+
+message PauseWebhookRequest {
+  // Webhook ID.
+  string webhook_id = 1;
+}
+
+message GetEnabledWebhookCountRequest {}
+
+message GetEnabledWebhookCountResponse {
+  // Number of currently enabled webhooks.
+  int32 count = 1;
+}
+
+// ─── Key-Value Store Messages ────────────────────────────────────────────────
+
+message KVList {
+  // List key name.
+  string key = 1;
+  // Items in the list.
+  repeated string items = 2;
+}
+
+message CreateKVListRequest {
+  // Key name for the new list.
+  string key = 1;
+  // Initial items.
+  repeated string items = 2;
+}
+
+message ListKVListsRequest {}
+
+message ListKVListsResponse {
+  // All list key names.
+  repeated string keys = 1;
+}
+
+message GetKVListRequest {
+  // List key name.
+  string key = 1;
+}
+
+message UpdateKVListRequest {
+  // List key name.
+  string key = 1;
+  // Items to add.
+  repeated string add = 2;
+  // Items to remove.
+  repeated string remove = 3;
+}
+
+message AddKVListItemRequest {
+  // List key name.
+  string key = 1;
+  // Item to add.
+  string item = 2;
+}
+
+message CheckKVListContainsRequest {
+  // List key name.
+  string key = 1;
+  // Item to check (case-sensitive).
+  string item = 2;
+}
+
+message CheckKVListContainsResponse {
+  // Whether the list contains the item.
+  bool contains = 1;
+}
+
+message DeleteKVListItemRequest {
+  // List key name.
+  string key = 1;
+  // Item to remove.
+  string item = 2;
+}
+
+message DeleteKVListItemResponse {}
+
+message DeleteKVListRequest {
+  // List key name.
+  string key = 1;
+}
+
+message DeleteKVListResponse {}
+
+message KVSet {
+  // Set key.
+  string key = 1;
+  // Set value.
+  string value = 2;
+}
+
+message CreateKVSetRequest {
+  // Key for the set.
+  string key = 1;
+  // Value for the set.
+  string value = 2;
+}
+
+message ListKVSetsRequest {}
+
+message ListKVSetsResponse {
+  // All set key names.
+  repeated string keys = 1;
+}
+
+message GetKVSetRequest {
+  // Set key.
+  string key = 1;
+}
+
+message BulkCreateKVSetsRequest {
+  // Sets to create.
+  repeated KVSet sets = 1;
+  // Keys to delete.
+  repeated string delete_keys = 2;
+}
+
+message BulkCreateKVSetsResponse {
+  // Number of sets created.
+  int32 created = 1;
+  // Number of sets deleted.
+  int32 deleted = 2;
+}
+
+message DeleteKVSetRequest {
+  // Set key to delete.
+  string key = 1;
+}
+
+message DeleteKVSetResponse {}
+
+// ─── IPFS Messages ───────────────────────────────────────────────────────────
+
+message IPFSObject {
+  // Request ID.
+  string request_id = 1;
+  // IPFS CID (Content Identifier).
+  string cid = 2;
+  // File name.
+  string file_name = 3;
+  // Content type.
+  string content_type = 4;
+  // File size in bytes.
+  int64 size = 5;
+}
+
+message UploadIPFSObjectRequest {
+  // Base64-encoded file content.
+  string body_base64 = 1;
+  // File name / key.
+  string key = 2;
+  // Content type (e.g. "image/png", "application/json").
+  string content_type = 3;
+}
+
+message PinIPFSObjectRequest {
+  // IPFS CID to pin.
+  string cid = 1;
+  // Optional name for the pinned object.
+  string name = 2;
+}
+
+message IPFSPinnedObject {
+  // Request ID.
+  string request_id = 1;
+  // IPFS CID.
+  string cid = 2;
+  // Pin status (pinned, queued, pinning).
+  string status = 3;
+  // Object name.
+  string name = 4;
+  // Creation timestamp.
+  string created_at = 5;
+}
+
+message ListIPFSPinnedObjectsRequest {
+  // Page number (1-indexed).
+  int32 page_number = 1;
+  // Number of items per page.
+  int32 per_page = 2;
+}
+
+message ListIPFSPinnedObjectsResponse {
+  repeated IPFSPinnedObject objects = 1;
+  // Total number of pinned objects.
+  int32 total = 2;
+}
+
+message GetIPFSPinnedObjectRequest {
+  // Request ID of the pinned object.
+  string request_id = 1;
+}
+
+message GetIPFSObjectRequest {
+  // Request ID of the object.
+  string request_id = 1;
+}
+
+message UpdateIPFSPinnedObjectRequest {
+  // Request ID of the pinned object.
+  string request_id = 1;
+  // New name.
+  string name = 2;
+}
+
+message DeleteIPFSPinnedObjectRequest {
+  // Request ID of the pinned object.
+  string request_id = 1;
+}
+
+message DeleteIPFSPinnedObjectResponse {}
+
+message GetIPFSUsageRequest {}
+
+message GetIPFSUsageResponse {
+  // Bandwidth used in bytes.
+  int64 bandwidth_bytes = 1;
+  // Storage used in bytes.
+  int64 storage_bytes = 2;
+  // Number of pinned objects.
+  int32 pinned_count = 3;
+}
+
+// ─── Token & NFT RPC Messages ───────────────────────────────────────────────
+
+message NFTAsset {
+  // Contract address.
+  string collection_address = 1;
+  // Token ID.
+  string token_id = 2;
+  // NFT name.
+  string name = 3;
+  // Collection name.
+  string collection_name = 4;
+  // Image URL.
+  string image_url = 5;
+  // Token type (ERC-721, ERC-1155).
+  string token_type = 6;
+  // Chain name.
+  string chain = 7;
+  // Network name.
+  string network = 8;
+  // Description.
+  string description = 9;
+}
+
+message FetchNFTsRequest {
+  // Wallet address to fetch NFTs for.
+  string wallet = 1;
+  // Page number (1-indexed).
+  int32 page = 2;
+  // Number of results per page.
+  int32 per_page = 3;
+  // Optional: filter by contract addresses.
+  repeated string contracts = 4;
+}
+
+message FetchNFTsResponse {
+  // Owner address.
+  string owner = 1;
+  // NFT assets.
+  repeated NFTAsset assets = 2;
+  // Total items across all pages.
+  int32 total_items = 3;
+  // Total pages.
+  int32 total_pages = 4;
+  // Current page number.
+  int32 page_number = 5;
+}
+
+message FetchNFTsByCollectionRequest {
+  // NFT collection contract address.
+  string collection = 1;
+  // Page number (1-indexed).
+  int32 page = 2;
+  // Number of results per page.
+  int32 per_page = 3;
+}
+
+message FetchNFTsByCollectionResponse {
+  // Collection contract address.
+  string collection = 1;
+  // NFT assets in the collection.
+  repeated NFTAsset assets = 2;
+  // Total items.
+  int32 total_items = 3;
+  // Total pages.
+  int32 total_pages = 4;
+  // Current page number.
+  int32 page_number = 5;
+}
+
+message FetchNFTCollectionDetailsRequest {
+  // NFT collection contract address.
+  string collection = 1;
+}
+
+message FetchNFTCollectionDetailsResponse {
+  // Collection name.
+  string name = 1;
+  // Collection description.
+  string description = 2;
+  // Collection image URL.
+  string image_url = 3;
+  // Collection banner URL.
+  string banner_url = 4;
+  // External URL.
+  string external_url = 5;
+  // Floor price in native currency.
+  string floor_price = 6;
+  // Total supply.
+  int64 total_supply = 7;
+}
+
+message GetTransfersByNFTRequest {
+  // NFT collection contract address.
+  string collection = 1;
+  // Token ID.
+  string token_id = 2;
+  // Page number (1-indexed).
+  int32 page = 3;
+  // Number of results per page.
+  int32 per_page = 4;
+}
+
+message NFTTransfer {
+  // Sender address.
+  string from = 1;
+  // Receiver address.
+  string to = 2;
+  // Block number.
+  string block_number = 3;
+  // Transaction hash.
+  string tx_hash = 4;
+  // Timestamp.
+  string date = 5;
+}
+
+message GetTransfersByNFTResponse {
+  // Transfer records.
+  repeated NFTTransfer transfers = 1;
+  // Total transfer count.
+  int32 total_items = 2;
+  // Total pages.
+  int32 total_pages = 3;
+  // Current page number.
+  int32 page_number = 4;
+}
+
+message VerifyNFTsOwnerRequest {
+  // Wallet address to verify.
+  string wallet = 1;
+  // Contract addresses to check.
+  repeated string contracts = 2;
+}
+
+message VerifyNFTsOwnerResponse {
+  // Contract addresses owned by the wallet.
+  repeated string owned_contracts = 1;
+  // Contract addresses not owned.
+  repeated string unowned_contracts = 2;
+}
+
+message TokenBalance {
+  // Token contract address.
+  string contract_address = 1;
+  // Token name.
+  string name = 2;
+  // Token symbol.
+  string symbol = 3;
+  // Number of decimals.
+  int32 decimals = 4;
+  // Balance in smallest unit (wei, etc.).
+  string balance = 5;
+}
+
+message GetWalletTokenBalanceRequest {
+  // Wallet address.
+  string wallet = 1;
+  // Page number (1-indexed).
+  int32 page = 2;
+  // Number of results per page.
+  int32 per_page = 3;
+}
+
+message GetWalletTokenBalanceResponse {
+  // Owner address.
+  string owner = 1;
+  // Token balances.
+  repeated TokenBalance tokens = 2;
+  // Total items.
+  int32 total_items = 3;
+  // Total pages.
+  int32 total_pages = 4;
+  // Current page number.
+  int32 page_number = 5;
+}
+
+message TokenTransaction {
+  // Transaction hash.
+  string tx_hash = 1;
+  // Block number.
+  string block_number = 2;
+  // Sender address.
+  string from = 3;
+  // Receiver address.
+  string to = 4;
+  // Token contract address.
+  string contract_address = 5;
+  // Amount transferred.
+  string amount = 6;
+  // Timestamp.
+  string timestamp = 7;
+}
+
+message GetWalletTokenTransactionsRequest {
+  // Wallet address.
+  string wallet = 1;
+  // Page number (1-indexed).
+  int32 page = 2;
+  // Number of results per page.
+  int32 per_page = 3;
+}
+
+message GetWalletTokenTransactionsResponse {
+  // Token transactions.
+  repeated TokenTransaction transactions = 1;
+  // Total items.
+  int32 total_items = 2;
+  // Total pages.
+  int32 total_pages = 3;
+  // Current page number.
+  int32 page_number = 4;
+}
+
+message GetTokenMetadataByContractAddressRequest {
+  // Token contract address.
+  string contract_address = 1;
+}
+
+message TokenMetadata {
+  // Token contract address.
+  string contract_address = 1;
+  // Token name.
+  string name = 2;
+  // Token symbol.
+  string symbol = 3;
+  // Number of decimals.
+  int32 decimals = 4;
+  // Total supply.
+  string total_supply = 5;
+}
+
+message GetTokenMetadataBySymbolRequest {
+  // Token symbol (e.g. "USDC", "WETH").
+  string symbol = 1;
+}
+
+message GetTokenMetadataBySymbolResponse {
+  // Matching tokens (may be multiple with same symbol).
+  repeated TokenMetadata tokens = 1;
+}
+
+message GetTransactionsByAddressRequest {
+  // Wallet address.
+  string address = 1;
+  // Page number (1-indexed).
+  int32 page = 2;
+  // Number of results per page.
+  int32 per_page = 3;
+}
+
+message Transaction {
+  // Transaction hash.
+  string tx_hash = 1;
+  // Block number.
+  string block_number = 2;
+  // Sender address.
+  string from = 3;
+  // Receiver address.
+  string to = 4;
+  // Value in wei.
+  string value = 5;
+  // Gas used.
+  string gas_used = 6;
+  // Gas price.
+  string gas_price = 7;
+  // Timestamp.
+  string timestamp = 8;
+  // Transaction status (1 = success, 0 = failure).
+  string status = 9;
+}
+
+message GetTransactionsByAddressResponse {
+  // Transactions.
+  repeated Transaction transactions = 1;
+  // Total items.
+  int32 total_items = 2;
+  // Total pages.
+  int32 total_pages = 3;
+  // Current page number.
+  int32 page_number = 4;
+}
+
+message GetContractABIRequest {
+  // Smart contract address.
+  string contract_address = 1;
+}
+
+message GetContractABIResponse {
+  // Contract ABI as JSON string.
+  string abi = 1;
+}
+
+message GetReceiptsRequest {
+  // Block number in hex (e.g. "0x1234") or "latest".
+  string block_number = 1;
+}
+
+message TransactionReceipt {
+  // Transaction hash.
+  string transaction_hash = 1;
+  // Block number (hex).
+  string block_number = 2;
+  // Sender address.
+  string from = 3;
+  // Receiver address.
+  string to = 4;
+  // Gas used (hex).
+  string gas_used = 5;
+  // Status (0x1 = success, 0x0 = failure).
+  string status = 6;
+  // Contract address (if deployment).
+  string contract_address = 7;
+}
+
+message GetReceiptsResponse {
+  // Transaction receipts for the block.
+  repeated TransactionReceipt receipts = 1;
+}
+
+message GetBlockWithReceiptsRequest {
+  // Block number in hex (e.g. "0x1234") or "latest".
+  string block_number = 1;
+}
+
+message GetBlockWithReceiptsResponse {
+  // Block hash.
+  string block_hash = 1;
+  // Block number (hex).
+  string block_number = 2;
+  // Block timestamp (hex).
+  string timestamp = 3;
+  // Transaction receipts.
+  repeated TransactionReceipt receipts = 4;
+}
+
+message GetBlockFromTimestampRequest {
+  // Unix timestamp.
+  int64 timestamp = 1;
+}
+
+message GetBlockFromTimestampResponse {
+  // Block number.
+  string block_number = 1;
+  // Block timestamp.
+  string block_timestamp = 2;
+}
+
+message GetBlocksInTimestampRangeRequest {
+  // Start Unix timestamp.
+  int64 start_timestamp = 1;
+  // End Unix timestamp.
+  int64 end_timestamp = 2;
+}
+
+message BlockInfo {
+  // Block number.
+  string block_number = 1;
+  // Block timestamp.
+  string block_timestamp = 2;
+}
+
+message GetBlocksInTimestampRangeResponse {
+  // Blocks in the range.
+  repeated BlockInfo blocks = 1;
+}
+
+message ResolveENSRequest {
+  // ENS name (e.g. "vitalik.eth") or address (for reverse resolution).
+  string name_or_address = 1;
+}
+
+message ResolveENSResponse {
+  // Resolved address (if name was provided).
+  string address = 1;
+  // Resolved ENS name (if address was provided).
+  string ens_name = 2;
+}
+
+message BroadcastRawTransactionRequest {
+  // Signed raw transaction hex.
+  string raw_transaction = 1;
+}
+
+message BroadcastRawTransactionResponse {
+  // Transaction hash.
+  string tx_hash = 1;
+}
+
+message EstimatePriorityFeesRequest {
+  // Optional: last N slots to consider.
+  int32 last_n_slots = 1;
+  // Optional: specific account to estimate for.
+  string account = 2;
+}
+
+message PriorityFeeEstimate {
+  // Fee in micro-lamports.
+  string per_compute_unit = 1;
+}
+
+message EstimatePriorityFeesResponse {
+  // Low priority fee estimate.
+  PriorityFeeEstimate low = 1;
+  // Medium priority fee estimate.
+  PriorityFeeEstimate medium = 2;
+  // High priority fee estimate.
+  PriorityFeeEstimate high = 3;
+  // Extreme priority fee estimate.
+  PriorityFeeEstimate extreme = 4;
+  // Recommended priority fee estimate.
+  PriorityFeeEstimate recommended = 5;
+}
+
+// ─── Solana DAS Messages ────────────────────────────────────────────────────
+
+message DASAsset {
+  // Asset ID (mint address).
+  string id = 1;
+  // Asset interface type.
+  string interface = 2;
+  // Owner address.
+  string owner = 3;
+  // Whether the asset is compressed.
+  bool compressed = 4;
+  // Whether the asset is burnt.
+  bool burnt = 5;
+  // Whether the asset is mutable.
+  bool mutable = 6;
+  // Asset name.
+  string name = 7;
+  // Asset symbol.
+  string symbol = 8;
+  // Asset description.
+  string description = 9;
+  // Asset image URI.
+  string image_uri = 10;
+  // Metadata URI.
+  string metadata_uri = 11;
+  // Royalty basis points.
+  int32 royalty_basis_points = 12;
+  // Collection address.
+  string collection = 13;
+  // Supply (for fungible assets).
+  string supply = 14;
+}
+
+message GetDASAssetRequest {
+  // Asset ID (mint address or asset ID).
+  string id = 1;
+}
+
+message GetDASAssetsRequest {
+  // List of asset IDs to fetch.
+  repeated string ids = 1;
+}
+
+message GetDASAssetsResponse {
+  // Retrieved assets.
+  repeated DASAsset assets = 1;
+}
+
+message DASAssetProof {
+  // Asset ID.
+  string id = 1;
+  // Root hash.
+  string root = 2;
+  // Merkle tree proof nodes.
+  repeated string proof = 3;
+  // Tree ID.
+  string tree_id = 4;
+  // Leaf index.
+  int32 node_index = 5;
+}
+
+message GetDASAssetProofRequest {
+  // Asset ID.
+  string id = 1;
+}
+
+message GetDASAssetProofsRequest {
+  // List of asset IDs.
+  repeated string ids = 1;
+}
+
+message GetDASAssetProofsResponse {
+  // Proofs keyed by asset ID.
+  repeated DASAssetProof proofs = 1;
+}
+
+message GetDASAssetsByAuthorityRequest {
+  // Authority address.
+  string authority_address = 1;
+  // Page number (1-indexed).
+  int32 page = 2;
+  // Results per page.
+  int32 limit = 3;
+}
+
+message GetDASAssetsByCreatorRequest {
+  // Creator address.
+  string creator_address = 1;
+  // Only return assets where this creator is verified.
+  bool only_verified = 2;
+  // Page number (1-indexed).
+  int32 page = 3;
+  // Results per page.
+  int32 limit = 4;
+}
+
+message GetDASAssetsByGroupRequest {
+  // Group key (e.g. "collection").
+  string group_key = 1;
+  // Group value (e.g. collection address).
+  string group_value = 2;
+  // Page number (1-indexed).
+  int32 page = 3;
+  // Results per page.
+  int32 limit = 4;
+}
+
+message GetDASAssetsByOwnerRequest {
+  // Owner wallet address.
+  string owner_address = 1;
+  // Page number (1-indexed).
+  int32 page = 2;
+  // Results per page.
+  int32 limit = 3;
+}
+
+message GetDASAssetsListResponse {
+  // Assets.
+  repeated DASAsset items = 1;
+  // Total items matching the query.
+  int32 total = 2;
+  // Current page number.
+  int32 page = 3;
+  // Results per page.
+  int32 limit = 4;
+}
+
+message GetDASAssetSignaturesRequest {
+  // Asset ID.
+  string id = 1;
+  // Page number (1-indexed).
+  int32 page = 2;
+  // Results per page.
+  int32 limit = 3;
+}
+
+message DASSignature {
+  // Transaction signature.
+  string signature = 1;
+  // Slot number.
+  int64 slot = 2;
+}
+
+message GetDASAssetSignaturesResponse {
+  // Transaction signatures.
+  repeated DASSignature signatures = 1;
+  // Total items.
+  int32 total = 2;
+}
+
+message GetDASTokenAccountsRequest {
+  // Mint address (to get all holders).
+  string mint = 1;
+  // Owner address (to get all token accounts).
+  string owner = 2;
+  // Page number (1-indexed).
+  int32 page = 3;
+  // Results per page.
+  int32 limit = 4;
+}
+
+message DASTokenAccount {
+  // Token account address.
+  string address = 1;
+  // Mint address.
+  string mint = 2;
+  // Owner address.
+  string owner = 3;
+  // Token balance.
+  string amount = 4;
+  // Number of decimals.
+  int32 decimals = 5;
+}
+
+message GetDASTokenAccountsResponse {
+  // Token accounts.
+  repeated DASTokenAccount token_accounts = 1;
+  // Total items.
+  int32 total = 2;
+}
+
+message GetDASNftEditionsRequest {
+  // Master NFT mint address.
+  string mint = 1;
+  // Page number (1-indexed).
+  int32 page = 2;
+  // Results per page.
+  int32 limit = 3;
+}
+
+message DASNftEdition {
+  // Edition mint address.
+  string mint = 1;
+  // Edition number.
+  int64 edition_number = 2;
+}
+
+message GetDASNftEditionsResponse {
+  // Editions.
+  repeated DASNftEdition editions = 1;
+  // Total items.
+  int32 total = 2;
+}
+
+message SearchDASAssetsRequest {
+  // Owner address filter.
+  string owner_address = 1;
+  // Creator address filter.
+  string creator_address = 2;
+  // Collection address filter.
+  string collection = 3;
+  // Asset name filter.
+  string name = 4;
+  // Whether to show only compressed assets.
+  bool compressed = 5;
+  // Whether to show only burnt assets.
+  bool burnt = 6;
+  // Interface type filter.
+  string interface = 7;
+  // Page number (1-indexed).
+  int32 page = 8;
+  // Results per page.
+  int32 limit = 9;
+}

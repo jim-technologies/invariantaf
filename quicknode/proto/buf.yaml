@@ -1,0 +1,11 @@
+version: v2
+modules:
+  - path: .
+lint:
+  ignore_only:
+    RPC_REQUEST_RESPONSE_UNIQUE:
+      - quicknode/v1/quicknode.proto
+    RPC_RESPONSE_STANDARD_NAME:
+      - quicknode/v1/quicknode.proto
+    RPC_REQUEST_STANDARD_NAME:
+      - quicknode/v1/quicknode.proto
