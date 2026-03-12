@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 
@@ -787,5 +788,299 @@ func TestAPIKeyIncludedWhenSet(t *testing.T) {
 
 	if !strings.Contains(capturedURL, "key=test-api-key-123") {
 		t.Errorf("API key not found in URL: %s", capturedURL)
+	}
+}
+
+// --- Live integration tests (hit the real Stack Exchange API) ---
+
+func skipUnlessIntegration(t *testing.T) {
+	t.Helper()
+	if os.Getenv("TEST_STACKEXCHANGE") == "" {
+		t.Skip("set TEST_STACKEXCHANGE=1 to run integration tests (hits real Stack Exchange API)")
+	}
+}
+
+func liveService() *StackExchangeService {
+	return NewStackExchangeService()
+}
+
+func liveGetItems(t *testing.T, resp *structpb.Struct) []*structpb.Value {
+	t.Helper()
+	items := resp.GetFields()["items"]
+	if items == nil {
+		t.Fatal("response has no 'items' field")
+	}
+	return items.GetListValue().GetValues()
+}
+
+func TestLiveSearchQuestions(t *testing.T) {
+	skipUnlessIntegration(t)
+	svc := liveService()
+
+	resp, err := svc.SearchQuestions(context.Background(), mustStruct(t, map[string]any{
+		"intitle":  "goroutine",
+		"site":     "stackoverflow",
+		"pagesize": float64(5),
+	}))
+	if err != nil {
+		t.Fatalf("SearchQuestions: %v", err)
+	}
+
+	items := liveGetItems(t, resp)
+	if len(items) == 0 {
+		t.Fatal("expected at least 1 question about goroutines")
+	}
+
+	q := items[0].GetStructValue().GetFields()
+	if q["question_id"].GetNumberValue() == 0 {
+		t.Error("question missing question_id")
+	}
+	if q["title"].GetStringValue() == "" {
+		t.Error("question missing title")
+	}
+	if q["link"].GetStringValue() == "" {
+		t.Error("question missing link")
+	}
+
+	// has_more should be present
+	if resp.GetFields()["has_more"] == nil {
+		t.Error("response missing has_more field")
+	}
+}
+
+func TestLiveGetQuestion(t *testing.T) {
+	skipUnlessIntegration(t)
+	svc := liveService()
+
+	// Question 11227809 is "How do I check whether a file exists without exceptions?"
+	resp, err := svc.GetQuestion(context.Background(), mustStruct(t, map[string]any{
+		"id":   float64(11227809),
+		"site": "stackoverflow",
+	}))
+	if err != nil {
+		t.Fatalf("GetQuestion: %v", err)
+	}
+
+	q := resp.GetFields()["question"]
+	if q == nil {
+		t.Fatal("response missing 'question' field")
+	}
+
+	fields := q.GetStructValue().GetFields()
+	if fields["title"].GetStringValue() == "" {
+		t.Error("question missing title")
+	}
+	if int64(fields["question_id"].GetNumberValue()) != 11227809 {
+		t.Errorf("question_id = %v, want 11227809", fields["question_id"].GetNumberValue())
+	}
+}
+
+func TestLiveGetAnswers(t *testing.T) {
+	skipUnlessIntegration(t)
+	svc := liveService()
+
+	// Question 11227809 has many answers
+	resp, err := svc.GetAnswers(context.Background(), mustStruct(t, map[string]any{
+		"question_id": float64(11227809),
+		"site":        "stackoverflow",
+		"sort":        "votes",
+		"pagesize":    float64(3),
+	}))
+	if err != nil {
+		t.Fatalf("GetAnswers: %v", err)
+	}
+
+	items := liveGetItems(t, resp)
+	if len(items) == 0 {
+		t.Fatal("expected at least 1 answer")
+	}
+
+	a := items[0].GetStructValue().GetFields()
+	if a["answer_id"].GetNumberValue() == 0 {
+		t.Error("answer missing answer_id")
+	}
+	if a["score"].GetNumberValue() == 0 {
+		t.Log("top answer has score 0 (unexpected for this popular question)")
+	}
+}
+
+func TestLiveGetUser(t *testing.T) {
+	skipUnlessIntegration(t)
+	svc := liveService()
+
+	// User 1 is Jeff Atwood (co-founder of Stack Overflow)
+	resp, err := svc.GetUser(context.Background(), mustStruct(t, map[string]any{
+		"id":   float64(1),
+		"site": "stackoverflow",
+	}))
+	if err != nil {
+		t.Fatalf("GetUser: %v", err)
+	}
+
+	u := resp.GetFields()["user"]
+	if u == nil {
+		t.Fatal("response missing 'user' field")
+	}
+
+	fields := u.GetStructValue().GetFields()
+	if fields["display_name"].GetStringValue() == "" {
+		t.Error("user missing display_name")
+	}
+	if fields["reputation"].GetNumberValue() == 0 {
+		t.Error("user missing reputation")
+	}
+}
+
+func TestLiveGetTags(t *testing.T) {
+	skipUnlessIntegration(t)
+	svc := liveService()
+
+	resp, err := svc.GetTags(context.Background(), mustStruct(t, map[string]any{
+		"sort":     "popular",
+		"pagesize": float64(5),
+		"site":     "stackoverflow",
+	}))
+	if err != nil {
+		t.Fatalf("GetTags: %v", err)
+	}
+
+	items := liveGetItems(t, resp)
+	if len(items) == 0 {
+		t.Fatal("expected at least 1 tag")
+	}
+
+	tag := items[0].GetStructValue().GetFields()
+	if tag["name"].GetStringValue() == "" {
+		t.Error("tag missing name")
+	}
+	if tag["count"].GetNumberValue() == 0 {
+		t.Error("most popular tag has count 0")
+	}
+}
+
+func TestLiveGetTopQuestions(t *testing.T) {
+	skipUnlessIntegration(t)
+	svc := liveService()
+
+	resp, err := svc.GetTopQuestions(context.Background(), mustStruct(t, map[string]any{
+		"tagged":   "go",
+		"sort":     "votes",
+		"pagesize": float64(3),
+		"site":     "stackoverflow",
+	}))
+	if err != nil {
+		t.Fatalf("GetTopQuestions: %v", err)
+	}
+
+	items := liveGetItems(t, resp)
+	if len(items) == 0 {
+		t.Fatal("expected at least 1 top Go question")
+	}
+
+	q := items[0].GetStructValue().GetFields()
+	if q["title"].GetStringValue() == "" {
+		t.Error("question missing title")
+	}
+	if q["score"].GetNumberValue() == 0 {
+		t.Log("top voted Go question has score 0 (unexpected)")
+	}
+}
+
+func TestLiveSearchAdvanced(t *testing.T) {
+	skipUnlessIntegration(t)
+	svc := liveService()
+
+	resp, err := svc.SearchAdvanced(context.Background(), mustStruct(t, map[string]any{
+		"q":        "parse json",
+		"tagged":   "go",
+		"accepted": true,
+		"sort":     "votes",
+		"pagesize": float64(3),
+		"site":     "stackoverflow",
+	}))
+	if err != nil {
+		t.Fatalf("SearchAdvanced: %v", err)
+	}
+
+	items := liveGetItems(t, resp)
+	if len(items) == 0 {
+		t.Fatal("expected at least 1 result for 'parse json' in Go")
+	}
+
+	q := items[0].GetStructValue().GetFields()
+	if q["title"].GetStringValue() == "" {
+		t.Error("question missing title")
+	}
+	if q["is_answered"].GetBoolValue() == false {
+		t.Log("first result is not answered (may be expected with filters)")
+	}
+}
+
+func TestLiveGetSimilar(t *testing.T) {
+	skipUnlessIntegration(t)
+	svc := liveService()
+
+	resp, err := svc.GetSimilar(context.Background(), mustStruct(t, map[string]any{
+		"title":    "How to parse JSON in Go",
+		"pagesize": float64(3),
+		"site":     "stackoverflow",
+	}))
+	if err != nil {
+		t.Fatalf("GetSimilar: %v", err)
+	}
+
+	items := liveGetItems(t, resp)
+	if len(items) == 0 {
+		t.Fatal("expected at least 1 similar question")
+	}
+
+	q := items[0].GetStructValue().GetFields()
+	if q["title"].GetStringValue() == "" {
+		t.Error("similar question missing title")
+	}
+}
+
+func TestLiveGetUnanswered(t *testing.T) {
+	skipUnlessIntegration(t)
+	svc := liveService()
+
+	resp, err := svc.GetUnanswered(context.Background(), mustStruct(t, map[string]any{
+		"tagged":   "go",
+		"sort":     "activity",
+		"pagesize": float64(3),
+		"site":     "stackoverflow",
+	}))
+	if err != nil {
+		t.Fatalf("GetUnanswered: %v", err)
+	}
+
+	items := liveGetItems(t, resp)
+	if len(items) == 0 {
+		t.Skip("no unanswered Go questions found (surprising but possible)")
+	}
+
+	q := items[0].GetStructValue().GetFields()
+	if q["title"].GetStringValue() == "" {
+		t.Error("question missing title")
+	}
+}
+
+func TestLiveGetUserReputation(t *testing.T) {
+	skipUnlessIntegration(t)
+	svc := liveService()
+
+	// User 1 (Jeff Atwood)
+	resp, err := svc.GetUserReputation(context.Background(), mustStruct(t, map[string]any{
+		"id":       float64(1),
+		"site":     "stackoverflow",
+		"pagesize": float64(3),
+	}))
+	if err != nil {
+		t.Fatalf("GetUserReputation: %v", err)
+	}
+
+	// The response should have items (may be empty if no recent rep changes)
+	if resp.GetFields()["items"] == nil {
+		t.Fatal("response missing 'items' field")
 	}
 }

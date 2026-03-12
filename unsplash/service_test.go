@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 
@@ -615,5 +616,320 @@ func TestLocationParsing(t *testing.T) {
 	}
 	if loc.Longitude != -122.4783 {
 		t.Errorf("expected longitude=-122.4783, got %f", loc.Longitude)
+	}
+}
+
+// --- Live integration tests (hit the real Unsplash API) ---
+// These require UNSPLASH_ACCESS_KEY to be set. Unsplash does not provide
+// a public/demo key, so these tests only run when you have a valid key.
+
+func skipUnlessIntegration(t *testing.T) {
+	t.Helper()
+	if os.Getenv("TEST_UNSPLASH") == "" {
+		t.Skip("set TEST_UNSPLASH=1 to run integration tests (hits real Unsplash API)")
+	}
+	if os.Getenv("UNSPLASH_ACCESS_KEY") == "" {
+		t.Skip("UNSPLASH_ACCESS_KEY is required for live Unsplash tests")
+	}
+}
+
+func liveService() *UnsplashService {
+	return NewUnsplashService()
+}
+
+func TestLiveSearchPhotos(t *testing.T) {
+	skipUnlessIntegration(t)
+	svc := liveService()
+
+	resp, err := svc.SearchPhotos(context.Background(), &pb.SearchPhotosRequest{
+		Query:   "mountains",
+		Page:    1,
+		PerPage: 5,
+	})
+	if err != nil {
+		t.Fatalf("SearchPhotos: %v", err)
+	}
+	if resp.Total == 0 {
+		t.Fatal("expected total > 0 for 'mountains' search")
+	}
+	if resp.TotalPages == 0 {
+		t.Fatal("expected total_pages > 0")
+	}
+	if len(resp.Results) == 0 {
+		t.Fatal("expected at least 1 result")
+	}
+
+	photo := resp.Results[0]
+	if photo.Id == "" {
+		t.Error("photo missing id")
+	}
+	if photo.Urls == nil {
+		t.Error("photo missing urls")
+	} else if photo.Urls.Regular == "" {
+		t.Error("photo missing regular url")
+	}
+	if photo.User == nil {
+		t.Error("photo missing user")
+	} else if photo.User.Username == "" {
+		t.Error("photo user missing username")
+	}
+}
+
+func TestLiveSearchPhotosWithFilters(t *testing.T) {
+	skipUnlessIntegration(t)
+	svc := liveService()
+
+	resp, err := svc.SearchPhotos(context.Background(), &pb.SearchPhotosRequest{
+		Query:       "ocean",
+		Page:        1,
+		PerPage:     3,
+		Orientation: "landscape",
+		OrderBy:     "relevant",
+	})
+	if err != nil {
+		t.Fatalf("SearchPhotos with filters: %v", err)
+	}
+	if len(resp.Results) == 0 {
+		t.Fatal("expected at least 1 result for landscape ocean photos")
+	}
+}
+
+func TestLiveGetPhoto(t *testing.T) {
+	skipUnlessIntegration(t)
+	svc := liveService()
+
+	// First search for a photo to get a real ID
+	searchResp, err := svc.SearchPhotos(context.Background(), &pb.SearchPhotosRequest{
+		Query:   "nature",
+		Page:    1,
+		PerPage: 1,
+	})
+	if err != nil {
+		t.Fatalf("SearchPhotos (setup): %v", err)
+	}
+	if len(searchResp.Results) == 0 {
+		t.Skip("no photos available for setup")
+	}
+	photoID := searchResp.Results[0].Id
+
+	resp, err := svc.GetPhoto(context.Background(), &pb.GetPhotoRequest{
+		Id: photoID,
+	})
+	if err != nil {
+		t.Fatalf("GetPhoto(%s): %v", photoID, err)
+	}
+	if resp.Photo == nil {
+		t.Fatal("expected photo to be non-nil")
+	}
+	if resp.Photo.Id != photoID {
+		t.Errorf("expected id=%s, got %s", photoID, resp.Photo.Id)
+	}
+	if resp.Photo.Width == 0 || resp.Photo.Height == 0 {
+		t.Error("photo missing dimensions")
+	}
+	if resp.Photo.Urls == nil {
+		t.Error("photo missing urls")
+	}
+}
+
+func TestLiveGetRandomPhoto(t *testing.T) {
+	skipUnlessIntegration(t)
+	svc := liveService()
+
+	resp, err := svc.GetRandomPhoto(context.Background(), &pb.GetRandomPhotoRequest{
+		Query: "sunset",
+	})
+	if err != nil {
+		t.Fatalf("GetRandomPhoto: %v", err)
+	}
+	if len(resp.Photos) == 0 {
+		t.Fatal("expected at least 1 random photo")
+	}
+
+	photo := resp.Photos[0]
+	if photo.Id == "" {
+		t.Error("random photo missing id")
+	}
+	if photo.Urls == nil {
+		t.Error("random photo missing urls")
+	}
+}
+
+func TestLiveListPhotos(t *testing.T) {
+	skipUnlessIntegration(t)
+	svc := liveService()
+
+	resp, err := svc.ListPhotos(context.Background(), &pb.ListPhotosRequest{
+		Page:    1,
+		PerPage: 5,
+		OrderBy: "latest",
+	})
+	if err != nil {
+		t.Fatalf("ListPhotos: %v", err)
+	}
+	if len(resp.Photos) == 0 {
+		t.Fatal("expected at least 1 editorial photo")
+	}
+
+	photo := resp.Photos[0]
+	if photo.Id == "" {
+		t.Error("photo missing id")
+	}
+	if photo.CreatedAt == "" {
+		t.Error("photo missing created_at")
+	}
+}
+
+func TestLiveSearchCollections(t *testing.T) {
+	skipUnlessIntegration(t)
+	svc := liveService()
+
+	resp, err := svc.SearchCollections(context.Background(), &pb.SearchCollectionsRequest{
+		Query:   "travel",
+		Page:    1,
+		PerPage: 3,
+	})
+	if err != nil {
+		t.Fatalf("SearchCollections: %v", err)
+	}
+	if resp.Total == 0 {
+		t.Fatal("expected total > 0 for 'travel' collections")
+	}
+	if len(resp.Results) == 0 {
+		t.Fatal("expected at least 1 collection")
+	}
+
+	col := resp.Results[0]
+	if col.Id == "" {
+		t.Error("collection missing id")
+	}
+	if col.Title == "" {
+		t.Error("collection missing title")
+	}
+}
+
+func TestLiveSearchUsers(t *testing.T) {
+	skipUnlessIntegration(t)
+	svc := liveService()
+
+	resp, err := svc.SearchUsers(context.Background(), &pb.SearchUsersRequest{
+		Query:   "landscape",
+		Page:    1,
+		PerPage: 3,
+	})
+	if err != nil {
+		t.Fatalf("SearchUsers: %v", err)
+	}
+	if resp.Total == 0 {
+		t.Fatal("expected total > 0 for 'landscape' user search")
+	}
+	if len(resp.Results) == 0 {
+		t.Fatal("expected at least 1 user")
+	}
+
+	user := resp.Results[0]
+	if user.Username == "" {
+		t.Error("user missing username")
+	}
+	if user.Name == "" {
+		t.Error("user missing name")
+	}
+}
+
+func TestLiveGetUser(t *testing.T) {
+	skipUnlessIntegration(t)
+	svc := liveService()
+
+	// "unsplash" is the official Unsplash user
+	resp, err := svc.GetUser(context.Background(), &pb.GetUserRequest{
+		Username: "unsplash",
+	})
+	if err != nil {
+		t.Fatalf("GetUser: %v", err)
+	}
+	if resp.User == nil {
+		t.Fatal("expected user to be non-nil")
+	}
+	if resp.User.Username != "unsplash" {
+		t.Errorf("expected username=unsplash, got %s", resp.User.Username)
+	}
+	if resp.User.Name == "" {
+		t.Error("user missing name")
+	}
+}
+
+func TestLiveGetUserPhotos(t *testing.T) {
+	skipUnlessIntegration(t)
+	svc := liveService()
+
+	resp, err := svc.GetUserPhotos(context.Background(), &pb.GetUserPhotosRequest{
+		Username: "unsplash",
+		Page:     1,
+		PerPage:  3,
+	})
+	if err != nil {
+		t.Fatalf("GetUserPhotos: %v", err)
+	}
+	if len(resp.Photos) == 0 {
+		t.Skip("unsplash user has no photos (unexpected)")
+	}
+
+	photo := resp.Photos[0]
+	if photo.Id == "" {
+		t.Error("photo missing id")
+	}
+}
+
+func TestLiveGetCollectionAndPhotos(t *testing.T) {
+	skipUnlessIntegration(t)
+	svc := liveService()
+
+	// Search for a collection first
+	searchResp, err := svc.SearchCollections(context.Background(), &pb.SearchCollectionsRequest{
+		Query:   "nature",
+		Page:    1,
+		PerPage: 1,
+	})
+	if err != nil {
+		t.Fatalf("SearchCollections (setup): %v", err)
+	}
+	if len(searchResp.Results) == 0 {
+		t.Skip("no collections found for setup")
+	}
+	colID := searchResp.Results[0].Id
+
+	// Get the collection
+	colResp, err := svc.GetCollection(context.Background(), &pb.GetCollectionRequest{
+		Id: colID,
+	})
+	if err != nil {
+		t.Fatalf("GetCollection(%s): %v", colID, err)
+	}
+	if colResp.Collection == nil {
+		t.Fatal("expected collection to be non-nil")
+	}
+	if colResp.Collection.Id != colID {
+		t.Errorf("expected id=%s, got %s", colID, colResp.Collection.Id)
+	}
+	if colResp.Collection.Title == "" {
+		t.Error("collection missing title")
+	}
+
+	// Get collection photos
+	photosResp, err := svc.GetCollectionPhotos(context.Background(), &pb.GetCollectionPhotosRequest{
+		Id:      colID,
+		Page:    1,
+		PerPage: 3,
+	})
+	if err != nil {
+		t.Fatalf("GetCollectionPhotos(%s): %v", colID, err)
+	}
+	if len(photosResp.Photos) == 0 {
+		t.Skip("collection has no photos")
+	}
+
+	photo := photosResp.Photos[0]
+	if photo.Id == "" {
+		t.Error("collection photo missing id")
 	}
 }

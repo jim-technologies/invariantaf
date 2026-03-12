@@ -52,24 +52,6 @@ func (s *DockerHubService) get(path string, params url.Values) (map[string]any, 
 	return result, nil
 }
 
-// getString fetches a plain text response from the Docker Hub API.
-func (s *DockerHubService) getString(path string) (string, error) {
-	u := fmt.Sprintf("%s%s", s.baseURL, path)
-	resp, err := s.client.Get(u)
-	if err != nil {
-		return "", fmt.Errorf("http get %s: %w", u, err)
-	}
-	defer resp.Body.Close()
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", fmt.Errorf("read body: %w", err)
-	}
-	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("docker hub api returned %d: %s", resp.StatusCode, string(body))
-	}
-	return string(body), nil
-}
-
 // getList fetches a JSON array response from the Docker Hub API.
 func (s *DockerHubService) getList(path string, params url.Values) ([]any, error) {
 	u := fmt.Sprintf("%s%s", s.baseURL, path)

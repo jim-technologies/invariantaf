@@ -172,7 +172,7 @@ def _make_mock_http(url_responses: dict | None = None):
 
 
 # We need this for the mock to extract path from URL.
-_BASE_URL_FOR_MOCK = "https://api.frankfurter.dev"
+_BASE_URL_FOR_MOCK = "https://api.frankfurter.app"
 
 
 @pytest.fixture

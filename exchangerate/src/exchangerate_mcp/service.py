@@ -8,7 +8,7 @@ import httpx
 
 from exchangerate_mcp.gen.exchangerate.v1 import exchangerate_pb2 as pb
 
-_BASE_URL = "https://api.frankfurter.dev"
+_BASE_URL = "https://api.frankfurter.app"
 
 
 class ExchangeRateService:

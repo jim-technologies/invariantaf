@@ -3,7 +3,7 @@ module github.com/jim-technologies/invariantaf/googlesheets
 go 1.25.5
 
 require (
-	github.com/jim-technologies/invariantprotocol/go v0.0.1
+	github.com/jim-technologies/invariantprotocol/go v0.0.2-0.20260311013520-17bb21f598ef
 	google.golang.org/protobuf v1.36.11
 )
 

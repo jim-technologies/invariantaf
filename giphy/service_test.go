@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"testing"
 
 	"google.golang.org/protobuf/types/known/structpb"
@@ -649,5 +650,278 @@ func TestNewGiphyServiceCustomKey(t *testing.T) {
 	svc := NewGiphyService()
 	if svc.apiKey != "my-custom-key" {
 		t.Errorf("expected my-custom-key, got %v", svc.apiKey)
+	}
+}
+
+// --- Live integration tests (hit the real Giphy API) ---
+// These use the public beta key (dc6zaTOxFJmzC) which is the default
+// in NewGiphyService when GIPHY_API_KEY is not set.
+
+func skipUnlessIntegration(t *testing.T) {
+	t.Helper()
+	if os.Getenv("TEST_GIPHY") == "" {
+		t.Skip("set TEST_GIPHY=1 to run integration tests (hits real Giphy API)")
+	}
+}
+
+func liveService() *GiphyService {
+	return NewGiphyService()
+}
+
+func mustStruct(t *testing.T, m map[string]any) *structpb.Struct {
+	t.Helper()
+	s, err := structpb.NewStruct(m)
+	if err != nil {
+		t.Fatalf("failed to create struct: %v", err)
+	}
+	return s
+}
+
+func TestLiveSearch(t *testing.T) {
+	skipUnlessIntegration(t)
+	svc := liveService()
+
+	resp, err := svc.Search(context.Background(), mustStruct(t, map[string]any{
+		"query": "cats",
+		"limit": float64(5),
+	}))
+	if err != nil {
+		t.Fatalf("Search: %v", err)
+	}
+
+	gifs := resp.GetFields()["data"].GetListValue().GetValues()
+	if len(gifs) == 0 {
+		t.Fatal("expected at least 1 gif for 'cats' search")
+	}
+
+	gif := gifs[0].GetStructValue().GetFields()
+	if gif["id"].GetStringValue() == "" {
+		t.Error("gif missing id")
+	}
+	if gif["title"].GetStringValue() == "" {
+		t.Error("gif missing title")
+	}
+	if gif["url"].GetStringValue() == "" {
+		t.Error("gif missing url")
+	}
+	if gif["original_url"].GetStringValue() == "" {
+		t.Error("gif missing original_url")
+	}
+
+	// Check pagination
+	pg := resp.GetFields()["pagination"].GetStructValue().GetFields()
+	if pg["total_count"].GetNumberValue() == 0 {
+		t.Error("expected total_count > 0 for cats search")
+	}
+}
+
+func TestLiveTrending(t *testing.T) {
+	skipUnlessIntegration(t)
+	svc := liveService()
+
+	resp, err := svc.Trending(context.Background(), mustStruct(t, map[string]any{
+		"limit": float64(5),
+	}))
+	if err != nil {
+		t.Fatalf("Trending: %v", err)
+	}
+
+	gifs := resp.GetFields()["data"].GetListValue().GetValues()
+	if len(gifs) == 0 {
+		t.Fatal("expected at least 1 trending gif")
+	}
+
+	gif := gifs[0].GetStructValue().GetFields()
+	if gif["id"].GetStringValue() == "" {
+		t.Error("trending gif missing id")
+	}
+	if gif["type"].GetStringValue() != "gif" {
+		t.Errorf("expected type=gif, got %s", gif["type"].GetStringValue())
+	}
+}
+
+func TestLiveGetGifById(t *testing.T) {
+	skipUnlessIntegration(t)
+	svc := liveService()
+
+	// First get a trending gif to use its ID
+	trendResp, err := svc.Trending(context.Background(), mustStruct(t, map[string]any{
+		"limit": float64(1),
+	}))
+	if err != nil {
+		t.Fatalf("Trending (setup): %v", err)
+	}
+
+	trendGifs := trendResp.GetFields()["data"].GetListValue().GetValues()
+	if len(trendGifs) == 0 {
+		t.Skip("no trending gifs available")
+	}
+	gifID := trendGifs[0].GetStructValue().GetFields()["id"].GetStringValue()
+
+	resp, err := svc.GetGifById(context.Background(), mustStruct(t, map[string]any{
+		"id": gifID,
+	}))
+	if err != nil {
+		t.Fatalf("GetGifById(%s): %v", gifID, err)
+	}
+
+	gif := resp.GetFields()["data"].GetStructValue().GetFields()
+	if gif["id"].GetStringValue() != gifID {
+		t.Errorf("expected id=%s, got %s", gifID, gif["id"].GetStringValue())
+	}
+	if gif["url"].GetStringValue() == "" {
+		t.Error("gif missing url")
+	}
+	if gif["original_url"].GetStringValue() == "" {
+		t.Error("gif missing original_url")
+	}
+}
+
+func TestLiveRandom(t *testing.T) {
+	skipUnlessIntegration(t)
+	svc := liveService()
+
+	resp, err := svc.Random(context.Background(), mustStruct(t, map[string]any{
+		"tag": "funny",
+	}))
+	if err != nil {
+		t.Fatalf("Random: %v", err)
+	}
+
+	gif := resp.GetFields()["data"].GetStructValue().GetFields()
+	if gif["id"].GetStringValue() == "" {
+		t.Error("random gif missing id")
+	}
+	if gif["url"].GetStringValue() == "" {
+		t.Error("random gif missing url")
+	}
+}
+
+func TestLiveTranslate(t *testing.T) {
+	skipUnlessIntegration(t)
+	svc := liveService()
+
+	resp, err := svc.Translate(context.Background(), mustStruct(t, map[string]any{
+		"query": "excited",
+	}))
+	if err != nil {
+		t.Fatalf("Translate: %v", err)
+	}
+
+	gif := resp.GetFields()["data"].GetStructValue().GetFields()
+	if gif["id"].GetStringValue() == "" {
+		t.Error("translated gif missing id")
+	}
+}
+
+func TestLiveSearchStickers(t *testing.T) {
+	skipUnlessIntegration(t)
+	svc := liveService()
+
+	resp, err := svc.SearchStickers(context.Background(), mustStruct(t, map[string]any{
+		"query": "happy",
+		"limit": float64(3),
+	}))
+	if err != nil {
+		t.Fatalf("SearchStickers: %v", err)
+	}
+
+	stickers := resp.GetFields()["data"].GetListValue().GetValues()
+	if len(stickers) == 0 {
+		t.Fatal("expected at least 1 sticker for 'happy' search")
+	}
+
+	sticker := stickers[0].GetStructValue().GetFields()
+	if sticker["id"].GetStringValue() == "" {
+		t.Error("sticker missing id")
+	}
+}
+
+func TestLiveTrendingStickers(t *testing.T) {
+	skipUnlessIntegration(t)
+	svc := liveService()
+
+	resp, err := svc.TrendingStickers(context.Background(), mustStruct(t, map[string]any{
+		"limit": float64(3),
+	}))
+	if err != nil {
+		t.Fatalf("TrendingStickers: %v", err)
+	}
+
+	stickers := resp.GetFields()["data"].GetListValue().GetValues()
+	if len(stickers) == 0 {
+		t.Fatal("expected at least 1 trending sticker")
+	}
+}
+
+func TestLiveRandomSticker(t *testing.T) {
+	skipUnlessIntegration(t)
+	svc := liveService()
+
+	resp, err := svc.RandomSticker(context.Background(), mustStruct(t, map[string]any{}))
+	if err != nil {
+		t.Fatalf("RandomSticker: %v", err)
+	}
+
+	sticker := resp.GetFields()["data"].GetStructValue().GetFields()
+	if sticker["id"].GetStringValue() == "" {
+		t.Error("random sticker missing id")
+	}
+}
+
+func TestLiveGetCategories(t *testing.T) {
+	skipUnlessIntegration(t)
+	svc := liveService()
+
+	resp, err := svc.GetCategories(context.Background(), mustStruct(t, map[string]any{
+		"limit": float64(5),
+	}))
+	if err != nil {
+		t.Fatalf("GetCategories: %v", err)
+	}
+
+	cats := resp.GetFields()["data"].GetListValue().GetValues()
+	if len(cats) == 0 {
+		t.Fatal("expected at least 1 category")
+	}
+
+	cat := cats[0].GetStructValue().GetFields()
+	if cat["name"].GetStringValue() == "" {
+		t.Error("category missing name")
+	}
+}
+
+func TestLiveSearchWithPagination(t *testing.T) {
+	skipUnlessIntegration(t)
+	svc := liveService()
+
+	resp1, err := svc.Search(context.Background(), mustStruct(t, map[string]any{
+		"query":  "dogs",
+		"limit":  float64(2),
+		"offset": float64(0),
+	}))
+	if err != nil {
+		t.Fatalf("Search page 1: %v", err)
+	}
+
+	resp2, err := svc.Search(context.Background(), mustStruct(t, map[string]any{
+		"query":  "dogs",
+		"limit":  float64(2),
+		"offset": float64(2),
+	}))
+	if err != nil {
+		t.Fatalf("Search page 2: %v", err)
+	}
+
+	gifs1 := resp1.GetFields()["data"].GetListValue().GetValues()
+	gifs2 := resp2.GetFields()["data"].GetListValue().GetValues()
+	if len(gifs1) == 0 || len(gifs2) == 0 {
+		t.Skip("not enough results for pagination test")
+	}
+
+	id1 := gifs1[0].GetStructValue().GetFields()["id"].GetStringValue()
+	id2 := gifs2[0].GetStructValue().GetFields()["id"].GetStringValue()
+	if id1 == id2 {
+		t.Error("page 1 and page 2 returned the same first gif; expected different offsets")
 	}
 }

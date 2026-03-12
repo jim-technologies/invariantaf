@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 
@@ -484,5 +485,202 @@ func TestErrorHandling(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "404") {
 		t.Errorf("expected error to contain 404, got %s", err.Error())
+	}
+}
+
+// --- Live integration tests (hit the real Docker Hub API) ---
+
+func skipUnlessIntegration(t *testing.T) {
+	t.Helper()
+	if os.Getenv("TEST_DOCKERHUB") == "" {
+		t.Skip("set TEST_DOCKERHUB=1 to run integration tests (hits real Docker Hub API)")
+	}
+}
+
+func liveService() *DockerHubService {
+	return NewDockerHubService()
+}
+
+func TestLiveSearchRepositories(t *testing.T) {
+	skipUnlessIntegration(t)
+	svc := liveService()
+
+	resp, err := svc.SearchRepositories(context.Background(), &pb.SearchRepositoriesRequest{
+		Query:    "nginx",
+		PageSize: 5,
+		Page:     1,
+	})
+	if err != nil {
+		t.Fatalf("SearchRepositories: %v", err)
+	}
+	if resp.Count == 0 {
+		t.Fatal("expected count > 0")
+	}
+	if len(resp.Results) == 0 {
+		t.Fatal("expected at least 1 result")
+	}
+
+	r := resp.Results[0]
+	if r.RepoName == "" {
+		t.Error("result missing repo_name")
+	}
+	if r.ShortDescription == "" {
+		t.Log("result has empty short_description (may be expected)")
+	}
+}
+
+func TestLiveGetRepository(t *testing.T) {
+	skipUnlessIntegration(t)
+	svc := liveService()
+
+	resp, err := svc.GetRepository(context.Background(), &pb.GetRepositoryRequest{
+		Namespace: "library",
+		Name:      "nginx",
+	})
+	if err != nil {
+		t.Fatalf("GetRepository: %v", err)
+	}
+	if resp.Name != "nginx" {
+		t.Errorf("expected name=nginx, got %s", resp.Name)
+	}
+	if resp.PullCount == 0 {
+		t.Error("expected pull_count > 0 for nginx")
+	}
+	if resp.StarCount == 0 {
+		t.Error("expected star_count > 0 for nginx")
+	}
+	if resp.Description == "" {
+		t.Error("expected non-empty description for nginx")
+	}
+}
+
+func TestLiveGetTags(t *testing.T) {
+	skipUnlessIntegration(t)
+	svc := liveService()
+
+	resp, err := svc.GetTags(context.Background(), &pb.GetTagsRequest{
+		Namespace: "library",
+		Name:      "alpine",
+		PageSize:  5,
+	})
+	if err != nil {
+		t.Fatalf("GetTags: %v", err)
+	}
+	if resp.Count == 0 {
+		t.Fatal("expected count > 0 for alpine tags")
+	}
+	if len(resp.Results) == 0 {
+		t.Fatal("expected at least 1 tag")
+	}
+
+	tag := resp.Results[0]
+	if tag.Name == "" {
+		t.Error("tag missing name")
+	}
+	if tag.LastUpdated == "" {
+		t.Error("tag missing last_updated")
+	}
+}
+
+func TestLiveGetTag(t *testing.T) {
+	skipUnlessIntegration(t)
+	svc := liveService()
+
+	resp, err := svc.GetTag(context.Background(), &pb.GetTagRequest{
+		Namespace: "library",
+		Name:      "alpine",
+		Tag:       "latest",
+	})
+	if err != nil {
+		t.Fatalf("GetTag: %v", err)
+	}
+	if resp.Name != "latest" {
+		t.Errorf("expected name=latest, got %s", resp.Name)
+	}
+	if resp.LastUpdated == "" {
+		t.Error("expected non-empty last_updated")
+	}
+}
+
+func TestLiveGetTopImages(t *testing.T) {
+	skipUnlessIntegration(t)
+	svc := liveService()
+
+	resp, err := svc.GetTopImages(context.Background(), &pb.GetTopImagesRequest{
+		PageSize: 5,
+	})
+	if err != nil {
+		t.Fatalf("GetTopImages: %v", err)
+	}
+	if resp.Count == 0 {
+		t.Fatal("expected count > 0 for library images")
+	}
+	if len(resp.Results) == 0 {
+		t.Fatal("expected at least 1 library image")
+	}
+
+	img := resp.Results[0]
+	if img.Name == "" {
+		t.Error("image missing name")
+	}
+	if img.Namespace == "" {
+		t.Error("image missing namespace")
+	}
+}
+
+func TestLiveGetCategories(t *testing.T) {
+	skipUnlessIntegration(t)
+	svc := liveService()
+
+	resp, err := svc.GetCategories(context.Background(), &pb.GetCategoriesRequest{})
+	if err != nil {
+		t.Fatalf("GetCategories: %v", err)
+	}
+	if len(resp.Categories) == 0 {
+		t.Fatal("expected at least 1 category")
+	}
+
+	cat := resp.Categories[0]
+	if cat.Name == "" {
+		t.Error("category missing name")
+	}
+	if cat.Slug == "" {
+		t.Error("category missing slug")
+	}
+}
+
+func TestLiveSearchRepositoriesPagination(t *testing.T) {
+	skipUnlessIntegration(t)
+	svc := liveService()
+
+	resp1, err := svc.SearchRepositories(context.Background(), &pb.SearchRepositoriesRequest{
+		Query:    "python",
+		PageSize: 2,
+		Page:     1,
+	})
+	if err != nil {
+		t.Fatalf("SearchRepositories page 1: %v", err)
+	}
+	if len(resp1.Results) == 0 {
+		t.Skip("no results for python search")
+	}
+
+	resp2, err := svc.SearchRepositories(context.Background(), &pb.SearchRepositoriesRequest{
+		Query:    "python",
+		PageSize: 2,
+		Page:     2,
+	})
+	if err != nil {
+		t.Fatalf("SearchRepositories page 2: %v", err)
+	}
+	if len(resp2.Results) == 0 {
+		t.Skip("no results on page 2")
+	}
+
+	// Verify pages return different results
+	if len(resp1.Results) > 0 && len(resp2.Results) > 0 {
+		if resp1.Results[0].RepoName == resp2.Results[0].RepoName {
+			t.Error("page 1 and page 2 returned the same first result; expected different pages")
+		}
 	}
 }

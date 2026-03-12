@@ -1,0 +1,234 @@
+syntax = "proto3";
+
+package predictfun.v1;
+
+option go_package = "github.com/jim-technologies/invariantaf/predictfun/proto/predictfun/v1;predictfunv1";
+
+// PredictFunService provides access to the Predict.fun prediction market
+// platform on the BNB Chain.
+//
+// Predict.fun is a decentralized prediction market where users can trade on
+// the outcomes of real-world events (sports, crypto, politics, etc.). Markets
+// are binary (Yes/No) and settle on-chain using oracle price feeds.
+//
+// The public API requires no authentication for read-only market data on
+// testnet. Set PREDICTFUN_API_KEY for mainnet access (default rate limit:
+// 240 requests per minute).
+//
+// Use this service to browse prediction markets, view orderbooks, look up
+// categories, and check market details and resolution status.
+service PredictFunService {
+  // List prediction markets with optional filters.
+  //
+  // Returns a paginated list of markets. Each market includes its title,
+  // question, outcomes, trading status, fee rate, and resolution info.
+  // Use `status` to filter by market status (e.g. "REGISTERED", "RESOLVED").
+  // Use `category_slug` to filter by category (e.g. "crypto", "sports").
+  // Use `cursor` for pagination through results.
+  //
+  // Wraps: GET /v1/markets
+  rpc ListMarkets(ListMarketsRequest) returns (ListMarketsResponse);
+
+  // Get a single market by its numeric ID.
+  //
+  // Returns the full details of a specific prediction market including its
+  // question, description, outcomes with on-chain IDs, trading status,
+  // resolution result (if resolved), fee rate, and related metadata.
+  //
+  // Wraps: GET /v1/markets/{id}
+  rpc GetMarket(GetMarketRequest) returns (GetMarketResponse);
+
+  // Get the orderbook for a specific market.
+  //
+  // Returns the current bid and ask depth for a market. Each level is a
+  // [price, volume] pair. Also includes the last settled order and a
+  // millisecond timestamp of the last update.
+  //
+  // Prices are decimal values (e.g. 0.65 means 65 cents per share).
+  // Volume is in wei (the smallest unit of the collateral token).
+  //
+  // Wraps: GET /v1/markets/{id}/orderbook
+  rpc GetOrderbook(GetOrderbookRequest) returns (GetOrderbookResponse);
+
+  // List available market categories.
+  //
+  // Returns categories that can be used to filter markets. Each category
+  // has a slug (used as a filter value) and a human-readable title.
+  // Use `cursor` for pagination.
+  //
+  // Wraps: GET /v1/categories
+  rpc ListCategories(ListCategoriesRequest) returns (ListCategoriesResponse);
+}
+
+// --- Domain types ---
+
+// A prediction market on Predict.fun.
+message Market {
+  // The unique numeric ID of the market.
+  int64 id = 1;
+  // The market title (short label, e.g. "Oklahoma City Thunder").
+  string title = 2;
+  // The full question being asked (e.g. "Will the OKC Thunder win the 2026 NBA Finals?").
+  string question = 3;
+  // Index of this question within its parent category/event.
+  int32 question_index = 4;
+  // Detailed description of the market and its resolution criteria.
+  string description = 5;
+  // The category slug this market belongs to (e.g. "2026-nba-champion").
+  string category_slug = 6;
+  // Market registration status: "REGISTERED" (active) or "RESOLVED" (settled).
+  string status = 7;
+  // Whether trading is currently open: "OPEN" or "CLOSED".
+  string trading_status = 8;
+  // When the market was created (ISO 8601 timestamp).
+  string created_at = 9;
+  // Whether the market is currently in a boost period.
+  bool is_boosted = 10;
+  // Whether the market is publicly visible.
+  bool is_visible = 11;
+  // Whether this market uses yield-bearing conditional tokens.
+  bool is_yield_bearing = 12;
+  // Whether this market uses the NegRisk adapter.
+  bool is_neg_risk = 13;
+  // The market variant type (e.g. "DEFAULT").
+  string market_variant = 14;
+  // The on-chain condition ID (hex string).
+  string condition_id = 15;
+  // The oracle question ID (hex string).
+  string oracle_question_id = 16;
+  // The resolver contract address.
+  string resolver_address = 17;
+  // Decimal precision for price values.
+  int32 decimal_precision = 18;
+  // Fee rate in basis points (e.g. 200 = 2%).
+  int32 fee_rate_bps = 19;
+  // URL to the market's image.
+  string image_url = 20;
+  // The possible outcomes for this market.
+  repeated Outcome outcomes = 21;
+  // The resolution result, if the market has been resolved.
+  Resolution resolution = 22;
+}
+
+// A possible outcome for a prediction market.
+message Outcome {
+  // The index set for this outcome (used for on-chain token identification).
+  int32 index_set = 1;
+  // Human-readable name of the outcome (e.g. "Yes", "No", "Up", "Down").
+  string name = 2;
+  // The on-chain token ID for this outcome (large numeric string).
+  string on_chain_id = 3;
+  // The resolution status: null if unresolved, "WON" or "LOST" if resolved.
+  string status = 4;
+}
+
+// The resolution result of a settled market.
+message Resolution {
+  // The index set of the winning outcome.
+  int32 index_set = 1;
+  // The name of the winning outcome.
+  string name = 2;
+  // The on-chain token ID of the winning outcome.
+  string on_chain_id = 3;
+  // Always "WON" for the resolution outcome.
+  string status = 4;
+}
+
+// A price level in an orderbook (price and volume).
+message DepthLevel {
+  // The price (decimal, e.g. 0.65 = 65 cents per share).
+  double price = 1;
+  // The volume available at this price level.
+  double volume = 2;
+}
+
+// The last order that was settled on this market.
+message LastOrderSettled {
+  // The order ID.
+  string id = 1;
+  // The order kind (e.g. "LIMIT", "MARKET").
+  string kind = 2;
+  // The market ID this order belongs to.
+  int64 market_id = 3;
+  // The outcome this order was for (e.g. "Yes", "No").
+  string outcome = 4;
+  // The price at which the order was settled.
+  string price = 5;
+  // The side of the order (e.g. "BUY", "SELL").
+  string side = 6;
+}
+
+// A market category on Predict.fun.
+message Category {
+  // The unique slug identifier (e.g. "crypto", "sports").
+  string slug = 1;
+  // Human-readable title of the category.
+  string title = 2;
+}
+
+// --- Request / Response messages ---
+
+// Request to list markets.
+message ListMarketsRequest {
+  // Filter by market status: "REGISTERED" (active) or "RESOLVED" (settled).
+  string status = 1;
+  // Filter by category slug (e.g. "crypto", "sports", "2026-nba-champion").
+  string category_slug = 2;
+  // Maximum number of markets to return per page (default 20).
+  int32 limit = 3;
+  // Cursor for pagination. Use the cursor from a previous response to get
+  // the next page.
+  string cursor = 4;
+}
+
+message ListMarketsResponse {
+  // The list of markets.
+  repeated Market data = 1;
+  // Cursor for the next page. Empty if no more results.
+  string cursor = 2;
+}
+
+// Request to get a single market by ID.
+message GetMarketRequest {
+  // The numeric market ID. Required.
+  int64 id = 1;
+}
+
+message GetMarketResponse {
+  // The requested market.
+  Market data = 1;
+}
+
+// Request to get the orderbook for a market.
+message GetOrderbookRequest {
+  // The numeric market ID. Required.
+  int64 id = 1;
+}
+
+message GetOrderbookResponse {
+  // The market ID.
+  int64 market_id = 1;
+  // Ask (sell) orders, sorted by price ascending. Each level is [price, volume].
+  repeated DepthLevel asks = 2;
+  // Bid (buy) orders, sorted by price descending. Each level is [price, volume].
+  repeated DepthLevel bids = 3;
+  // The last order that was settled on this market.
+  LastOrderSettled last_order_settled = 4;
+  // Timestamp of the last orderbook update (milliseconds since epoch).
+  int64 update_timestamp_ms = 5;
+}
+
+// Request to list categories.
+message ListCategoriesRequest {
+  // Maximum number of categories to return per page.
+  int32 limit = 1;
+  // Cursor for pagination.
+  string cursor = 2;
+}
+
+message ListCategoriesResponse {
+  // The list of categories.
+  repeated Category data = 1;
+  // Cursor for the next page. Empty if no more results.
+  string cursor = 2;
+}

@@ -1,4 +1,4 @@
-module github.com/jim-technologies/invariantaf/giphy
+module github.com/jim-technologies/invariantaf/predictfun
 
 go 1.25.5
 

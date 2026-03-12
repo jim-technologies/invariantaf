@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 
@@ -613,4 +614,202 @@ func TestNewSteamService(t *testing.T) {
 	assert.Equal(t, defaultSteamBaseURL, svc.steamBaseURL)
 	assert.Equal(t, defaultStoreBaseURL, svc.storeBaseURL)
 	assert.NotNil(t, svc.client)
+}
+
+// --- Live integration tests (hit the real Steam API) ---
+// These tests exercise endpoints that work without an API key:
+// GetAppList, GetNumberOfCurrentPlayers, GetNewsForApp,
+// GetGlobalAchievementPercentages, and GetAppDetails (Store API).
+
+func skipUnlessIntegration(t *testing.T) {
+	t.Helper()
+	if os.Getenv("TEST_STEAM") == "" {
+		t.Skip("set TEST_STEAM=1 to run integration tests (hits real Steam API)")
+	}
+}
+
+func liveService() *SteamService {
+	return NewSteamService()
+}
+
+func TestLiveGetAppList(t *testing.T) {
+	skipUnlessIntegration(t)
+	svc := liveService()
+
+	resp, err := svc.GetAppList(context.Background(), makeReq(t, map[string]any{}))
+	require.NoError(t, err)
+
+	apps := resp.GetFields()["apps"].GetListValue().GetValues()
+	if len(apps) == 0 {
+		t.Fatal("expected at least 1 app in the app list")
+	}
+
+	// The Steam app list is huge (100k+ apps); just verify structure
+	first := apps[0].GetStructValue().GetFields()
+	if first["app_id"] == nil {
+		t.Error("app missing app_id")
+	}
+	// name can be empty for some apps, so just check the field exists
+	if first["name"] == nil {
+		t.Error("app missing name field")
+	}
+
+	t.Logf("Steam app list contains %d apps", len(apps))
+}
+
+func TestLiveGetNumberOfCurrentPlayers(t *testing.T) {
+	skipUnlessIntegration(t)
+	svc := liveService()
+
+	// TF2 (app_id 440) always has players online
+	resp, err := svc.GetNumberOfCurrentPlayers(context.Background(), makeReq(t, map[string]any{
+		"app_id": float64(440),
+	}))
+	require.NoError(t, err)
+
+	playerCount := resp.GetFields()["player_count"].GetNumberValue()
+	if playerCount == 0 {
+		t.Log("player_count is 0 for TF2 (unexpected but possible during maintenance)")
+	}
+	t.Logf("TF2 current players: %.0f", playerCount)
+}
+
+func TestLiveGetNumberOfCurrentPlayersCS2(t *testing.T) {
+	skipUnlessIntegration(t)
+	svc := liveService()
+
+	// Counter-Strike 2 (app_id 730) is one of the most popular games
+	resp, err := svc.GetNumberOfCurrentPlayers(context.Background(), makeReq(t, map[string]any{
+		"app_id": float64(730),
+	}))
+	require.NoError(t, err)
+
+	playerCount := resp.GetFields()["player_count"].GetNumberValue()
+	t.Logf("CS2 current players: %.0f", playerCount)
+}
+
+func TestLiveGetNewsForApp(t *testing.T) {
+	skipUnlessIntegration(t)
+	svc := liveService()
+
+	// Get news for TF2
+	resp, err := svc.GetNewsForApp(context.Background(), makeReq(t, map[string]any{
+		"app_id": float64(440),
+		"count":  float64(3),
+	}))
+	require.NoError(t, err)
+
+	fields := resp.GetFields()
+	appID := fields["app_id"].GetNumberValue()
+	if appID != 440 {
+		t.Errorf("expected app_id=440, got %.0f", appID)
+	}
+
+	newsItems := fields["news_items"].GetListValue().GetValues()
+	if len(newsItems) == 0 {
+		t.Fatal("expected at least 1 news item for TF2")
+	}
+
+	n := newsItems[0].GetStructValue().GetFields()
+	if n["title"].GetStringValue() == "" {
+		t.Error("news item missing title")
+	}
+	if n["url"].GetStringValue() == "" {
+		t.Error("news item missing url")
+	}
+	if n["date"].GetNumberValue() == 0 {
+		t.Error("news item missing date")
+	}
+}
+
+func TestLiveGetGlobalAchievementPercentages(t *testing.T) {
+	skipUnlessIntegration(t)
+	svc := liveService()
+
+	// TF2 achievements
+	resp, err := svc.GetGlobalAchievementPercentages(context.Background(), makeReq(t, map[string]any{
+		"app_id": float64(440),
+	}))
+	require.NoError(t, err)
+
+	achievements := resp.GetFields()["achievements"].GetListValue().GetValues()
+	if len(achievements) == 0 {
+		t.Fatal("expected at least 1 achievement for TF2")
+	}
+
+	a := achievements[0].GetStructValue().GetFields()
+	if a["name"].GetStringValue() == "" {
+		t.Error("achievement missing name")
+	}
+	percent := a["percent"].GetNumberValue()
+	if percent < 0 || percent > 100 {
+		t.Errorf("achievement percent out of range: %v", percent)
+	}
+
+	t.Logf("TF2 has %d global achievements", len(achievements))
+}
+
+func TestLiveGetAppDetails(t *testing.T) {
+	skipUnlessIntegration(t)
+	svc := liveService()
+
+	// TF2 details from the Store API
+	resp, err := svc.GetAppDetails(context.Background(), makeReq(t, map[string]any{
+		"app_id": float64(440),
+	}))
+	require.NoError(t, err)
+
+	fields := resp.GetFields()
+	if !fields["success"].GetBoolValue() {
+		t.Fatal("expected success=true for TF2 app details")
+	}
+
+	data := fields["data"].GetStructValue().GetFields()
+	if data["name"].GetStringValue() == "" {
+		t.Error("app missing name")
+	}
+	if data["type"].GetStringValue() != "game" {
+		t.Errorf("expected type=game, got %s", data["type"].GetStringValue())
+	}
+	if data["short_description"].GetStringValue() == "" {
+		t.Error("app missing short_description")
+	}
+	if data["is_free"].GetBoolValue() != true {
+		t.Error("TF2 should be free")
+	}
+	if data["header_image"].GetStringValue() == "" {
+		t.Error("app missing header_image")
+	}
+
+	// Check platforms
+	platforms := data["platforms"].GetStructValue()
+	if platforms != nil {
+		pf := platforms.GetFields()
+		if !pf["windows"].GetBoolValue() {
+			t.Error("TF2 should be available on Windows")
+		}
+	}
+
+	// Check genres exist
+	genres := data["genres"].GetListValue()
+	if genres == nil || len(genres.GetValues()) == 0 {
+		t.Log("no genres returned (may vary by region)")
+	}
+
+	t.Logf("App details: %s (%s)", data["name"].GetStringValue(), data["type"].GetStringValue())
+}
+
+func TestLiveGetAppDetailsNotFound(t *testing.T) {
+	skipUnlessIntegration(t)
+	svc := liveService()
+
+	// Use an app ID that's very unlikely to exist
+	resp, err := svc.GetAppDetails(context.Background(), makeReq(t, map[string]any{
+		"app_id": float64(999999999),
+	}))
+	require.NoError(t, err)
+
+	if resp.GetFields()["success"].GetBoolValue() {
+		t.Error("expected success=false for non-existent app")
+	}
 }
