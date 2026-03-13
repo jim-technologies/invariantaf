@@ -1,0 +1,171 @@
+syntax = "proto3";
+
+package openmeteo.v1;
+
+// OpenMeteoService provides weather data from the Open-Meteo API.
+// Completely free, no authentication required.
+// Critical for Polymarket weather prediction markets.
+service OpenMeteoService {
+  // Get hourly and daily weather forecasts for a location.
+  rpc GetForecast(GetForecastRequest) returns (GetForecastResponse);
+
+  // Get historical weather data for backtesting.
+  rpc GetHistoricalWeather(GetHistoricalWeatherRequest) returns (GetHistoricalWeatherResponse);
+
+  // Get forecasts from multiple weather models simultaneously.
+  // KEY RPC: compare 6 models to estimate confidence.
+  rpc GetMultiModelForecast(GetMultiModelForecastRequest) returns (GetMultiModelForecastResponse);
+
+  // Get air quality data for a location.
+  rpc GetAirQuality(GetAirQualityRequest) returns (GetAirQualityResponse);
+
+  // Get marine/ocean weather data for a location.
+  rpc GetMarineWeather(GetMarineWeatherRequest) returns (GetMarineWeatherResponse);
+}
+
+// --- GetForecast ---
+
+message GetForecastRequest {
+  // Latitude of the location
+  double latitude = 1;
+  // Longitude of the location
+  double longitude = 2;
+  // Number of forecast days (default 7)
+  optional int32 forecast_days = 3;
+  // Timezone (optional, default "auto")
+  optional string timezone = 4;
+}
+
+message HourlyForecast {
+  // ISO 8601 timestamps for each hour
+  repeated string times = 1;
+  // Temperature at 2m above ground (Celsius)
+  repeated double temperature_2m = 2;
+  // Relative humidity at 2m (%)
+  repeated double relative_humidity_2m = 3;
+  // Precipitation (mm)
+  repeated double precipitation = 4;
+  // Wind speed at 10m (km/h)
+  repeated double wind_speed_10m = 5;
+  // WMO weather interpretation codes
+  repeated int32 weather_code = 6;
+}
+
+message DailyForecast {
+  // ISO 8601 date strings
+  repeated string dates = 1;
+  // Daily maximum temperature at 2m (Celsius) -- Polymarket resolves on this!
+  repeated double temperature_2m_max = 2;
+  // Daily minimum temperature at 2m (Celsius) -- Polymarket resolves on this!
+  repeated double temperature_2m_min = 3;
+  // Daily precipitation sum (mm)
+  repeated double precipitation_sum = 4;
+  // Daily maximum wind speed at 10m (km/h)
+  repeated double wind_speed_10m_max = 5;
+}
+
+message GetForecastResponse {
+  // Hourly forecast data
+  HourlyForecast hourly = 1;
+  // Daily forecast data
+  DailyForecast daily = 2;
+}
+
+// --- GetHistoricalWeather ---
+
+message GetHistoricalWeatherRequest {
+  // Latitude of the location
+  double latitude = 1;
+  // Longitude of the location
+  double longitude = 2;
+  // Start date (YYYY-MM-DD)
+  string start_date = 3;
+  // End date (YYYY-MM-DD)
+  string end_date = 4;
+  // Timezone (optional, default "auto")
+  optional string timezone = 5;
+}
+
+message GetHistoricalWeatherResponse {
+  // Hourly historical data
+  HourlyForecast hourly = 1;
+  // Daily historical data
+  DailyForecast daily = 2;
+}
+
+// --- GetMultiModelForecast ---
+
+message GetMultiModelForecastRequest {
+  // Latitude of the location
+  double latitude = 1;
+  // Longitude of the location
+  double longitude = 2;
+  // Number of forecast days (default 7)
+  optional int32 forecast_days = 3;
+  // Weather models to query (e.g. ecmwf_ifs025, gfs_seamless, icon_seamless, jma_seamless, gem_seamless, meteofrance_seamless)
+  repeated string models = 4;
+}
+
+message ModelForecast {
+  // Name of the weather model
+  string model_name = 1;
+  // ISO 8601 timestamps for each hour
+  repeated string times = 2;
+  // Temperature at 2m for this model (Celsius)
+  repeated double temperature_2m = 3;
+}
+
+message GetMultiModelForecastResponse {
+  // Forecasts from each requested model
+  repeated ModelForecast model_forecasts = 1;
+}
+
+// --- GetAirQuality ---
+
+message GetAirQualityRequest {
+  // Latitude of the location
+  double latitude = 1;
+  // Longitude of the location
+  double longitude = 2;
+}
+
+message AirQualityHourly {
+  // ISO 8601 timestamps for each hour
+  repeated string times = 1;
+  // PM2.5 concentration (ug/m3)
+  repeated double pm2_5 = 2;
+  // PM10 concentration (ug/m3)
+  repeated double pm10 = 3;
+  // US Air Quality Index
+  repeated double us_aqi = 4;
+}
+
+message GetAirQualityResponse {
+  // Hourly air quality data
+  AirQualityHourly hourly = 1;
+}
+
+// --- GetMarineWeather ---
+
+message GetMarineWeatherRequest {
+  // Latitude of the location
+  double latitude = 1;
+  // Longitude of the location
+  double longitude = 2;
+}
+
+message MarineWeatherHourly {
+  // ISO 8601 timestamps for each hour
+  repeated string times = 1;
+  // Wave height (meters)
+  repeated double wave_height = 2;
+  // Wave period (seconds)
+  repeated double wave_period = 3;
+  // Wind wave height (meters)
+  repeated double wind_wave_height = 4;
+}
+
+message GetMarineWeatherResponse {
+  // Hourly marine weather data
+  MarineWeatherHourly hourly = 1;
+}

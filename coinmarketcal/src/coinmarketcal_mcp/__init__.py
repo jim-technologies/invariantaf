@@ -1,0 +1,1 @@
+"""CoinMarketCal MCP package."""

@@ -1,0 +1,123 @@
+syntax = "proto3";
+
+package wikimedia.v1;
+
+// WikimediaService proxies Wikimedia REST API pageview and unique-device endpoints.
+service WikimediaService {
+  // Get daily pageviews for a specific Wikipedia article.
+  rpc GetPageviews(GetPageviewsRequest) returns (GetPageviewsResponse);
+
+  // Get the most viewed pages on a given day.
+  rpc GetTopPages(GetTopPagesRequest) returns (GetTopPagesResponse);
+
+  // Get aggregate (total) Wikipedia pageviews per day.
+  rpc GetAggregatePageviews(GetAggregatePageviewsRequest) returns (GetAggregatePageviewsResponse);
+
+  // Get most viewed pages for an entire month.
+  rpc GetMostViewed(GetMostViewedRequest) returns (GetMostViewedResponse);
+
+  // Get unique device counts per day.
+  rpc GetUniqueDevices(GetUniqueDevicesRequest) returns (GetUniqueDevicesResponse);
+}
+
+// --- GetPageviews ---
+
+message GetPageviewsRequest {
+  // Article title (e.g. "Bitcoin", "Donald_Trump")
+  string article = 1;
+  // Start date in YYYYMMDD format
+  string start = 2;
+  // End date in YYYYMMDD format
+  string end = 3;
+}
+
+message PageviewDatapoint {
+  string project = 1;
+  string article = 2;
+  string granularity = 3;
+  string timestamp = 4;
+  string access = 5;
+  string agent = 6;
+  int64 views = 7;
+}
+
+message GetPageviewsResponse {
+  repeated PageviewDatapoint items = 1;
+}
+
+// --- GetTopPages ---
+
+message GetTopPagesRequest {
+  // Year (e.g. "2025")
+  string year = 1;
+  // Month (e.g. "01")
+  string month = 2;
+  // Day (e.g. "15")
+  string day = 3;
+}
+
+message TopPageArticle {
+  string article = 1;
+  int64 views = 2;
+  int32 rank = 3;
+}
+
+message GetTopPagesResponse {
+  repeated TopPageArticle articles = 1;
+}
+
+// --- GetAggregatePageviews ---
+
+message GetAggregatePageviewsRequest {
+  // Start date in YYYYMMDD format
+  string start = 1;
+  // End date in YYYYMMDD format
+  string end = 2;
+}
+
+message AggregateDatapoint {
+  string project = 1;
+  string access = 2;
+  string agent = 3;
+  string granularity = 4;
+  string timestamp = 5;
+  int64 views = 6;
+}
+
+message GetAggregatePageviewsResponse {
+  repeated AggregateDatapoint items = 1;
+}
+
+// --- GetMostViewed ---
+
+message GetMostViewedRequest {
+  // Year (e.g. "2025")
+  string year = 1;
+  // Month (e.g. "01")
+  string month = 2;
+}
+
+message GetMostViewedResponse {
+  repeated TopPageArticle articles = 1;
+}
+
+// --- GetUniqueDevices ---
+
+message GetUniqueDevicesRequest {
+  // Start date in YYYYMMDD format
+  string start = 1;
+  // End date in YYYYMMDD format
+  string end = 2;
+}
+
+message UniqueDevicesDatapoint {
+  string project = 1;
+  string access_site = 2;
+  string granularity = 3;
+  string timestamp = 4;
+  int64 devices = 5;
+}
+
+message GetUniqueDevicesResponse {
+  repeated UniqueDevicesDatapoint items = 1;
+}

@@ -1,0 +1,124 @@
+syntax = "proto3";
+
+package coinmarketcal.v1;
+
+// CoinMarketCalService exposes the CoinMarketCal crypto events calendar API.
+service CoinMarketCalService {
+  // List upcoming crypto events (token unlocks, mainnet launches, listings, airdrops, etc.).
+  rpc ListEvents(ListEventsRequest) returns (ListEventsResponse);
+
+  // List all event categories (Exchange Listings, Airdrops, Burns, Partnerships, etc.).
+  rpc ListCategories(ListCategoriesRequest) returns (ListCategoriesResponse);
+
+  // List all tracked coins.
+  rpc ListCoins(ListCoinsRequest) returns (ListCoinsResponse);
+}
+
+// --- ListEvents ---
+
+message ListEventsRequest {
+  // Maximum number of events to return (default 50).
+  optional int32 max = 1;
+  // Page number for pagination (default 1).
+  optional int32 page = 2;
+  // Filter by coin symbols (comma-separated, e.g. "bitcoin,ethereum").
+  optional string coins = 3;
+  // Filter by category IDs (comma-separated, e.g. "1,5,12").
+  optional string categories = 4;
+  // Start of date range (YYYY-MM-DD).
+  optional string date_range_start = 5;
+  // End of date range (YYYY-MM-DD).
+  optional string date_range_end = 6;
+  // Sort by: "created_desc" (default), "hot_events", "significant_events", "trending_events".
+  optional string sort_by = 7;
+  // Show only events with these confidence levels (comma-separated: "confirmed", "unconfirmed").
+  optional string show_only = 8;
+}
+
+message EventCoin {
+  // Coin ID.
+  string id = 1;
+  // Coin display name (e.g. "Bitcoin").
+  string name = 2;
+  // Coin symbol (e.g. "BTC").
+  string symbol = 3;
+  // Coin ranking.
+  int32 rank = 4;
+}
+
+message EventCategory {
+  // Category ID.
+  int32 id = 1;
+  // Category name (e.g. "Exchange Listings", "Partnerships").
+  string name = 2;
+}
+
+message Event {
+  // Unique event ID.
+  int32 id = 1;
+  // Event title.
+  string title = 2;
+  // Description or proof text.
+  string description = 3;
+  // Source URL for the event.
+  string source = 4;
+  // Confirmation status: true if confirmed.
+  bool is_hot = 5;
+  // Event date (YYYY-MM-DD or ISO 8601).
+  string date_event = 6;
+  // Date the event was created.
+  string created_date = 7;
+  // Coins associated with this event.
+  repeated EventCoin coins = 8;
+  // Categories for this event.
+  repeated EventCategory categories = 9;
+  // Percentage of votes saying this event is real.
+  int32 percentage = 10;
+  // Number of positive votes.
+  int32 positive_vote_count = 11;
+  // Total vote count.
+  int32 vote_count = 12;
+}
+
+message ListEventsResponse {
+  // Returned events.
+  repeated Event events = 1;
+  // Total number of results across all pages.
+  int32 total = 2;
+  // Current page number.
+  int32 page = 3;
+}
+
+// --- ListCategories ---
+
+message ListCategoriesRequest {}
+
+message Category {
+  // Category ID.
+  int32 id = 1;
+  // Category name.
+  string name = 2;
+}
+
+message ListCategoriesResponse {
+  repeated Category categories = 1;
+}
+
+// --- ListCoins ---
+
+message ListCoinsRequest {}
+
+message Coin {
+  // Coin identifier.
+  string id = 1;
+  // Coin display name.
+  string name = 2;
+  // Coin symbol (ticker).
+  string symbol = 3;
+  // Coin ranking.
+  int32 rank = 4;
+}
+
+message ListCoinsResponse {
+  repeated Coin coins = 1;
+}

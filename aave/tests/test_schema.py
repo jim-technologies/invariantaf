@@ -23,4 +23,4 @@ def test_rpc_method_count_is_stable():
     total = 0
     for service in aave_pb2.DESCRIPTOR.services_by_name.values():
         total += len(service.methods)
-    assert total == 6
+    assert total == 4

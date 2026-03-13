@@ -1,0 +1,286 @@
+syntax = "proto3";
+
+package pandascore.v1;
+
+// PandaScoreService proxies esports data endpoints from the PandaScore API.
+// Focused on Dota 2 but generic enough for other supported games.
+service PandaScoreService {
+  // List all Dota 2 matches (past, upcoming, running).
+  rpc ListMatches(ListMatchesRequest) returns (ListMatchesResponse);
+
+  // List upcoming scheduled Dota 2 matches.
+  rpc ListUpcomingMatches(ListUpcomingMatchesRequest) returns (ListUpcomingMatchesResponse);
+
+  // List currently live Dota 2 matches.
+  rpc ListRunningMatches(ListRunningMatchesRequest) returns (ListRunningMatchesResponse);
+
+  // List completed Dota 2 matches with results.
+  rpc ListPastMatches(ListPastMatchesRequest) returns (ListPastMatchesResponse);
+
+  // List all Dota 2 tournaments.
+  rpc ListTournaments(ListTournamentsRequest) returns (ListTournamentsResponse);
+
+  // List all Dota 2 teams.
+  rpc ListTeams(ListTeamsRequest) returns (ListTeamsResponse);
+
+  // List all Dota 2 players.
+  rpc ListPlayers(ListPlayersRequest) returns (ListPlayersResponse);
+
+  // List all Dota 2 leagues.
+  rpc ListLeagues(ListLeaguesRequest) returns (ListLeaguesResponse);
+
+  // List upcoming Dota 2 series.
+  rpc ListSeries(ListSeriesRequest) returns (ListSeriesResponse);
+
+  // List all Dota 2 heroes.
+  rpc ListHeroes(ListHeroesRequest) returns (ListHeroesResponse);
+}
+
+// --- Shared sub-messages ---
+
+message TeamSummary {
+  int32 id = 1;
+  string name = 2;
+  string slug = 3;
+  string acronym = 4;
+  string image_url = 5;
+}
+
+message TournamentSummary {
+  int32 id = 1;
+  string name = 2;
+  string slug = 3;
+}
+
+message LeagueSummary {
+  int32 id = 1;
+  string name = 2;
+  string slug = 3;
+  string image_url = 4;
+}
+
+message SerieSummary {
+  int32 id = 1;
+  string name = 2;
+  string slug = 3;
+  string full_name = 4;
+}
+
+message Opponent {
+  string type = 1;
+  TeamSummary opponent = 2;
+}
+
+message MatchResult {
+  int32 team_id = 1;
+  int32 score = 2;
+}
+
+message MatchGame {
+  int32 id = 1;
+  int32 position = 2;
+  string status = 3;
+  bool forfeit = 4;
+  int32 length = 5;
+  string begin_at = 6;
+  string end_at = 7;
+  TeamSummary winner = 8;
+}
+
+// --- ListMatches ---
+
+message ListMatchesRequest {
+  optional int32 page = 1;
+  optional int32 per_page = 2;
+}
+
+message Match {
+  int32 id = 1;
+  string name = 2;
+  string scheduled_at = 3;
+  string status = 4;
+  int32 number_of_games = 5;
+  TournamentSummary tournament = 6;
+  LeagueSummary league = 7;
+  SerieSummary serie = 8;
+  repeated Opponent opponents = 9;
+  TeamSummary winner = 10;
+  repeated MatchResult results = 11;
+  repeated MatchGame games = 12;
+  string begin_at = 13;
+  string end_at = 14;
+  string match_type = 15;
+  string slug = 16;
+}
+
+message ListMatchesResponse {
+  repeated Match matches = 1;
+}
+
+// --- ListUpcomingMatches ---
+
+message ListUpcomingMatchesRequest {
+  optional int32 page = 1;
+  optional int32 per_page = 2;
+}
+
+message ListUpcomingMatchesResponse {
+  repeated Match matches = 1;
+}
+
+// --- ListRunningMatches ---
+
+message ListRunningMatchesRequest {
+  optional int32 page = 1;
+  optional int32 per_page = 2;
+}
+
+message ListRunningMatchesResponse {
+  repeated Match matches = 1;
+}
+
+// --- ListPastMatches ---
+
+message ListPastMatchesRequest {
+  optional int32 page = 1;
+  optional int32 per_page = 2;
+}
+
+message ListPastMatchesResponse {
+  repeated Match matches = 1;
+}
+
+// --- ListTournaments ---
+
+message ListTournamentsRequest {
+  optional int32 page = 1;
+  optional int32 per_page = 2;
+}
+
+message Tournament {
+  int32 id = 1;
+  string name = 2;
+  string slug = 3;
+  string begin_at = 4;
+  string end_at = 5;
+  LeagueSummary league = 6;
+  SerieSummary serie = 7;
+  string tier = 8;
+  int32 prizepool = 9;
+}
+
+message ListTournamentsResponse {
+  repeated Tournament tournaments = 1;
+}
+
+// --- ListTeams ---
+
+message ListTeamsRequest {
+  optional int32 page = 1;
+  optional int32 per_page = 2;
+}
+
+message PlayerSummary {
+  int32 id = 1;
+  string name = 2;
+  string slug = 3;
+  string first_name = 4;
+  string last_name = 5;
+  string role = 6;
+  string image_url = 7;
+}
+
+message Team {
+  int32 id = 1;
+  string name = 2;
+  string slug = 3;
+  string acronym = 4;
+  string image_url = 5;
+  string location = 6;
+  repeated PlayerSummary players = 7;
+}
+
+message ListTeamsResponse {
+  repeated Team teams = 1;
+}
+
+// --- ListPlayers ---
+
+message ListPlayersRequest {
+  optional int32 page = 1;
+  optional int32 per_page = 2;
+}
+
+message Player {
+  int32 id = 1;
+  string name = 2;
+  string slug = 3;
+  string first_name = 4;
+  string last_name = 5;
+  string role = 6;
+  string image_url = 7;
+  TeamSummary current_team = 8;
+}
+
+message ListPlayersResponse {
+  repeated Player players = 1;
+}
+
+// --- ListLeagues ---
+
+message ListLeaguesRequest {
+  optional int32 page = 1;
+  optional int32 per_page = 2;
+}
+
+message League {
+  int32 id = 1;
+  string name = 2;
+  string slug = 3;
+  string image_url = 4;
+  string url = 5;
+}
+
+message ListLeaguesResponse {
+  repeated League leagues = 1;
+}
+
+// --- ListSeries ---
+
+message ListSeriesRequest {
+  optional int32 page = 1;
+  optional int32 per_page = 2;
+}
+
+message Series {
+  int32 id = 1;
+  string name = 2;
+  string slug = 3;
+  string begin_at = 4;
+  string end_at = 5;
+  LeagueSummary league = 6;
+  string full_name = 7;
+  string tier = 8;
+  int32 year = 9;
+}
+
+message ListSeriesResponse {
+  repeated Series series = 1;
+}
+
+// --- ListHeroes ---
+
+message ListHeroesRequest {
+  optional int32 page = 1;
+  optional int32 per_page = 2;
+}
+
+message Hero {
+  int32 id = 1;
+  string name = 2;
+  string localized_name = 3;
+}
+
+message ListHeroesResponse {
+  repeated Hero heroes = 1;
+}

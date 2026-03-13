@@ -1,0 +1,1 @@
+"""Wikimedia MCP package."""

@@ -1,0 +1,227 @@
+syntax = "proto3";
+
+package footballdata.v1;
+
+// FootballDataService proxies public endpoints from the Football-Data.org API.
+service FootballDataService {
+  // List all available competitions.
+  rpc ListCompetitions(ListCompetitionsRequest) returns (ListCompetitionsResponse);
+
+  // Get a specific competition by code.
+  rpc GetCompetition(GetCompetitionRequest) returns (GetCompetitionResponse);
+
+  // Get standings/league table for a competition.
+  rpc GetStandings(GetStandingsRequest) returns (GetStandingsResponse);
+
+  // List matches for a competition, filterable by date range and status.
+  rpc ListMatches(ListMatchesRequest) returns (ListMatchesResponse);
+
+  // Get details for a specific match by ID.
+  rpc GetMatch(GetMatchRequest) returns (GetMatchResponse);
+
+  // List today's matches across all competitions.
+  rpc ListTodayMatches(ListTodayMatchesRequest) returns (ListTodayMatchesResponse);
+
+  // Get team details including squad.
+  rpc GetTeam(GetTeamRequest) returns (GetTeamResponse);
+
+  // Get top scorers for a competition.
+  rpc GetScorers(GetScorersRequest) returns (GetScorersResponse);
+}
+
+// --- Common sub-messages ---
+
+message Area {
+  string name = 1;
+  string code = 2;
+}
+
+message Season {
+  int32 id = 1;
+  string start_date = 2;
+  string end_date = 3;
+  int32 current_matchday = 4;
+}
+
+message Competition {
+  int32 id = 1;
+  string name = 2;
+  string code = 3;
+  Area area = 4;
+  Season current_season = 5;
+}
+
+message TeamRef {
+  int32 id = 1;
+  string name = 2;
+  string short_name = 3;
+  string tla = 4;
+  string crest = 5;
+}
+
+message Score {
+  ScoreLine full_time = 1;
+  ScoreLine half_time = 2;
+}
+
+message ScoreLine {
+  optional int32 home = 1;
+  optional int32 away = 2;
+}
+
+message Referee {
+  string name = 1;
+  string type = 2;
+  string nationality = 3;
+}
+
+message Match {
+  int32 id = 1;
+  Competition competition = 2;
+  TeamRef home_team = 3;
+  TeamRef away_team = 4;
+  Score score = 5;
+  string status = 6;
+  int32 matchday = 7;
+  string utc_date = 8;
+  repeated Referee referees = 9;
+}
+
+message TableEntry {
+  int32 position = 1;
+  TeamRef team = 2;
+  int32 played_games = 3;
+  int32 won = 4;
+  int32 draw = 5;
+  int32 lost = 6;
+  int32 points = 7;
+  int32 goals_for = 8;
+  int32 goals_against = 9;
+  int32 goal_difference = 10;
+}
+
+message Standing {
+  string stage = 1;
+  string type = 2;
+  string group = 3;
+  repeated TableEntry table = 4;
+}
+
+message Player {
+  int32 id = 1;
+  string name = 2;
+  string nationality = 3;
+  string position = 4;
+}
+
+message Coach {
+  int32 id = 1;
+  string name = 2;
+  string nationality = 3;
+}
+
+message ScorerEntry {
+  Player player = 1;
+  TeamRef team = 2;
+  int32 goals = 3;
+  int32 assists = 4;
+  int32 penalties = 5;
+}
+
+// --- ListCompetitions ---
+
+message ListCompetitionsRequest {}
+
+message ListCompetitionsResponse {
+  repeated Competition competitions = 1;
+}
+
+// --- GetCompetition ---
+
+message GetCompetitionRequest {
+  // Competition code (e.g. "PL", "BL1", "SA", "PD", "FL1")
+  string code = 1;
+}
+
+message GetCompetitionResponse {
+  Competition competition = 1;
+}
+
+// --- GetStandings ---
+
+message GetStandingsRequest {
+  // Competition code (e.g. "PL")
+  string code = 1;
+}
+
+message GetStandingsResponse {
+  Competition competition = 1;
+  repeated Standing standings = 2;
+}
+
+// --- ListMatches ---
+
+message ListMatchesRequest {
+  // Competition code (e.g. "PL")
+  string code = 1;
+  // Optional date range filter (YYYY-MM-DD)
+  optional string date_from = 2;
+  optional string date_to = 3;
+  // Optional status filter (SCHEDULED, LIVE, IN_PLAY, PAUSED, FINISHED, POSTPONED, CANCELLED)
+  optional string status = 4;
+}
+
+message ListMatchesResponse {
+  repeated Match matches = 1;
+}
+
+// --- GetMatch ---
+
+message GetMatchRequest {
+  // Match ID
+  int32 id = 1;
+}
+
+message GetMatchResponse {
+  Match match = 1;
+}
+
+// --- ListTodayMatches ---
+
+message ListTodayMatchesRequest {}
+
+message ListTodayMatchesResponse {
+  repeated Match matches = 1;
+}
+
+// --- GetTeam ---
+
+message GetTeamRequest {
+  // Team ID
+  int32 id = 1;
+}
+
+message GetTeamResponse {
+  int32 id = 1;
+  string name = 2;
+  string short_name = 3;
+  string tla = 4;
+  string crest = 5;
+  string venue = 6;
+  Coach coach = 7;
+  repeated Player squad = 8;
+}
+
+// --- GetScorers ---
+
+message GetScorersRequest {
+  // Competition code (e.g. "PL")
+  string code = 1;
+  // Max number of scorers to return
+  optional int32 limit = 2;
+}
+
+message GetScorersResponse {
+  Competition competition = 1;
+  repeated ScorerEntry scorers = 2;
+}

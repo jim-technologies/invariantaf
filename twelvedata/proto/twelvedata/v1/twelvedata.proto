@@ -1,0 +1,189 @@
+syntax = "proto3";
+
+package twelvedata.v1;
+
+// TwelveDataService proxies market data endpoints from the Twelve Data API.
+// Covers stocks, forex, crypto, ETFs, and indices.
+service TwelveDataService {
+  // Get a real-time quote for a stock, crypto, or forex pair.
+  rpc GetQuote(GetQuoteRequest) returns (GetQuoteResponse);
+
+  // Get OHLCV time series data for a symbol.
+  rpc GetTimeSeries(GetTimeSeriesRequest) returns (GetTimeSeriesResponse);
+
+  // Get simple current price for a symbol.
+  rpc GetPrice(GetPriceRequest) returns (GetPriceResponse);
+
+  // List available stocks, optionally filtered by exchange.
+  rpc ListStocks(ListStocksRequest) returns (ListStocksResponse);
+
+  // List available forex pairs.
+  rpc ListForexPairs(ListForexPairsRequest) returns (ListForexPairsResponse);
+
+  // List available cryptocurrency trading pairs.
+  rpc ListCryptoPairs(ListCryptoPairsRequest) returns (ListCryptoPairsResponse);
+
+  // Get current exchange rate between two currencies.
+  rpc GetExchangeRate(GetExchangeRateRequest) returns (GetExchangeRateResponse);
+
+  // Get upcoming earnings releases calendar.
+  rpc GetEarningsCalendar(GetEarningsCalendarRequest) returns (GetEarningsCalendarResponse);
+}
+
+// --- GetQuote ---
+
+message GetQuoteRequest {
+  // Symbol: e.g. "AAPL", "BTC/USD", "EUR/USD", "SPY"
+  string symbol = 1;
+}
+
+message GetQuoteResponse {
+  string symbol = 1;
+  string name = 2;
+  string exchange = 3;
+  string currency = 4;
+  double open = 5;
+  double high = 6;
+  double low = 7;
+  double close = 8;
+  double previous_close = 9;
+  double change = 10;
+  double percent_change = 11;
+  int64 volume = 12;
+  string datetime = 13;
+  string timestamp = 14;
+  double fifty_two_week_high = 15;
+  double fifty_two_week_low = 16;
+}
+
+// --- GetTimeSeries ---
+
+message GetTimeSeriesRequest {
+  // Symbol: e.g. "AAPL", "BTC/USD"
+  string symbol = 1;
+  // Interval: "1min", "5min", "15min", "30min", "45min", "1h", "2h", "4h", "1day", "1week", "1month"
+  string interval = 2;
+  // Number of data points to return (default 30)
+  optional int32 outputsize = 3;
+}
+
+message TimeSeriesValue {
+  string datetime = 1;
+  double open = 2;
+  double high = 3;
+  double low = 4;
+  double close = 5;
+  int64 volume = 6;
+}
+
+message GetTimeSeriesResponse {
+  string symbol = 1;
+  string interval = 2;
+  string currency = 3;
+  string exchange = 4;
+  string type = 5;
+  repeated TimeSeriesValue values = 6;
+}
+
+// --- GetPrice ---
+
+message GetPriceRequest {
+  // Symbol: e.g. "AAPL", "BTC/USD"
+  string symbol = 1;
+}
+
+message GetPriceResponse {
+  double price = 1;
+}
+
+// --- ListStocks ---
+
+message ListStocksRequest {
+  // Exchange filter (optional), e.g. "NASDAQ", "NYSE"
+  optional string exchange = 1;
+}
+
+message Stock {
+  string symbol = 1;
+  string name = 2;
+  string currency = 3;
+  string exchange = 4;
+  string country = 5;
+  string type = 6;
+}
+
+message ListStocksResponse {
+  repeated Stock stocks = 1;
+}
+
+// --- ListForexPairs ---
+
+message ListForexPairsRequest {
+}
+
+message ForexPair {
+  string symbol = 1;
+  string currency_group = 2;
+  string currency_base = 3;
+  string currency_quote = 4;
+}
+
+message ListForexPairsResponse {
+  repeated ForexPair pairs = 1;
+}
+
+// --- ListCryptoPairs ---
+
+message ListCryptoPairsRequest {
+}
+
+message CryptoPair {
+  string symbol = 1;
+  string available_exchanges = 2;
+  string currency_base = 3;
+  string currency_quote = 4;
+}
+
+message ListCryptoPairsResponse {
+  repeated CryptoPair pairs = 1;
+}
+
+// --- GetExchangeRate ---
+
+message GetExchangeRateRequest {
+  // Symbol in "FROM/TO" format, e.g. "USD/EUR", "BTC/USD"
+  string symbol = 1;
+}
+
+message GetExchangeRateResponse {
+  string symbol = 1;
+  double rate = 2;
+  string timestamp = 3;
+}
+
+// --- GetEarningsCalendar ---
+
+message GetEarningsCalendarRequest {
+  // Start date in YYYY-MM-DD format (optional)
+  optional string start_date = 1;
+  // End date in YYYY-MM-DD format (optional)
+  optional string end_date = 2;
+}
+
+message EarningsEvent {
+  string symbol = 1;
+  string name = 2;
+  string currency = 3;
+  string exchange = 4;
+  string country = 5;
+  string date = 6;
+  string time = 7;
+  double eps_estimate = 8;
+  double eps_actual = 9;
+  double revenue_estimate = 10;
+  double revenue_actual = 11;
+}
+
+message GetEarningsCalendarResponse {
+  repeated EarningsEvent earnings = 1;
+}

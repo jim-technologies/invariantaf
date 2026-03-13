@@ -1,0 +1,248 @@
+syntax = "proto3";
+
+package balldontlie.v1;
+
+// BallDontLieService provides NBA sports data from the BallDontLie API.
+service BallDontLieService {
+  // Search and list NBA players.
+  rpc ListNBAPlayers(ListNBAPlayersRequest) returns (ListNBAPlayersResponse);
+
+  // Get a single NBA player by ID.
+  rpc GetNBAPlayer(GetNBAPlayerRequest) returns (GetNBAPlayerResponse);
+
+  // List all NBA teams.
+  rpc ListNBATeams(ListNBATeamsRequest) returns (ListNBATeamsResponse);
+
+  // List NBA games with optional filters.
+  rpc ListNBAGames(ListNBAGamesRequest) returns (ListNBAGamesResponse);
+
+  // Get a single NBA game by ID.
+  rpc GetNBAGame(GetNBAGameRequest) returns (GetNBAGameResponse);
+
+  // Get NBA box-score stats with optional filters.
+  rpc GetNBAStats(GetNBAStatsRequest) returns (GetNBAStatsResponse);
+
+  // Get season averages for one or more players.
+  rpc GetNBASeasonAverages(GetNBASeasonAveragesRequest) returns (GetNBASeasonAveragesResponse);
+
+  // Get NBA standings for a season.
+  rpc ListNBAStandings(ListNBAStandingsRequest) returns (ListNBAStandingsResponse);
+}
+
+// --- Shared messages ---
+
+message NBATeam {
+  int32 id = 1;
+  string conference = 2;
+  string division = 3;
+  string city = 4;
+  string name = 5;
+  string full_name = 6;
+  string abbreviation = 7;
+}
+
+message NBAPlayer {
+  int32 id = 1;
+  string first_name = 2;
+  string last_name = 3;
+  string position = 4;
+  string height = 5;
+  string weight = 6;
+  string jersey_number = 7;
+  string college = 8;
+  string country = 9;
+  int32 draft_year = 10;
+  int32 draft_round = 11;
+  int32 draft_number = 12;
+  NBATeam team = 13;
+}
+
+message NBAGame {
+  int32 id = 1;
+  string date = 2;
+  int32 season = 3;
+  string status = 4;
+  int32 period = 5;
+  string time = 6;
+  bool postseason = 7;
+  int32 home_team_score = 8;
+  int32 visitor_team_score = 9;
+  NBATeam home_team = 10;
+  NBATeam visitor_team = 11;
+}
+
+message NBAStatLine {
+  int32 id = 1;
+  int32 min = 2;
+  int32 fgm = 3;
+  int32 fga = 4;
+  int32 fg3m = 5;
+  int32 fg3a = 6;
+  int32 ftm = 7;
+  int32 fta = 8;
+  int32 oreb = 9;
+  int32 dreb = 10;
+  int32 reb = 11;
+  int32 ast = 12;
+  int32 stl = 13;
+  int32 blk = 14;
+  int32 turnover = 15;
+  int32 pf = 16;
+  int32 pts = 17;
+  double fg_pct = 18;
+  double fg3_pct = 19;
+  double ft_pct = 20;
+  NBAPlayer player = 21;
+  NBATeam team = 22;
+  NBAGame game = 23;
+}
+
+message NBASeasonAverage {
+  int32 player_id = 1;
+  int32 season = 2;
+  int32 games_played = 3;
+  double min = 4;
+  double fgm = 5;
+  double fga = 6;
+  double fg3m = 7;
+  double fg3a = 8;
+  double ftm = 9;
+  double fta = 10;
+  double oreb = 11;
+  double dreb = 12;
+  double reb = 13;
+  double ast = 14;
+  double stl = 15;
+  double blk = 16;
+  double turnover = 17;
+  double pf = 18;
+  double pts = 19;
+  double fg_pct = 20;
+  double fg3_pct = 21;
+  double ft_pct = 22;
+}
+
+message NBAStandingRecord {
+  int32 team_id = 1;
+  NBATeam team = 2;
+  string conference = 3;
+  string division = 4;
+  int32 wins = 5;
+  int32 losses = 6;
+  int32 conference_rank = 7;
+  int32 division_rank = 8;
+  double win_pct = 9;
+}
+
+message PaginationMeta {
+  int32 next_cursor = 1;
+  int32 per_page = 2;
+}
+
+// --- ListNBAPlayers ---
+
+message ListNBAPlayersRequest {
+  // Search by player name
+  optional string search = 1;
+  // Results per page (max 100)
+  optional int32 per_page = 2;
+  // Cursor for pagination
+  optional int32 cursor = 3;
+}
+
+message ListNBAPlayersResponse {
+  repeated NBAPlayer data = 1;
+  PaginationMeta meta = 2;
+}
+
+// --- GetNBAPlayer ---
+
+message GetNBAPlayerRequest {
+  // Player ID
+  int32 id = 1;
+}
+
+message GetNBAPlayerResponse {
+  NBAPlayer data = 1;
+}
+
+// --- ListNBATeams ---
+
+message ListNBATeamsRequest {}
+
+message ListNBATeamsResponse {
+  repeated NBATeam data = 1;
+}
+
+// --- ListNBAGames ---
+
+message ListNBAGamesRequest {
+  // Filter by dates (YYYY-MM-DD)
+  repeated string dates = 1;
+  // Filter by seasons (e.g. 2024)
+  repeated int32 seasons = 2;
+  // Filter by team IDs
+  repeated int32 team_ids = 3;
+  // Results per page (max 100)
+  optional int32 per_page = 4;
+  // Cursor for pagination
+  optional int32 cursor = 5;
+}
+
+message ListNBAGamesResponse {
+  repeated NBAGame data = 1;
+  PaginationMeta meta = 2;
+}
+
+// --- GetNBAGame ---
+
+message GetNBAGameRequest {
+  // Game ID
+  int32 id = 1;
+}
+
+message GetNBAGameResponse {
+  NBAGame data = 1;
+}
+
+// --- GetNBAStats ---
+
+message GetNBAStatsRequest {
+  // Filter by game IDs
+  repeated int32 game_ids = 1;
+  // Filter by player IDs
+  repeated int32 player_ids = 2;
+  // Results per page (max 100)
+  optional int32 per_page = 3;
+  // Cursor for pagination
+  optional int32 cursor = 4;
+}
+
+message GetNBAStatsResponse {
+  repeated NBAStatLine data = 1;
+  PaginationMeta meta = 2;
+}
+
+// --- GetNBASeasonAverages ---
+
+message GetNBASeasonAveragesRequest {
+  // Season year (e.g. 2024)
+  optional int32 season = 1;
+  // Player IDs to get averages for
+  repeated int32 player_ids = 2;
+}
+
+message GetNBASeasonAveragesResponse {
+  repeated NBASeasonAverage data = 1;
+}
+
+// --- ListNBAStandings ---
+
+message ListNBAStandingsRequest {
+  // Season year (e.g. 2024)
+  optional int32 season = 1;
+}
+
+message ListNBAStandingsResponse {
+  repeated NBAStandingRecord data = 1;
+}

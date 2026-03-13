@@ -1,0 +1,1 @@
+"""PandaScore MCP package."""

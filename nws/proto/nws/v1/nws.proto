@@ -1,0 +1,204 @@
+syntax = "proto3";
+
+package nws.v1;
+
+// NwsService proxies public weather data endpoints from the US National Weather Service API.
+service NwsService {
+  // Get metadata for a geographic point (forecast office, grid coordinates, URLs).
+  rpc GetPointMetadata(GetPointMetadataRequest) returns (GetPointMetadataResponse);
+
+  // Get 7-day forecast for a location (accepts lat/lon, internally resolves grid point).
+  rpc GetForecast(GetForecastRequest) returns (GetForecastResponse);
+
+  // Get hourly forecast for a location (accepts lat/lon, internally resolves grid point).
+  rpc GetHourlyForecast(GetHourlyForecastRequest) returns (GetHourlyForecastResponse);
+
+  // Get active weather alerts for a location or state.
+  rpc GetAlerts(GetAlertsRequest) returns (GetAlertsResponse);
+
+  // Get nearby weather observation stations for a location.
+  rpc GetStations(GetStationsRequest) returns (GetStationsResponse);
+
+  // Get the latest observation from a weather station.
+  rpc GetLatestObservation(GetLatestObservationRequest) returns (GetLatestObservationResponse);
+}
+
+// --- GetPointMetadata ---
+
+message GetPointMetadataRequest {
+  // Latitude of the location.
+  double latitude = 1;
+  // Longitude of the location.
+  double longitude = 2;
+}
+
+message GetPointMetadataResponse {
+  // Forecast office identifier (e.g. "OKX").
+  string office = 1;
+  // Grid X coordinate.
+  int32 grid_x = 2;
+  // Grid Y coordinate.
+  int32 grid_y = 3;
+  // URL for the 7-day forecast.
+  string forecast_url = 4;
+  // URL for the hourly forecast.
+  string forecast_hourly_url = 5;
+  // City name for the location.
+  string city = 6;
+  // State abbreviation for the location.
+  string state = 7;
+}
+
+// --- GetForecast ---
+
+message GetForecastRequest {
+  // Latitude of the location.
+  double latitude = 1;
+  // Longitude of the location.
+  double longitude = 2;
+}
+
+message ForecastPeriod {
+  // Period name (e.g. "Tonight", "Monday").
+  string name = 1;
+  // Temperature value.
+  int32 temperature = 2;
+  // Temperature unit ("F" or "C").
+  string temperature_unit = 3;
+  // Wind speed (e.g. "10 mph").
+  string wind_speed = 4;
+  // Wind direction (e.g. "NW").
+  string wind_direction = 5;
+  // Short forecast summary.
+  string short_forecast = 6;
+  // Detailed forecast text.
+  string detailed_forecast = 7;
+  // Whether this is a daytime period.
+  bool is_daytime = 8;
+  // Start time in ISO 8601 format.
+  string start_time = 9;
+  // End time in ISO 8601 format.
+  string end_time = 10;
+}
+
+message GetForecastResponse {
+  // Forecast periods (typically 14 half-day periods covering 7 days).
+  repeated ForecastPeriod periods = 1;
+}
+
+// --- GetHourlyForecast ---
+
+message GetHourlyForecastRequest {
+  // Latitude of the location.
+  double latitude = 1;
+  // Longitude of the location.
+  double longitude = 2;
+}
+
+message GetHourlyForecastResponse {
+  // Hourly forecast periods.
+  repeated ForecastPeriod periods = 1;
+}
+
+// --- GetAlerts ---
+
+message GetAlertsRequest {
+  // Latitude of the location (used with longitude for point-based alerts).
+  optional double latitude = 1;
+  // Longitude of the location (used with latitude for point-based alerts).
+  optional double longitude = 2;
+  // State abbreviation for state-wide alerts (e.g. "TX", "NY").
+  optional string area = 3;
+}
+
+message Alert {
+  // Alert identifier.
+  string id = 1;
+  // Alert event type (e.g. "Winter Storm Warning").
+  string event = 2;
+  // Headline summary.
+  string headline = 3;
+  // Severity (e.g. "Severe", "Moderate").
+  string severity = 4;
+  // Urgency (e.g. "Immediate", "Expected").
+  string urgency = 5;
+  // Certainty (e.g. "Observed", "Likely").
+  string certainty = 6;
+  // Effective time in ISO 8601 format.
+  string effective = 7;
+  // Expiration time in ISO 8601 format.
+  string expires = 8;
+  // Full description of the alert.
+  string description = 9;
+  // Sender name.
+  string sender_name = 10;
+  // Affected areas.
+  string area_desc = 11;
+}
+
+message GetAlertsResponse {
+  // Active alerts.
+  repeated Alert alerts = 1;
+}
+
+// --- GetStations ---
+
+message GetStationsRequest {
+  // Latitude of the location.
+  double latitude = 1;
+  // Longitude of the location.
+  double longitude = 2;
+}
+
+message Station {
+  // Station identifier (e.g. "KNYC").
+  string station_id = 1;
+  // Station name.
+  string name = 2;
+  // Latitude of the station.
+  double latitude = 3;
+  // Longitude of the station.
+  double longitude = 4;
+}
+
+message GetStationsResponse {
+  // Nearby observation stations, ordered by proximity.
+  repeated Station stations = 1;
+}
+
+// --- GetLatestObservation ---
+
+message GetLatestObservationRequest {
+  // Station identifier (e.g. "KNYC").
+  string station_id = 1;
+}
+
+message ObservationValue {
+  // Numeric value (may be null/0 if not available).
+  double value = 1;
+  // Unit of measurement.
+  string unit_code = 2;
+}
+
+message GetLatestObservationResponse {
+  // Station identifier.
+  string station_id = 1;
+  // Observation timestamp in ISO 8601 format.
+  string timestamp = 2;
+  // Text description of current conditions.
+  string text_description = 3;
+  // Temperature observation.
+  ObservationValue temperature = 4;
+  // Dewpoint observation.
+  ObservationValue dewpoint = 5;
+  // Wind speed observation.
+  ObservationValue wind_speed = 6;
+  // Wind direction in degrees.
+  ObservationValue wind_direction = 7;
+  // Barometric pressure.
+  ObservationValue barometric_pressure = 8;
+  // Relative humidity percentage.
+  ObservationValue relative_humidity = 9;
+  // Visibility.
+  ObservationValue visibility = 10;
+}
