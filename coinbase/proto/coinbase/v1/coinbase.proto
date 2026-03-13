@@ -1,0 +1,273 @@
+syntax = "proto3";
+
+package coinbase.v1;
+
+option go_package = "github.com/jim-technologies/invariantaf/coinbase/proto/coinbase/v1;coinbasev1";
+
+// CoinbaseService provides read-only access to Coinbase Exchange public
+// market data via the Coinbase Exchange API.
+//
+// Coinbase Exchange exposes real-time and historical trading data for
+// cryptocurrency pairs (products). Each product is identified by a
+// hyphenated pair such as "BTC-USD" or "ETH-EUR".
+//
+// No authentication is required. The public API base URL is
+// https://api.exchange.coinbase.com.
+//
+// Use this service to list trading pairs, fetch ticker data, query
+// orderbooks, retrieve OHLCV candles, recent trades, and 24-hour
+// rolling statistics.
+service CoinbaseService {
+  // List all available trading pairs (products) on Coinbase Exchange.
+  //
+  // Returns every product including its price, 24h volume, and spread.
+  // No parameters are required.
+  //
+  // Wraps: GET /products
+  rpc ListProducts(ListProductsRequest) returns (ListProductsResponse);
+
+  // Get details for a single trading pair.
+  //
+  // Returns product metadata such as base/quote currencies, minimum
+  // order size, and trading increments.
+  //
+  // Wraps: GET /products/{product_id}
+  rpc GetProduct(GetProductRequest) returns (GetProductResponse);
+
+  // Get the latest ticker for a trading pair.
+  //
+  // Returns the most recent price, best bid/ask, and 24h volume
+  // for the specified product.
+  //
+  // Wraps: GET /products/{product_id}/ticker
+  rpc GetProductTicker(GetProductTickerRequest) returns (GetProductTickerResponse);
+
+  // Get the order book for a trading pair at level 2 detail.
+  //
+  // Returns aggregated bids and asks with price, size, and the
+  // number of orders at each level. Level 2 provides the top 50
+  // bid/ask price points.
+  //
+  // Wraps: GET /products/{product_id}/book?level=2
+  rpc GetProductOrderbook(GetProductOrderbookRequest) returns (GetProductOrderbookResponse);
+
+  // Get OHLCV candles for a trading pair.
+  //
+  // Returns historical candlestick data with open, high, low, close
+  // prices and volume. Granularity defaults to 3600 seconds (1 hour).
+  //
+  // Wraps: GET /products/{product_id}/candles?granularity=3600
+  rpc GetProductCandles(GetProductCandlesRequest) returns (GetProductCandlesResponse);
+
+  // Get recent trades for a trading pair.
+  //
+  // Returns the most recent trades for the specified product.
+  // The limit defaults to 100.
+  //
+  // Wraps: GET /products/{product_id}/trades?limit=100
+  rpc GetProductTrades(GetProductTradesRequest) returns (GetProductTradesResponse);
+
+  // Get 24-hour rolling statistics for a trading pair.
+  //
+  // Returns the open, high, low, last price, volume, and
+  // 30-day volume for the specified product.
+  //
+  // Wraps: GET /products/{product_id}/stats
+  rpc GetProductStats(GetProductStatsRequest) returns (GetProductStatsResponse);
+}
+
+// --- Request / Response messages ---
+
+// Request to list all trading pairs.
+message ListProductsRequest {}
+
+message ListProductsResponse {
+  // The list of available trading pairs.
+  repeated Product products = 1;
+}
+
+// Request to get a single product's details.
+message GetProductRequest {
+  // The product identifier (e.g. "BTC-USD"). Required.
+  string product_id = 1;
+}
+
+message GetProductResponse {
+  // The product details.
+  Product product = 1;
+}
+
+// Request to get the latest ticker for a product.
+message GetProductTickerRequest {
+  // The product identifier (e.g. "BTC-USD"). Required.
+  string product_id = 1;
+}
+
+message GetProductTickerResponse {
+  // The latest ticker data.
+  Ticker ticker = 1;
+}
+
+// Request to get the order book for a product.
+message GetProductOrderbookRequest {
+  // The product identifier (e.g. "BTC-USD"). Required.
+  string product_id = 1;
+  // Order book detail level (default 2). Level 1 returns best bid/ask,
+  // level 2 returns top 50 aggregated, level 3 returns full book.
+  int64 level = 2;
+}
+
+message GetProductOrderbookResponse {
+  // The order book data.
+  Orderbook orderbook = 1;
+}
+
+// Request to get OHLCV candles for a product.
+message GetProductCandlesRequest {
+  // The product identifier (e.g. "BTC-USD"). Required.
+  string product_id = 1;
+  // Candle granularity in seconds. Valid values: 60, 300, 900, 3600,
+  // 21600, 86400. Default: 3600 (1 hour).
+  int64 granularity = 2;
+  // Start time as an ISO 8601 timestamp string.
+  string start = 3;
+  // End time as an ISO 8601 timestamp string.
+  string end = 4;
+}
+
+message GetProductCandlesResponse {
+  // The list of OHLCV candles.
+  repeated Candle candles = 1;
+}
+
+// Request to get recent trades for a product.
+message GetProductTradesRequest {
+  // The product identifier (e.g. "BTC-USD"). Required.
+  string product_id = 1;
+  // Maximum number of trades to return. Default: 100.
+  int64 limit = 2;
+}
+
+message GetProductTradesResponse {
+  // The list of recent trades.
+  repeated Trade trades = 1;
+}
+
+// Request to get 24-hour rolling statistics for a product.
+message GetProductStatsRequest {
+  // The product identifier (e.g. "BTC-USD"). Required.
+  string product_id = 1;
+}
+
+message GetProductStatsResponse {
+  // The 24-hour rolling statistics.
+  ProductStats stats = 1;
+}
+
+// --- Domain types ---
+
+// A Coinbase Exchange trading pair.
+message Product {
+  // The product identifier (e.g. "BTC-USD").
+  string id = 1;
+  // The base currency (e.g. "BTC").
+  string base_currency = 2;
+  // The quote currency (e.g. "USD").
+  string quote_currency = 3;
+  // Minimum order size in base currency.
+  string base_min_size = 4;
+  // Maximum order size in base currency.
+  string base_max_size = 5;
+  // Step size for base currency quantities.
+  string base_increment = 6;
+  // Step size for quote currency prices.
+  string quote_increment = 7;
+  // Human-readable display name.
+  string display_name = 8;
+  // Current trading status (e.g. "online").
+  string status = 9;
+}
+
+// Real-time ticker data for a product.
+message Ticker {
+  // The trade ID of the most recent trade.
+  int64 trade_id = 1;
+  // The price of the most recent trade.
+  string price = 2;
+  // The size of the most recent trade.
+  string size = 3;
+  // The best current bid price.
+  string bid = 4;
+  // The best current ask price.
+  string ask = 5;
+  // The 24-hour trading volume.
+  string volume = 6;
+  // The timestamp of the most recent trade (ISO 8601).
+  string time = 7;
+}
+
+// Aggregated order book data.
+message Orderbook {
+  // The order book sequence number.
+  int64 sequence = 1;
+  // List of bid entries [price, size, num_orders].
+  repeated OrderbookEntry bids = 2;
+  // List of ask entries [price, size, num_orders].
+  repeated OrderbookEntry asks = 3;
+}
+
+// A single entry in the order book.
+message OrderbookEntry {
+  // The price level.
+  string price = 1;
+  // The aggregate size at this price level.
+  string size = 2;
+  // The number of orders at this price level.
+  int64 num_orders = 3;
+}
+
+// An OHLCV candlestick data point.
+message Candle {
+  // The candle start time as a Unix timestamp.
+  int64 time = 1;
+  // The lowest price during the candle period.
+  double low = 2;
+  // The highest price during the candle period.
+  double high = 3;
+  // The opening price.
+  double open = 4;
+  // The closing price.
+  double close = 5;
+  // The trading volume during the candle period.
+  double volume = 6;
+}
+
+// A single trade execution.
+message Trade {
+  // The trade timestamp (ISO 8601).
+  string time = 1;
+  // The unique trade ID.
+  int64 trade_id = 2;
+  // The price at which the trade executed.
+  string price = 3;
+  // The amount traded.
+  string size = 4;
+  // The side of the taker: "buy" or "sell".
+  string side = 5;
+}
+
+// 24-hour rolling statistics for a product.
+message ProductStats {
+  // The opening price (24 hours ago).
+  string open = 1;
+  // The highest price in the last 24 hours.
+  string high = 2;
+  // The lowest price in the last 24 hours.
+  string low = 3;
+  // The last traded price.
+  string last = 4;
+  // The 24-hour trading volume.
+  string volume = 5;
+  // The 30-day trading volume.
+  string volume_30day = 6;
+}

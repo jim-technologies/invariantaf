@@ -1,0 +1,274 @@
+syntax = "proto3";
+
+package theoddsapi.v1;
+
+option go_package = "github.com/jim-technologies/invariantaf/theoddsapi/proto/theoddsapi/v1;theoddsapiv1";
+
+// TheOddsApiService provides read-only access to The Odds API, which
+// aggregates real-time and historical sports betting odds from 20+
+// bookmakers worldwide.
+//
+// Authentication is via API key passed as a query parameter. Set the
+// ODDS_API_KEY environment variable. Free tier allows 500 requests/month.
+//
+// Base URL: https://api.the-odds-api.com/v4
+//
+// Use this service to list available sports, fetch live odds from
+// multiple bookmakers, retrieve scores, query upcoming events, get
+// odds for a specific event, and access historical odds snapshots.
+// Comparing bookmaker odds reveals mispriced prediction market contracts
+// on platforms like Kalshi and Polymarket.
+service TheOddsApiService {
+  // List all available sports and leagues.
+  //
+  // Returns every sport/league that currently has odds available,
+  // including the sport key, title, and whether it is currently
+  // in season.
+  //
+  // Wraps: GET /sports
+  rpc ListSports(ListSportsRequest) returns (ListSportsResponse);
+
+  // Get odds from multiple bookmakers for a given sport.
+  //
+  // Returns head-to-head (moneyline), spread, and totals odds across
+  // all available bookmakers for upcoming events in the specified sport.
+  // Useful for comparing lines across books and identifying value.
+  //
+  // Wraps: GET /sports/{sport}/odds
+  rpc GetOdds(GetOddsRequest) returns (GetOddsResponse);
+
+  // Get live and recently completed scores for a given sport.
+  //
+  // Returns current scores for in-progress games and final scores
+  // for recently completed games. The daysFrom parameter controls
+  // how far back to include completed games.
+  //
+  // Wraps: GET /sports/{sport}/scores
+  rpc GetScores(GetScoresRequest) returns (GetScoresResponse);
+
+  // Get upcoming events for a given sport.
+  //
+  // Returns a list of upcoming events/games including teams,
+  // start times, and event identifiers that can be used with
+  // GetEventOdds.
+  //
+  // Wraps: GET /sports/{sport}/events
+  rpc GetEvents(GetEventsRequest) returns (GetEventsResponse);
+
+  // Get odds for a specific event from multiple bookmakers.
+  //
+  // Returns odds from all available bookmakers for a single event,
+  // identified by sport and event ID. Useful for deep-diving into
+  // a particular matchup.
+  //
+  // Wraps: GET /sports/{sport}/events/{eventId}/odds
+  rpc GetEventOdds(GetEventOddsRequest) returns (GetEventOddsResponse);
+
+  // Get a historical odds snapshot for a given sport and date.
+  //
+  // Returns odds as they were at a specific point in time. Useful
+  // for backtesting strategies, analyzing line movements, and
+  // comparing historical bookmaker pricing.
+  //
+  // Wraps: GET /sports/{sport}/odds-history
+  rpc GetHistoricalOdds(GetHistoricalOddsRequest) returns (GetHistoricalOddsResponse);
+}
+
+// --- Request / Response messages ---
+
+// Request to list all available sports.
+message ListSportsRequest {}
+
+message ListSportsResponse {
+  // The list of available sports/leagues.
+  repeated Sport sports = 1;
+}
+
+// Request to get odds for a sport.
+message GetOddsRequest {
+  // The sport key (e.g. "americanfootball_nfl", "basketball_nba"). Required.
+  string sport = 1;
+  // Comma-separated regions for bookmakers (e.g. "us", "us,uk"). Defaults to "us".
+  string regions = 2;
+  // Comma-separated markets to return (e.g. "h2h", "h2h,spreads,totals"). Defaults to "h2h,spreads,totals".
+  string markets = 3;
+}
+
+message GetOddsResponse {
+  // The list of events with odds from multiple bookmakers.
+  repeated EventOdds events = 1;
+}
+
+// Request to get scores for a sport.
+message GetScoresRequest {
+  // The sport key (e.g. "americanfootball_nfl"). Required.
+  string sport = 1;
+  // Number of days in the past to include completed games (1-3). Defaults to 1.
+  int64 days_from = 2;
+}
+
+message GetScoresResponse {
+  // The list of events with score data.
+  repeated EventScore events = 1;
+}
+
+// Request to get upcoming events for a sport.
+message GetEventsRequest {
+  // The sport key (e.g. "americanfootball_nfl"). Required.
+  string sport = 1;
+}
+
+message GetEventsResponse {
+  // The list of upcoming events.
+  repeated Event events = 1;
+}
+
+// Request to get odds for a specific event.
+message GetEventOddsRequest {
+  // The sport key (e.g. "americanfootball_nfl"). Required.
+  string sport = 1;
+  // The event ID. Required.
+  string event_id = 2;
+  // Comma-separated regions for bookmakers. Defaults to "us".
+  string regions = 3;
+  // Comma-separated markets to return. Defaults to "h2h".
+  string markets = 4;
+}
+
+message GetEventOddsResponse {
+  // The event with odds from multiple bookmakers.
+  EventOdds event = 1;
+}
+
+// Request to get historical odds for a sport.
+message GetHistoricalOddsRequest {
+  // The sport key (e.g. "americanfootball_nfl"). Required.
+  string sport = 1;
+  // The ISO 8601 date for the historical snapshot (e.g. "2024-01-15T00:00:00Z"). Required.
+  string date = 2;
+  // Comma-separated regions for bookmakers. Defaults to "us".
+  string regions = 3;
+  // Comma-separated markets to return. Defaults to "h2h".
+  string markets = 4;
+}
+
+message GetHistoricalOddsResponse {
+  // The timestamp of the odds snapshot.
+  string timestamp = 1;
+  // The list of events with historical odds.
+  repeated EventOdds events = 2;
+}
+
+// --- Domain types ---
+
+// A sport or league available on The Odds API.
+message Sport {
+  // Unique sport key (e.g. "americanfootball_nfl").
+  string key = 1;
+  // Whether the sport is currently active/in-season.
+  bool active = 2;
+  // The sport group (e.g. "American Football").
+  string group = 3;
+  // Human-readable title (e.g. "NFL").
+  string title = 4;
+  // Description of the sport/league.
+  string description = 5;
+  // Whether this entry has outrights (futures) markets.
+  bool has_outrights = 6;
+}
+
+// An event with odds from multiple bookmakers.
+message EventOdds {
+  // Unique event identifier.
+  string id = 1;
+  // The sport key.
+  string sport_key = 2;
+  // The sport title.
+  string sport_title = 3;
+  // The scheduled start time (ISO 8601).
+  string commence_time = 4;
+  // The home team name.
+  string home_team = 5;
+  // The away team name.
+  string away_team = 6;
+  // Odds from each bookmaker.
+  repeated Bookmaker bookmakers = 7;
+}
+
+// A single bookmaker's odds for an event.
+message Bookmaker {
+  // The bookmaker key (e.g. "draftkings", "fanduel").
+  string key = 1;
+  // Human-readable bookmaker name.
+  string title = 2;
+  // When these odds were last updated (ISO 8601).
+  string last_update = 3;
+  // The markets offered by this bookmaker for this event.
+  repeated Market markets = 4;
+}
+
+// A betting market (e.g. h2h, spreads, totals).
+message Market {
+  // The market key (e.g. "h2h", "spreads", "totals").
+  string key = 1;
+  // When this market was last updated (ISO 8601).
+  string last_update = 2;
+  // The outcomes/selections in this market.
+  repeated Outcome outcomes = 3;
+}
+
+// A single outcome/selection within a market.
+message Outcome {
+  // The outcome name (e.g. team name, "Over", "Under").
+  string name = 1;
+  // The decimal odds price.
+  double price = 2;
+  // The point spread or total line (if applicable).
+  double point = 3;
+}
+
+// An event with score information.
+message EventScore {
+  // Unique event identifier.
+  string id = 1;
+  // The sport key.
+  string sport_key = 2;
+  // The sport title.
+  string sport_title = 3;
+  // The scheduled start time (ISO 8601).
+  string commence_time = 4;
+  // Whether the game has been completed.
+  bool completed = 5;
+  // The home team name.
+  string home_team = 6;
+  // The away team name.
+  string away_team = 7;
+  // The scores for each team.
+  repeated Score scores = 8;
+  // When this score was last updated (ISO 8601).
+  string last_update = 9;
+}
+
+// A team's score in an event.
+message Score {
+  // The team name.
+  string name = 1;
+  // The team's score as a string (to handle various formats).
+  string score = 2;
+}
+
+// An upcoming event.
+message Event {
+  // Unique event identifier.
+  string id = 1;
+  // The sport key.
+  string sport_key = 2;
+  // The sport title.
+  string sport_title = 3;
+  // The scheduled start time (ISO 8601).
+  string commence_time = 4;
+  // The home team name.
+  string home_team = 5;
+  // The away team name.
+  string away_team = 6;
+}

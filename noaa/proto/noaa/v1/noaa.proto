@@ -1,0 +1,290 @@
+syntax = "proto3";
+
+package noaa.v1;
+
+option go_package = "github.com/jim-technologies/invariantaf/noaa/proto/noaa/v1;noaav1";
+
+// NOAAService provides access to NOAA (National Oceanic and Atmospheric
+// Administration) weather and climate data via the National Weather Service
+// (NWS) public API and the Climate Data Online (CDO) API.
+//
+// This service is useful for trading weather prediction markets (e.g. Kalshi
+// daily temperature records, hurricane landfalls) by providing authoritative
+// US weather forecasts, real-time observations, active alerts, and historical
+// climate data.
+//
+// The NWS API (api.weather.gov) does not require authentication but requires
+// a User-Agent header. The CDO API (ncdc.noaa.gov) requires an API token
+// set via the NOAA_API_TOKEN environment variable.
+service NOAAService {
+  // Get a detailed forecast for a specific NWS grid point.
+  //
+  // Returns multi-day forecast periods with temperature, wind, and
+  // detailed text descriptions. Use GetPointInfo first to resolve
+  // lat/lon coordinates into office/gridX/gridY values.
+  //
+  // Wraps: GET /gridpoints/{office}/{gridX},{gridY}/forecast
+  rpc GetForecast(GetForecastRequest) returns (GetForecastResponse);
+
+  // Get the latest weather observation from a specific station.
+  //
+  // Returns the most recent observation including temperature,
+  // wind speed/direction, humidity, barometric pressure, and
+  // weather description. Use GetStations to find station IDs.
+  //
+  // Wraps: GET /stations/{stationId}/observations/latest
+  rpc GetForecastByStation(GetForecastByStationRequest) returns (GetForecastByStationResponse);
+
+  // Get an hourly forecast for a specific NWS grid point.
+  //
+  // Returns hour-by-hour forecast data with temperature, wind,
+  // precipitation probability, and short descriptions. More granular
+  // than GetForecast. Use GetPointInfo first to resolve coordinates.
+  //
+  // Wraps: GET /gridpoints/{office}/{gridX},{gridY}/forecast/hourly
+  rpc GetHourlyForecast(GetHourlyForecastRequest) returns (GetHourlyForecastResponse);
+
+  // Get active weather alerts for a US state.
+  //
+  // Returns all currently active NWS alerts including watches,
+  // warnings, and advisories. Useful for tracking severe weather
+  // events relevant to prediction markets.
+  //
+  // Wraps: GET /alerts/active?area={state}
+  rpc GetAlerts(GetAlertsRequest) returns (GetAlertsResponse);
+
+  // Find weather stations in a US state.
+  //
+  // Returns a list of NWS observation stations with their IDs,
+  // names, and coordinates. Station IDs can be used with
+  // GetForecastByStation to get current observations.
+  //
+  // Wraps: GET /stations?state={state}&limit=10
+  rpc GetStations(GetStationsRequest) returns (GetStationsResponse);
+
+  // Get NWS grid point and station info from latitude/longitude.
+  //
+  // Resolves geographic coordinates into the NWS office, grid
+  // coordinates, and nearest station needed for forecast lookups.
+  // Call this first to get parameters for GetForecast and
+  // GetHourlyForecast.
+  //
+  // Wraps: GET /points/{lat},{lon}
+  rpc GetPointInfo(GetPointInfoRequest) returns (GetPointInfoResponse);
+
+  // Get historical daily climate observations from NOAA CDO.
+  //
+  // Returns daily high/low temperature records (TMAX/TMIN) from
+  // the GHCND dataset. Requires NOAA_API_TOKEN environment variable.
+  // Useful for verifying temperature records in prediction markets.
+  //
+  // Wraps: GET /cdo-web/api/v2/data?datasetid=GHCND&...
+  rpc GetClimateData(GetClimateDataRequest) returns (GetClimateDataResponse);
+}
+
+// --- Request / Response messages ---
+
+// Request to get a detailed forecast for a grid point.
+message GetForecastRequest {
+  // NWS office identifier (e.g. "TOP", "OKX", "LOT"). Required.
+  string office = 1;
+  // Grid X coordinate from GetPointInfo. Required.
+  int64 grid_x = 2;
+  // Grid Y coordinate from GetPointInfo. Required.
+  int64 grid_y = 3;
+}
+
+message GetForecastResponse {
+  // The forecast periods (e.g. "Tonight", "Monday", "Monday Night").
+  repeated ForecastPeriod periods = 1;
+}
+
+// Request to get the latest observation from a station.
+message GetForecastByStationRequest {
+  // NWS station identifier (e.g. "KJFK", "KORD", "KLAX"). Required.
+  string station_id = 1;
+}
+
+message GetForecastByStationResponse {
+  // The latest weather observation from the station.
+  Observation observation = 1;
+}
+
+// Request to get an hourly forecast for a grid point.
+message GetHourlyForecastRequest {
+  // NWS office identifier (e.g. "TOP", "OKX"). Required.
+  string office = 1;
+  // Grid X coordinate from GetPointInfo. Required.
+  int64 grid_x = 2;
+  // Grid Y coordinate from GetPointInfo. Required.
+  int64 grid_y = 3;
+}
+
+message GetHourlyForecastResponse {
+  // The hourly forecast periods.
+  repeated ForecastPeriod periods = 1;
+}
+
+// Request to get active weather alerts by state.
+message GetAlertsRequest {
+  // Two-letter US state abbreviation (e.g. "NY", "CA", "TX"). Required.
+  string state = 1;
+}
+
+message GetAlertsResponse {
+  // The list of active weather alerts.
+  repeated Alert alerts = 1;
+}
+
+// Request to find weather stations in a state.
+message GetStationsRequest {
+  // Two-letter US state abbreviation (e.g. "NY", "CA", "TX"). Required.
+  string state = 1;
+  // Maximum number of stations to return (default 10).
+  int64 limit = 2;
+}
+
+message GetStationsResponse {
+  // The list of weather stations.
+  repeated Station stations = 1;
+}
+
+// Request to get grid point info from coordinates.
+message GetPointInfoRequest {
+  // Latitude in decimal degrees (e.g. 40.7128). Required.
+  double lat = 1;
+  // Longitude in decimal degrees (e.g. -74.0060). Required.
+  double lon = 2;
+}
+
+message GetPointInfoResponse {
+  // The point metadata including grid and station info.
+  PointInfo point_info = 1;
+}
+
+// Request to get historical climate data from NOAA CDO.
+message GetClimateDataRequest {
+  // GHCND station identifier (e.g. "GHCND:USW00094728"). Required.
+  string station = 1;
+  // Start date in YYYY-MM-DD format. Required.
+  string start_date = 2;
+  // End date in YYYY-MM-DD format. Required.
+  string end_date = 3;
+}
+
+message GetClimateDataResponse {
+  // The list of climate observations.
+  repeated ClimateObservation observations = 1;
+}
+
+// --- Domain types ---
+
+// A single forecast period (e.g. "Tonight", "Monday").
+message ForecastPeriod {
+  // Period name (e.g. "Tonight", "Monday", "Monday Night").
+  string name = 1;
+  // Temperature value in the forecast unit.
+  double temperature = 2;
+  // Temperature unit ("F" or "C").
+  string temperature_unit = 3;
+  // Wind speed description (e.g. "5 to 10 mph").
+  string wind_speed = 4;
+  // Wind direction (e.g. "NW", "SSE").
+  string wind_direction = 5;
+  // Short forecast summary.
+  string short_forecast = 6;
+  // Detailed forecast text.
+  string detailed_forecast = 7;
+  // Whether this is a daytime period.
+  bool is_daytime = 8;
+  // Start time of this period (ISO 8601).
+  string start_time = 9;
+  // End time of this period (ISO 8601).
+  string end_time = 10;
+}
+
+// A weather observation from a station.
+message Observation {
+  // Station identifier.
+  string station_id = 1;
+  // Observation timestamp (ISO 8601).
+  string timestamp = 2;
+  // Text description of current conditions.
+  string text_description = 3;
+  // Temperature in Celsius.
+  double temperature_celsius = 4;
+  // Wind speed in km/h.
+  double wind_speed_kmh = 5;
+  // Wind direction in degrees.
+  double wind_direction_degrees = 6;
+  // Barometric pressure in Pascals.
+  double barometric_pressure_pa = 7;
+  // Relative humidity as a percentage.
+  double relative_humidity = 8;
+  // Visibility in meters.
+  double visibility_meters = 9;
+}
+
+// An active weather alert.
+message Alert {
+  // Alert identifier.
+  string id = 1;
+  // Alert event type (e.g. "Tornado Warning", "Heat Advisory").
+  string event = 2;
+  // Severity level (e.g. "Extreme", "Severe", "Moderate").
+  string severity = 3;
+  // Urgency level (e.g. "Immediate", "Expected").
+  string urgency = 4;
+  // Certainty level (e.g. "Observed", "Likely").
+  string certainty = 5;
+  // Headline summary.
+  string headline = 6;
+  // Detailed alert description.
+  string description = 7;
+  // Affected area description.
+  string area_desc = 8;
+  // Alert effective time (ISO 8601).
+  string effective = 9;
+  // Alert expiration time (ISO 8601).
+  string expires = 10;
+}
+
+// A weather observation station.
+message Station {
+  // Station identifier (e.g. "KJFK").
+  string station_id = 1;
+  // Station name (e.g. "New York City, John F. Kennedy International Airport").
+  string name = 2;
+  // Latitude in decimal degrees.
+  double latitude = 3;
+  // Longitude in decimal degrees.
+  double longitude = 4;
+}
+
+// Grid point and station metadata for a geographic location.
+message PointInfo {
+  // NWS office identifier (e.g. "OKX").
+  string office = 1;
+  // Grid X coordinate for forecast lookups.
+  int64 grid_x = 2;
+  // Grid Y coordinate for forecast lookups.
+  int64 grid_y = 3;
+  // Nearest observation station ID.
+  string station_id = 4;
+  // City name.
+  string city = 5;
+  // State abbreviation.
+  string state = 6;
+}
+
+// A single daily climate observation from the GHCND dataset.
+message ClimateObservation {
+  // Observation date (YYYY-MM-DD).
+  string date = 1;
+  // Data type (e.g. "TMAX", "TMIN").
+  string datatype = 2;
+  // Station identifier.
+  string station = 3;
+  // Observed value (tenths of degrees Celsius for temperature).
+  double value = 4;
+}

@@ -1,0 +1,1 @@
+"""GeckoTerminal MCP package."""

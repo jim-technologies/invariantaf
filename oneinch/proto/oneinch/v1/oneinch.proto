@@ -1,0 +1,210 @@
+syntax = "proto3";
+
+package oneinch.v1;
+
+// OneInchService provides access to the 1inch DEX aggregator API,
+// which aggregates across 400+ decentralized exchange sources to find
+// the best swap prices across multiple blockchain networks.
+//
+// All endpoints require an API key set via the ONEINCH_API_KEY environment
+// variable. Free keys are available at https://portal.1inch.dev/.
+//
+// Supported chains: Ethereum (1), BSC (56), Polygon (137), Arbitrum (42161),
+// Optimism (10), Base (8453), Avalanche (43114), and more.
+//
+// Use this for arbitrage detection, optimal trade execution, portfolio
+// tracking, and token discovery across DeFi.
+service OneInchService {
+
+  // Get a swap quote for a token pair on a specific chain.
+  //
+  // Returns the estimated output amount and gas cost for swapping
+  // a given amount of source token to destination token. Does NOT
+  // build a transaction — use GetSwap for that. Use this to compare
+  // prices, estimate slippage, and evaluate trade opportunities.
+  // Token addresses should be checksummed ERC-20 addresses, or
+  // 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE for the native token.
+  rpc GetQuote(GetQuoteRequest) returns (GetQuoteResponse);
+
+  // Build a swap transaction for a token pair on a specific chain.
+  //
+  // Returns a fully-formed transaction (to, data, value, gas) ready
+  // to be signed and broadcast. Requires the sender address and
+  // slippage tolerance. Use this when you want to actually execute
+  // a swap on-chain after confirming the quote.
+  rpc GetSwap(GetSwapRequest) returns (GetSwapResponse);
+
+  // Get spot token prices in USD on a specific chain.
+  //
+  // Returns current USD prices for one or more tokens on a given chain.
+  // Pass a comma-separated list of token contract addresses. Use this
+  // for portfolio valuation, price feeds, and arbitrage detection.
+  rpc GetTokenPrice(GetTokenPriceRequest) returns (GetTokenPriceResponse);
+
+  // Get detailed information about a token by its contract address.
+  //
+  // Returns token metadata including name, symbol, decimals, and logo.
+  // Use this to look up token details before executing swaps or
+  // displaying token information in a UI.
+  rpc GetTokenInfo(GetTokenInfoRequest) returns (GetTokenInfoResponse);
+
+  // Search for tokens by name or symbol on a specific chain.
+  //
+  // Returns matching tokens with their contract addresses, names,
+  // symbols, and decimals. Use this to discover token addresses
+  // when you only know the name or ticker symbol.
+  rpc SearchTokens(SearchTokensRequest) returns (SearchTokensResponse);
+
+  // Get all token balances for a wallet address on a specific chain.
+  //
+  // Returns a map of token contract addresses to their raw balances
+  // (in smallest unit / wei). Use this to check wallet holdings,
+  // monitor portfolio positions, and find tokens available for swapping.
+  rpc GetBalances(GetBalancesRequest) returns (GetBalancesResponse);
+}
+
+// --- Domain types ---
+
+message TokenInfo {
+  // Contract address of the token.
+  string address = 1;
+  // Token symbol (e.g., "USDC", "WETH").
+  string symbol = 2;
+  // Full token name.
+  string name = 3;
+  // Number of decimals (e.g., 18 for ETH, 6 for USDC).
+  int32 decimals = 4;
+  // URL to the token's logo image.
+  string logo_uri = 5;
+  // Tags associated with the token (e.g., "stablecoin", "defi").
+  repeated string tags = 6;
+}
+
+message SwapTransaction {
+  // Address of the 1inch router contract to send the transaction to.
+  string to = 1;
+  // Encoded transaction calldata.
+  string data = 2;
+  // Native token value to send (in wei), as a decimal string.
+  string value = 3;
+  // Estimated gas limit for the transaction.
+  int64 gas = 4;
+  // Gas price in wei, as a decimal string.
+  string gas_price = 5;
+}
+
+message TokenBalance {
+  // Contract address of the token.
+  string address = 1;
+  // Raw balance in smallest unit (wei), as a decimal string.
+  string balance = 2;
+}
+
+message TokenPrice {
+  // Contract address of the token.
+  string address = 1;
+  // Price in USD.
+  double price_usd = 2;
+}
+
+// --- Request / Response messages ---
+
+message GetQuoteRequest {
+  // Chain ID (e.g., 1 for Ethereum, 137 for Polygon).
+  int32 chain_id = 1;
+  // Source token contract address.
+  string src = 2;
+  // Destination token contract address.
+  string dst = 3;
+  // Amount of source token to swap, in smallest unit (wei), as a decimal string.
+  string amount = 4;
+}
+
+message GetQuoteResponse {
+  // Source token address.
+  string src_token = 1;
+  // Destination token address.
+  string dst_token = 2;
+  // Amount of source token (in wei), as a decimal string.
+  string src_amount = 3;
+  // Estimated output amount of destination token (in wei), as a decimal string.
+  string dst_amount = 4;
+  // Estimated gas cost for the swap.
+  int64 gas = 5;
+}
+
+message GetSwapRequest {
+  // Chain ID (e.g., 1 for Ethereum, 137 for Polygon).
+  int32 chain_id = 1;
+  // Source token contract address.
+  string src = 2;
+  // Destination token contract address.
+  string dst = 3;
+  // Amount of source token to swap, in smallest unit (wei), as a decimal string.
+  string amount = 4;
+  // Wallet address that will execute the swap.
+  string from = 5;
+  // Maximum acceptable slippage percentage (e.g., 1 for 1%).
+  double slippage = 6;
+}
+
+message GetSwapResponse {
+  // Source token address.
+  string src_token = 1;
+  // Destination token address.
+  string dst_token = 2;
+  // Amount of source token (in wei), as a decimal string.
+  string src_amount = 3;
+  // Estimated output amount of destination token (in wei), as a decimal string.
+  string dst_amount = 4;
+  // The transaction object ready to be signed and broadcast.
+  SwapTransaction tx = 5;
+}
+
+message GetTokenPriceRequest {
+  // Chain ID (e.g., 1 for Ethereum, 137 for Polygon).
+  int32 chain_id = 1;
+  // Comma-separated list of token contract addresses to get prices for.
+  string tokens = 2;
+  // Currency to quote prices in (default: "USD").
+  string currency = 3;
+}
+
+message GetTokenPriceResponse {
+  // Token prices keyed by contract address.
+  repeated TokenPrice prices = 1;
+}
+
+message GetTokenInfoRequest {
+  // Chain ID (e.g., 1 for Ethereum, 137 for Polygon).
+  int32 chain_id = 1;
+  // Token contract address.
+  string address = 2;
+}
+
+message GetTokenInfoResponse {
+  TokenInfo token = 1;
+}
+
+message SearchTokensRequest {
+  // Chain ID (e.g., 1 for Ethereum, 137 for Polygon).
+  int32 chain_id = 1;
+  // Search query (token name or symbol).
+  string query = 2;
+}
+
+message SearchTokensResponse {
+  repeated TokenInfo tokens = 1;
+}
+
+message GetBalancesRequest {
+  // Chain ID (e.g., 1 for Ethereum, 137 for Polygon).
+  int32 chain_id = 1;
+  // Wallet address to check balances for.
+  string address = 2;
+}
+
+message GetBalancesResponse {
+  // Token balances keyed by contract address.
+  repeated TokenBalance balances = 1;
+}

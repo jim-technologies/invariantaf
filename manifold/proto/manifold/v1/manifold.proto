@@ -1,0 +1,183 @@
+syntax = "proto3";
+
+package manifold.v1;
+
+import "google/api/annotations.proto";
+
+// ManifoldService proxies public read-only endpoints from the Manifold Markets API.
+service ManifoldService {
+  // List markets with optional pagination and sorting.
+  rpc ListMarkets(ListMarketsRequest) returns (ListMarketsResponse) {
+    option (google.api.http) = {
+      get: "/markets"
+      response_body: "data"
+    };
+  }
+
+  // Get a single market by id.
+  rpc GetMarket(GetMarketRequest) returns (GetMarketResponse) {
+    option (google.api.http) = {
+      get: "/market/{market_id}"
+      response_body: "data"
+    };
+  }
+
+  // Get a single market by slug.
+  rpc GetMarketBySlug(GetMarketBySlugRequest) returns (GetMarketBySlugResponse) {
+    option (google.api.http) = {
+      get: "/slug/{slug}"
+      response_body: "data"
+    };
+  }
+
+  // Search markets by text query with filters.
+  rpc SearchMarkets(SearchMarketsRequest) returns (SearchMarketsResponse) {
+    option (google.api.http) = {
+      get: "/search-markets"
+      response_body: "data"
+    };
+  }
+
+  // Get positions for a market.
+  rpc GetMarketPositions(GetMarketPositionsRequest) returns (GetMarketPositionsResponse) {
+    option (google.api.http) = {
+      get: "/market/{market_id}/positions"
+      response_body: "data"
+    };
+  }
+
+  // Get a user by id.
+  rpc GetUser(GetUserRequest) returns (GetUserResponse) {
+    option (google.api.http) = {
+      get: "/user/{user_id}"
+      response_body: "data"
+    };
+  }
+
+  // Get a user by username.
+  rpc GetUserByUsername(GetUserByUsernameRequest) returns (GetUserByUsernameResponse) {
+    option (google.api.http) = {
+      get: "/user/by-username/{username}"
+      response_body: "data"
+    };
+  }
+}
+
+// --- Request / Response messages ---
+
+message ListMarketsRequest {
+  int32 limit = 1;
+  string before = 2;
+  string sort = 3;
+  string order = 4;
+}
+
+message ListMarketsResponse {
+  repeated Market data = 1;
+}
+
+message GetMarketRequest {
+  string market_id = 1;
+}
+
+message GetMarketResponse {
+  Market data = 1;
+}
+
+message GetMarketBySlugRequest {
+  string slug = 1;
+}
+
+message GetMarketBySlugResponse {
+  Market data = 1;
+}
+
+message SearchMarketsRequest {
+  string term = 1;
+  string sort = 2;
+  string filter = 3;
+  int32 limit = 4;
+  int32 offset = 5;
+}
+
+message SearchMarketsResponse {
+  repeated Market data = 1;
+}
+
+message GetMarketPositionsRequest {
+  string market_id = 1;
+  string order = 2;
+  int32 top = 3;
+  int32 bottom = 4;
+  string user_id = 5;
+}
+
+message GetMarketPositionsResponse {
+  repeated ContractPosition data = 1;
+}
+
+message GetUserRequest {
+  string user_id = 1;
+}
+
+message GetUserResponse {
+  User data = 1;
+}
+
+message GetUserByUsernameRequest {
+  string username = 1;
+}
+
+message GetUserByUsernameResponse {
+  User data = 1;
+}
+
+// --- Domain messages ---
+
+message Pool {
+  double YES = 1;
+  double NO = 2;
+}
+
+message Market {
+  string id = 1;
+  string question = 2;
+  string url = 3;
+  string creator_id = 4;
+  string creator_username = 5;
+  int64 created_time = 6;
+  int64 close_time = 7;
+  string mechanism = 8;
+  string outcome_type = 9;
+  double probability = 10;
+  Pool pool = 11;
+  double volume = 12;
+  double volume24_hours = 13;
+  double total_liquidity = 14;
+  bool is_resolved = 15;
+  string resolution = 16;
+  int32 unique_bettor_count = 17;
+  int64 last_bet_time = 18;
+  int64 last_comment_time = 19;
+  string description_text = 20;
+}
+
+message ContractPosition {
+  bool has_yes_shares = 1;
+  bool has_no_shares = 2;
+  double yes_shares = 3;
+  double no_shares = 4;
+  double profit = 5;
+  string user_id = 6;
+  string user_name = 7;
+}
+
+message User {
+  string id = 1;
+  string name = 2;
+  string username = 3;
+  string avatar_url = 4;
+  double balance = 5;
+  double total_deposits = 6;
+  double profit = 7;
+}

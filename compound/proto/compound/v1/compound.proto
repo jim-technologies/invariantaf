@@ -1,0 +1,156 @@
+syntax = "proto3";
+
+package compound.v1;
+
+// CompoundService provides Compound Finance protocol data from the
+// public Compound v2 API, a major DeFi lending protocol on Ethereum.
+//
+// All endpoints are **free and require no authentication**.
+// Data covers cToken markets, historical rates, and governance proposals.
+//
+// Use this to monitor lending/borrowing rates, track market history,
+// and follow governance activity on the Compound protocol.
+service CompoundService {
+
+  // List all cTokens with current market data.
+  //
+  // Returns every cToken market on Compound including supply/borrow rates,
+  // total supply, total borrows, reserves, collateral factor, and
+  // underlying token information.
+  // Use this to discover lending markets, compare supply/borrow APYs,
+  // and assess market liquidity.
+  rpc ListCTokens(ListCTokensRequest) returns (ListCTokensResponse);
+
+  // Get historical market data for a specific asset.
+  //
+  // Returns historical supply/borrow rates and market data points
+  // over time for a specific cToken identified by its underlying
+  // asset contract address.
+  // Use this for rate trend analysis and historical performance tracking.
+  rpc GetMarketHistory(GetMarketHistoryRequest) returns (GetMarketHistoryResponse);
+
+  // List governance proposals.
+  //
+  // Returns Compound governance proposals including title, description,
+  // status, vote counts, and timing information.
+  // Use this to track protocol governance activity and proposal outcomes.
+  rpc ListProposals(ListProposalsRequest) returns (ListProposalsResponse);
+}
+
+// --- Domain types ---
+
+message CToken {
+  // cToken contract address.
+  string address = 1;
+  // cToken name (e.g., "Compound Dai").
+  string name = 2;
+  // cToken symbol (e.g., "cDAI").
+  string symbol = 3;
+  // Underlying token information.
+  UnderlyingToken underlying = 4;
+  // Current supply rate as APY (annualized, e.g., 0.032 = 3.2%).
+  double supply_rate_apy = 5;
+  // Current borrow rate as APY (annualized, e.g., 0.055 = 5.5%).
+  double borrow_rate_apy = 6;
+  // Total supply in underlying token units (as string for precision).
+  string total_supply = 7;
+  // Total borrows in underlying token units (as string for precision).
+  string total_borrows = 8;
+  // Protocol reserves in underlying token units (as string for precision).
+  string reserves = 9;
+  // Cash held by the cToken contract (as string for precision).
+  string cash = 10;
+  // Collateral factor (e.g., 0.75 = 75% of value can be borrowed against).
+  double collateral_factor = 11;
+  // Exchange rate between cToken and underlying.
+  double exchange_rate = 12;
+  // Number of addresses supplying to this market.
+  int32 number_of_suppliers = 13;
+  // Number of addresses borrowing from this market.
+  int32 number_of_borrowers = 14;
+  // Reserve factor (fraction of interest that goes to reserves).
+  double reserve_factor = 15;
+  // Borrow cap (as string for precision, "0" if unlimited).
+  string borrow_cap = 16;
+}
+
+message UnderlyingToken {
+  // Underlying token contract address.
+  string address = 1;
+  // Token name (e.g., "Dai").
+  string name = 2;
+  // Token symbol (e.g., "DAI").
+  string symbol = 3;
+  // Token decimals.
+  int32 decimals = 4;
+  // Price in USD.
+  double price_usd = 5;
+}
+
+message MarketHistoryPoint {
+  // Block number.
+  int64 block_number = 1;
+  // Block timestamp (unix seconds).
+  int64 block_timestamp = 2;
+  // Supply rate at this point (annualized).
+  double supply_rate = 3;
+  // Borrow rate at this point (annualized).
+  double borrow_rate = 4;
+  // Total supply in underlying units (as string for precision).
+  string total_supply = 5;
+  // Total borrows in underlying units (as string for precision).
+  string total_borrows = 6;
+}
+
+message Proposal {
+  // Proposal ID.
+  int32 id = 1;
+  // Proposal title.
+  string title = 2;
+  // Proposal description.
+  string description = 3;
+  // Current state (e.g., "Active", "Succeeded", "Executed", "Defeated").
+  string state = 4;
+  // Address of the proposer.
+  string proposer = 5;
+  // Number of votes for.
+  string for_votes = 6;
+  // Number of votes against.
+  string against_votes = 7;
+  // Block number when voting starts.
+  int64 start_block = 8;
+  // Block number when voting ends.
+  int64 end_block = 9;
+  // Creation timestamp (unix seconds).
+  int64 created_at = 10;
+}
+
+// --- Request / Response messages ---
+
+message ListCTokensRequest {}
+
+message ListCTokensResponse {
+  repeated CToken ctokens = 1;
+}
+
+message GetMarketHistoryRequest {
+  // Underlying asset contract address (e.g., "0x6B17...1d0F" for DAI).
+  string asset = 1;
+  // Minimum block timestamp to return data from (unix seconds, optional).
+  int64 min_block_timestamp = 2;
+  // Maximum number of data points to return (optional, defaults to API default).
+  int32 num_points = 3;
+}
+
+message GetMarketHistoryResponse {
+  repeated MarketHistoryPoint points = 1;
+}
+
+message ListProposalsRequest {
+  // Maximum number of proposals to return (optional, defaults to API default).
+  int32 limit = 1;
+}
+
+message ListProposalsResponse {
+  repeated Proposal proposals = 1;
+}

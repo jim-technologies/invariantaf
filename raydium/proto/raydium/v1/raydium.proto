@@ -1,0 +1,205 @@
+syntax = "proto3";
+
+package raydium.v1;
+
+option go_package = "github.com/jim-technologies/invariantaf/raydium/proto/raydium/v1;raydiumv1";
+
+// RaydiumService provides read-only access to the Raydium decentralized
+// exchange on Solana.
+//
+// Raydium is the largest AMM and DEX on Solana, offering concentrated
+// liquidity pools, standard AMM pools, and yield farming. Pools are
+// identified by their on-chain pool ID (base58 public key). Tokens are
+// identified by their SPL mint address.
+//
+// No authentication is required. The public API base URL is
+// https://api-v3.raydium.io.
+//
+// Use this service to look up pool details by ID or token mint, list
+// top pools by volume or liquidity, query farm/staking information,
+// and fetch token prices by mint address.
+service RaydiumService {
+  // Get pool information by pool ID.
+  //
+  // Returns detailed information for a specific Raydium pool including
+  // token mints, TVL, volume, fees, and APR data.
+  //
+  // Wraps: GET /pools/info/ids?ids={pool_id}
+  rpc GetPoolInfo(GetPoolInfoRequest) returns (GetPoolInfoResponse);
+
+  // List pools with sorting and pagination.
+  //
+  // Returns a paginated list of Raydium pools sorted by the specified
+  // field (e.g. volume, liquidity, fee). Supports filtering by pool
+  // type and configurable page size.
+  //
+  // Wraps: GET /pools/info/list?poolType={type}&poolSortField={field}&sortType={sort}&pageSize={size}&page={page}
+  rpc ListPools(ListPoolsRequest) returns (ListPoolsResponse);
+
+  // Find pools by token mint address.
+  //
+  // Returns pools that contain a specific SPL token mint, optionally
+  // filtered by pool type and sorted by liquidity or volume.
+  // Useful for discovering trading pairs for a given token.
+  //
+  // Wraps: GET /pools/info/mint?mint1={mint}&poolType={type}&poolSortField={field}&sortType={sort}&pageSize={size}&page={page}
+  rpc GetPoolByMints(GetPoolByMintsRequest) returns (GetPoolByMintsResponse);
+
+  // Get farm information by farm ID.
+  //
+  // Returns detailed information for a specific Raydium farm/staking
+  // pool including reward tokens, APR, and TVL.
+  //
+  // Wraps: GET /farm/info/ids?ids={farm_id}
+  rpc GetFarmInfo(GetFarmInfoRequest) returns (GetFarmInfoResponse);
+
+  // List farms with pagination.
+  //
+  // Returns a paginated list of all Raydium yield farms including
+  // reward details and staking metrics.
+  //
+  // Wraps: GET /farm/info/list?pageSize={size}&page={page}
+  rpc ListFarms(ListFarmsRequest) returns (ListFarmsResponse);
+
+  // Get token prices by mint address.
+  //
+  // Returns current USD prices for one or more SPL token mints.
+  // Multiple mints can be queried by passing a comma-separated list.
+  //
+  // Wraps: GET /mint/price?mints={mint_address}
+  rpc GetTokenPrice(GetTokenPriceRequest) returns (GetTokenPriceResponse);
+}
+
+// --- Request / Response messages ---
+
+// Request to get pool info by ID.
+message GetPoolInfoRequest {
+  // The on-chain pool ID (base58 public key). Required.
+  string pool_id = 1;
+}
+
+message GetPoolInfoResponse {
+  // The pool information.
+  Pool pool = 1;
+}
+
+// Request to list pools.
+message ListPoolsRequest {
+  // Pool type filter: "all", "standard", "concentrated", etc.
+  // Defaults to "all" if omitted.
+  string pool_type = 1;
+  // Field to sort by: "volume", "liquidity", "fee", "apr".
+  // Defaults to "volume" if omitted.
+  string pool_sort_field = 2;
+  // Sort direction: "desc" or "asc". Defaults to "desc" if omitted.
+  string sort_type = 3;
+  // Number of results per page. Defaults to 10 if omitted.
+  int64 page_size = 4;
+  // Page number (1-indexed). Defaults to 1 if omitted.
+  int64 page = 5;
+}
+
+message ListPoolsResponse {
+  // The list of pools.
+  repeated Pool pools = 1;
+  // Total number of pools available (for pagination).
+  int64 total = 2;
+}
+
+// Request to find pools by token mint.
+message GetPoolByMintsRequest {
+  // The SPL token mint address (base58 public key). Required.
+  string mint1 = 1;
+  // Optional second mint to find a specific pair.
+  string mint2 = 2;
+  // Pool type filter: "all", "standard", "concentrated", etc.
+  // Defaults to "all" if omitted.
+  string pool_type = 3;
+  // Field to sort by: "liquidity", "volume", "fee", "apr".
+  // Defaults to "liquidity" if omitted.
+  string pool_sort_field = 4;
+  // Sort direction: "desc" or "asc". Defaults to "desc" if omitted.
+  string sort_type = 5;
+  // Number of results per page. Defaults to 10 if omitted.
+  int64 page_size = 6;
+  // Page number (1-indexed). Defaults to 1 if omitted.
+  int64 page = 7;
+}
+
+message GetPoolByMintsResponse {
+  // The list of matching pools.
+  repeated Pool pools = 1;
+  // Total number of matching pools (for pagination).
+  int64 total = 2;
+}
+
+// Request to get farm info by ID.
+message GetFarmInfoRequest {
+  // The farm ID. Required.
+  string farm_id = 1;
+}
+
+message GetFarmInfoResponse {
+  // The farm information.
+  Farm farm = 1;
+}
+
+// Request to list farms.
+message ListFarmsRequest {
+  // Number of results per page. Defaults to 10 if omitted.
+  int64 page_size = 1;
+  // Page number (1-indexed). Defaults to 1 if omitted.
+  int64 page = 2;
+}
+
+message ListFarmsResponse {
+  // The list of farms.
+  repeated Farm farms = 1;
+  // Total number of farms available (for pagination).
+  int64 total = 2;
+}
+
+// Request to get token prices.
+message GetTokenPriceRequest {
+  // Comma-separated list of SPL token mint addresses. Required.
+  string mints = 1;
+}
+
+message GetTokenPriceResponse {
+  // Map of mint address to USD price.
+  map<string, double> prices = 1;
+}
+
+// --- Domain types ---
+
+// A Raydium liquidity pool.
+message Pool {
+  // The on-chain pool ID (base58 public key).
+  string id = 1;
+  // The pool type (e.g. "Standard", "Concentrated").
+  string type = 2;
+  // Mint address of token A.
+  string mint_a = 3;
+  // Mint address of token B.
+  string mint_b = 4;
+  // Total value locked in USD.
+  double tvl = 5;
+  // 24-hour trading volume in USD.
+  double volume_24h = 6;
+  // 24-hour fee revenue in USD.
+  double fee_24h = 7;
+  // Current annual percentage rate.
+  double apr = 8;
+}
+
+// A Raydium yield farm.
+message Farm {
+  // The farm ID.
+  string id = 1;
+  // The LP token mint address.
+  string lp_mint = 2;
+  // Total value locked in the farm in USD.
+  double tvl = 3;
+  // Current APR for the farm.
+  double apr = 4;
+}

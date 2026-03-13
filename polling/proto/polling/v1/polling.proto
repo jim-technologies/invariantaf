@@ -1,0 +1,156 @@
+syntax = "proto3";
+
+package polling.v1;
+
+// PollingService provides cross-platform prediction market and forecasting
+// data from PredictIt and Metaculus.
+//
+// All endpoints are **free and require no authentication**.
+// Use this to compare prediction market prices across platforms,
+// discover mispricings, and track community forecasts on political,
+// economic, and scientific questions.
+service PollingService {
+
+  // List all PredictIt prediction markets.
+  //
+  // Returns every active market on PredictIt with contract prices,
+  // including Yes/No bid/ask prices and trade volumes.
+  // Use this to scan for cross-platform arbitrage opportunities
+  // by comparing PredictIt prices against Polymarket or Kalshi.
+  rpc ListPredictItMarkets(ListPredictItMarketsRequest) returns (ListPredictItMarketsResponse);
+
+  // Get a single PredictIt market by ticker symbol.
+  //
+  // Returns detailed market data including all contracts and their
+  // current bid/ask/last prices. Use this to drill into a specific
+  // market for price comparison.
+  rpc GetPredictItMarket(GetPredictItMarketRequest) returns (GetPredictItMarketResponse);
+
+  // List recent Metaculus forecast questions.
+  //
+  // Returns questions ordered by recent activity, including community
+  // prediction values, resolution criteria, and question metadata.
+  // Use this to compare crowd forecasts against prediction market prices.
+  rpc ListMetaculusQuestions(ListMetaculusQuestionsRequest) returns (ListMetaculusQuestionsResponse);
+
+  // Get a single Metaculus question by ID.
+  //
+  // Returns full question details including description, resolution
+  // criteria, community prediction, and metadata.
+  // Use this for detailed analysis of a specific forecast question.
+  rpc GetMetaculusQuestion(GetMetaculusQuestionRequest) returns (GetMetaculusQuestionResponse);
+}
+
+// --- PredictIt domain types ---
+
+message PredictItContract {
+  // Unique contract ID.
+  int64 id = 1;
+  // Date the contract was created.
+  string date_end = 2;
+  // URL-friendly name slug.
+  string name = 3;
+  // Short display name.
+  string short_name = 4;
+  // Status (e.g., "Open", "Closed").
+  string status = 5;
+  // Last trade price (0.0 - 1.0).
+  double last_trade_price = 6;
+  // Best buy-yes price.
+  double best_buy_yes_cost = 7;
+  // Best buy-no price.
+  double best_buy_no_cost = 8;
+  // Best sell-yes price.
+  double best_sell_yes_cost = 9;
+  // Best sell-no price.
+  double best_sell_no_cost = 10;
+  // Last close price.
+  double last_close_price = 11;
+}
+
+message PredictItMarket {
+  // Unique market ID.
+  int64 id = 1;
+  // Market name / question.
+  string name = 2;
+  // Short display name.
+  string short_name = 3;
+  // URL on PredictIt.
+  string url = 4;
+  // Status (e.g., "Open", "Closed").
+  string status = 5;
+  // Timestamp of last update.
+  string timestamp = 6;
+  // Image URL for the market.
+  string image = 7;
+  // Contracts (outcomes) in this market.
+  repeated PredictItContract contracts = 8;
+}
+
+// --- Metaculus domain types ---
+
+message MetaculusQuestion {
+  // Unique question ID.
+  int64 id = 1;
+  // Question title.
+  string title = 2;
+  // URL on Metaculus.
+  string url = 3;
+  // Creation timestamp.
+  string created_time = 4;
+  // Publish timestamp.
+  string publish_time = 5;
+  // Close timestamp (when predictions stop).
+  string close_time = 6;
+  // Resolve timestamp (when the question resolves).
+  string resolve_time = 7;
+  // Number of predictions made.
+  int32 number_of_predictions = 8;
+  // Question status (e.g., "open", "resolved", "closed").
+  string status = 9;
+  // Question type (e.g., "binary", "numeric", "multiple_choice").
+  string type = 10;
+  // Community prediction value (probability for binary, median for numeric).
+  double community_prediction = 11;
+  // Short description or title text.
+  string title_short = 12;
+  // Resolution value (if resolved, -1 otherwise).
+  double resolution = 13;
+}
+
+// --- Request / Response messages ---
+
+message ListPredictItMarketsRequest {}
+
+message ListPredictItMarketsResponse {
+  repeated PredictItMarket markets = 1;
+}
+
+message GetPredictItMarketRequest {
+  // PredictIt market ticker symbol (e.g., "PARTY.PRES2024.RNOM").
+  string ticker = 1;
+}
+
+message GetPredictItMarketResponse {
+  PredictItMarket market = 1;
+}
+
+message ListMetaculusQuestionsRequest {
+  // Maximum number of questions to return (default 20, max 100).
+  int32 limit = 1;
+  // Offset for pagination.
+  int32 offset = 2;
+}
+
+message ListMetaculusQuestionsResponse {
+  repeated MetaculusQuestion questions = 1;
+}
+
+message GetMetaculusQuestionRequest {
+  // Metaculus question ID.
+  int64 id = 1;
+}
+
+message GetMetaculusQuestionResponse {
+  MetaculusQuestion question = 1;
+}

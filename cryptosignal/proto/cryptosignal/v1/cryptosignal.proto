@@ -1,0 +1,150 @@
+syntax = "proto3";
+
+package cryptosignal.v1;
+
+option go_package = "github.com/jim-technologies/invariantaf/cryptosignal/proto/cryptosignal/v1;cryptosignalv1";
+
+// CryptoSignalService aggregates multiple free crypto signal APIs into
+// one service, providing fear & greed index data, global market metrics,
+// trending coin discovery, and Ethereum gas price tracking.
+//
+// No authentication is required. Data is sourced from:
+//   - Alternative.me (Fear & Greed Index)
+//   - CoinGecko (global metrics, trending coins)
+//   - Etherscan (gas prices)
+//
+// Use this service to monitor overall crypto market sentiment, track
+// Bitcoin/Ethereum dominance, discover trending coins by search volume,
+// and check current Ethereum gas prices.
+service CryptoSignalService {
+  // Get the crypto Fear & Greed Index with recent history.
+  //
+  // Returns the current fear/greed value (0-100) plus historical entries.
+  // Values near 0 indicate extreme fear; values near 100 indicate extreme greed.
+  //
+  // Wraps: GET https://api.alternative.me/fng/?limit=10&format=json
+  rpc GetFearGreedIndex(GetFearGreedIndexRequest) returns (GetFearGreedIndexResponse);
+
+  // Get global cryptocurrency market metrics.
+  //
+  // Returns total market cap, BTC dominance, ETH dominance, number of
+  // active cryptocurrencies, and market cap change percentages.
+  //
+  // Wraps: GET https://api.coingecko.com/api/v3/global
+  rpc GetGlobalMetrics(GetGlobalMetricsRequest) returns (GetGlobalMetricsResponse);
+
+  // Get trending coins by search volume on CoinGecko.
+  //
+  // Returns the top trending coins that users are searching for,
+  // including name, symbol, market cap rank, and price data.
+  //
+  // Wraps: GET https://api.coingecko.com/api/v3/search/trending
+  rpc GetTrendingCoins(GetTrendingCoinsRequest) returns (GetTrendingCoinsResponse);
+
+  // Get current Ethereum gas prices.
+  //
+  // Returns safe, proposed, and fast gas prices in Gwei from Etherscan's
+  // gas tracker. Useful for estimating transaction costs.
+  //
+  // Wraps: GET https://api.etherscan.io/api?module=gastracker&action=gasoracle
+  rpc GetGasPrice(GetGasPriceRequest) returns (GetGasPriceResponse);
+}
+
+// --- Request / Response messages ---
+
+// Request to get the Fear & Greed Index.
+message GetFearGreedIndexRequest {
+  // Number of historical data points to return (default 10, max 30).
+  int64 limit = 1;
+}
+
+message GetFearGreedIndexResponse {
+  // The list of fear & greed index data points (most recent first).
+  repeated FearGreedEntry entries = 1;
+}
+
+// Request to get global market metrics.
+message GetGlobalMetricsRequest {}
+
+message GetGlobalMetricsResponse {
+  // The global market metrics data.
+  GlobalMetrics metrics = 1;
+}
+
+// Request to get trending coins.
+message GetTrendingCoinsRequest {}
+
+message GetTrendingCoinsResponse {
+  // The list of trending coins ordered by search volume.
+  repeated TrendingCoin coins = 1;
+}
+
+// Request to get current ETH gas prices.
+message GetGasPriceRequest {}
+
+message GetGasPriceResponse {
+  // The current gas price data.
+  GasPrice gas_price = 1;
+}
+
+// --- Domain types ---
+
+// A single Fear & Greed Index data point.
+message FearGreedEntry {
+  // The fear/greed value (0-100). 0 = Extreme Fear, 100 = Extreme Greed.
+  int64 value = 1;
+  // Human-readable classification (e.g. "Extreme Fear", "Fear", "Neutral", "Greed", "Extreme Greed").
+  string value_classification = 2;
+  // Unix timestamp (seconds) for this data point.
+  string timestamp = 3;
+  // Time until next update (e.g. "23 hours").
+  string time_until_update = 4;
+}
+
+// Global cryptocurrency market metrics.
+message GlobalMetrics {
+  // Number of active cryptocurrencies tracked.
+  int64 active_cryptocurrencies = 1;
+  // Total market capitalization in USD.
+  double total_market_cap_usd = 2;
+  // Total 24h trading volume in USD.
+  double total_volume_usd = 3;
+  // Bitcoin dominance as a percentage (e.g. 52.5).
+  double btc_dominance = 4;
+  // Ethereum dominance as a percentage (e.g. 18.2).
+  double eth_dominance = 5;
+  // Market cap change percentage in the last 24 hours.
+  double market_cap_change_percentage_24h = 6;
+}
+
+// A trending coin from CoinGecko search data.
+message TrendingCoin {
+  // The coin's unique identifier on CoinGecko.
+  string id = 1;
+  // The coin's display name.
+  string name = 2;
+  // The coin's ticker symbol.
+  string symbol = 3;
+  // Market cap rank (1 = largest).
+  int64 market_cap_rank = 4;
+  // Small thumbnail image URL.
+  string thumb = 5;
+  // Current price in BTC.
+  double price_btc = 6;
+  // Rank in trending search results.
+  int64 score = 7;
+}
+
+// Ethereum gas price data from Etherscan.
+message GasPrice {
+  // Safe (low priority) gas price in Gwei.
+  string safe_gas_price = 1;
+  // Proposed (standard priority) gas price in Gwei.
+  string propose_gas_price = 2;
+  // Fast (high priority) gas price in Gwei.
+  string fast_gas_price = 3;
+  // Suggested base fee in Gwei.
+  string suggest_base_fee = 4;
+  // Gas used ratio for recent blocks.
+  string gas_used_ratio = 5;
+}

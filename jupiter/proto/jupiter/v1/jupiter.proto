@@ -1,0 +1,208 @@
+syntax = "proto3";
+
+package jupiter.v1;
+
+// JupiterService provides access to Jupiter, the #1 Solana DEX aggregator.
+//
+// Jupiter aggregates liquidity across all major Solana DEXs to find the
+// best swap routes. Use this to get token prices, find optimal swap quotes,
+// generate swap transactions, and discover available tokens and markets.
+//
+// An API key is required for all endpoints. Generate a free key at
+// https://portal.jup.ag and set the JUPITER_API_KEY environment variable.
+service JupiterService {
+
+  // Get current prices for one or more tokens by their Solana mint addresses.
+  //
+  // Returns USD prices for the requested tokens. Pass comma-separated mint
+  // addresses to price multiple tokens in one call (up to 50 tokens).
+  // This is the fastest way to check token prices on Solana.
+  rpc GetPrice(GetPriceRequest) returns (GetPriceResponse);
+
+  // Get the best swap quote for a token pair.
+  //
+  // Jupiter aggregates liquidity across all Solana DEXs and returns the
+  // optimal route with expected output amount, price impact, and fees.
+  // Specify input/output mints, amount (in smallest unit, e.g. lamports),
+  // and slippage tolerance in basis points (1 bps = 0.01%).
+  rpc GetQuote(GetQuoteRequest) returns (GetQuoteResponse);
+
+  // Generate a swap transaction from a quote.
+  //
+  // Takes a quote response and the user's wallet public key, and returns
+  // a serialized transaction ready to be signed and submitted on-chain.
+  // The transaction is base64-encoded and can be deserialized with any
+  // Solana SDK.
+  rpc Swap(SwapRequest) returns (SwapResponse);
+
+  // Search tokens by symbol, name, or mint address.
+  //
+  // Returns matching tokens from Jupiter's full token database.
+  // Each token includes its mint address, symbol, name, decimals,
+  // verification status, and trading metrics.
+  // Pass a comma-separated list of mint addresses to look up multiple tokens.
+  rpc ListTokens(ListTokensRequest) returns (ListTokensResponse);
+
+  // List verified tokens only.
+  //
+  // Returns tokens from Jupiter's verified list. These tokens have
+  // been reviewed and are less likely to be scams or low-quality projects.
+  // Prefer this over ListTokens when building user-facing token selectors.
+  rpc ListVerifiedTokens(ListVerifiedTokensRequest) returns (ListVerifiedTokensResponse);
+
+  // List available swap markets.
+  //
+  // Returns the DEX markets (AMMs, order books, etc.) that Jupiter
+  // aggregates across. Each market includes its AMM identifier and
+  // the trading pairs available.
+  rpc ListMarkets(ListMarketsRequest) returns (ListMarketsResponse);
+}
+
+// --- Domain types ---
+
+// Price data for a single token.
+message TokenPrice {
+  // Solana mint address of the token.
+  string mint = 1;
+  // Current price in USD.
+  double price = 2;
+  // Token liquidity in USD.
+  double liquidity = 3;
+  // Price change over the last 24 hours as a percentage.
+  double price_change_24h = 4;
+}
+
+// Information about a swap route leg.
+message RoutePlanStep {
+  // The AMM / DEX used for this leg.
+  string amm_key = 1;
+  // Label of the AMM (e.g. "Raydium", "Orca").
+  string label = 2;
+  // Input mint for this leg.
+  string input_mint = 3;
+  // Output mint for this leg.
+  string output_mint = 4;
+  // Fee amount charged for this leg (in output token smallest units).
+  string fee_amount = 5;
+  // Fee mint address.
+  string fee_mint = 6;
+  // Percentage of the input allocated to this leg (0-100).
+  double percent = 7;
+}
+
+// A token in the Jupiter token list.
+message Token {
+  // Solana mint address.
+  string address = 1;
+  // Token symbol, e.g. "SOL", "USDC".
+  string symbol = 2;
+  // Human-readable name, e.g. "Wrapped SOL".
+  string name = 3;
+  // Number of decimal places.
+  int32 decimals = 4;
+  // URL to token logo image.
+  string logo_uri = 5;
+  // Daily trading volume in USD (if available).
+  double daily_volume = 6;
+  // Whether this token is verified by Jupiter.
+  bool is_verified = 7;
+}
+
+// A swap market available on Jupiter.
+message Market {
+  // Unique market identifier.
+  string id = 1;
+  // Base token mint address.
+  string base_mint = 2;
+  // Quote token mint address.
+  string quote_mint = 3;
+  // AMM / DEX label (e.g. "Raydium", "Orca").
+  string label = 4;
+  // Liquidity in USD (if available).
+  double liquidity = 5;
+}
+
+// --- Request / Response messages ---
+
+message GetPriceRequest {
+  // Comma-separated Solana mint addresses to get prices for (up to 50).
+  // Example: "So11111111111111111111111111111111111111112,EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+  string ids = 1;
+}
+
+message GetPriceResponse {
+  // Prices keyed by mint address.
+  repeated TokenPrice prices = 1;
+}
+
+message GetQuoteRequest {
+  // Input token mint address (the token you are selling).
+  string input_mint = 1;
+  // Output token mint address (the token you are buying).
+  string output_mint = 2;
+  // Amount of input token in its smallest unit (e.g. lamports for SOL).
+  // For 1 SOL, use "1000000000" (10^9 lamports).
+  string amount = 3;
+  // Maximum slippage tolerance in basis points (1 bps = 0.01%).
+  // Example: 50 = 0.5% slippage.
+  int32 slippage_bps = 4;
+}
+
+message GetQuoteResponse {
+  // Input token mint address.
+  string input_mint = 1;
+  // Output token mint address.
+  string output_mint = 2;
+  // Input amount in smallest units.
+  string in_amount = 3;
+  // Expected output amount in smallest units.
+  string out_amount = 4;
+  // Guaranteed minimum output after slippage.
+  string other_amount_threshold = 5;
+  // Price impact as a percentage (e.g. "0.01" = 1%).
+  string price_impact_pct = 6;
+  // Swap mode: "ExactIn" or "ExactOut".
+  string swap_mode = 7;
+  // Slippage tolerance in basis points.
+  int32 slippage_bps = 8;
+  // The route plan — ordered list of swap legs.
+  repeated RoutePlanStep route_plan = 9;
+}
+
+message SwapRequest {
+  // The full quote response (as JSON string) from GetQuote.
+  string quote_response = 1;
+  // The user's Solana wallet public key (base58).
+  string user_public_key = 2;
+  // If true, wrap/unwrap SOL automatically. Default true.
+  bool wrap_and_unwrap_sol = 3;
+}
+
+message SwapResponse {
+  // Base64-encoded serialized transaction ready to be signed.
+  string swap_transaction = 1;
+  // Last valid block height for the transaction.
+  int64 last_valid_block_height = 2;
+}
+
+message ListTokensRequest {
+  // Search query: token symbol, name, or mint address.
+  // Pass a comma-separated list of mint addresses to look up multiple tokens.
+  string query = 1;
+}
+
+message ListTokensResponse {
+  repeated Token tokens = 1;
+}
+
+message ListVerifiedTokensRequest {}
+
+message ListVerifiedTokensResponse {
+  repeated Token tokens = 1;
+}
+
+message ListMarketsRequest {}
+
+message ListMarketsResponse {
+  repeated Market markets = 1;
+}

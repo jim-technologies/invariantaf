@@ -1,0 +1,241 @@
+syntax = "proto3";
+
+package solscan.v1;
+
+// SolscanService provides Solana blockchain data from the Solscan API,
+// the main Solana blockchain explorer.
+//
+// Essential for monitoring Solana wallets, token transfers, and DeFi
+// activity. Requires a free API key set via the SOLSCAN_API_KEY env var.
+//
+// Use this to look up account details, SPL token balances, transaction
+// history, token metadata, prices, holders, and market data.
+service SolscanService {
+
+  // Get account details for a Solana address.
+  //
+  // Returns basic account information including SOL balance,
+  // owner program, and account type.
+  // Use this to check if an address exists and get its overview.
+  rpc GetAccountInfo(GetAccountInfoRequest) returns (GetAccountInfoResponse);
+
+  // Get SPL token balances for a Solana address.
+  //
+  // Returns all SPL token accounts held by the address, including
+  // token mint, balance, decimals, and associated token metadata.
+  // Use this to see the full token portfolio of a wallet.
+  rpc GetAccountTokens(GetAccountTokensRequest) returns (GetAccountTokensResponse);
+
+  // Get recent transactions for a Solana address.
+  //
+  // Returns the most recent transactions involving the address,
+  // including signatures, block times, statuses, and fees.
+  // Use this to monitor wallet activity and track transfers.
+  rpc GetAccountTransactions(GetAccountTransactionsRequest) returns (GetAccountTransactionsResponse);
+
+  // Get metadata for an SPL token by its mint address.
+  //
+  // Returns the token name, symbol, decimals, icon, and other
+  // metadata registered on-chain or via token lists.
+  // Use this to resolve a mint address to a human-readable token.
+  rpc GetTokenMeta(GetTokenMetaRequest) returns (GetTokenMetaResponse);
+
+  // Get the current USD price of an SPL token.
+  //
+  // Returns the latest price quote for the token identified by
+  // its mint address.
+  // Use this for portfolio valuation and price monitoring.
+  rpc GetTokenPrice(GetTokenPriceRequest) returns (GetTokenPriceResponse);
+
+  // Get top holders of an SPL token.
+  //
+  // Returns a paginated list of the largest holders of a token,
+  // including their address, balance, and ownership percentage.
+  // Use this for whale tracking and token distribution analysis.
+  rpc GetTokenHolders(GetTokenHoldersRequest) returns (GetTokenHoldersResponse);
+
+  // Get market data for an SPL token.
+  //
+  // Returns market-level information such as total supply,
+  // circulating supply, volume, and market cap.
+  // Use this for market analysis and token comparison.
+  rpc GetMarketInfo(GetMarketInfoRequest) returns (GetMarketInfoResponse);
+}
+
+// --- Domain types ---
+
+message AccountInfo {
+  // Solana account address.
+  string address = 1;
+  // SOL balance in lamports.
+  int64 lamports = 2;
+  // Owner program of the account.
+  string owner = 3;
+  // Account type (e.g., "system", "token").
+  string type = 4;
+  // Rent epoch.
+  int64 rent_epoch = 5;
+  // Whether the account is executable.
+  bool executable = 6;
+}
+
+message TokenAccount {
+  // SPL token mint address.
+  string token_address = 1;
+  // Associated token account address.
+  string token_account = 2;
+  // Token balance (raw amount as string).
+  string amount = 3;
+  // Token decimals.
+  int32 token_decimals = 4;
+  // Token name.
+  string token_name = 5;
+  // Token symbol.
+  string token_symbol = 6;
+  // Token icon URL.
+  string token_icon = 7;
+}
+
+message Transaction {
+  // Transaction signature.
+  string tx_hash = 1;
+  // Block number (slot).
+  int64 block_id = 2;
+  // Unix timestamp of the block.
+  int64 block_time = 3;
+  // Transaction status (e.g., "Success", "Fail").
+  string status = 4;
+  // Transaction fee in lamports.
+  int64 fee = 5;
+  // Signer address.
+  string signer = 6;
+}
+
+message TokenMeta {
+  // SPL token mint address.
+  string address = 1;
+  // Token name.
+  string name = 2;
+  // Token symbol.
+  string symbol = 3;
+  // Token decimals.
+  int32 decimals = 4;
+  // Token icon URL.
+  string icon = 5;
+  // Token website.
+  string website = 6;
+  // Twitter handle.
+  string twitter = 7;
+  // Token tag/category.
+  string tag = 8;
+}
+
+message TokenPrice {
+  // SPL token mint address.
+  string address = 1;
+  // Price in USD.
+  double price_usdt = 2;
+}
+
+message TokenHolder {
+  // Holder wallet address.
+  string address = 1;
+  // Token balance (raw amount as string).
+  string amount = 2;
+  // Token decimals.
+  int32 decimals = 3;
+  // Holder rank.
+  int32 rank = 4;
+  // Ownership percentage.
+  double owner_percentage = 5;
+}
+
+message MarketInfo {
+  // SPL token mint address.
+  string address = 1;
+  // Current price in USD.
+  double price_usdt = 2;
+  // 24h trading volume in USD.
+  double volume_24h = 3;
+  // Market capitalization in USD.
+  double market_cap = 4;
+  // Market cap rank.
+  int32 market_cap_rank = 5;
+  // Total supply (raw amount as string).
+  string total_supply = 6;
+  // Circulating supply (raw amount as string).
+  string circulating_supply = 7;
+}
+
+// --- Request / Response messages ---
+
+message GetAccountInfoRequest {
+  // Solana account address.
+  string address = 1;
+}
+
+message GetAccountInfoResponse {
+  AccountInfo account = 1;
+}
+
+message GetAccountTokensRequest {
+  // Solana account address.
+  string address = 1;
+}
+
+message GetAccountTokensResponse {
+  repeated TokenAccount tokens = 1;
+}
+
+message GetAccountTransactionsRequest {
+  // Solana account address.
+  string address = 1;
+  // Maximum number of transactions to return (default 10).
+  int32 limit = 2;
+}
+
+message GetAccountTransactionsResponse {
+  repeated Transaction transactions = 1;
+}
+
+message GetTokenMetaRequest {
+  // SPL token mint address.
+  string address = 1;
+}
+
+message GetTokenMetaResponse {
+  TokenMeta token = 1;
+}
+
+message GetTokenPriceRequest {
+  // SPL token mint address.
+  string address = 1;
+}
+
+message GetTokenPriceResponse {
+  TokenPrice price = 1;
+}
+
+message GetTokenHoldersRequest {
+  // SPL token mint address.
+  string address = 1;
+  // Page number (default 1).
+  int32 page = 2;
+  // Page size (default 10).
+  int32 page_size = 3;
+}
+
+message GetTokenHoldersResponse {
+  repeated TokenHolder holders = 1;
+  // Total number of holders.
+  int64 total = 2;
+}
+
+message GetMarketInfoRequest {
+  // SPL token mint address.
+  string address = 1;
+}
+
+message GetMarketInfoResponse {
+  MarketInfo market = 1;
+}

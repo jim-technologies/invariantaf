@@ -1,0 +1,291 @@
+syntax = "proto3";
+
+package okx.v1;
+
+option go_package = "github.com/jim-technologies/invariantaf/okx/proto/okx/v1;okxv1";
+
+// OKXService provides read-only access to OKX exchange public market data.
+//
+// OKX is a global cryptocurrency exchange offering spot, futures, perpetual
+// swaps, and options trading. This service exposes the public (no-auth)
+// market data endpoints for fetching tickers, orderbooks, candles, trades,
+// funding rates, and instrument metadata.
+//
+// No authentication is required. The public API base URL is
+// https://www.okx.com.
+//
+// All OKX API responses wrap data in {"code":"0","msg":"","data":[...]}.
+// This service extracts the "data" field automatically.
+service OKXService {
+  // Get all spot tickers with latest prices and 24h statistics.
+  //
+  // Returns every active SPOT instrument's ticker including last price,
+  // best bid/ask, 24h high/low, and 24h volume.
+  //
+  // Wraps: GET /api/v5/market/tickers?instType=SPOT
+  rpc GetTickers(GetTickersRequest) returns (GetTickersResponse);
+
+  // Get a single ticker by instrument ID.
+  //
+  // Returns the latest ticker data for a specific instrument including
+  // last traded price, best bid/ask, 24h statistics, and timestamp.
+  //
+  // Wraps: GET /api/v5/market/ticker?instId={inst_id}
+  rpc GetTicker(GetTickerRequest) returns (GetTickerResponse);
+
+  // Get the orderbook for a specific instrument.
+  //
+  // Returns the current orderbook with bids and asks up to the
+  // requested depth. Each level includes price, quantity, number of
+  // orders, and number of liquidation orders.
+  //
+  // Wraps: GET /api/v5/market/books?instId={inst_id}&sz={size}
+  rpc GetOrderbook(GetOrderbookRequest) returns (GetOrderbookResponse);
+
+  // Get OHLCV candlestick data for a specific instrument.
+  //
+  // Returns historical candlestick/kline data including open, high,
+  // low, close prices and volume for the specified bar size.
+  //
+  // Wraps: GET /api/v5/market/candles?instId={inst_id}&bar={bar}&limit={limit}
+  rpc GetCandles(GetCandlesRequest) returns (GetCandlesResponse);
+
+  // Get recent trades for a specific instrument.
+  //
+  // Returns the most recent trades including price, size, side
+  // (buy/sell), and timestamp.
+  //
+  // Wraps: GET /api/v5/market/trades?instId={inst_id}&limit={limit}
+  rpc GetTrades(GetTradesRequest) returns (GetTradesResponse);
+
+  // Get the current funding rate for a perpetual swap instrument.
+  //
+  // Returns the current and next funding rate, along with funding
+  // time for the specified perpetual swap contract.
+  //
+  // Wraps: GET /api/v5/public/funding-rate?instId={inst_id}
+  rpc GetFundingRate(GetFundingRateRequest) returns (GetFundingRateResponse);
+
+  // List all instruments of a given type.
+  //
+  // Returns metadata for all instruments of the specified type
+  // including contract details, tick sizes, lot sizes, and status.
+  //
+  // Wraps: GET /api/v5/public/instruments?instType={inst_type}
+  rpc GetInstruments(GetInstrumentsRequest) returns (GetInstrumentsResponse);
+}
+
+// --- Request / Response messages ---
+
+// Request to get all spot tickers.
+message GetTickersRequest {
+  // Instrument type (e.g. "SPOT", "SWAP", "FUTURES", "OPTION").
+  // Defaults to "SPOT" if omitted.
+  string inst_type = 1;
+}
+
+message GetTickersResponse {
+  // The list of tickers.
+  repeated Ticker tickers = 1;
+}
+
+// Request to get a single ticker.
+message GetTickerRequest {
+  // The instrument ID (e.g. "BTC-USDT"). Required.
+  string inst_id = 1;
+}
+
+message GetTickerResponse {
+  // The ticker data.
+  Ticker ticker = 1;
+}
+
+// Request to get an orderbook.
+message GetOrderbookRequest {
+  // The instrument ID (e.g. "BTC-USDT"). Required.
+  string inst_id = 1;
+  // Orderbook depth (number of levels). Max 400, default 20.
+  int64 size = 2;
+}
+
+message GetOrderbookResponse {
+  // The orderbook data.
+  Orderbook orderbook = 1;
+}
+
+// Request to get candlestick data.
+message GetCandlesRequest {
+  // The instrument ID (e.g. "BTC-USDT"). Required.
+  string inst_id = 1;
+  // Bar size, e.g. "1m", "5m", "15m", "30m", "1H", "4H", "1D", "1W", "1M".
+  // Defaults to "1H" if omitted.
+  string bar = 2;
+  // Number of candles to return. Max 300, default 100.
+  int64 limit = 3;
+}
+
+message GetCandlesResponse {
+  // The list of candles.
+  repeated Candle candles = 1;
+}
+
+// Request to get recent trades.
+message GetTradesRequest {
+  // The instrument ID (e.g. "BTC-USDT"). Required.
+  string inst_id = 1;
+  // Number of trades to return. Max 500, default 100.
+  int64 limit = 2;
+}
+
+message GetTradesResponse {
+  // The list of recent trades.
+  repeated Trade trades = 1;
+}
+
+// Request to get funding rate.
+message GetFundingRateRequest {
+  // The perpetual swap instrument ID (e.g. "BTC-USDT-SWAP"). Required.
+  string inst_id = 1;
+}
+
+message GetFundingRateResponse {
+  // The funding rate data.
+  FundingRate funding_rate = 1;
+}
+
+// Request to list instruments.
+message GetInstrumentsRequest {
+  // Instrument type: "SPOT", "SWAP", "FUTURES", "OPTION". Required.
+  string inst_type = 1;
+}
+
+message GetInstrumentsResponse {
+  // The list of instruments.
+  repeated Instrument instruments = 1;
+}
+
+// --- Domain types ---
+
+// Ticker data for an instrument.
+message Ticker {
+  // Instrument ID (e.g. "BTC-USDT").
+  string inst_id = 1;
+  // Last traded price.
+  string last = 2;
+  // Last traded size.
+  string last_sz = 3;
+  // Best ask price.
+  string ask_px = 4;
+  // Best ask size.
+  string ask_sz = 5;
+  // Best bid price.
+  string bid_px = 6;
+  // Best bid size.
+  string bid_sz = 7;
+  // 24h open price.
+  string open_24h = 8;
+  // 24h high price.
+  string high_24h = 9;
+  // 24h low price.
+  string low_24h = 10;
+  // 24h volume in base currency.
+  string vol_24h = 11;
+  // 24h volume in quote currency.
+  string vol_ccy_24h = 12;
+  // Timestamp in milliseconds.
+  string ts = 13;
+}
+
+// Orderbook for an instrument.
+message Orderbook {
+  // The instrument ID.
+  string inst_id = 1;
+  // Ask levels [price, size, num_orders, num_liquidations].
+  repeated OrderbookLevel asks = 2;
+  // Bid levels [price, size, num_orders, num_liquidations].
+  repeated OrderbookLevel bids = 3;
+  // Timestamp in milliseconds.
+  string ts = 4;
+}
+
+// A single orderbook price level.
+message OrderbookLevel {
+  // Price at this level.
+  string price = 1;
+  // Total size at this level.
+  string size = 2;
+  // Number of orders at this level.
+  string num_orders = 3;
+  // Number of liquidation orders at this level.
+  string num_liquidations = 4;
+}
+
+// OHLCV candlestick data.
+message Candle {
+  // Timestamp in milliseconds.
+  string ts = 1;
+  // Open price.
+  string open = 2;
+  // High price.
+  string high = 3;
+  // Low price.
+  string low = 4;
+  // Close price.
+  string close = 5;
+  // Volume in base currency.
+  string vol = 6;
+  // Volume in quote currency.
+  string vol_ccy = 7;
+}
+
+// A single trade.
+message Trade {
+  // Instrument ID.
+  string inst_id = 1;
+  // Trade ID.
+  string trade_id = 2;
+  // Trade price.
+  string px = 3;
+  // Trade size.
+  string sz = 4;
+  // Trade side: "buy" or "sell".
+  string side = 5;
+  // Timestamp in milliseconds.
+  string ts = 6;
+}
+
+// Funding rate data for a perpetual swap.
+message FundingRate {
+  // Instrument ID (e.g. "BTC-USDT-SWAP").
+  string inst_id = 1;
+  // Instrument type.
+  string inst_type = 2;
+  // Current funding rate as a decimal string.
+  string funding_rate = 3;
+  // Next funding rate as a decimal string.
+  string next_funding_rate = 4;
+  // Current funding time in milliseconds.
+  string funding_time = 5;
+  // Next funding time in milliseconds.
+  string next_funding_time = 6;
+}
+
+// Instrument metadata.
+message Instrument {
+  // Instrument ID (e.g. "BTC-USDT").
+  string inst_id = 1;
+  // Instrument type: "SPOT", "SWAP", "FUTURES", "OPTION".
+  string inst_type = 2;
+  // Base currency (e.g. "BTC").
+  string base_ccy = 3;
+  // Quote currency (e.g. "USDT").
+  string quote_ccy = 4;
+  // Tick size (minimum price increment).
+  string tick_sz = 5;
+  // Lot size (minimum order size).
+  string lot_sz = 6;
+  // Minimum order size.
+  string min_sz = 7;
+  // Instrument status: "live", "suspend", "preopen".
+  string state = 8;
+}

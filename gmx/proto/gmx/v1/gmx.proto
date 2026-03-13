@@ -1,0 +1,169 @@
+syntax = "proto3";
+
+package gmx.v1;
+
+option go_package = "github.com/jim-technologies/invariantaf/gmx/proto/gmx/v1;gmxv1";
+
+// GmxService provides read-only access to the GMX v2 decentralized perpetual
+// exchange on Arbitrum and Avalanche.
+//
+// GMX v2 enables leveraged trading of perpetual contracts with on-chain
+// liquidity pools. Markets are identified by a market token address and
+// consist of an index token (the traded asset), a long collateral token,
+// and a short collateral token.
+//
+// No authentication is required. API base URLs:
+//   - Arbitrum:  https://arbitrum-api.gmxinfra.io
+//   - Avalanche: https://avalanche-api.gmxinfra.io
+//
+// Use this service to list perpetual markets with funding/borrowing rates
+// and open interest, fetch real-time token price tickers, and retrieve
+// historical price candles. Particularly useful for funding rate arbitrage
+// and cross-venue perp analysis.
+service GmxService {
+  // List all perpetual markets with liquidity, open interest, and rates.
+  //
+  // Returns every listed GMX v2 market including funding rates, borrowing
+  // rates, open interest (long/short), available liquidity, pool amounts,
+  // and net rates. Data is critical for funding rate arbitrage strategies.
+  //
+  // Wraps: GET /markets/info
+  rpc ListMarkets(ListMarketsRequest) returns (ListMarketsResponse);
+
+  // Get current price tickers for all tokens.
+  //
+  // Returns min/max prices for every token known to GMX on the selected
+  // chain. Prices are represented as string-encoded integers with
+  // chain-specific decimal scaling.
+  //
+  // Wraps: GET /prices/tickers
+  rpc GetTickers(GetTickersRequest) returns (GetTickersResponse);
+
+  // Get historical OHLC price candles for a token.
+  //
+  // Returns candlestick data for the specified token and time period.
+  // Each candle contains timestamp, open, high, low, and close prices.
+  // Supported periods: 1m, 5m, 15m, 1h, 4h, 1d.
+  //
+  // Wraps: GET /prices/candles?tokenSymbol={symbol}&period={period}
+  rpc GetCandles(GetCandlesRequest) returns (GetCandlesResponse);
+}
+
+// --- Request / Response messages ---
+
+// Request to list all perpetual markets.
+message ListMarketsRequest {
+  // The chain to query: "arbitrum" or "avalanche".
+  // Defaults to "arbitrum" if omitted.
+  string chain = 1;
+}
+
+message ListMarketsResponse {
+  // The list of perpetual markets.
+  repeated Market markets = 1;
+}
+
+// Request to get price tickers.
+message GetTickersRequest {
+  // The chain to query: "arbitrum" or "avalanche".
+  // Defaults to "arbitrum" if omitted.
+  string chain = 1;
+}
+
+message GetTickersResponse {
+  // The list of token price tickers.
+  repeated Ticker tickers = 1;
+}
+
+// Request to get price candles.
+message GetCandlesRequest {
+  // The chain to query: "arbitrum" or "avalanche".
+  // Defaults to "arbitrum" if omitted.
+  string chain = 1;
+  // The token symbol to fetch candles for (e.g. "ETH", "BTC"). Required.
+  string token_symbol = 2;
+  // The candle period: "1m", "5m", "15m", "1h", "4h", "1d".
+  // Defaults to "1h" if omitted.
+  string period = 3;
+}
+
+message GetCandlesResponse {
+  // The candle period that was queried.
+  string period = 1;
+  // The list of OHLC candles.
+  repeated Candle candles = 2;
+}
+
+// --- Domain types ---
+
+// A GMX v2 perpetual market.
+message Market {
+  // Human-readable market name (e.g. "ETH/USD [WETH-USDC]").
+  string name = 1;
+  // The GM (market) token address.
+  string market_token = 2;
+  // The index token address (the asset being traded).
+  string index_token = 3;
+  // The long collateral token address.
+  string long_token = 4;
+  // The short collateral token address.
+  string short_token = 5;
+  // Whether this market is currently listed and active.
+  bool is_listed = 6;
+  // The date this market was listed (ISO 8601).
+  string listing_date = 7;
+  // Total open interest on the long side (string-encoded integer).
+  string open_interest_long = 8;
+  // Total open interest on the short side (string-encoded integer).
+  string open_interest_short = 9;
+  // Available liquidity for long positions (string-encoded integer).
+  string available_liquidity_long = 10;
+  // Available liquidity for short positions (string-encoded integer).
+  string available_liquidity_short = 11;
+  // Pool token amount for long collateral (string-encoded integer).
+  string pool_amount_long = 12;
+  // Pool token amount for short collateral (string-encoded integer).
+  string pool_amount_short = 13;
+  // Funding rate for long positions (string-encoded integer).
+  string funding_rate_long = 14;
+  // Funding rate for short positions (string-encoded integer).
+  string funding_rate_short = 15;
+  // Borrowing rate for long positions (string-encoded integer).
+  string borrowing_rate_long = 16;
+  // Borrowing rate for short positions (string-encoded integer).
+  string borrowing_rate_short = 17;
+  // Net rate for long positions: funding + borrowing (string-encoded integer).
+  string net_rate_long = 18;
+  // Net rate for short positions: funding + borrowing (string-encoded integer).
+  string net_rate_short = 19;
+}
+
+// A token price ticker.
+message Ticker {
+  // The token contract address.
+  string token_address = 1;
+  // The token symbol (e.g. "ETH", "BTC").
+  string token_symbol = 2;
+  // The minimum (bid) price (string-encoded integer).
+  string min_price = 3;
+  // The maximum (ask) price (string-encoded integer).
+  string max_price = 4;
+  // Last update time as millisecond timestamp.
+  int64 updated_at = 5;
+  // Last update time as Unix timestamp (seconds).
+  int64 timestamp = 6;
+}
+
+// An OHLC price candle.
+message Candle {
+  // The candle open time as a Unix timestamp (seconds).
+  int64 timestamp = 1;
+  // The open price.
+  double open = 2;
+  // The high price.
+  double high = 3;
+  // The low price.
+  double low = 4;
+  // The close price.
+  double close = 5;
+}

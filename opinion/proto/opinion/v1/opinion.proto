@@ -1,0 +1,272 @@
+syntax = "proto3";
+
+package opinion.v1;
+
+import "google/api/annotations.proto";
+
+// OpinionService proxies the Opinion.trade prediction market API.
+service OpinionService {
+  // List markets with optional pagination and filters.
+  rpc ListMarkets(ListMarketsRequest) returns (ListMarketsResponse) {
+    option (google.api.http) = {
+      get: "/market"
+      response_body: "data"
+    };
+  }
+
+  // Get a single market by market id.
+  rpc GetMarket(GetMarketRequest) returns (GetMarketResponse) {
+    option (google.api.http) = {
+      get: "/market/{market_id}"
+      response_body: "data"
+    };
+  }
+
+  // Get a categorical market and its child markets.
+  rpc GetCategoricalMarket(GetCategoricalMarketRequest) returns (GetCategoricalMarketResponse) {
+    option (google.api.http) = {
+      get: "/market/categorical/{market_id}"
+      response_body: "data"
+    };
+  }
+
+  // Get a market by its slug.
+  rpc GetMarketBySlug(GetMarketBySlugRequest) returns (GetMarketBySlugResponse) {
+    option (google.api.http) = {
+      get: "/market/slug/{slug}"
+      response_body: "data"
+    };
+  }
+
+  // Get the latest price for a token.
+  rpc GetLatestPrice(GetLatestPriceRequest) returns (GetLatestPriceResponse) {
+    option (google.api.http) = {
+      get: "/token/latest-price"
+      response_body: "data"
+    };
+  }
+
+  // Get the orderbook for a token.
+  rpc GetOrderbook(GetOrderbookRequest) returns (GetOrderbookResponse) {
+    option (google.api.http) = {
+      get: "/token/orderbook"
+      response_body: "data"
+    };
+  }
+
+  // Get historical prices for a token.
+  rpc GetPriceHistory(GetPriceHistoryRequest) returns (GetPriceHistoryResponse) {
+    option (google.api.http) = {
+      get: "/token/price-history"
+      response_body: "data"
+    };
+  }
+
+  // Get trades for a user wallet.
+  rpc GetUserTrades(GetUserTradesRequest) returns (GetUserTradesResponse) {
+    option (google.api.http) = {
+      get: "/trade/user/{wallet_address}"
+      response_body: "data"
+    };
+  }
+
+  // List available quote tokens.
+  rpc ListQuoteTokens(ListQuoteTokensRequest) returns (ListQuoteTokensResponse) {
+    option (google.api.http) = {
+      get: "/quoteToken"
+      response_body: "data"
+    };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Request / Response messages
+// ---------------------------------------------------------------------------
+
+message ListMarketsRequest {
+  int32 page = 1;
+  int32 limit = 2;
+  string status = 3;
+  int32 market_type = 4;
+  int32 sort_by = 5;
+  string chain_id = 6;
+}
+
+message ListMarketsResponse {
+  ListMarketsData data = 1;
+}
+
+message ListMarketsData {
+  int32 total = 1;
+  repeated Market list = 2;
+}
+
+message GetMarketRequest {
+  int32 market_id = 1;
+}
+
+message GetMarketResponse {
+  Market data = 1;
+}
+
+message GetCategoricalMarketRequest {
+  int32 market_id = 1;
+}
+
+message GetCategoricalMarketResponse {
+  CategoricalMarket data = 1;
+}
+
+message GetMarketBySlugRequest {
+  string slug = 1;
+}
+
+message GetMarketBySlugResponse {
+  Market data = 1;
+}
+
+message GetLatestPriceRequest {
+  string token_id = 1;
+}
+
+message GetLatestPriceResponse {
+  LatestPrice data = 1;
+}
+
+message GetOrderbookRequest {
+  string token_id = 1;
+}
+
+message GetOrderbookResponse {
+  Orderbook data = 1;
+}
+
+message GetPriceHistoryRequest {
+  string token_id = 1;
+  string interval = 2;
+  int64 start_at = 3;
+  int64 end_at = 4;
+}
+
+message GetPriceHistoryResponse {
+  PriceHistoryData data = 1;
+}
+
+message GetUserTradesRequest {
+  string wallet_address = 1;
+  int32 page = 2;
+  int32 limit = 3;
+  int32 market_id = 4;
+  string chain_id = 5;
+}
+
+message GetUserTradesResponse {
+  UserTradesData data = 1;
+}
+
+message ListQuoteTokensRequest {}
+
+message ListQuoteTokensResponse {
+  repeated QuoteToken data = 1;
+}
+
+// ---------------------------------------------------------------------------
+// Domain models
+// ---------------------------------------------------------------------------
+
+message Market {
+  int32 market_id = 1;
+  string market_title = 2;
+  string status = 3;
+  int32 status_enum = 4;
+  int32 market_type = 5;
+  string yes_label = 6;
+  string no_label = 7;
+  double volume = 8;
+  double volume_24h = 9;
+  double volume_7d = 10;
+  string created_at = 11;
+  string cutoff_at = 12;
+  repeated Token tokens = 13;
+  repeated Condition conditions = 14;
+  string rules = 15;
+  string slug = 16;
+  string chain_id = 17;
+}
+
+message CategoricalMarket {
+  Market parent = 1;
+  repeated Market child_markets = 2;
+}
+
+message Token {
+  string token_id = 1;
+  string outcome = 2;
+  double price = 3;
+}
+
+message Condition {
+  string condition_id = 1;
+  string outcome = 2;
+}
+
+message LatestPrice {
+  string token_id = 1;
+  string price = 2;
+  string side = 3;
+  string size = 4;
+  string timestamp = 5;
+}
+
+message PriceLevel {
+  string price = 1;
+  string size = 2;
+}
+
+message Orderbook {
+  string market = 1;
+  string token_id = 2;
+  string timestamp = 3;
+  repeated PriceLevel bids = 4;
+  repeated PriceLevel asks = 5;
+}
+
+message PricePoint {
+  int64 t = 1;
+  string p = 2;
+}
+
+message PriceHistoryData {
+  repeated PricePoint history = 1;
+}
+
+message Trade {
+  string tx_hash = 1;
+  int32 market_id = 2;
+  string market_title = 3;
+  string side = 4;
+  string outcome = 5;
+  string price = 6;
+  string shares = 7;
+  string amount = 8;
+  string fee = 9;
+  string profit = 10;
+  string quote_token = 11;
+  string usd_amount = 12;
+  int32 status_enum = 13;
+  string chain_id = 14;
+  string created_at = 15;
+}
+
+message UserTradesData {
+  int32 total = 1;
+  repeated Trade list = 2;
+}
+
+message QuoteToken {
+  string token_address = 1;
+  string symbol = 2;
+  string name = 3;
+  int32 decimals = 4;
+  string chain_id = 5;
+}

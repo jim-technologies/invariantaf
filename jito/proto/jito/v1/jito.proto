@@ -1,0 +1,124 @@
+syntax = "proto3";
+
+package jito.v1;
+
+option go_package = "github.com/jim-technologies/invariantaf/jito/proto/jito/v1;jitov1";
+
+// JitoService provides access to the Jito MEV infrastructure on Solana.
+//
+// Jito is essential for Solana trading bots - it lets you submit bundles
+// of transactions for MEV extraction (arbitrage, liquidations, sandwich
+// protection). Bundles are groups of transactions that execute atomically
+// and in order, submitted to Jito validators for inclusion.
+//
+// No authentication is required. The bundle submission endpoint is
+// https://mainnet.block-engine.jito.wtf/api/v1/bundles and the tip
+// floor endpoint is https://bundles-api-rest.jito.wtf/api/v1/bundles/tip_floor.
+//
+// Use this service to submit transaction bundles, check bundle statuses,
+// and query the current minimum tip required for bundle inclusion.
+service JitoService {
+  // Submit a bundle of base58-encoded signed transactions to Jito validators.
+  //
+  // Bundles execute atomically and in order. Each bundle should include a
+  // tip transfer to a Jito tip account as the last transaction. Use
+  // GetTipFloor to determine the minimum tip needed for inclusion.
+  //
+  // Returns a bundle ID that can be used with GetBundleStatuses to track
+  // the bundle's lifecycle.
+  //
+  // Wraps: POST /api/v1/bundles (JSON-RPC method: sendBundle)
+  rpc SendBundle(SendBundleRequest) returns (SendBundleResponse);
+
+  // Get the processing status of one or more previously submitted bundles.
+  //
+  // Returns the current status for each bundle ID, including whether the
+  // bundle has landed on-chain, the slot it landed in, and any error
+  // information. Useful for confirming bundle execution or diagnosing
+  // failures.
+  //
+  // Wraps: POST /api/v1/bundles (JSON-RPC method: getBundleStatuses)
+  rpc GetBundleStatuses(GetBundleStatusesRequest) returns (GetBundleStatusesResponse);
+
+  // Get the current tip floor (minimum tip for bundle inclusion).
+  //
+  // Returns percentile-based tip amounts in SOL (lamports). The tip floor
+  // represents the minimum tip validators expect to include a bundle.
+  // Use the landed_tips_50th_percentile as a baseline and increase for
+  // higher priority.
+  //
+  // Wraps: GET /api/v1/bundles/tip_floor
+  rpc GetTipFloor(GetTipFloorRequest) returns (GetTipFloorResponse);
+}
+
+// --- Request / Response messages ---
+
+// Request to submit a bundle of transactions.
+message SendBundleRequest {
+  // List of base58-encoded signed transactions to include in the bundle.
+  // Transactions execute atomically in the order provided. The last
+  // transaction should include a tip transfer to a Jito tip account.
+  // Maximum 5 transactions per bundle.
+  repeated string transactions = 1;
+}
+
+// Response from submitting a bundle.
+message SendBundleResponse {
+  // The unique bundle ID assigned by Jito. Use this with GetBundleStatuses
+  // to track the bundle's processing state.
+  string bundle_id = 1;
+}
+
+// Request to get bundle statuses.
+message GetBundleStatusesRequest {
+  // List of bundle IDs to query. Each ID was returned by a prior
+  // SendBundle call.
+  repeated string bundle_ids = 1;
+}
+
+// Response containing bundle statuses.
+message GetBundleStatusesResponse {
+  // Status information for each requested bundle.
+  repeated BundleStatus statuses = 1;
+}
+
+// Request to get the current tip floor.
+message GetTipFloorRequest {}
+
+// Response containing tip floor data.
+message GetTipFloorResponse {
+  // Tip floor entries (typically one per recent time window).
+  repeated TipFloorEntry entries = 1;
+}
+
+// --- Domain types ---
+
+// Status of a submitted bundle.
+message BundleStatus {
+  // The bundle ID.
+  string bundle_id = 1;
+  // Processing status: "Invalid", "Pending", "Failed", "Landed".
+  string status = 2;
+  // The slot the bundle landed in (0 if not yet landed).
+  int64 landed_slot = 3;
+  // Error information if the bundle failed.
+  string error = 4;
+}
+
+// A tip floor entry with percentile-based tip amounts in SOL.
+message TipFloorEntry {
+  // Time window for this entry (e.g. recent epoch).
+  string time = 1;
+  // 25th percentile of landed tips (SOL).
+  double landed_tips_25th_percentile = 2;
+  // 50th percentile of landed tips (SOL).
+  double landed_tips_50th_percentile = 3;
+  // 75th percentile of landed tips (SOL).
+  double landed_tips_75th_percentile = 4;
+  // 95th percentile of landed tips (SOL).
+  double landed_tips_95th_percentile = 5;
+  // 99th percentile of landed tips (SOL).
+  double landed_tips_99th_percentile = 6;
+  // EMA (exponential moving average) of landed tips (SOL).
+  double ema_landed_tips_50th_percentile = 7;
+}

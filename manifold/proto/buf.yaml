@@ -1,0 +1,9 @@
+version: v2
+modules:
+  - path: .
+deps:
+  - buf.build/googleapis/googleapis
+lint:
+  ignore_only:
+    FIELD_LOWER_SNAKE_CASE:
+      - manifold/v1/manifold.proto

@@ -1,0 +1,277 @@
+syntax = "proto3";
+
+package beefy.v1;
+
+// BeefyService provides yield-optimization analytics from Beefy Finance,
+// a multi-chain yield optimizer covering 20+ blockchains.
+//
+// All endpoints are **free and require no authentication**.
+// Data covers vault listings, APY/APR breakdowns, TVL, fee structures,
+// LP token prices, and active boost campaigns.
+//
+// Use this to discover yield vaults, compare APYs across chains,
+// analyze fee structures, and track boost incentives.
+service BeefyService {
+
+  // List all vaults across every supported chain.
+  //
+  // Returns every vault tracked by Beefy Finance with metadata including
+  // chain, status, assets, token addresses, strategy type, and risk flags.
+  // Use this to discover yield opportunities, filter by chain or status,
+  // and inspect vault configurations.
+  rpc ListVaults(ListVaultsRequest) returns (ListVaultsResponse);
+
+  // Get current APY for all vaults.
+  //
+  // Returns a map of vault ID to its current annual percentage yield.
+  // APY values are decimals (e.g., 0.25 = 25%). Use this to rank vaults
+  // by yield and compare returns across strategies.
+  rpc GetApys(GetApysRequest) returns (GetApysResponse);
+
+  // Get detailed APR/APY breakdown for all vaults.
+  //
+  // Returns per-vault breakdown including vault APR, trading APR,
+  // compounding frequency, and fee components. Use this to understand
+  // where yield comes from (base vs trading vs boost) and how fees
+  // affect net returns.
+  rpc GetApyBreakdown(GetApyBreakdownRequest) returns (GetApyBreakdownResponse);
+
+  // Get TVL for all vaults grouped by chain.
+  //
+  // Returns a map of chain ID to per-vault TVL in USD.
+  // Use this to gauge vault popularity, identify well-capitalized
+  // strategies, and compare chain-level DeFi activity.
+  rpc GetTVL(GetTVLRequest) returns (GetTVLResponse);
+
+  // Get fee structures for all vaults.
+  //
+  // Returns per-vault fee breakdowns including performance fees
+  // (split among strategist, treasury, stakers, caller) and
+  // withdrawal fees. Use this to compare vault costs and understand
+  // the fee distribution model.
+  rpc GetFees(GetFeesRequest) returns (GetFeesResponse);
+
+  // Get LP token prices.
+  //
+  // Returns a map of LP token ID to its current price in USD.
+  // Use this to value LP positions, calculate portfolio worth,
+  // and track LP token price movements.
+  rpc GetLPPrices(GetLPPricesRequest) returns (GetLPPricesResponse);
+
+  // Get active boost campaigns.
+  //
+  // Returns all active boost campaigns with their reward tokens,
+  // partner info, and period details. Use this to find additional
+  // yield incentives on top of base vault returns.
+  rpc GetBoosts(GetBoostsRequest) returns (GetBoostsResponse);
+}
+
+// --- Domain types ---
+
+// Risk assessment flags for a vault.
+message VaultRisks {
+  bool complex = 1;
+  bool curated = 2;
+  bool not_audited = 3;
+  bool not_battle_tested = 4;
+  bool not_correlated = 5;
+  bool not_timelocked = 6;
+  bool not_verified = 7;
+  bool synth_asset = 8;
+}
+
+// A Beefy vault with full metadata.
+message Vault {
+  // Unique vault identifier (e.g., "curve-usdc-usdf").
+  string id = 1;
+  // Human-readable vault name.
+  string name = 2;
+  // Vault type (e.g., "standard", "gov").
+  string type = 3;
+  // LP or deposit token symbol.
+  string token = 4;
+  // Token contract address.
+  string token_address = 5;
+  // Token decimals.
+  int32 token_decimals = 6;
+  // Vault (moo) contract address.
+  string earn_contract_address = 7;
+  // Earned (moo) token symbol.
+  string earned_token = 8;
+  // Vault status: "active" or "eol".
+  string status = 9;
+  // Blockchain network (e.g., "ethereum", "bsc").
+  string chain = 10;
+  // Platform/DEX used (e.g., "convex", "pancakeswap").
+  string platform_id = 11;
+  // Underlying asset symbols.
+  repeated string assets = 12;
+  // Strategy type (e.g., "lp", "multi-lp", "single").
+  string strategy_type_id = 13;
+  // Risk assessment flags.
+  VaultRisks risks = 14;
+  // Unix timestamp when vault was created.
+  int64 created_at = 15;
+  // Strategy contract address.
+  string strategy = 16;
+  // Unix timestamp of last harvest.
+  int64 last_harvest = 17;
+  // Price per full share (raw, as string for precision).
+  string price_per_full_share = 18;
+  // Whether this is a governance vault.
+  bool is_gov_vault = 19;
+}
+
+// APY for a single vault.
+message VaultApy {
+  // Vault identifier.
+  string vault_id = 1;
+  // Annual percentage yield as a decimal (e.g., 0.25 = 25%).
+  double apy = 2;
+}
+
+// Detailed APR/APY breakdown for a single vault.
+message ApyBreakdown {
+  // Vault identifier.
+  string vault_id = 1;
+  // Total APY after compounding.
+  double total_apy = 2;
+  // Vault APR before compounding.
+  double vault_apr = 3;
+  // Compounding events per year.
+  double compoundings_per_year = 4;
+  // Beefy performance fee rate.
+  double beefy_performance_fee = 5;
+  // LP/trading fee rate.
+  double lp_fee = 6;
+  // Trading APR component.
+  double trading_apr = 7;
+  // Boost APR component.
+  double boost_apr = 8;
+}
+
+// TVL entry for a single vault.
+message VaultTVL {
+  // Vault identifier.
+  string vault_id = 1;
+  // Total value locked in USD.
+  double tvl_usd = 2;
+}
+
+// TVL data grouped by chain.
+message ChainTVL {
+  // Chain identifier (numeric chain ID as string, e.g., "1", "56").
+  string chain_id = 1;
+  // Per-vault TVL on this chain.
+  repeated VaultTVL vaults = 2;
+}
+
+// Performance fee breakdown.
+message PerformanceFees {
+  // Total performance fee rate.
+  double total = 1;
+  // Strategist's share.
+  double strategist = 2;
+  // Harvest caller's share.
+  double call = 3;
+  // Treasury's share.
+  double treasury = 4;
+  // Stakers' share.
+  double stakers = 5;
+}
+
+// Fee structure for a single vault.
+message VaultFees {
+  // Vault identifier.
+  string vault_id = 1;
+  // Performance fee breakdown.
+  PerformanceFees performance = 2;
+  // Withdrawal fee rate.
+  double withdraw = 3;
+  // Deposit fee rate.
+  double deposit = 4;
+  // Last updated timestamp in milliseconds.
+  int64 last_updated = 5;
+}
+
+// LP token price entry.
+message LPPrice {
+  // LP token identifier.
+  string lp_id = 1;
+  // Price in USD.
+  double price = 2;
+}
+
+// A boost campaign on a vault.
+message Boost {
+  // Unique boost identifier.
+  string id = 1;
+  // Boost display name.
+  string name = 2;
+  // Blockchain network.
+  string chain = 3;
+  // Associated vault (pool) ID.
+  string pool_id = 4;
+  // Underlying asset symbols.
+  repeated string assets = 5;
+  // Boost status.
+  string status = 6;
+  // Boost contract address.
+  string earn_contract_address = 7;
+  // Earned reward token symbol.
+  string earned_token = 8;
+  // Earned reward token decimals.
+  int32 earned_token_decimals = 9;
+  // Earned reward token address.
+  string earned_token_address = 10;
+  // Partner names offering the boost.
+  repeated string partners = 11;
+  // Whether moo token staking is required.
+  bool is_moo_staked = 12;
+  // Unix timestamp when boost period ends.
+  int64 period_finish = 13;
+}
+
+// --- Request / Response messages ---
+
+message ListVaultsRequest {}
+
+message ListVaultsResponse {
+  repeated Vault vaults = 1;
+}
+
+message GetApysRequest {}
+
+message GetApysResponse {
+  repeated VaultApy apys = 1;
+}
+
+message GetApyBreakdownRequest {}
+
+message GetApyBreakdownResponse {
+  repeated ApyBreakdown breakdowns = 1;
+}
+
+message GetTVLRequest {}
+
+message GetTVLResponse {
+  repeated ChainTVL chains = 1;
+}
+
+message GetFeesRequest {}
+
+message GetFeesResponse {
+  repeated VaultFees fees = 1;
+}
+
+message GetLPPricesRequest {}
+
+message GetLPPricesResponse {
+  repeated LPPrice prices = 1;
+}
+
+message GetBoostsRequest {}
+
+message GetBoostsResponse {
+  repeated Boost boosts = 1;
+}

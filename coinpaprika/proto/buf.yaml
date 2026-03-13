@@ -1,0 +1,9 @@
+version: v2
+modules:
+  - path: .
+lint:
+  ignore_only:
+    RPC_REQUEST_STANDARD_NAME:
+      - coinpaprika/v1/coinpaprika.proto
+    RPC_RESPONSE_STANDARD_NAME:
+      - coinpaprika/v1/coinpaprika.proto

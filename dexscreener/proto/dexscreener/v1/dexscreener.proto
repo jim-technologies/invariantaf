@@ -1,0 +1,203 @@
+syntax = "proto3";
+
+package dexscreener.v1;
+
+// DexScreenerService proxies public endpoints from the DexScreener API.
+service DexScreenerService {
+  // Search pairs by token name, symbol, or address.
+  rpc SearchPairs(SearchPairsRequest) returns (SearchPairsResponse);
+
+  // Get specific pairs by chain and pair addresses (comma-separated).
+  rpc GetPairsByChainAndAddress(GetPairsByChainAndAddressRequest) returns (GetPairsByChainAndAddressResponse);
+
+  // Get all pairs for given token addresses (comma-separated).
+  rpc GetTokenPairs(GetTokenPairsRequest) returns (GetTokenPairsResponse);
+
+  // Get latest token profiles.
+  rpc GetLatestTokenProfiles(GetLatestTokenProfilesRequest) returns (GetLatestTokenProfilesResponse);
+
+  // Get latest boosted tokens.
+  rpc GetLatestBoostedTokens(GetLatestBoostedTokensRequest) returns (GetLatestBoostedTokensResponse);
+
+  // Get top boosted tokens.
+  rpc GetTopBoostedTokens(GetTopBoostedTokensRequest) returns (GetTopBoostedTokensResponse);
+
+  // Get orders/ads for a specific token.
+  rpc GetOrdersByToken(GetOrdersByTokenRequest) returns (GetOrdersByTokenResponse);
+}
+
+// --- Shared messages ---
+
+message Token {
+  string address = 1;
+  string name = 2;
+  string symbol = 3;
+}
+
+message Transactions {
+  int32 buys = 1;
+  int32 sells = 2;
+}
+
+message TransactionsByPeriod {
+  Transactions m5 = 1;
+  Transactions h1 = 2;
+  Transactions h6 = 3;
+  Transactions h24 = 4;
+}
+
+message Volume {
+  double m5 = 1;
+  double h1 = 2;
+  double h6 = 3;
+  double h24 = 4;
+}
+
+message PriceChange {
+  double m5 = 1;
+  double h1 = 2;
+  double h6 = 3;
+  double h24 = 4;
+}
+
+message Liquidity {
+  double usd = 1;
+  double base = 2;
+  double quote = 3;
+}
+
+message Pair {
+  string chain_id = 1;
+  string dex_id = 2;
+  string url = 3;
+  string pair_address = 4;
+  Token base_token = 5;
+  Token quote_token = 6;
+  string price_native = 7;
+  string price_usd = 8;
+  TransactionsByPeriod txns = 9;
+  Volume volume = 10;
+  PriceChange price_change = 11;
+  Liquidity liquidity = 12;
+  double fdv = 13;
+  double market_cap = 14;
+  int64 pair_created_at = 15;
+  repeated string labels = 16;
+}
+
+// --- SearchPairs ---
+
+message SearchPairsRequest {
+  // Search query: token name, symbol, or address.
+  string query = 1;
+}
+
+message SearchPairsResponse {
+  repeated Pair pairs = 1;
+}
+
+// --- GetPairsByChainAndAddress ---
+
+message GetPairsByChainAndAddressRequest {
+  // Chain ID (e.g. "ethereum", "solana", "bsc").
+  string chain_id = 1;
+  // Comma-separated pair addresses.
+  string pair_addresses = 2;
+}
+
+message GetPairsByChainAndAddressResponse {
+  repeated Pair pairs = 1;
+}
+
+// --- GetTokenPairs ---
+
+message GetTokenPairsRequest {
+  // Comma-separated token addresses.
+  string token_addresses = 1;
+}
+
+message GetTokenPairsResponse {
+  repeated Pair pairs = 1;
+}
+
+// --- GetLatestTokenProfiles ---
+
+message TokenProfileLink {
+  string label = 1;
+  string type = 2;
+  string url = 3;
+}
+
+message TokenProfile {
+  string url = 1;
+  string chain_id = 2;
+  string token_address = 3;
+  string icon = 4;
+  string header = 5;
+  string open_graph = 6;
+  string description = 7;
+  repeated TokenProfileLink links = 8;
+}
+
+message GetLatestTokenProfilesRequest {}
+
+message GetLatestTokenProfilesResponse {
+  repeated TokenProfile profiles = 1;
+}
+
+// --- GetLatestBoostedTokens / GetTopBoostedTokens ---
+
+message BoostedToken {
+  string url = 1;
+  string chain_id = 2;
+  string token_address = 3;
+  string description = 4;
+  string icon = 5;
+  string header = 6;
+  string open_graph = 7;
+  repeated TokenProfileLink links = 8;
+  double total_amount = 9;
+  double amount = 10;
+}
+
+message GetLatestBoostedTokensRequest {}
+
+message GetLatestBoostedTokensResponse {
+  repeated BoostedToken tokens = 1;
+}
+
+message GetTopBoostedTokensRequest {}
+
+message GetTopBoostedTokensResponse {
+  repeated BoostedToken tokens = 1;
+}
+
+// --- GetOrdersByToken ---
+
+message GetOrdersByTokenRequest {
+  // Chain ID (e.g. "ethereum", "solana").
+  string chain_id = 1;
+  // Token address.
+  string token_address = 2;
+}
+
+message TokenOrder {
+  string chain_id = 1;
+  string token_address = 2;
+  string type = 3;
+  string status = 4;
+  int64 payment_timestamp = 5;
+}
+
+message TokenBoost {
+  string chain_id = 1;
+  string token_address = 2;
+  string id = 3;
+  double amount = 4;
+  int64 payment_timestamp = 5;
+}
+
+message GetOrdersByTokenResponse {
+  repeated TokenOrder orders = 1;
+  repeated TokenBoost boosts = 2;
+}

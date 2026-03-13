@@ -1,0 +1,164 @@
+syntax = "proto3";
+
+package bls.v1;
+
+// BLSService provides Bureau of Labor Statistics economic data
+// via the BLS Public Data API v2.
+//
+// Key data includes CPI (Consumer Price Index), unemployment rate,
+// nonfarm payrolls, and labor force participation -- the primary
+// indicators used in economic prediction markets on Kalshi/Polymarket.
+//
+// Basic access requires no authentication. Set BLS_API_KEY for
+// higher rate limits (registered access).
+service BLSService {
+
+  // Get time series observations for a single BLS series.
+  //
+  // Fetches data points for the specified series ID over the given
+  // year range. Returns period-level observations with value,
+  // footnotes, and period metadata.
+  // Use this to pull historical data for a specific economic indicator.
+  rpc GetSeriesData(GetSeriesDataRequest) returns (GetSeriesDataResponse);
+
+  // Get time series observations for multiple BLS series at once.
+  //
+  // Fetches data for up to 50 series IDs in a single request.
+  // Returns observations grouped by series ID.
+  // Use this to compare multiple indicators side-by-side.
+  rpc GetMultipleSeries(GetMultipleSeriesRequest) returns (GetMultipleSeriesResponse);
+
+  // Get the latest CPI-U All Items value.
+  //
+  // Convenience RPC that fetches the most recent observation for
+  // series CUUR0000SA0 (Consumer Price Index for All Urban Consumers).
+  // This is the headline CPI number used in inflation prediction markets.
+  rpc GetLatestCPI(GetLatestCPIRequest) returns (GetLatestCPIResponse);
+
+  // Get the latest unemployment rate.
+  //
+  // Convenience RPC that fetches the most recent observation for
+  // series LNS14000000 (Unemployment Rate).
+  // This is the headline unemployment number used in labor market
+  // prediction markets.
+  rpc GetLatestUnemployment(GetLatestUnemploymentRequest) returns (GetLatestUnemploymentResponse);
+
+  // Get the latest total nonfarm payrolls value.
+  //
+  // Convenience RPC that fetches the most recent observation for
+  // series CES0000000001 (Total Nonfarm Payrolls).
+  // This is the headline jobs number from the monthly Employment
+  // Situation report.
+  rpc GetLatestNonfarmPayrolls(GetLatestNonfarmPayrollsRequest) returns (GetLatestNonfarmPayrollsResponse);
+
+  // Search for series metadata using catalog information.
+  //
+  // Fetches series metadata by requesting catalog data for the
+  // given series IDs. Returns series title, survey name, and
+  // other descriptive information.
+  // Use this to discover what a series ID represents.
+  rpc SearchSeries(SearchSeriesRequest) returns (SearchSeriesResponse);
+}
+
+// --- Domain types ---
+
+message Observation {
+  // Year of the observation (e.g., "2024").
+  string year = 1;
+  // Period code (e.g., "M01" for January, "M13" for annual average).
+  string period = 2;
+  // Human-readable period name (e.g., "January").
+  string period_name = 3;
+  // Observation value as a string (e.g., "314.175").
+  string value = 4;
+  // Footnote codes, if any.
+  repeated string footnotes = 5;
+  // Whether this is a preliminary value.
+  bool preliminary = 6;
+  // Whether this is the latest observation.
+  bool latest = 7;
+}
+
+message SeriesData {
+  // BLS series identifier (e.g., "CUUR0000SA0").
+  string series_id = 1;
+  // Observations ordered by time.
+  repeated Observation observations = 2;
+}
+
+message SeriesCatalog {
+  // BLS series identifier.
+  string series_id = 1;
+  // Human-readable title of the series.
+  string series_title = 2;
+  // Name of the BLS survey this series belongs to.
+  string survey_name = 3;
+  // BLS survey abbreviation.
+  string survey_abbreviation = 4;
+  // Whether the series is seasonally adjusted.
+  bool seasonally_adjusted = 5;
+}
+
+// --- Request / Response messages ---
+
+message GetSeriesDataRequest {
+  // BLS series ID to fetch (e.g., "CUUR0000SA0").
+  string series_id = 1;
+  // Start year (e.g., "2023"). Defaults to current year if empty.
+  string start_year = 2;
+  // End year (e.g., "2024"). Defaults to current year if empty.
+  string end_year = 3;
+}
+
+message GetSeriesDataResponse {
+  SeriesData series = 1;
+}
+
+message GetMultipleSeriesRequest {
+  // List of BLS series IDs to fetch (max 50).
+  repeated string series_ids = 1;
+  // Start year. Defaults to current year if empty.
+  string start_year = 2;
+  // End year. Defaults to current year if empty.
+  string end_year = 3;
+}
+
+message GetMultipleSeriesResponse {
+  repeated SeriesData series = 1;
+}
+
+message GetLatestCPIRequest {}
+
+message GetLatestCPIResponse {
+  // Series ID (always "CUUR0000SA0").
+  string series_id = 1;
+  // The latest CPI-U All Items observation.
+  Observation observation = 2;
+}
+
+message GetLatestUnemploymentRequest {}
+
+message GetLatestUnemploymentResponse {
+  // Series ID (always "LNS14000000").
+  string series_id = 1;
+  // The latest unemployment rate observation.
+  Observation observation = 2;
+}
+
+message GetLatestNonfarmPayrollsRequest {}
+
+message GetLatestNonfarmPayrollsResponse {
+  // Series ID (always "CES0000000001").
+  string series_id = 1;
+  // The latest total nonfarm payrolls observation.
+  Observation observation = 2;
+}
+
+message SearchSeriesRequest {
+  // Series IDs to look up catalog metadata for.
+  repeated string series_ids = 1;
+}
+
+message SearchSeriesResponse {
+  repeated SeriesCatalog results = 1;
+}

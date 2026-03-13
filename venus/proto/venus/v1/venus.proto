@@ -1,0 +1,140 @@
+syntax = "proto3";
+
+package venus.v1;
+
+option go_package = "github.com/jim-technologies/invariantaf/venus/proto/venus/v1;venusv1";
+
+// VenusService provides read-only access to the Venus Protocol lending and
+// borrowing platform on BNB Smart Chain via the public Venus API.
+//
+// Venus is a decentralized lending/borrowing protocol where users can supply
+// assets to earn interest or borrow against their collateral. Markets are
+// organized into pools, with the core pool being the primary lending pool.
+//
+// No authentication is required. The public API base URL is
+// https://api.venus.io.
+//
+// Use this service to list lending markets (supply/borrow APY, TVL),
+// fetch details for a specific market by underlying token address,
+// list all lending pools, and query pool liquidity data.
+service VenusService {
+  // List all lending markets in the Venus core pool.
+  //
+  // Returns every active market including supply APY, borrow APY,
+  // total supply, total borrows, and total value locked.
+  //
+  // Wraps: GET /markets/core-pool
+  rpc ListMarkets(ListMarketsRequest) returns (ListMarketsResponse);
+
+  // Get details for a specific lending market by underlying token address.
+  //
+  // Returns detailed market metrics including supply/borrow APY,
+  // total supply, total borrows, liquidity, collateral factor,
+  // and token information.
+  //
+  // Wraps: GET /markets/core-pool?underlyingAddress={address}
+  rpc GetMarket(GetMarketRequest) returns (GetMarketResponse);
+
+  // List all lending pools on Venus Protocol.
+  //
+  // Returns every available lending pool with its name, description,
+  // and associated markets.
+  //
+  // Wraps: GET /pools
+  rpc ListPools(ListPoolsRequest) returns (ListPoolsResponse);
+
+  // Get pool liquidity data across Venus lending pools.
+  //
+  // Returns liquidity information for pools including total supply,
+  // total borrows, and available liquidity.
+  //
+  // Wraps: GET /pools/liquidity
+  rpc GetPoolLiquidity(GetPoolLiquidityRequest) returns (GetPoolLiquidityResponse);
+}
+
+// --- Request / Response messages ---
+
+// Request to list all lending markets in the core pool.
+message ListMarketsRequest {}
+
+message ListMarketsResponse {
+  // The list of lending markets.
+  repeated Market markets = 1;
+}
+
+// Request to get a specific market by underlying token address.
+message GetMarketRequest {
+  // The underlying token contract address (hex, 0x-prefixed). Required.
+  string underlying_address = 1;
+}
+
+message GetMarketResponse {
+  // The market details.
+  Market market = 1;
+}
+
+// Request to list all lending pools.
+message ListPoolsRequest {}
+
+message ListPoolsResponse {
+  // The list of lending pools.
+  repeated Pool pools = 1;
+}
+
+// Request to get pool liquidity data.
+message GetPoolLiquidityRequest {}
+
+message GetPoolLiquidityResponse {
+  // The pool liquidity data.
+  repeated PoolLiquidity pools = 1;
+}
+
+// --- Domain types ---
+
+// A Venus lending market representing a single asset that can be supplied or borrowed.
+message Market {
+  // The vToken contract address.
+  string address = 1;
+  // The underlying token symbol (e.g. "BNB", "USDT", "BTCB").
+  string underlying_symbol = 2;
+  // The underlying token contract address.
+  string underlying_address = 3;
+  // The underlying token name.
+  string underlying_name = 4;
+  // Current supply APY as a percentage (e.g. 5.25 = 5.25%).
+  double supply_apy = 5;
+  // Current borrow APY as a percentage.
+  double borrow_apy = 6;
+  // Total value supplied in USD.
+  double total_supply_usd = 7;
+  // Total value borrowed in USD.
+  double total_borrows_usd = 8;
+  // Available liquidity in USD.
+  double liquidity_usd = 9;
+  // The underlying token price in USD.
+  double underlying_price_usd = 10;
+  // Collateral factor as a decimal (e.g. 0.80 = 80%).
+  double collateral_factor = 11;
+}
+
+// A Venus lending pool containing multiple markets.
+message Pool {
+  // The pool identifier or name.
+  string name = 1;
+  // A description of the pool.
+  string description = 2;
+  // The comptroller contract address for this pool.
+  string comptroller = 3;
+}
+
+// Liquidity data for a Venus lending pool.
+message PoolLiquidity {
+  // The pool name.
+  string name = 1;
+  // Total value supplied across all markets in USD.
+  double total_supply_usd = 2;
+  // Total value borrowed across all markets in USD.
+  double total_borrows_usd = 3;
+  // Total available liquidity in USD.
+  double available_liquidity_usd = 4;
+}

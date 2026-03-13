@@ -1,0 +1,1 @@
+"""CoinPaprika MCP package."""

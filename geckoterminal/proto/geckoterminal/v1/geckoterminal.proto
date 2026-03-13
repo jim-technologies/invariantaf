@@ -1,0 +1,159 @@
+syntax = "proto3";
+
+package geckoterminal.v1;
+
+// GeckoTerminalService provides access to GeckoTerminal DEX analytics data.
+service GeckoTerminalService {
+  // List all supported blockchain networks.
+  rpc ListNetworks(ListNetworksRequest) returns (ListNetworksResponse);
+
+  // Get trending pools across all networks or for a specific network.
+  rpc GetTrendingPools(GetTrendingPoolsRequest) returns (GetTrendingPoolsResponse);
+
+  // Get a specific pool by network and pool address.
+  rpc GetPool(GetPoolRequest) returns (GetPoolResponse);
+
+  // Search for pools by query string.
+  rpc SearchPools(SearchPoolsRequest) returns (SearchPoolsResponse);
+
+  // Get OHLCV candlestick data for a pool.
+  rpc GetPoolOHLCV(GetPoolOHLCVRequest) returns (GetPoolOHLCVResponse);
+
+  // Get newly created pools on a network.
+  rpc GetNewPools(GetNewPoolsRequest) returns (GetNewPoolsResponse);
+
+  // Get top pools on a specific DEX.
+  rpc GetTopPools(GetTopPoolsRequest) returns (GetTopPoolsResponse);
+}
+
+// --- ListNetworks ---
+
+message ListNetworksRequest {}
+
+message Network {
+  string id = 1;
+  string name = 2;
+  string coingecko_asset_platform_id = 3;
+}
+
+message ListNetworksResponse {
+  repeated Network networks = 1;
+}
+
+// --- GetTrendingPools ---
+
+message GetTrendingPoolsRequest {
+  // Optional network ID to filter trending pools (e.g. "eth", "solana").
+  // If empty, returns trending pools across all networks.
+  optional string network = 1;
+}
+
+message PoolToken {
+  string address = 1;
+  string name = 2;
+  string symbol = 3;
+  string image_url = 4;
+}
+
+message Pool {
+  string address = 1;
+  string name = 2;
+  double base_token_price_usd = 3;
+  double quote_token_price_usd = 4;
+  double fdv_usd = 5;
+  double market_cap_usd = 6;
+  double reserve_in_usd = 7;
+  double volume_usd_h24 = 8;
+  double price_change_percentage_h24 = 9;
+  PoolToken base_token = 10;
+  PoolToken quote_token = 11;
+  string network_id = 12;
+  string dex_id = 13;
+  string pool_created_at = 14;
+  double price_change_percentage_m5 = 15;
+  double price_change_percentage_h1 = 16;
+  double volume_usd_m5 = 17;
+  double volume_usd_h1 = 18;
+}
+
+message GetTrendingPoolsResponse {
+  repeated Pool pools = 1;
+}
+
+// --- GetPool ---
+
+message GetPoolRequest {
+  // Network ID (required, e.g. "eth", "solana").
+  string network = 1;
+  // Pool contract address (required).
+  string address = 2;
+}
+
+message GetPoolResponse {
+  Pool pool = 1;
+}
+
+// --- SearchPools ---
+
+message SearchPoolsRequest {
+  // Search query (required, e.g. token name, symbol, or address).
+  string query = 1;
+  // Optional network ID to filter results.
+  optional string network = 2;
+}
+
+message SearchPoolsResponse {
+  repeated Pool pools = 1;
+}
+
+// --- GetPoolOHLCV ---
+
+message GetPoolOHLCVRequest {
+  // Network ID (required, e.g. "eth", "solana").
+  string network = 1;
+  // Pool contract address (required).
+  string pool_address = 2;
+  // Timeframe: "day", "hour", or "minute".
+  string timeframe = 3;
+  // Aggregation period (default 1).
+  optional int32 aggregate = 4;
+  // Number of candles to return (default 100, max 1000).
+  optional int32 limit = 5;
+}
+
+message OHLCVCandle {
+  int64 timestamp = 1;
+  double open = 2;
+  double high = 3;
+  double low = 4;
+  double close = 5;
+  double volume = 6;
+}
+
+message GetPoolOHLCVResponse {
+  repeated OHLCVCandle candles = 1;
+}
+
+// --- GetNewPools ---
+
+message GetNewPoolsRequest {
+  // Network ID (required, e.g. "eth", "solana").
+  string network = 1;
+}
+
+message GetNewPoolsResponse {
+  repeated Pool pools = 1;
+}
+
+// --- GetTopPools ---
+
+message GetTopPoolsRequest {
+  // Network ID (required, e.g. "eth", "solana").
+  string network = 1;
+  // DEX ID (required, e.g. "uniswap_v3", "raydium").
+  string dex = 2;
+}
+
+message GetTopPoolsResponse {
+  repeated Pool pools = 1;
+}

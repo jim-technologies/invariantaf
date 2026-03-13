@@ -1,0 +1,92 @@
+syntax = "proto3";
+
+package alternativeme.v1;
+
+// AlternativeMeService proxies public endpoints from the Alternative.me API.
+service AlternativeMeService {
+  // Get the Fear & Greed Index (current + historical).
+  rpc GetFearGreedIndex(GetFearGreedIndexRequest) returns (GetFearGreedIndexResponse);
+
+  // Get global crypto market data (top coins with prices, market cap, volume, % changes).
+  rpc GetGlobalMarketData(GetGlobalMarketDataRequest) returns (GetGlobalMarketDataResponse);
+
+  // Get specific coin data by CoinMarketCap ID.
+  rpc GetCoinData(GetCoinDataRequest) returns (GetCoinDataResponse);
+
+  // Get all coin listings.
+  rpc GetListings(GetListingsRequest) returns (GetListingsResponse);
+}
+
+// --- GetFearGreedIndex ---
+
+message GetFearGreedIndexRequest {
+  // Number of results to return (default 1 for current value).
+  optional int32 limit = 1;
+}
+
+message FearGreedEntry {
+  string value = 1;  // 0-100
+  string value_classification = 2;  // "Extreme Fear", "Fear", "Neutral", "Greed", "Extreme Greed"
+  int64 timestamp = 3;
+  string time_until_update = 4;
+}
+
+message GetFearGreedIndexResponse {
+  repeated FearGreedEntry data = 1;
+}
+
+// --- GetGlobalMarketData ---
+
+message GetGlobalMarketDataRequest {
+  // Number of coins to return.
+  optional int32 limit = 1;
+}
+
+message CoinTicker {
+  string id = 1;
+  string name = 2;
+  string symbol = 3;
+  int32 rank = 4;
+  string price_usd = 5;
+  string price_btc = 6;
+  string market_cap_usd = 7;
+  string volume_24h_usd = 8;
+  string percent_change_1h = 9;
+  string percent_change_24h = 10;
+  string percent_change_7d = 11;
+  int64 last_updated = 12;
+}
+
+message GetGlobalMarketDataResponse {
+  repeated CoinTicker data = 1;
+}
+
+// --- GetCoinData ---
+
+message GetCoinDataRequest {
+  // CoinMarketCap ID of the coin.
+  string id = 1;
+}
+
+message GetCoinDataResponse {
+  CoinTicker data = 1;
+}
+
+// --- GetListings ---
+
+message GetListingsRequest {
+  // Number of listings to return.
+  optional int32 limit = 1;
+}
+
+message CoinListing {
+  string id = 1;
+  string name = 2;
+  string symbol = 3;
+  string website_slug = 4;
+  int32 rank = 5;
+}
+
+message GetListingsResponse {
+  repeated CoinListing data = 1;
+}

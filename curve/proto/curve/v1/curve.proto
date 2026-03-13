@@ -1,0 +1,289 @@
+syntax = "proto3";
+
+package curve.v1;
+
+// CurveService provides data from Curve Finance, the largest stablecoin
+// decentralized exchange (DEX) optimized for low-slippage swaps between
+// similarly-priced assets (stablecoins, wrapped tokens, LSTs).
+//
+// All endpoints are **free and require no authentication**.
+// Data covers pool liquidity, trading volumes, APYs from fees and CRV
+// incentives, gauge rewards, and weekly fee revenue across Ethereum,
+// Arbitrum, Optimism, Base, Polygon, Avalanche, and Fantom.
+//
+// Use this to discover stablecoin yield opportunities, track Curve pool
+// health, compare APYs, and monitor protocol revenue.
+service CurveService {
+
+  // Get all liquidity pools for a specific chain and registry.
+  //
+  // Returns detailed pool data including coins, balances, TVL, gauge
+  // rewards, CRV APY, amplification coefficient, and pool URLs.
+  // Use blockchain_id to select the chain (ethereum, arbitrum, optimism,
+  // base, polygon, avalanche, fantom) and registry_id to select the pool
+  // registry (main, crypto, factory, factory-crypto, factory-crvusd).
+  rpc GetPools(GetPoolsRequest) returns (GetPoolsResponse);
+
+  // Get APY data for all pools on a chain.
+  //
+  // Returns base APY (from trading fees), CRV reward APY, and external
+  // gauge reward APY for every pool. Includes daily and weekly APY
+  // calculations and any additional yield from liquid staking tokens.
+  // Use this to compare yield opportunities across Curve pools.
+  rpc GetApys(GetApysRequest) returns (GetApysResponse);
+
+  // Get trading volume data for all pools.
+  //
+  // Returns per-pool trading volumes in USD along with daily and weekly
+  // APY percentages derived from fees. Use this to identify the most
+  // actively traded pools and estimate fee revenue.
+  rpc GetVolumes(GetVolumesRequest) returns (GetVolumesResponse);
+
+  // Get total TVL across all Curve pools.
+  //
+  // Note: this endpoint redirects to the full pool listing. The response
+  // contains all pools with their USD balances which can be summed for
+  // total TVL. Returns full pool data identical to GetPools.
+  rpc GetTVL(GetTVLRequest) returns (GetTVLResponse);
+
+  // Get factory pool TVL.
+  //
+  // Returns the aggregate USD balance across all factory-deployed pools.
+  // Factory pools are permissionlessly deployed by users. Use this to
+  // track the growth of community-created pools.
+  rpc GetFactoryTVL(GetFactoryTVLRequest) returns (GetFactoryTVLResponse);
+
+  // Get weekly fee revenue data.
+  //
+  // Returns a time series of weekly fee revenue collected by the protocol,
+  // plus the cumulative total fees earned since inception. Fees are
+  // denominated in USD and collected from trading activity across all pools.
+  rpc GetWeeklyFees(GetWeeklyFeesRequest) returns (GetWeeklyFeesResponse);
+
+  // Get the current ETH price used by the Curve API.
+  //
+  // Returns the ETH/USD price that Curve uses internally for calculations.
+  // Useful as a reference price or for converting between ETH and USD values.
+  rpc GetETHPrice(GetETHPriceRequest) returns (GetETHPriceResponse);
+
+  // Get subgraph data for a specific chain.
+  //
+  // Returns per-pool data sourced from the chain's subgraph, including
+  // daily and weekly APY, trading volume in USD, virtual price, and pool
+  // type classification. Use this for a lightweight view of pool metrics.
+  rpc GetSubgraphData(GetSubgraphDataRequest) returns (GetSubgraphDataResponse);
+}
+
+// --- Domain types ---
+
+message Coin {
+  // Token contract address.
+  string address = 1;
+  // Current USD price of the token.
+  double usd_price = 2;
+  // Token decimals (as string from API).
+  string decimals = 3;
+  // Whether this token is a base pool LP token.
+  bool is_base_pool_lp_token = 4;
+  // Token ticker symbol (e.g., "DAI", "USDC").
+  string symbol = 5;
+  // Full token name.
+  string name = 6;
+  // Raw token balance in the pool (wei string).
+  string pool_balance = 7;
+}
+
+message GaugeReward {
+  // Gauge contract address.
+  string gauge_address = 1;
+  // USD price of the reward token.
+  double token_price = 2;
+  // Reward token name.
+  string name = 3;
+  // Reward token symbol.
+  string symbol = 4;
+  // Reward token decimals.
+  string decimals = 5;
+  // APY from this reward.
+  double apy = 6;
+  // Reward token contract address.
+  string token_address = 7;
+}
+
+message PoolUrls {
+  repeated string swap = 1;
+  repeated string deposit = 2;
+  repeated string withdraw = 3;
+}
+
+message Pool {
+  // Pool identifier within the registry.
+  string id = 1;
+  // Pool contract address.
+  string address = 2;
+  // Pool display name (e.g., "Curve.fi DAI/USDC/USDT").
+  string name = 3;
+  // LP token symbol (e.g., "3Crv").
+  string symbol = 4;
+  // Asset type name (e.g., "usd", "eth", "btc", "crypto").
+  string asset_type_name = 5;
+  // Coins (tokens) in the pool.
+  repeated Coin coins = 6;
+  // Total USD value locked in the pool.
+  double usd_total = 7;
+  // Whether this is a metapool (pool of a pool).
+  bool is_meta_pool = 8;
+  // Amplification coefficient (controls slippage curve).
+  string amplification_coefficient = 9;
+  // Virtual price of the LP token.
+  string virtual_price = 10;
+  // LP token contract address.
+  string lp_token_address = 11;
+  // Pool implementation contract address.
+  string implementation = 12;
+  // Gauge (staking) contract address.
+  string gauge_address = 13;
+  // External gauge rewards (non-CRV incentives).
+  repeated GaugeReward gauge_rewards = 14;
+  // CRV APY range [min, max] from the gauge.
+  repeated double gauge_crv_apy = 15;
+  // URLs for swap/deposit/withdraw UIs.
+  PoolUrls pool_urls = 16;
+  // Total supply of LP tokens (wei string).
+  string total_supply = 17;
+  // Addresses of coins in the pool.
+  repeated string coins_addresses = 18;
+  // Decimals for each coin.
+  repeated string decimals = 19;
+  // Whether the pool is marked as broken/deprecated.
+  bool is_broken = 20;
+  // Pool creation Unix timestamp.
+  int64 creation_ts = 21;
+  // Pool creation block number.
+  int64 creation_block_number = 22;
+}
+
+message PoolApy {
+  // Pool contract address.
+  string address = 1;
+  // Pool type (main, crypto, stable-factory, factory-crypto).
+  string type = 2;
+  // Trading volume in USD.
+  double volume_usd = 3;
+  // Latest daily APY percentage from fees.
+  double latest_daily_apy_pcent = 4;
+  // Latest weekly APY percentage from fees.
+  double latest_weekly_apy_pcent = 5;
+  // Additional APY from liquid staking tokens.
+  double included_apy_pcent_from_lsts = 6;
+  // Virtual price of the LP token.
+  double virtual_price = 7;
+}
+
+message PoolVolume {
+  // Pool contract address.
+  string address = 1;
+  // Pool type.
+  string type = 2;
+  // Trading volume in USD.
+  double volume_usd = 3;
+  // Latest daily APY percentage.
+  double latest_daily_apy_pcent = 4;
+  // Latest weekly APY percentage.
+  double latest_weekly_apy_pcent = 5;
+  // Additional APY from liquid staking tokens.
+  double included_apy_pcent_from_lsts = 6;
+  // Virtual price of the LP token.
+  double virtual_price = 7;
+}
+
+message WeeklyFeeEntry {
+  // Human-readable date (e.g., "Thu Mar 12 2026").
+  string date = 1;
+  // Unix timestamp in milliseconds.
+  int64 ts = 2;
+  // Raw fee amount in USD for this week.
+  double raw_fees = 3;
+}
+
+message SubgraphPool {
+  // Pool contract address.
+  string address = 1;
+  // Latest daily APY.
+  double latest_daily_apy = 2;
+  // Latest weekly APY.
+  double latest_weekly_apy = 3;
+  // Pool type.
+  string type = 4;
+  // Trading volume in USD.
+  double volume_usd = 5;
+  // Virtual price of the LP token.
+  double virtual_price = 6;
+}
+
+// --- Request / Response messages ---
+
+message GetPoolsRequest {
+  // Blockchain identifier: ethereum, arbitrum, optimism, base, polygon,
+  // avalanche, fantom. Defaults to "ethereum".
+  string blockchain_id = 1;
+  // Registry identifier: main, crypto, factory, factory-crypto,
+  // factory-crvusd. Defaults to "main".
+  string registry_id = 2;
+}
+
+message GetPoolsResponse {
+  repeated Pool pools = 1;
+}
+
+message GetApysRequest {}
+
+message GetApysResponse {
+  repeated PoolApy pools = 1;
+}
+
+message GetVolumesRequest {}
+
+message GetVolumesResponse {
+  repeated PoolVolume pools = 1;
+}
+
+message GetTVLRequest {}
+
+message GetTVLResponse {
+  // All pools with their USD totals.
+  repeated Pool pools = 1;
+}
+
+message GetFactoryTVLRequest {}
+
+message GetFactoryTVLResponse {
+  // Aggregate USD balance across all factory pools.
+  double factory_balances = 1;
+}
+
+message GetWeeklyFeesRequest {}
+
+message GetWeeklyFeesResponse {
+  // Weekly fee entries ordered by date descending.
+  repeated WeeklyFeeEntry weekly_fees = 1;
+  // Cumulative total fees in USD since inception.
+  double total_fees = 2;
+}
+
+message GetETHPriceRequest {}
+
+message GetETHPriceResponse {
+  // Current ETH price in USD.
+  double price = 1;
+}
+
+message GetSubgraphDataRequest {
+  // Blockchain identifier: ethereum, arbitrum, optimism, base, polygon,
+  // avalanche, fantom. Defaults to "ethereum".
+  string blockchain_id = 1;
+}
+
+message GetSubgraphDataResponse {
+  repeated SubgraphPool pools = 1;
+}

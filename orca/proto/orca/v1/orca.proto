@@ -1,0 +1,252 @@
+syntax = "proto3";
+
+package orca.v1;
+
+// OrcaService provides pool analytics, token data, and protocol stats
+// from the Orca DEX on Solana via the Orca REST API.
+//
+// All endpoints are **free and require no authentication**.
+// Data covers Whirlpool concentrated-liquidity pools, token prices,
+// protocol-wide volume/TVL/fees, and the ORCA governance token.
+//
+// Use this to analyze Solana DEX liquidity, compare pool yields,
+// find LP opportunities, and track Orca protocol health.
+service OrcaService {
+
+  // List Whirlpool liquidity pools on Orca.
+  //
+  // Returns pools with TVL, volume, fees, rewards, yield, and token pair info.
+  // Use this to discover pools, compare yields, and find LP opportunities.
+  rpc ListPools(ListPoolsRequest) returns (ListPoolsResponse);
+
+  // Get detailed information about a specific pool by its on-chain address.
+  //
+  // Returns full pool data including tick spacing, fee rate, token balances,
+  // 24h/7d/30d stats, rewards, and locked liquidity percentage.
+  rpc GetPool(GetPoolRequest) returns (GetPoolResponse);
+
+  // Search pools by token pair (e.g., "SOL-USDC").
+  //
+  // Returns matching pools sorted by relevance. Use this when you know
+  // the token pair but not the specific pool address.
+  rpc SearchPools(SearchPoolsRequest) returns (SearchPoolsResponse);
+
+  // List all tokens tracked by Orca.
+  //
+  // Returns tokens with price, supply, metadata, and 24h volume.
+  // Use this to discover tokens available on Orca pools.
+  rpc ListTokens(ListTokensRequest) returns (ListTokensResponse);
+
+  // Get detailed information about a specific token by its mint address.
+  //
+  // Returns token data including price, supply, decimals, metadata,
+  // and 24h trading volume.
+  rpc GetToken(GetTokenRequest) returns (GetTokenResponse);
+
+  // Search tokens by name or symbol (e.g., "ORCA", "Solana").
+  //
+  // Returns matching tokens sorted by relevance. Use this when you know
+  // the token name or symbol but not the mint address.
+  rpc SearchTokens(SearchTokensRequest) returns (SearchTokensResponse);
+
+  // Get protocol-wide statistics for Orca.
+  //
+  // Returns aggregate TVL, 24h volume, 24h fees, and 24h revenue
+  // across all Orca Whirlpools. Use this for a high-level view
+  // of Orca protocol health and activity.
+  rpc GetProtocolStats(GetProtocolStatsRequest) returns (GetProtocolStatsResponse);
+
+  // Get ORCA governance token information.
+  //
+  // Returns the ORCA token price, circulating supply, total supply,
+  // name, symbol, and 24h trading volume.
+  rpc GetProtocolToken(GetProtocolTokenRequest) returns (GetProtocolTokenResponse);
+
+  // Get locked liquidity information for a specific pool.
+  //
+  // Returns the list of liquidity lockers and their locked percentage
+  // for a given pool. Use this to assess pool liquidity permanence
+  // and rug-pull risk.
+  rpc GetLockedLiquidity(GetLockedLiquidityRequest) returns (GetLockedLiquidityResponse);
+}
+
+// --- Domain types ---
+
+message PoolToken {
+  string address = 1;
+  string program_id = 2;
+  string image_url = 3;
+  string name = 4;
+  string symbol = 5;
+  int32 decimals = 6;
+  repeated string tags = 7;
+}
+
+message PoolStats {
+  string volume = 1;
+  string fees = 2;
+  string rewards = 3;
+  string yield_over_tvl = 4;
+}
+
+message PoolReward {
+  string mint = 1;
+  string vault = 2;
+  string authority = 3;
+  string emissions_per_second_x64 = 4;
+  string growth_global_x64 = 5;
+  bool active = 6;
+  string emissions_per_second = 7;
+}
+
+message LockedLiquidity {
+  string name = 1;
+  string locked_percentage = 2;
+}
+
+message Pool {
+  string address = 1;
+  string whirlpools_config = 2;
+  int32 tick_spacing = 3;
+  int32 fee_rate = 4;
+  int32 protocol_fee_rate = 5;
+  string liquidity = 6;
+  string sqrt_price = 7;
+  int32 tick_current_index = 8;
+  string token_mint_a = 9;
+  string token_mint_b = 10;
+  PoolToken token_a = 11;
+  PoolToken token_b = 12;
+  string price = 13;
+  string tvl_usdc = 14;
+  string yield_over_tvl = 15;
+  string token_balance_a = 16;
+  string token_balance_b = 17;
+  PoolStats stats_24h = 18;
+  PoolStats stats_7d = 19;
+  PoolStats stats_30d = 20;
+  repeated PoolReward rewards = 21;
+  repeated LockedLiquidity locked_liquidity_percent = 22;
+  bool has_warning = 23;
+  string pool_type = 24;
+  string updated_at = 25;
+}
+
+message TokenMetadata {
+  string name = 1;
+  string symbol = 2;
+  string description = 3;
+  string image = 4;
+  int32 risk = 5;
+}
+
+message TokenStats {
+  double volume_24h = 1;
+}
+
+message Token {
+  string address = 1;
+  double supply = 2;
+  int32 decimals = 3;
+  bool is_initialized = 4;
+  string token_program = 5;
+  string price_usdc = 6;
+  TokenMetadata metadata = 7;
+  TokenStats stats = 8;
+  string updated_at = 9;
+}
+
+// --- Request / Response messages ---
+
+message ListPoolsRequest {
+  // Maximum number of pools to return (default: 100).
+  int32 limit = 1;
+}
+
+message ListPoolsResponse {
+  repeated Pool pools = 1;
+}
+
+message GetPoolRequest {
+  // On-chain address of the Whirlpool.
+  string address = 1;
+}
+
+message GetPoolResponse {
+  Pool pool = 1;
+}
+
+message SearchPoolsRequest {
+  // Search query, e.g. "SOL-USDC".
+  string query = 1;
+  // Maximum number of results (default: 10).
+  int32 limit = 2;
+}
+
+message SearchPoolsResponse {
+  repeated Pool pools = 1;
+}
+
+message ListTokensRequest {
+  // Maximum number of tokens to return (default: 100).
+  int32 limit = 1;
+}
+
+message ListTokensResponse {
+  repeated Token tokens = 1;
+}
+
+message GetTokenRequest {
+  // Mint address of the token.
+  string mint_address = 1;
+}
+
+message GetTokenResponse {
+  Token token = 1;
+}
+
+message SearchTokensRequest {
+  // Search query, e.g. "ORCA" or "Solana".
+  string query = 1;
+  // Maximum number of results (default: 10).
+  int32 limit = 2;
+}
+
+message SearchTokensResponse {
+  repeated Token tokens = 1;
+}
+
+message GetProtocolStatsRequest {}
+
+message GetProtocolStatsResponse {
+  // Total value locked across all Orca pools, in USDC.
+  string tvl = 1;
+  // 24-hour trading volume in USDC.
+  string volume_24h_usdc = 2;
+  // 24-hour fees collected in USDC.
+  string fees_24h_usdc = 3;
+  // 24-hour revenue in USDC.
+  string revenue_24h_usdc = 4;
+}
+
+message GetProtocolTokenRequest {}
+
+message GetProtocolTokenResponse {
+  string symbol = 1;
+  string name = 2;
+  string description = 3;
+  string image_url = 4;
+  string price = 5;
+  string circulating_supply = 6;
+  string total_supply = 7;
+  string volume_24h = 8;
+}
+
+message GetLockedLiquidityRequest {
+  // On-chain address of the Whirlpool.
+  string address = 1;
+}
+
+message GetLockedLiquidityResponse {
+  repeated LockedLiquidity entries = 1;
+}

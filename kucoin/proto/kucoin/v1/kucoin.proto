@@ -1,0 +1,176 @@
+syntax = "proto3";
+
+package kucoin.v1;
+
+// KucoinService proxies public market data endpoints from the KuCoin exchange.
+service KucoinService {
+  // Get tickers for all trading pairs.
+  rpc GetAllTickers(GetAllTickersRequest) returns (GetAllTickersResponse);
+
+  // Get 24hr stats for a single symbol.
+  rpc GetTicker(GetTickerRequest) returns (GetTickerResponse);
+
+  // Get level-2 order book (top 20) for a symbol.
+  rpc GetOrderbook(GetOrderbookRequest) returns (GetOrderbookResponse);
+
+  // Get kline/candlestick data for a symbol.
+  rpc GetKlines(GetKlinesRequest) returns (GetKlinesResponse);
+
+  // List all available trading pairs.
+  rpc ListSymbols(ListSymbolsRequest) returns (ListSymbolsResponse);
+
+  // Get fiat prices for cryptocurrencies.
+  rpc GetFiat(GetFiatRequest) returns (GetFiatResponse);
+}
+
+// --- GetAllTickers ---
+
+message GetAllTickersRequest {}
+
+message TickerSummary {
+  string symbol = 1;
+  string symbol_name = 2;
+  string buy = 3;
+  string sell = 4;
+  string best_bid_size = 5;
+  string best_ask_size = 6;
+  string change_rate = 7;
+  string change_price = 8;
+  string high = 9;
+  string low = 10;
+  string vol = 11;
+  string vol_value = 12;
+  string last = 13;
+  string average_price = 14;
+  string taker_fee_rate = 15;
+  string maker_fee_rate = 16;
+  string taker_coefficient = 17;
+  string maker_coefficient = 18;
+}
+
+message GetAllTickersResponse {
+  int64 time = 1;
+  repeated TickerSummary ticker = 2;
+}
+
+// --- GetTicker ---
+
+message GetTickerRequest {
+  // Trading pair symbol (e.g. "BTC-USDT")
+  string symbol = 1;
+}
+
+message GetTickerResponse {
+  string time = 1;
+  string symbol = 2;
+  string buy = 3;
+  string sell = 4;
+  string change_rate = 5;
+  string change_price = 6;
+  string high = 7;
+  string low = 8;
+  string vol = 9;
+  string vol_value = 10;
+  string last = 11;
+  string average_price = 12;
+  string taker_fee_rate = 13;
+  string maker_fee_rate = 14;
+  string taker_coefficient = 15;
+  string maker_coefficient = 16;
+}
+
+// --- GetOrderbook ---
+
+message GetOrderbookRequest {
+  // Trading pair symbol (e.g. "BTC-USDT")
+  string symbol = 1;
+}
+
+message OrderbookLevel {
+  string price = 1;
+  string size = 2;
+}
+
+message GetOrderbookResponse {
+  string sequence = 1;
+  int64 time = 2;
+  repeated OrderbookLevel bids = 3;
+  repeated OrderbookLevel asks = 4;
+}
+
+// --- GetKlines ---
+
+message GetKlinesRequest {
+  // Trading pair symbol (e.g. "BTC-USDT")
+  string symbol = 1;
+  // Kline type: "1min", "3min", "5min", "15min", "30min", "1hour", "2hour",
+  // "4hour", "6hour", "8hour", "12hour", "1day", "1week"
+  string type = 2;
+  // Start time in seconds (unix timestamp)
+  int64 start_at = 3;
+  // End time in seconds (unix timestamp)
+  int64 end_at = 4;
+}
+
+message Kline {
+  string time = 1;
+  string open = 2;
+  string close = 3;
+  string high = 4;
+  string low = 5;
+  string volume = 6;
+  string turnover = 7;
+}
+
+message GetKlinesResponse {
+  repeated Kline klines = 1;
+}
+
+// --- ListSymbols ---
+
+message ListSymbolsRequest {
+  // Optional market filter (e.g. "USDS", "BTC")
+  optional string market = 1;
+}
+
+message SymbolInfo {
+  string symbol = 1;
+  string name = 2;
+  string base_currency = 3;
+  string quote_currency = 4;
+  string fee_currency = 5;
+  string market = 6;
+  string base_min_size = 7;
+  string quote_min_size = 8;
+  string base_max_size = 9;
+  string quote_max_size = 10;
+  string base_increment = 11;
+  string quote_increment = 12;
+  string price_increment = 13;
+  string price_limit_rate = 14;
+  string min_funds = 15;
+  bool is_margin_enabled = 16;
+  bool enable_trading = 17;
+}
+
+message ListSymbolsResponse {
+  repeated SymbolInfo symbols = 1;
+}
+
+// --- GetFiat ---
+
+message GetFiatRequest {
+  // Base fiat currency (e.g. "USD")
+  optional string base = 1;
+  // Comma-separated crypto list (e.g. "BTC,ETH")
+  optional string currencies = 2;
+}
+
+message FiatPrice {
+  string currency = 1;
+  string price = 2;
+}
+
+message GetFiatResponse {
+  repeated FiatPrice prices = 1;
+}

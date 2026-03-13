@@ -1,0 +1,184 @@
+syntax = "proto3";
+
+package yearn.v1;
+
+// YearnService provides Yearn Finance vault data from the yDaemon API,
+// the official backend for Yearn's yield-optimizing vaults.
+//
+// All endpoints are **free and require no authentication**.
+// Data covers vaults across Ethereum, Optimism, Polygon, Fantom,
+// Arbitrum, and Base — including APY, TVL, strategies, and fees.
+//
+// Use this to discover yield opportunities, compare vault performance,
+// track strategy allocations, and optimize yield farming.
+service YearnService {
+
+  // List all vaults on a specific chain.
+  //
+  // Returns every Yearn vault on the specified chain with APY, TVL,
+  // token info, fees, and strategy details. Defaults to Ethereum (chainId=1).
+  // Supported chains: Ethereum (1), Optimism (10), Polygon (137),
+  // Fantom (250), Arbitrum (42161), Base (8453).
+  // Use this to discover vaults, compare yields, and find the best
+  // risk-adjusted returns on a specific network.
+  rpc ListVaults(ListVaultsRequest) returns (ListVaultsResponse);
+
+  // Get detailed information about a single vault.
+  //
+  // Returns comprehensive vault data including APY breakdown, TVL,
+  // token info, strategies, fees, and metadata for a specific vault
+  // identified by its on-chain address and chain ID.
+  // Use this when you need full detail on a specific vault.
+  rpc GetVault(GetVaultRequest) returns (GetVaultResponse);
+
+  // List vaults across all supported chains.
+  //
+  // Aggregates vaults from Ethereum, Optimism, Polygon, Fantom,
+  // Arbitrum, and Base into a single response. Each vault includes
+  // its chain ID so you can filter by network.
+  // Use this for cross-chain yield comparison and portfolio analysis.
+  rpc ListAllVaults(ListAllVaultsRequest) returns (ListAllVaultsResponse);
+}
+
+// --- Domain types ---
+
+message TokenInfo {
+  // On-chain token contract address.
+  string address = 1;
+  string name = 2;
+  string symbol = 3;
+  int32 decimals = 4;
+  string description = 5;
+  // Addresses of underlying tokens (for LP/pool tokens).
+  repeated string underlying_tokens_addresses = 6;
+}
+
+message VaultAPR {
+  // APR type (e.g., "v2:averaged", "v3:averaged").
+  string type = 1;
+  // Net APR after fees.
+  double net_apr = 2;
+  // APR over the last week.
+  double week_ago = 3;
+  // APR over the last month.
+  double month_ago = 4;
+  // APR since vault inception.
+  double inception = 5;
+  // Forward-looking net APR estimate.
+  double forward_apr = 6;
+  // Composite forward APR breakdown.
+  CompositeAPR composite = 7;
+}
+
+message CompositeAPR {
+  double boost = 1;
+  double pool_apy = 2;
+  double boosted_apr = 3;
+  double base_apr = 4;
+  double cvx_apr = 5;
+  double rewards_apr = 6;
+}
+
+message VaultFees {
+  // Performance fee (fraction, e.g., 0.1 = 10%).
+  double performance = 1;
+  // Management fee (fraction, e.g., 0.02 = 2%).
+  double management = 2;
+}
+
+message VaultTVL {
+  // Total assets in the vault (raw token amount as string).
+  string total_assets = 1;
+  // TVL in USD.
+  double tvl_usd = 2;
+  // Price per underlying token in USD.
+  double price = 3;
+}
+
+message StrategyDetail {
+  // On-chain strategy contract address.
+  string address = 1;
+  string name = 2;
+  // Strategy lifecycle status (e.g., "Active", "Retired").
+  string status = 3;
+  string total_debt = 4;
+  string total_loss = 5;
+  string total_gain = 6;
+  double performance_fee = 7;
+  // Unix timestamp of last harvest report.
+  int64 last_report = 8;
+  double debt_ratio = 9;
+}
+
+message VaultDetails {
+  bool is_retired = 1;
+  bool is_hidden = 2;
+  bool is_boosted = 3;
+  bool is_automated = 4;
+  bool is_pool = 5;
+  string pool_provider = 6;
+  string stability = 7;
+  string category = 8;
+}
+
+message Vault {
+  // On-chain vault contract address.
+  string address = 1;
+  string name = 2;
+  string display_name = 3;
+  string symbol = 4;
+  string display_symbol = 5;
+  string icon = 6;
+  string version = 7;
+  // Vault type (e.g., "Yearn Vault", "Automated Yearn Vault").
+  string type = 8;
+  string category = 9;
+  int32 decimals = 10;
+  // Chain ID where the vault is deployed.
+  int32 chain_id = 11;
+  bool endorsed = 12;
+  bool boosted = 13;
+  bool emergency_shutdown = 14;
+  // Underlying deposit token.
+  TokenInfo token = 15;
+  VaultTVL tvl = 16;
+  VaultAPR apr = 17;
+  VaultFees fees = 18;
+  repeated StrategyDetail strategies = 19;
+  VaultDetails details = 20;
+  // Price per share (raw string from contract).
+  string price_per_share = 21;
+  // Featuring/ranking score.
+  double featuring_score = 22;
+  // Vault kind (e.g., "Legacy", "Multi Strategy").
+  string kind = 23;
+}
+
+// --- Request / Response messages ---
+
+message ListVaultsRequest {
+  // Chain ID to query. Defaults to 1 (Ethereum).
+  // Supported: 1, 10, 137, 250, 42161, 8453.
+  int32 chain_id = 1;
+}
+
+message ListVaultsResponse {
+  repeated Vault vaults = 1;
+}
+
+message GetVaultRequest {
+  // Chain ID where the vault is deployed.
+  int32 chain_id = 1;
+  // On-chain vault contract address (e.g., "0x...").
+  string address = 2;
+}
+
+message GetVaultResponse {
+  Vault vault = 1;
+}
+
+message ListAllVaultsRequest {}
+
+message ListAllVaultsResponse {
+  repeated Vault vaults = 1;
+}

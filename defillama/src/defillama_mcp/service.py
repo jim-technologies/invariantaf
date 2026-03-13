@@ -91,7 +91,7 @@ class DefiLlamaService:
                 tvl=c.get("tvl") or 0,
                 token_symbol=c.get("tokenSymbol", "") or "",
                 gecko_id=c.get("gecko_id", "") or "",
-                chain_id=c.get("chainId") or 0,
+                chain_id=int(cid) if isinstance(cid := c.get("chainId"), (int, float)) else 0,
             ))
         return resp
 
@@ -151,7 +151,7 @@ class DefiLlamaService:
                 apy_pct_7d=p.get("apyPct7D") or 0,
                 apy_pct_30d=p.get("apyPct30D") or 0,
                 predicted_class=preds.get("predictedClass", "") or "",
-                predicted_probability=preds.get("predictedProbability") or 0,
+                predicted_probability=int(preds.get("predictedProbability") or 0),
             ))
         return resp
 

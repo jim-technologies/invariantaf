@@ -1,0 +1,158 @@
+syntax = "proto3";
+
+package dune.v1;
+
+// DuneService provides on-chain analytics via the Dune Analytics API.
+//
+// Dune lets you run SQL queries against indexed blockchain data and
+// retrieve structured results. Use saved queries by ID to pull
+// metrics such as DEX volumes, wallet activity, token flows, and
+// protocol-level KPIs.
+//
+// Authentication: requires a DUNE_API_KEY environment variable.
+// Base URL: https://api.dune.com/api/v1
+service DuneService {
+
+  // Execute a saved Dune query.
+  //
+  // Triggers execution of a previously saved SQL query identified by
+  // its numeric query_id. Optionally pass query_parameters to override
+  // default parameter values. Returns an execution_id you can poll
+  // with GetExecutionStatus and GetExecutionResults.
+  rpc ExecuteQuery(ExecuteQueryRequest) returns (ExecuteQueryResponse);
+
+  // Check the status of a query execution.
+  //
+  // Returns the current state (PENDING, EXECUTING, COMPLETED, FAILED,
+  // CANCELLED) plus timing metadata. Poll this until the state is
+  // terminal before fetching results.
+  rpc GetExecutionStatus(GetExecutionStatusRequest) returns (GetExecutionStatusResponse);
+
+  // Get the results of a completed query execution.
+  //
+  // Returns column metadata and row data as JSON-encoded strings.
+  // Only succeeds when the execution state is COMPLETED.
+  rpc GetExecutionResults(GetExecutionResultsRequest) returns (GetExecutionResultsResponse);
+
+  // Get the latest cached results for a saved query.
+  //
+  // Returns the most recent successful execution results without
+  // triggering a new run. Useful for dashboards and polling use cases
+  // where fresh-enough data is acceptable.
+  rpc GetLatestResults(GetLatestResultsRequest) returns (GetLatestResultsResponse);
+
+  // Cancel a running query execution.
+  //
+  // Requests cancellation of an in-progress execution. The execution
+  // will transition to CANCELLED state.
+  rpc CancelExecution(CancelExecutionRequest) returns (CancelExecutionResponse);
+}
+
+// --- Domain types ---
+
+message ExecutionMetadata {
+  // Unique identifier for this execution.
+  string execution_id = 1;
+  // The query ID that was executed.
+  string query_id = 2;
+  // Execution state: PENDING, EXECUTING, COMPLETED, FAILED, CANCELLED.
+  string state = 3;
+  // ISO-8601 timestamp when the execution was submitted.
+  string submitted_at = 4;
+  // ISO-8601 timestamp when execution started (empty if still pending).
+  string execution_started_at = 5;
+  // ISO-8601 timestamp when execution ended (empty if not finished).
+  string execution_ended_at = 6;
+  // ISO-8601 timestamp when the execution expires from cache.
+  string expires_at = 7;
+}
+
+message ResultMetadata {
+  // Names of the result columns.
+  repeated string column_names = 1;
+  // Total number of result rows.
+  int32 row_count = 2;
+  // Total size of the result set in bytes.
+  int64 result_set_bytes = 3;
+  // Total number of rows available.
+  int32 total_row_count = 4;
+  // Truncated indicates whether the result was truncated.
+  bool truncated = 5;
+  // Approximate time the query took in seconds.
+  double pending_time_millis = 6;
+  // Execution time in milliseconds.
+  double execution_time_millis = 7;
+}
+
+message QueryParameter {
+  // Parameter key name.
+  string key = 1;
+  // Parameter value (always passed as string).
+  string value = 2;
+  // Parameter type (e.g., "text", "number", "date", "enum").
+  string type = 3;
+}
+
+// --- Request / Response messages ---
+
+message ExecuteQueryRequest {
+  // Numeric ID of the saved Dune query.
+  string query_id = 1;
+  // Optional parameter overrides for the query.
+  repeated QueryParameter query_parameters = 2;
+}
+
+message ExecuteQueryResponse {
+  // Unique identifier for tracking this execution.
+  string execution_id = 1;
+  // Initial state of the execution (typically PENDING).
+  string state = 2;
+}
+
+message GetExecutionStatusRequest {
+  // Execution ID returned from ExecuteQuery.
+  string execution_id = 1;
+}
+
+message GetExecutionStatusResponse {
+  // Full execution metadata including state and timestamps.
+  ExecutionMetadata execution = 1;
+}
+
+message GetExecutionResultsRequest {
+  // Execution ID returned from ExecuteQuery.
+  string execution_id = 1;
+}
+
+message GetExecutionResultsResponse {
+  // Execution metadata.
+  ExecutionMetadata execution = 1;
+  // Result metadata (column names, row count, etc.).
+  ResultMetadata result_metadata = 2;
+  // Result rows as JSON-encoded strings (one per row).
+  repeated string rows = 3;
+}
+
+message GetLatestResultsRequest {
+  // Numeric ID of the saved Dune query.
+  string query_id = 1;
+}
+
+message GetLatestResultsResponse {
+  // Execution metadata from the cached run.
+  ExecutionMetadata execution = 1;
+  // Result metadata.
+  ResultMetadata result_metadata = 2;
+  // Result rows as JSON-encoded strings (one per row).
+  repeated string rows = 3;
+}
+
+message CancelExecutionRequest {
+  // Execution ID to cancel.
+  string execution_id = 1;
+}
+
+message CancelExecutionResponse {
+  // Whether the cancellation was accepted.
+  bool success = 1;
+}

@@ -1,0 +1,80 @@
+syntax = "proto3";
+
+package aave.v1;
+
+// AaveService wraps the Aave v3 GraphQL API for market data and rates.
+service AaveService {
+  // Get all markets and reserves across chains.
+  rpc GetMarkets(GetMarketsRequest) returns (GetMarketsResponse);
+  // Get historical supply APY for a reserve.
+  rpc GetSupplyAPYHistory(GetAPYHistoryRequest) returns (GetAPYHistoryResponse);
+  // Get historical borrow APY for a reserve.
+  rpc GetBorrowAPYHistory(GetAPYHistoryRequest) returns (GetAPYHistoryResponse);
+  // Get detailed reserve info.
+  rpc GetReserve(GetReserveRequest) returns (GetReserveResponse);
+}
+
+// ---------- Request / Response messages ----------
+
+message GetMarketsRequest {
+  // Chain IDs to query (e.g. [1] for Ethereum, [137] for Polygon).
+  // Empty means all chains.
+  repeated int32 chain_ids = 1;
+}
+
+message GetMarketsResponse {
+  repeated Market markets = 1;
+}
+
+message GetAPYHistoryRequest {
+  // Aave market contract address.
+  string market_address = 1;
+  // Underlying token address.
+  string underlying_token = 2;
+  // Chain ID (e.g. 1 for Ethereum).
+  int32 chain_id = 3;
+  // Time window: ONE_WEEK, ONE_MONTH, THREE_MONTHS, ONE_YEAR, ALL_TIME.
+  string window = 4;
+}
+
+message GetAPYHistoryResponse {
+  repeated APYDataPoint data_points = 1;
+}
+
+message GetReserveRequest {
+  string market_address = 1;
+  string underlying_token = 2;
+  int32 chain_id = 3;
+}
+
+message GetReserveResponse {
+  Reserve reserve = 1;
+}
+
+// ---------- Domain messages ----------
+
+message Market {
+  string name = 1;
+  int32 chain_id = 2;
+  string total_market_size = 3;
+  string total_available_liquidity = 4;
+  repeated Reserve reserves = 5;
+}
+
+message Reserve {
+  string symbol = 1;
+  string name = 2;
+  string supply_apy = 3;
+  string total_supplied = 4;
+  string borrow_apy = 5;
+  string total_borrowed = 6;
+  string utilization_rate = 7;
+  string usd_exchange_rate = 8;
+  bool is_frozen = 9;
+  bool borrowing_enabled = 10;
+}
+
+message APYDataPoint {
+  int64 timestamp = 1;
+  string apy = 2;
+}

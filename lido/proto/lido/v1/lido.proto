@@ -1,0 +1,105 @@
+syntax = "proto3";
+
+package lido.v1;
+
+// LidoService provides staking analytics from Lido, the largest
+// ETH liquid staking protocol.
+//
+// All endpoints are **free and require no authentication**.
+// Data covers stETH staking APR (current and 7-day SMA) and
+// withdrawal queue wait time estimates.
+//
+// Use this to monitor ETH staking yields, track APR trends,
+// and estimate withdrawal processing times.
+service LidoService {
+
+  // Get the latest stETH staking APR.
+  //
+  // Returns the most recent annual percentage rate for stETH staking
+  // along with the Unix timestamp of the observation. Also includes
+  // token metadata (symbol, contract address, chain ID).
+  // Use this to check the current ETH staking yield via Lido.
+  rpc GetStETHApr(GetStETHAprRequest) returns (GetStETHAprResponse);
+
+  // Get the 7-day simple moving average of stETH APR.
+  //
+  // Returns the SMA APR computed over the last 7 days, along with
+  // each daily APR data point used in the calculation. Also includes
+  // token metadata. Use this to smooth out daily APR fluctuations
+  // and identify yield trends.
+  rpc GetStETHAprSMA(GetStETHAprSMARequest) returns (GetStETHAprSMAResponse);
+
+  // Estimate withdrawal wait time for a given stETH amount.
+  //
+  // Returns the estimated time until a withdrawal request for the
+  // specified stETH amount would be finalized, including the
+  // projected finalization timestamp and request type classification.
+  // Use this to plan unstaking and assess withdrawal queue depth.
+  rpc GetWithdrawalTime(GetWithdrawalTimeRequest) returns (GetWithdrawalTimeResponse);
+}
+
+// --- Domain types ---
+
+// A single APR observation at a point in time.
+message AprDataPoint {
+  // Unix timestamp (seconds) of the observation.
+  int64 time_unix = 1;
+  // Annual percentage rate as a decimal (e.g., 2.464 means 2.464%).
+  double apr = 2;
+}
+
+// Token metadata returned alongside APR data.
+message TokenMeta {
+  // Token symbol (e.g., "stETH").
+  string symbol = 1;
+  // Token contract address on the chain.
+  string address = 2;
+  // Chain ID (1 = Ethereum mainnet).
+  int32 chain_id = 3;
+}
+
+// Withdrawal request timing information.
+message WithdrawalRequestInfo {
+  // Estimated time until finalization in milliseconds.
+  int64 finalization_in = 1;
+  // Projected finalization timestamp (ISO 8601).
+  string finalization_at = 2;
+  // Request type classification (e.g., "exitValidators").
+  string type = 3;
+}
+
+// --- Request / Response messages ---
+
+message GetStETHAprRequest {}
+
+message GetStETHAprResponse {
+  // The latest APR data point.
+  AprDataPoint data = 1;
+  // Token metadata.
+  TokenMeta meta = 2;
+}
+
+message GetStETHAprSMARequest {}
+
+message GetStETHAprSMAResponse {
+  // Individual daily APR data points used in the SMA calculation.
+  repeated AprDataPoint aprs = 1;
+  // The computed 7-day simple moving average APR.
+  double sma_apr = 2;
+  // Token metadata.
+  TokenMeta meta = 3;
+}
+
+message GetWithdrawalTimeRequest {
+  // Amount of stETH to withdraw (e.g., 32 for 32 stETH).
+  double amount = 1;
+}
+
+message GetWithdrawalTimeResponse {
+  // Withdrawal timing details.
+  WithdrawalRequestInfo request_info = 1;
+  // Calculation status (e.g., "calculated").
+  string status = 2;
+  // When the next calculation will be performed (ISO 8601).
+  string next_calculation_at = 3;
+}

@@ -1,0 +1,169 @@
+syntax = "proto3";
+
+package coinglass.v1;
+
+// CoinGlassService provides aggregated crypto derivatives data from CoinGlass,
+// covering funding rates, open interest, liquidations, and long/short ratios
+// across all major exchanges.
+//
+// Some endpoints may require a CoinGlass API key passed via the
+// `coinglassSecret` header. Set the COINGLASS_API_KEY environment variable
+// to authenticate.
+//
+// Use this to monitor derivatives market conditions, detect funding rate
+// arbitrage, track open interest shifts, and analyze liquidation events.
+service CoinGlassService {
+
+  // Get current funding rates across exchanges for a symbol.
+  //
+  // Returns the latest perpetual-swap funding rates aggregated across
+  // all major exchanges for the requested symbol. Use this to spot
+  // funding-rate arbitrage opportunities and gauge market sentiment.
+  rpc GetFundingRate(GetFundingRateRequest) returns (GetFundingRateResponse);
+
+  // Get aggregated open interest across exchanges for a symbol.
+  //
+  // Returns current open interest data broken down by exchange for the
+  // requested symbol. Use this to monitor leverage build-up and identify
+  // potential squeeze setups.
+  rpc GetOpenInterest(GetOpenInterestRequest) returns (GetOpenInterestResponse);
+
+  // Get liquidation data for a symbol.
+  //
+  // Returns historical liquidation data across exchanges for the requested
+  // symbol and time range. Use this to identify liquidation cascades,
+  // support/resistance zones, and over-leveraged price levels.
+  rpc GetLiquidation(GetLiquidationRequest) returns (GetLiquidationResponse);
+
+  // Get long/short ratio for a symbol.
+  //
+  // Returns the ratio of long to short positions across exchanges for the
+  // requested symbol and time range. Use this to gauge crowd positioning
+  // and identify contrarian trading signals.
+  rpc GetLongShortRatio(GetLongShortRatioRequest) returns (GetLongShortRatioResponse);
+
+  // Get open interest history for a symbol.
+  //
+  // Returns historical open interest data across exchanges for the
+  // requested symbol and time range. Use this to track OI trends,
+  // correlate OI changes with price moves, and detect new money flow.
+  rpc GetOIHistory(GetOIHistoryRequest) returns (GetOIHistoryResponse);
+}
+
+// --- Domain types ---
+
+message ExchangeFundingRate {
+  // Exchange name (e.g., "Binance", "Bybit").
+  string exchange = 1;
+  // Current funding rate (decimal, e.g., 0.0001 = 0.01%).
+  double rate = 2;
+  // Predicted next funding rate.
+  double predicted_rate = 3;
+}
+
+message FundingRateData {
+  // Trading symbol (e.g., "BTC", "ETH").
+  string symbol = 1;
+  // Funding rates per exchange.
+  repeated ExchangeFundingRate exchanges = 2;
+}
+
+message ExchangeOpenInterest {
+  // Exchange name.
+  string exchange = 1;
+  // Open interest in USD.
+  double open_interest_usd = 2;
+  // Open interest in native coin amount.
+  double open_interest_amount = 3;
+}
+
+message OpenInterestData {
+  // Trading symbol.
+  string symbol = 1;
+  // Open interest per exchange.
+  repeated ExchangeOpenInterest exchanges = 2;
+}
+
+message LiquidationRecord {
+  // Unix timestamp in milliseconds.
+  int64 timestamp = 1;
+  // Long liquidation volume in USD.
+  double long_liquidation_usd = 2;
+  // Short liquidation volume in USD.
+  double short_liquidation_usd = 3;
+  // Long liquidation count.
+  int32 long_count = 4;
+  // Short liquidation count.
+  int32 short_count = 5;
+}
+
+message LongShortRecord {
+  // Unix timestamp in milliseconds.
+  int64 timestamp = 1;
+  // Long account ratio (0-1).
+  double long_rate = 2;
+  // Short account ratio (0-1).
+  double short_rate = 3;
+  // Long/short ratio (long_rate / short_rate).
+  double long_short_ratio = 4;
+}
+
+message OIHistoryRecord {
+  // Unix timestamp in milliseconds.
+  int64 timestamp = 1;
+  // Open interest in USD at this point.
+  double open_interest_usd = 2;
+}
+
+// --- Request / Response messages ---
+
+message GetFundingRateRequest {
+  // Trading symbol (e.g., "BTC", "ETH"). If empty, returns all symbols.
+  string symbol = 1;
+}
+
+message GetFundingRateResponse {
+  repeated FundingRateData data = 1;
+}
+
+message GetOpenInterestRequest {
+  // Trading symbol (e.g., "BTC", "ETH"). Required.
+  string symbol = 1;
+}
+
+message GetOpenInterestResponse {
+  OpenInterestData data = 1;
+}
+
+message GetLiquidationRequest {
+  // Trading symbol (e.g., "BTC", "ETH"). Required.
+  string symbol = 1;
+  // Time range type (e.g., "all", "1h", "4h", "12h", "24h"). Defaults to "all".
+  string time_type = 2;
+}
+
+message GetLiquidationResponse {
+  repeated LiquidationRecord records = 1;
+}
+
+message GetLongShortRatioRequest {
+  // Trading symbol (e.g., "BTC", "ETH"). Required.
+  string symbol = 1;
+  // Time range type (e.g., "all", "1h", "4h", "12h", "24h"). Defaults to "all".
+  string time_type = 2;
+}
+
+message GetLongShortRatioResponse {
+  repeated LongShortRecord records = 1;
+}
+
+message GetOIHistoryRequest {
+  // Trading symbol (e.g., "BTC", "ETH"). Required.
+  string symbol = 1;
+  // Time range type (e.g., "all", "1h", "4h", "12h", "24h"). Defaults to "all".
+  string time_type = 2;
+}
+
+message GetOIHistoryResponse {
+  repeated OIHistoryRecord records = 1;
+}

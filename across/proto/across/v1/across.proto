@@ -1,0 +1,177 @@
+syntax = "proto3";
+
+package across.v1;
+
+option go_package = "github.com/jim-technologies/invariantaf/across/proto/across/v1;acrossv1";
+
+// AcrossService provides read-only access to the Across Protocol cross-chain
+// bridge via the public Across API.
+//
+// Across Protocol is an optimistic cross-chain bridge that enables fast and
+// capital-efficient transfers between EVM chains including Ethereum (1),
+// Optimism (10), Arbitrum (42161), Polygon (137), Base (8453), and others.
+//
+// No authentication is required. The public API base URL is
+// https://app.across.to/api.
+//
+// Use this service to query suggested bridge fees, discover available routes,
+// check transfer limits, and inspect LP pool state. Useful for cross-chain
+// arbitrage and bridging cost analysis.
+service AcrossService {
+  // Get suggested fees for a cross-chain bridge transfer.
+  //
+  // Returns the recommended relay fee, LP fee, capital fee, and total
+  // estimated cost for bridging a given token and amount between two chains.
+  // Essential for computing bridge costs before executing a transfer.
+  //
+  // Wraps: GET /suggested-fees
+  rpc GetSuggestedFees(GetSuggestedFeesRequest) returns (GetSuggestedFeesResponse);
+
+  // Get available bridge routes between chains.
+  //
+  // Returns a list of supported token routes between origin and destination
+  // chains, including the token addresses on each chain. Useful for
+  // discovering which tokens can be bridged on a given path.
+  //
+  // Wraps: GET /available-routes
+  rpc GetAvailableRoutes(GetAvailableRoutesRequest) returns (GetAvailableRoutesResponse);
+
+  // Get transfer limits for a token between two chains.
+  //
+  // Returns the minimum and maximum transfer amounts for a given token
+  // and route. Useful for validating transfer amounts before bridging.
+  //
+  // Wraps: GET /limits
+  rpc GetLimits(GetLimitsRequest) returns (GetLimitsResponse);
+
+  // Get LP pool state for a token.
+  //
+  // Returns the current state of the liquidity pool for a given token,
+  // including pool size, utilization, and available liquidity. Useful
+  // for assessing bridge capacity and liquidity depth.
+  //
+  // Wraps: GET /pools
+  rpc GetPoolState(GetPoolStateRequest) returns (GetPoolStateResponse);
+}
+
+// --- Request / Response messages ---
+
+// Request to get suggested bridge fees.
+message GetSuggestedFeesRequest {
+  // The token contract address on the origin chain (hex, 0x-prefixed). Required.
+  string token = 1;
+  // The destination chain ID (e.g. 10 for Optimism). Required.
+  int64 destination_chain_id = 2;
+  // The transfer amount in the token's smallest unit (e.g. wei). Required.
+  string amount = 3;
+  // The origin chain ID (e.g. 1 for Ethereum). Required.
+  int64 origin_chain_id = 4;
+}
+
+message GetSuggestedFeesResponse {
+  // The suggested fees for the bridge transfer.
+  SuggestedFees fees = 1;
+}
+
+// Request to get available bridge routes.
+message GetAvailableRoutesRequest {
+  // The origin chain ID (e.g. 1 for Ethereum). If omitted, returns routes from all chains.
+  int64 origin_chain_id = 1;
+  // The destination chain ID (e.g. 10 for Optimism). If omitted, returns routes to all chains.
+  int64 destination_chain_id = 2;
+}
+
+message GetAvailableRoutesResponse {
+  // The list of available bridge routes.
+  repeated Route routes = 1;
+}
+
+// Request to get transfer limits.
+message GetLimitsRequest {
+  // The token contract address on the origin chain (hex, 0x-prefixed). Required.
+  string token = 1;
+  // The destination chain ID. Required.
+  int64 destination_chain_id = 2;
+  // The origin chain ID. Required.
+  int64 origin_chain_id = 3;
+}
+
+message GetLimitsResponse {
+  // The transfer limits for the token on the given route.
+  Limits limits = 1;
+}
+
+// Request to get LP pool state.
+message GetPoolStateRequest {
+  // The token contract address (hex, 0x-prefixed). Required.
+  string token = 1;
+}
+
+message GetPoolStateResponse {
+  // The current LP pool state for the token.
+  PoolState pool_state = 1;
+}
+
+// --- Domain types ---
+
+// Suggested fees for a cross-chain bridge transfer.
+message SuggestedFees {
+  // The total relay fee amount in the token's smallest unit.
+  string total_relay_fee_amount = 1;
+  // The total relay fee as a percentage (decimal string).
+  string total_relay_fee_pct = 2;
+  // The relayer capital fee as a percentage (decimal string).
+  string relayer_capital_fee_pct = 3;
+  // The relayer gas fee as a percentage (decimal string).
+  string relayer_gas_fee_pct = 4;
+  // The LP fee as a percentage (decimal string).
+  string lp_fee_pct = 5;
+  // Estimated time in seconds for the transfer to complete.
+  double estimated_fill_time_secs = 6;
+  // The timestamp of the fee quote.
+  double timestamp = 7;
+}
+
+// A bridge route between two chains for a specific token.
+message Route {
+  // The origin chain ID.
+  int64 origin_chain_id = 1;
+  // The destination chain ID.
+  int64 destination_chain_id = 2;
+  // The token address on the origin chain.
+  string origin_token = 3;
+  // The token address on the destination chain.
+  string destination_token = 4;
+  // The origin token symbol.
+  string origin_token_symbol = 5;
+  // The destination token symbol.
+  string destination_token_symbol = 6;
+  // Whether this route is currently enabled.
+  bool is_enabled = 7;
+}
+
+// Transfer limits for a token on a given route.
+message Limits {
+  // The minimum deposit amount in the token's smallest unit.
+  string min_deposit = 1;
+  // The maximum deposit amount in the token's smallest unit.
+  string max_deposit = 2;
+  // The maximum deposit amount that can be filled instantly.
+  string max_deposit_instant = 3;
+  // The maximum deposit amount that can be filled via short delay.
+  string max_deposit_short_delay = 4;
+}
+
+// LP pool state for a token.
+message PoolState {
+  // The estimated APY for liquidity providers (decimal string).
+  string estimated_apy = 1;
+  // The exchange rate between LP tokens and the underlying.
+  double exchange_rate_current = 2;
+  // Total pool size in the token's smallest unit.
+  string total_pool_size = 3;
+  // Liquid reserves available in the pool.
+  string liquid_reserves = 4;
+  // Utilization rate of the pool as a decimal (0-1).
+  double utilization_current = 5;
+}

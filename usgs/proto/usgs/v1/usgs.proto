@@ -1,0 +1,210 @@
+syntax = "proto3";
+
+package usgs.v1;
+
+// USGSService provides real-time earthquake, seismic, and water level data
+// from the US Geological Survey (USGS) public APIs.
+//
+// All endpoints are **free and require no authentication**.
+// Data covers earthquakes worldwide, significant seismic events,
+// and real-time water/flood level monitoring at USGS stream gauge sites.
+//
+// Use this for natural disaster monitoring, earthquake risk assessment,
+// flood tracking, and Kalshi weather/disaster market analysis.
+service USGSService {
+
+  // Get earthquakes from the last hour.
+  //
+  // Returns all earthquakes detected worldwide in the last 60 minutes,
+  // including magnitude, location, depth, and tsunami alerts.
+  // Use this for real-time seismic monitoring and early detection
+  // of earthquake activity relevant to disaster prediction markets.
+  rpc GetRecentEarthquakes(GetRecentEarthquakesRequest) returns (GetRecentEarthquakesResponse);
+
+  // Get significant earthquakes from the last 30 days.
+  //
+  // Returns only significant seismic events (typically M4.5+ or felt/damaging)
+  // from the past month. Includes detailed impact data such as felt reports,
+  // estimated intensity, tsunami flags, and alert levels.
+  // Use this for tracking major seismic events that may affect markets.
+  rpc GetSignificantEarthquakes(GetSignificantEarthquakesRequest) returns (GetSignificantEarthquakesResponse);
+
+  // Search earthquakes with filters.
+  //
+  // Query the USGS earthquake catalog with time range, magnitude,
+  // and geographic filters. Supports filtering by start/end time,
+  // minimum/maximum magnitude, and bounding box coordinates.
+  // Use this for historical analysis and custom earthquake queries.
+  rpc SearchEarthquakes(SearchEarthquakesRequest) returns (SearchEarthquakesResponse);
+
+  // Get detailed information about a specific earthquake.
+  //
+  // Returns comprehensive data for a single earthquake event identified
+  // by its USGS event ID, including full location detail, magnitude type,
+  // network source, felt reports, and tsunami/alert status.
+  // Use this when you need complete detail on a specific seismic event.
+  rpc GetEarthquakeDetail(GetEarthquakeDetailRequest) returns (GetEarthquakeDetailResponse);
+
+  // Get real-time water level data from a USGS stream gauge site.
+  //
+  // Returns the latest water level (gauge height) readings from a
+  // specific USGS monitoring site over the last 24 hours. Data includes
+  // timestamped readings and site metadata.
+  // Use this for flood monitoring and water level tracking.
+  rpc GetWaterLevels(GetWaterLevelsRequest) returns (GetWaterLevelsResponse);
+}
+
+// --- Domain types ---
+
+message Earthquake {
+  // USGS event ID (e.g., "us7000m0xl").
+  string id = 1;
+  // Magnitude value.
+  double magnitude = 2;
+  // Magnitude type (e.g., "ml", "mb", "mw").
+  string magnitude_type = 3;
+  // Human-readable location description.
+  string place = 4;
+  // Event time as Unix timestamp in milliseconds.
+  int64 time = 5;
+  // Last update time as Unix timestamp in milliseconds.
+  int64 updated = 6;
+  // Longitude in decimal degrees.
+  double longitude = 7;
+  // Latitude in decimal degrees.
+  double latitude = 8;
+  // Depth in kilometers.
+  double depth = 9;
+  // URL to USGS event page.
+  string url = 10;
+  // URL to detailed GeoJSON.
+  string detail_url = 11;
+  // Number of felt reports submitted.
+  int32 felt = 12;
+  // Maximum Community Determined Intensity (CDI).
+  double cdi = 13;
+  // Maximum Modified Mercalli Intensity (MMI).
+  double mmi = 14;
+  // Alert level: "green", "yellow", "orange", "red".
+  string alert = 15;
+  // Review status: "automatic" or "reviewed".
+  string status = 16;
+  // Whether a tsunami warning was issued (1=yes, 0=no).
+  int32 tsunami = 17;
+  // Significance score (0-1000+).
+  int32 sig = 18;
+  // Network that originally authored the event.
+  string net = 19;
+  // Network event code.
+  string code = 20;
+  // Number of seismic stations used.
+  int32 nst = 21;
+  // Minimum distance to nearest station (degrees).
+  double dmin = 22;
+  // RMS travel time residual (seconds).
+  double rms = 23;
+  // Horizontal position uncertainty (km).
+  double horizontal_error = 24;
+  // Depth uncertainty (km).
+  double depth_error = 25;
+  // Magnitude uncertainty.
+  double magnitude_error = 26;
+  // Number of stations used for magnitude.
+  int32 magnitude_nst = 27;
+  // Event type (e.g., "earthquake", "quarry blast").
+  string type = 28;
+  // Title text (e.g., "M 5.2 - 10km SSW of Somewhere").
+  string title = 29;
+}
+
+message EarthquakeCollection {
+  // Total number of earthquakes returned.
+  int32 count = 1;
+  // Title describing the feed (e.g., "USGS All Earthquakes, Past Hour").
+  string title = 2;
+  // List of earthquake events.
+  repeated Earthquake earthquakes = 3;
+}
+
+message WaterLevelReading {
+  // Timestamp of the reading (ISO 8601 string).
+  string datetime = 1;
+  // Water level value (gauge height in feet).
+  string value = 2;
+}
+
+message WaterLevelSite {
+  // USGS site number (e.g., "01646500").
+  string site_number = 1;
+  // Site name/description.
+  string site_name = 2;
+  // Latitude of the site.
+  double latitude = 3;
+  // Longitude of the site.
+  double longitude = 4;
+  // List of water level readings.
+  repeated WaterLevelReading readings = 5;
+  // Variable description (e.g., "Gage height, ft").
+  string variable_description = 6;
+  // Unit of measurement.
+  string unit = 7;
+}
+
+// --- Request / Response messages ---
+
+message GetRecentEarthquakesRequest {}
+
+message GetRecentEarthquakesResponse {
+  EarthquakeCollection collection = 1;
+}
+
+message GetSignificantEarthquakesRequest {}
+
+message GetSignificantEarthquakesResponse {
+  EarthquakeCollection collection = 1;
+}
+
+message SearchEarthquakesRequest {
+  // Start time (ISO 8601, e.g., "2024-01-01").
+  string start_time = 1;
+  // End time (ISO 8601, e.g., "2024-01-31").
+  string end_time = 2;
+  // Minimum magnitude filter.
+  double min_magnitude = 3;
+  // Maximum magnitude filter.
+  double max_magnitude = 4;
+  // Minimum latitude for bounding box.
+  double min_latitude = 5;
+  // Maximum latitude for bounding box.
+  double max_latitude = 6;
+  // Minimum longitude for bounding box.
+  double min_longitude = 7;
+  // Maximum longitude for bounding box.
+  double max_longitude = 8;
+  // Maximum number of results to return.
+  int32 limit = 9;
+  // Order by: "time" (default), "time-asc", "magnitude", "magnitude-asc".
+  string order_by = 10;
+}
+
+message SearchEarthquakesResponse {
+  EarthquakeCollection collection = 1;
+}
+
+message GetEarthquakeDetailRequest {
+  // USGS event ID (e.g., "us7000m0xl").
+  string event_id = 1;
+}
+
+message GetEarthquakeDetailResponse {
+  Earthquake earthquake = 1;
+}
+
+message GetWaterLevelsRequest {
+  // USGS site number (e.g., "01646500" for Potomac River at DC).
+  string site_number = 1;
+}
+
+message GetWaterLevelsResponse {
+  WaterLevelSite site = 1;
+}

@@ -1,0 +1,290 @@
+syntax = "proto3";
+
+package morpho.v1;
+
+// MorphoService provides lending and borrowing analytics from Morpho,
+// a permissionless and non-custodial lending protocol.
+//
+// All endpoints are **free and require no authentication**.
+// Data covers markets (supply/borrow APYs, TVL, utilization),
+// vaults (managed lending strategies), market positions, and rewards.
+//
+// Use this to monitor DeFi lending yields, find the best supply/borrow
+// rates, track user positions, and discover reward incentives across
+// Morpho markets and vaults.
+service MorphoService {
+
+  // List Morpho lending markets with supply/borrow APYs, TVL, and utilization.
+  //
+  // Returns paginated markets ordered by the chosen criteria (default: supply
+  // TVL descending). Each market includes the loan and collateral assets,
+  // current APYs, USD-denominated supply/borrow amounts, utilization rate,
+  // and any active reward programs. Supports filtering by chain, asset,
+  // and various numeric thresholds.
+  rpc ListMarkets(ListMarketsRequest) returns (ListMarketsResponse);
+
+  // Get detailed information for a single Morpho market by its unique key.
+  //
+  // Returns full market data including loan/collateral assets, current state
+  // (APYs, TVL, utilization, fees), and reward programs. The unique key is
+  // a hex string identifying the market (e.g., "0xb323495f...").
+  rpc GetMarket(GetMarketRequest) returns (GetMarketResponse);
+
+  // List Morpho MetaMorpho vaults with APYs, TVL, and fees.
+  //
+  // Returns paginated vaults ordered by the chosen criteria (default: total
+  // assets USD descending). Each vault includes the underlying asset, current
+  // APY, total assets under management, fee rate, and any active reward
+  // programs. Supports filtering by chain, asset symbol, and TVL thresholds.
+  rpc ListVaults(ListVaultsRequest) returns (ListVaultsResponse);
+
+  // Get detailed information for a single Morpho vault by its address.
+  //
+  // Returns full vault data including underlying asset, current state
+  // (APY, net APY, TVL, fees), reward programs, and the vault's market
+  // allocation breakdown. Requires the vault contract address and optionally
+  // a chain ID.
+  rpc GetVault(GetVaultRequest) returns (GetVaultResponse);
+
+  // List user positions across Morpho markets.
+  //
+  // Returns paginated market positions for a given user address, showing
+  // supply, borrow, and collateral amounts (both raw and USD-denominated),
+  // health factor, and distance to liquidation. Useful for portfolio
+  // monitoring and risk assessment.
+  rpc ListMarketPositions(ListMarketPositionsRequest) returns (ListMarketPositionsResponse);
+}
+
+// --- Shared domain types ---
+
+// Token/asset information.
+message Asset {
+  // Token symbol (e.g., "USDC", "WETH").
+  string symbol = 1;
+  // Token contract address.
+  string address = 2;
+  // Token decimals.
+  int32 decimals = 3;
+}
+
+// Chain information.
+message Chain {
+  // Chain ID (1 = Ethereum, 8453 = Base, etc.).
+  int32 id = 1;
+  // Human-readable network name (e.g., "Ethereum", "Base").
+  string network = 2;
+}
+
+// Reward program on a market or vault.
+message Reward {
+  // Annualised reward rate for suppliers.
+  double supply_apr = 1;
+  // Annualised reward rate for borrowers.
+  double borrow_apr = 2;
+  // The reward token asset.
+  Asset asset = 3;
+}
+
+// --- Market types ---
+
+// Current state of a Morpho market.
+message MarketState {
+  // Annualised supply APY (as a decimal, e.g., 0.05 = 5%).
+  double supply_apy = 1;
+  // Annualised borrow APY.
+  double borrow_apy = 2;
+  // Net supply APY including rewards.
+  double net_supply_apy = 3;
+  // Net borrow APY including rewards.
+  double net_borrow_apy = 4;
+  // Total supply in USD.
+  double supply_assets_usd = 5;
+  // Total borrow in USD.
+  double borrow_assets_usd = 6;
+  // Utilization rate (0.0 to 1.0).
+  double utilization = 7;
+  // Protocol fee rate (0.0 to 1.0).
+  double fee = 8;
+  // Active reward programs on this market.
+  repeated Reward rewards = 9;
+  // Available liquidity in USD.
+  double liquidity_assets_usd = 10;
+  // Collateral value in USD.
+  double collateral_assets_usd = 11;
+}
+
+// A single Morpho lending market.
+message Market {
+  // Unique market identifier (hex string).
+  string unique_key = 1;
+  // The asset being lent/borrowed.
+  Asset loan_asset = 2;
+  // The asset used as collateral (may be absent for idle markets).
+  Asset collateral_asset = 3;
+  // Liquidation loan-to-value ratio (raw BigInt as string, 18 decimals).
+  string lltv = 4;
+  // Current market state (APYs, TVL, etc.).
+  MarketState state = 5;
+  // Chain this market is deployed on.
+  Chain chain = 6;
+}
+
+// --- Vault types ---
+
+// Current state of a Morpho vault.
+message VaultState {
+  // Current annualised APY.
+  double apy = 1;
+  // Net APY after fees.
+  double net_apy = 2;
+  // Total assets under management in USD.
+  double total_assets_usd = 3;
+  // Total assets (raw token amount as string).
+  string total_assets = 4;
+  // Total vault share supply (raw as string).
+  string total_supply = 5;
+  // Vault fee rate (0.0 to 1.0).
+  double fee = 6;
+  // Active reward programs.
+  repeated Reward rewards = 7;
+}
+
+// A Morpho MetaMorpho vault.
+message Vault {
+  // Vault contract address.
+  string address = 1;
+  // Vault name (e.g., "Steakhouse Prime USDC").
+  string name = 2;
+  // Vault token symbol (e.g., "steakUSDC").
+  string symbol = 3;
+  // Underlying asset.
+  Asset asset = 4;
+  // Chain this vault is deployed on.
+  Chain chain = 5;
+  // Current vault state.
+  VaultState state = 6;
+}
+
+// --- Market Position types ---
+
+// State of a user's position in a market.
+message MarketPositionState {
+  // Supply amount (raw token as string).
+  string supply_assets = 1;
+  // Supply amount in USD.
+  double supply_assets_usd = 2;
+  // Borrow amount (raw token as string).
+  string borrow_assets = 3;
+  // Borrow amount in USD.
+  double borrow_assets_usd = 4;
+  // Collateral amount (raw token as string).
+  string collateral = 5;
+  // Collateral value in USD.
+  double collateral_usd = 6;
+}
+
+// A user's position in a Morpho market.
+message MarketPosition {
+  // Health factor (> 1 means safe; null if no borrow).
+  double health_factor = 1;
+  // Market this position is in.
+  Market market = 2;
+  // User wallet address.
+  string user_address = 3;
+  // Current position state.
+  MarketPositionState state = 4;
+}
+
+// --- Request / Response messages ---
+
+// Request to list markets.
+message ListMarketsRequest {
+  // Maximum number of markets to return (default: 10, max: 100).
+  int32 first = 1;
+  // Number of markets to skip (for pagination).
+  int32 skip = 2;
+  // Order by field (e.g., "SupplyAssetsUsd", "SupplyApy", "BorrowApy", "Utilization").
+  string order_by = 3;
+  // Order direction: "Asc" or "Desc" (default: "Desc").
+  string order_direction = 4;
+  // Filter: chain IDs to include (e.g., [1] for Ethereum only).
+  repeated int32 chain_id_in = 5;
+  // Filter: search string to match asset symbols or market keys.
+  string search = 6;
+}
+
+// Response containing a list of markets.
+message ListMarketsResponse {
+  // The markets matching the query.
+  repeated Market markets = 1;
+}
+
+// Request to get a single market.
+message GetMarketRequest {
+  // Unique market key (hex string, required).
+  string unique_key = 1;
+  // Chain ID (optional; helps disambiguate if needed).
+  int32 chain_id = 2;
+}
+
+// Response containing a single market.
+message GetMarketResponse {
+  // The requested market.
+  Market market = 1;
+}
+
+// Request to list vaults.
+message ListVaultsRequest {
+  // Maximum number of vaults to return (default: 10, max: 100).
+  int32 first = 1;
+  // Number of vaults to skip (for pagination).
+  int32 skip = 2;
+  // Order by field (e.g., "TotalAssetsUsd", "Apy", "NetApy").
+  string order_by = 3;
+  // Order direction: "Asc" or "Desc" (default: "Desc").
+  string order_direction = 4;
+  // Filter: chain IDs to include.
+  repeated int32 chain_id_in = 5;
+  // Filter: only show vaults with at least this much TVL in USD.
+  double total_assets_usd_gte = 6;
+  // Filter: search string to match vault name, symbol, or asset.
+  string search = 7;
+}
+
+// Response containing a list of vaults.
+message ListVaultsResponse {
+  // The vaults matching the query.
+  repeated Vault vaults = 1;
+}
+
+// Request to get a single vault.
+message GetVaultRequest {
+  // Vault contract address (required).
+  string address = 1;
+  // Chain ID (optional).
+  int32 chain_id = 2;
+}
+
+// Response containing a single vault.
+message GetVaultResponse {
+  // The requested vault.
+  Vault vault = 1;
+}
+
+// Request to list user market positions.
+message ListMarketPositionsRequest {
+  // User wallet address (required).
+  string user_address = 1;
+  // Maximum number of positions to return (default: 10, max: 100).
+  int32 first = 2;
+  // Number of positions to skip (for pagination).
+  int32 skip = 3;
+  // Filter: chain IDs to include.
+  repeated int32 chain_id_in = 4;
+}
+
+// Response containing user market positions.
+message ListMarketPositionsResponse {
+  // The user's market positions.
+  repeated MarketPosition positions = 1;
+}

@@ -1,0 +1,185 @@
+syntax = "proto3";
+
+package usgovdata.v1;
+
+option go_package = "github.com/jim-technologies/invariantaf/usgovdata/proto/usgovdata/v1;usgovdatav1";
+
+// USGovDataService provides read-only access to US government economic data
+// from the Treasury Fiscal Data API and Census Bureau API.
+//
+// These data releases feed prediction markets (e.g. Kalshi) covering GDP,
+// retail sales, housing data, treasury auctions, and other macro-economic
+// indicators.
+//
+// No authentication is required. The Treasury Fiscal Data API base URL is
+// https://api.fiscaldata.treasury.gov/services/api/fiscal_service.
+//
+// Use this service to fetch national debt figures, average interest rates,
+// treasury auction results, exchange rates, and federal spending data.
+service USGovDataService {
+  // Get the current US national debt (Debt to the Penny).
+  //
+  // Returns the most recent daily records of total public debt outstanding,
+  // including both publicly held and intragovernmental holdings. Updated
+  // daily by the Bureau of the Fiscal Service.
+  //
+  // Wraps: GET /v2/accounting/od/debt_to_penny?sort=-record_date&page[size]=10
+  rpc GetDebtToThePenny(GetDebtToThePennyRequest) returns (GetDebtToThePennyResponse);
+
+  // Get average interest rates on US Treasury securities.
+  //
+  // Returns average interest rates on outstanding marketable and
+  // non-marketable securities. Useful for tracking yield trends and
+  // predicting rate movements.
+  //
+  // Wraps: GET /v2/accounting/od/avg_interest_rates?sort=-record_date&page[size]=10
+  rpc GetTreasuryYields(GetTreasuryYieldsRequest) returns (GetTreasuryYieldsResponse);
+
+  // Get recent US Treasury auction results.
+  //
+  // Returns data on recent Treasury securities sales including bills,
+  // notes, bonds, TIPS, and FRNs. Useful for tracking auction demand
+  // and bid-to-cover ratios.
+  //
+  // Wraps: GET /v1/accounting/od/securities_sales?sort=-record_date&page[size]=10
+  rpc GetTreasuryAuctions(GetTreasuryAuctionsRequest) returns (GetTreasuryAuctionsResponse);
+
+  // Get Treasury exchange rates for foreign currencies.
+  //
+  // Returns exchange rates used by the Treasury for converting foreign
+  // currency receipts and disbursements. Useful for tracking USD strength
+  // against major currencies.
+  //
+  // Wraps: GET /v1/accounting/od/rates_of_exchange?sort=-record_date&page[size]=10
+  rpc GetExchangeRates(GetExchangeRatesRequest) returns (GetExchangeRatesResponse);
+
+  // Get federal spending data from the Monthly Treasury Statement.
+  //
+  // Returns monthly outlays by budget function from MTS Table 5, covering
+  // all major spending categories (defense, Social Security, Medicare, etc.).
+  // Useful for tracking fiscal policy trends and government spending patterns.
+  //
+  // Wraps: GET /v1/accounting/mts/mts_table_5?sort=-record_date&page[size]=10
+  rpc GetFederalSpending(GetFederalSpendingRequest) returns (GetFederalSpendingResponse);
+}
+
+// --- Request / Response messages ---
+
+// Request to get national debt data.
+message GetDebtToThePennyRequest {
+  // Maximum number of records to return (default 10).
+  int64 page_size = 1;
+}
+
+message GetDebtToThePennyResponse {
+  // The list of debt records, most recent first.
+  repeated DebtRecord records = 1;
+}
+
+// Request to get average interest rates.
+message GetTreasuryYieldsRequest {
+  // Maximum number of records to return (default 10).
+  int64 page_size = 1;
+}
+
+message GetTreasuryYieldsResponse {
+  // The list of interest rate records, most recent first.
+  repeated InterestRateRecord records = 1;
+}
+
+// Request to get treasury auction data.
+message GetTreasuryAuctionsRequest {
+  // Maximum number of records to return (default 10).
+  int64 page_size = 1;
+}
+
+message GetTreasuryAuctionsResponse {
+  // The list of auction records, most recent first.
+  repeated AuctionRecord records = 1;
+}
+
+// Request to get exchange rate data.
+message GetExchangeRatesRequest {
+  // Maximum number of records to return (default 10).
+  int64 page_size = 1;
+}
+
+message GetExchangeRatesResponse {
+  // The list of exchange rate records, most recent first.
+  repeated ExchangeRateRecord records = 1;
+}
+
+// Request to get federal spending data.
+message GetFederalSpendingRequest {
+  // Maximum number of records to return (default 10).
+  int64 page_size = 1;
+}
+
+message GetFederalSpendingResponse {
+  // The list of spending records, most recent first.
+  repeated SpendingRecord records = 1;
+}
+
+// --- Domain types ---
+
+// A daily record of US national debt outstanding.
+message DebtRecord {
+  // The date this record was published (YYYY-MM-DD).
+  string record_date = 1;
+  // Total public debt outstanding in dollars.
+  string total_public_debt_outstanding = 2;
+  // Debt held by the public in dollars.
+  string debt_held_public = 3;
+  // Intragovernmental holdings in dollars.
+  string intragov_holdings = 4;
+}
+
+// An average interest rate record for a Treasury security type.
+message InterestRateRecord {
+  // The date this record was published (YYYY-MM-DD).
+  string record_date = 1;
+  // The type of security (e.g. "Treasury Bills", "Treasury Notes").
+  string security_type = 2;
+  // The security description.
+  string security_desc = 3;
+  // The average interest rate as a string percentage.
+  string avg_interest_rate = 4;
+}
+
+// A record of a Treasury securities auction.
+message AuctionRecord {
+  // The date this record was published (YYYY-MM-DD).
+  string record_date = 1;
+  // The type of security sold.
+  string security_type = 2;
+  // The security description.
+  string security_desc = 3;
+  // The issue date of the security.
+  string issue_date = 4;
+  // The maturity date of the security.
+  string maturity_date = 5;
+}
+
+// A Treasury exchange rate record for a foreign currency.
+message ExchangeRateRecord {
+  // The date this record was published (YYYY-MM-DD).
+  string record_date = 1;
+  // The country name.
+  string country = 2;
+  // The currency name.
+  string currency = 3;
+  // The exchange rate (units of foreign currency per USD).
+  string exchange_rate = 4;
+}
+
+// A monthly federal spending record from the Monthly Treasury Statement.
+message SpendingRecord {
+  // The date this record was published (YYYY-MM-DD).
+  string record_date = 1;
+  // The budget function category.
+  string classification_desc = 2;
+  // The current month's spending amount in millions of dollars.
+  string current_month_amt = 3;
+  // The fiscal year-to-date spending amount in millions of dollars.
+  string current_fytd_amt = 4;
+}

@@ -1,0 +1,146 @@
+syntax = "proto3";
+
+package cryptocompare.v1;
+
+// CryptoCompareService proxies public market data endpoints from the CryptoCompare API.
+service CryptoCompareService {
+  // Get the price of a single cryptocurrency in multiple currencies.
+  rpc GetPrice(GetPriceRequest) returns (GetPriceResponse);
+
+  // Get a price matrix for multiple cryptocurrencies in multiple currencies.
+  rpc GetMultiPrice(GetMultiPriceRequest) returns (GetMultiPriceResponse);
+
+  // Get full price data (volume, market cap, etc.) for multiple cryptocurrencies.
+  rpc GetFullPrice(GetFullPriceRequest) returns (GetFullPriceResponse);
+
+  // Get hourly OHLCV history for a cryptocurrency pair.
+  rpc GetHistoHour(GetHistoHourRequest) returns (GetHistoHourResponse);
+
+  // Get daily OHLCV history for a cryptocurrency pair.
+  rpc GetHistoDay(GetHistoDayRequest) returns (GetHistoDayResponse);
+
+  // Get top coins ranked by total volume.
+  rpc GetTopByVolume(GetTopByVolumeRequest) returns (GetTopByVolumeResponse);
+}
+
+// --- GetPrice ---
+
+message GetPriceRequest {
+  // From symbol (e.g. "BTC")
+  string fsym = 1;
+  // To symbols, comma-separated (e.g. "USD,EUR,GBP")
+  string tsyms = 2;
+}
+
+message GetPriceResponse {
+  // Currency -> price mapping
+  map<string, double> prices = 1;
+}
+
+// --- GetMultiPrice ---
+
+message GetMultiPriceRequest {
+  // From symbols, comma-separated (e.g. "BTC,ETH")
+  string fsyms = 1;
+  // To symbols, comma-separated (e.g. "USD,EUR")
+  string tsyms = 2;
+}
+
+message PriceRow {
+  // The source cryptocurrency symbol
+  string from_symbol = 1;
+  // Currency -> price mapping
+  map<string, double> prices = 2;
+}
+
+message GetMultiPriceResponse {
+  repeated PriceRow rows = 1;
+}
+
+// --- GetFullPrice ---
+
+message GetFullPriceRequest {
+  // From symbols, comma-separated (e.g. "BTC,ETH")
+  string fsyms = 1;
+  // To symbols, comma-separated (e.g. "USD")
+  string tsyms = 2;
+}
+
+message CoinData {
+  string from_symbol = 1;
+  string to_symbol = 2;
+  double price = 3;
+  double volume_24h = 4;
+  double market_cap = 5;
+  double change_pct_24h = 6;
+  double high_24h = 7;
+  double low_24h = 8;
+  double open_24h = 9;
+  double supply = 10;
+}
+
+message GetFullPriceResponse {
+  repeated CoinData coins = 1;
+}
+
+// --- GetHistoHour ---
+
+message GetHistoHourRequest {
+  // From symbol (e.g. "BTC")
+  string fsym = 1;
+  // To symbol (e.g. "USD")
+  string tsym = 2;
+  // Number of data points to return
+  optional int32 limit = 3;
+}
+
+message OHLCV {
+  int64 time = 1;
+  double open = 2;
+  double high = 3;
+  double low = 4;
+  double close = 5;
+  double volumefrom = 6;
+  double volumeto = 7;
+}
+
+message GetHistoHourResponse {
+  repeated OHLCV candles = 1;
+}
+
+// --- GetHistoDay ---
+
+message GetHistoDayRequest {
+  // From symbol (e.g. "BTC")
+  string fsym = 1;
+  // To symbol (e.g. "USD")
+  string tsym = 2;
+  // Number of data points to return
+  optional int32 limit = 3;
+}
+
+message GetHistoDayResponse {
+  repeated OHLCV candles = 1;
+}
+
+// --- GetTopByVolume ---
+
+message GetTopByVolumeRequest {
+  // To symbol (e.g. "USD")
+  string tsym = 1;
+  // Number of top coins to return
+  optional int32 limit = 2;
+}
+
+message CoinInfo {
+  string name = 1;
+  string symbol = 2;
+  double price = 3;
+  double volume_24h = 4;
+  double market_cap = 5;
+  double change_pct_24h = 6;
+}
+
+message GetTopByVolumeResponse {
+  repeated CoinInfo coins = 1;
+}

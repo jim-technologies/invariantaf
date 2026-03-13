@@ -1,0 +1,237 @@
+syntax = "proto3";
+
+package binance.v1;
+
+// Binance Spot public market data API exposed as MCP tools.
+service BinanceMarketService {
+  // Get current price for a symbol or all symbols
+  rpc GetPrice(GetPriceRequest) returns (GetPriceResponse);
+
+  // Get 24hr price change statistics
+  rpc Get24hrStats(Get24hrStatsRequest) returns (Get24hrStatsResponse);
+
+  // Get orderbook depth for a symbol
+  rpc GetOrderbook(GetOrderbookRequest) returns (GetOrderbookResponse);
+
+  // Get kline/candlestick (OHLCV) data
+  rpc GetKlines(GetKlinesRequest) returns (GetKlinesResponse);
+
+  // Get recent trades for a symbol
+  rpc GetTrades(GetTradesRequest) returns (GetTradesResponse);
+
+  // Get exchange information (trading pairs, limits, filters)
+  rpc GetExchangeInfo(GetExchangeInfoRequest) returns (GetExchangeInfoResponse);
+
+  // Get current average price for a symbol
+  rpc GetAvgPrice(GetAvgPriceRequest) returns (GetAvgPriceResponse);
+
+  // Get best bid/ask price(s) (book ticker)
+  rpc GetBookTicker(GetBookTickerRequest) returns (GetBookTickerResponse);
+}
+
+// --- GetPrice ---
+
+message GetPriceRequest {
+  // Trading pair symbol (e.g. "BTCUSDT"). If empty, returns all symbols.
+  optional string symbol = 1;
+}
+
+message TickerPrice {
+  string symbol = 1;
+  string price = 2;
+}
+
+message GetPriceResponse {
+  repeated TickerPrice prices = 1;
+}
+
+// --- Get24hrStats ---
+
+message Get24hrStatsRequest {
+  // Trading pair symbol (e.g. "BTCUSDT"). If empty, returns all symbols.
+  optional string symbol = 1;
+}
+
+message Ticker24hr {
+  string symbol = 1;
+  string price_change = 2;
+  string price_change_percent = 3;
+  string weighted_avg_price = 4;
+  string prev_close_price = 5;
+  string last_price = 6;
+  string last_qty = 7;
+  string bid_price = 8;
+  string bid_qty = 9;
+  string ask_price = 10;
+  string ask_qty = 11;
+  string open_price = 12;
+  string high_price = 13;
+  string low_price = 14;
+  string volume = 15;
+  string quote_volume = 16;
+  int64 open_time = 17;
+  int64 close_time = 18;
+  int64 first_id = 19;
+  int64 last_id = 20;
+  int64 count = 21;
+}
+
+message Get24hrStatsResponse {
+  repeated Ticker24hr tickers = 1;
+}
+
+// --- GetOrderbook ---
+
+message GetOrderbookRequest {
+  // Trading pair symbol (required, e.g. "BTCUSDT")
+  string symbol = 1;
+  // Depth limit (default 100, valid: 5, 10, 20, 50, 100, 500, 1000, 5000)
+  optional int32 limit = 2;
+}
+
+message OrderbookLevel {
+  string price = 1;
+  string quantity = 2;
+}
+
+message GetOrderbookResponse {
+  int64 last_update_id = 1;
+  repeated OrderbookLevel bids = 2;
+  repeated OrderbookLevel asks = 3;
+}
+
+// --- GetKlines ---
+
+message GetKlinesRequest {
+  // Trading pair symbol (required, e.g. "BTCUSDT")
+  string symbol = 1;
+  // Kline interval (e.g. "1m","3m","5m","15m","30m","1h","2h","4h","6h","8h","12h","1d","3d","1w","1M")
+  string interval = 2;
+  // Start time in milliseconds
+  optional int64 start_time = 3;
+  // End time in milliseconds
+  optional int64 end_time = 4;
+  // Number of results (default 500, max 1000)
+  optional int32 limit = 5;
+}
+
+message Kline {
+  int64 open_time = 1;
+  string open = 2;
+  string high = 3;
+  string low = 4;
+  string close = 5;
+  string volume = 6;
+  int64 close_time = 7;
+  string quote_asset_volume = 8;
+  int64 number_of_trades = 9;
+  string taker_buy_base_asset_volume = 10;
+  string taker_buy_quote_asset_volume = 11;
+}
+
+message GetKlinesResponse {
+  repeated Kline klines = 1;
+}
+
+// --- GetTrades ---
+
+message GetTradesRequest {
+  // Trading pair symbol (required, e.g. "BTCUSDT")
+  string symbol = 1;
+  // Number of results (default 500, max 1000)
+  optional int32 limit = 2;
+}
+
+message Trade {
+  int64 id = 1;
+  string price = 2;
+  string qty = 3;
+  string quote_qty = 4;
+  int64 time = 5;
+  bool is_buyer_maker = 6;
+  bool is_best_match = 7;
+}
+
+message GetTradesResponse {
+  repeated Trade trades = 1;
+}
+
+// --- GetExchangeInfo ---
+
+message GetExchangeInfoRequest {
+  // Trading pair symbol (e.g. "BTCUSDT"). If empty, returns all symbols.
+  optional string symbol = 1;
+}
+
+message RateLimit {
+  string rate_limit_type = 1;
+  string interval = 2;
+  int32 interval_num = 3;
+  int32 limit = 4;
+}
+
+message SymbolFilter {
+  string filter_type = 1;
+  optional string min_price = 2;
+  optional string max_price = 3;
+  optional string tick_size = 4;
+  optional string min_qty = 5;
+  optional string max_qty = 6;
+  optional string step_size = 7;
+  optional string min_notional = 8;
+}
+
+message SymbolInfo {
+  string symbol = 1;
+  string status = 2;
+  string base_asset = 3;
+  int32 base_asset_precision = 4;
+  string quote_asset = 5;
+  int32 quote_precision = 6;
+  repeated string order_types = 7;
+  bool iceberg_allowed = 8;
+  bool oco_allowed = 9;
+  bool is_spot_trading_allowed = 10;
+  bool is_margin_trading_allowed = 11;
+  repeated SymbolFilter filters = 12;
+  repeated string permissions = 13;
+}
+
+message GetExchangeInfoResponse {
+  string timezone = 1;
+  int64 server_time = 2;
+  repeated RateLimit rate_limits = 3;
+  repeated SymbolInfo symbols = 4;
+}
+
+// --- GetAvgPrice ---
+
+message GetAvgPriceRequest {
+  // Trading pair symbol (required, e.g. "BTCUSDT")
+  string symbol = 1;
+}
+
+message GetAvgPriceResponse {
+  int32 mins = 1;
+  string price = 2;
+  int64 close_time = 3;
+}
+
+// --- GetBookTicker ---
+
+message GetBookTickerRequest {
+  // Trading pair symbol (e.g. "BTCUSDT"). If empty, returns all symbols.
+  optional string symbol = 1;
+}
+
+message BookTicker {
+  string symbol = 1;
+  string bid_price = 2;
+  string bid_qty = 3;
+  string ask_price = 4;
+  string ask_qty = 5;
+}
+
+message GetBookTickerResponse {
+  repeated BookTicker tickers = 1;
+}

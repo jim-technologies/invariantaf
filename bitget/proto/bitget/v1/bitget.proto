@@ -1,0 +1,147 @@
+syntax = "proto3";
+
+package bitget.v1;
+
+// BitgetService proxies public market data endpoints from the Bitget exchange.
+service BitgetService {
+  // List spot tickers (optionally filtered by symbol).
+  rpc ListSpotTickers(ListSpotTickersRequest) returns (ListSpotTickersResponse);
+
+  // Get spot order book for a symbol.
+  rpc GetSpotOrderbook(GetSpotOrderbookRequest) returns (GetSpotOrderbookResponse);
+
+  // Get spot candlestick (OHLCV) data for a symbol.
+  rpc GetSpotCandles(GetSpotCandlesRequest) returns (GetSpotCandlesResponse);
+
+  // List futures tickers for a product type.
+  rpc ListFuturesTickers(ListFuturesTickersRequest) returns (ListFuturesTickersResponse);
+
+  // Get futures merged order book for a symbol.
+  rpc GetFuturesOrderbook(GetFuturesOrderbookRequest) returns (GetFuturesOrderbookResponse);
+}
+
+// --- ListSpotTickers ---
+
+message ListSpotTickersRequest {
+  // Trading pair symbol (optional, e.g. "BTCUSDT"). If omitted, returns all.
+  optional string symbol = 1;
+}
+
+message SpotTicker {
+  string symbol = 1;
+  string high24h = 2;
+  string open = 3;
+  string last_pr = 4;
+  string low24h = 5;
+  string quote_volume = 6;
+  string base_volume = 7;
+  string usd_volume = 8;
+  string bid_pr = 9;
+  string ask_pr = 10;
+  string bid_sz = 11;
+  string ask_sz = 12;
+  string open_utc = 13;
+  string ts = 14;
+  string change_utc24h = 15;
+  string change24h = 16;
+}
+
+message ListSpotTickersResponse {
+  repeated SpotTicker tickers = 1;
+}
+
+// --- GetSpotOrderbook ---
+
+message GetSpotOrderbookRequest {
+  // Trading pair symbol (required, e.g. "BTCUSDT").
+  string symbol = 1;
+  // Number of levels to return (optional, default 20).
+  optional int32 limit = 2;
+}
+
+message OrderbookLevel {
+  string price = 1;
+  string amount = 2;
+}
+
+message GetSpotOrderbookResponse {
+  repeated OrderbookLevel asks = 1;
+  repeated OrderbookLevel bids = 2;
+  string ts = 3;
+}
+
+// --- GetSpotCandles ---
+
+message GetSpotCandlesRequest {
+  // Trading pair symbol (required, e.g. "BTCUSDT").
+  string symbol = 1;
+  // Candlestick granularity (required, e.g. "1h", "4h", "1day").
+  string granularity = 2;
+  // Number of candles to return (optional, default 100).
+  optional int32 limit = 3;
+}
+
+message Candle {
+  string ts = 1;
+  string open = 2;
+  string high = 3;
+  string low = 4;
+  string close = 5;
+  string base_volume = 6;
+  string quote_volume = 7;
+  string usd_volume = 8;
+}
+
+message GetSpotCandlesResponse {
+  repeated Candle candles = 1;
+}
+
+// --- ListFuturesTickers ---
+
+message ListFuturesTickersRequest {
+  // Product type (required, e.g. "USDT-FUTURES", "COIN-FUTURES").
+  string product_type = 1;
+}
+
+message FuturesTicker {
+  string symbol = 1;
+  string last_pr = 2;
+  string bid_pr = 3;
+  string ask_pr = 4;
+  string bid_sz = 5;
+  string ask_sz = 6;
+  string high24h = 7;
+  string low24h = 8;
+  string timestamp = 9;
+  string price_change_percent24h = 10;
+  string base_volume = 11;
+  string quote_volume = 12;
+  string usd_volume = 13;
+  string open_utc = 14;
+  string change_utc24h = 15;
+  string index_price = 16;
+  string funding_rate = 17;
+  string hold_volume = 18;
+  string open24h = 19;
+}
+
+message ListFuturesTickersResponse {
+  repeated FuturesTicker tickers = 1;
+}
+
+// --- GetFuturesOrderbook ---
+
+message GetFuturesOrderbookRequest {
+  // Trading pair symbol (required, e.g. "BTCUSDT").
+  string symbol = 1;
+  // Product type (required, e.g. "USDT-FUTURES").
+  string product_type = 2;
+  // Number of levels to return (optional, default 20).
+  optional int32 limit = 3;
+}
+
+message GetFuturesOrderbookResponse {
+  repeated OrderbookLevel asks = 1;
+  repeated OrderbookLevel bids = 2;
+  string ts = 3;
+}

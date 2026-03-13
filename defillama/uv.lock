@@ -277,12 +277,13 @@ wheels = [
 [[package]]
 name = "invariant-protocol"
 version = "0.1.0"
-source = { git = "https://github.com/jim-technologies/invariantprotocol.git?subdirectory=python#16735f9064f6982944f3b05ad1fb75dd6253f6bf" }
+source = { git = "https://github.com/jim-technologies/invariantprotocol.git?subdirectory=python#16fc0e5444838301ab7585c57290cdb72d5ea0ab" }
 dependencies = [
     { name = "fire" },
     { name = "googleapis-common-protos" },
     { name = "grpcio" },
     { name = "grpcio-tools" },
+    { name = "httpx" },
     { name = "protobuf" },
 ]
 

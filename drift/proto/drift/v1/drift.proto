@@ -1,0 +1,284 @@
+syntax = "proto3";
+
+package drift.v1;
+
+option go_package = "github.com/jim-technologies/invariantaf/drift/proto/drift/v1;driftv1";
+
+// DriftService provides read-only access to the Drift Protocol perpetuals
+// DEX on Solana via the public Drift data API.
+//
+// Drift is the largest perpetual futures DEX on Solana, supporting both
+// perpetual and spot markets with on-chain orderbook and AMM liquidity.
+// Markets use symbols like "SOL-PERP", "BTC-PERP", "ETH-PERP" for perps
+// and "SOL", "USDC" for spot.
+//
+// No authentication is required. The public API base URL is
+// https://data.api.drift.trade.
+//
+// Use this service to list markets with live funding rates and open
+// interest, fetch OHLCV candles, query recent trades, retrieve funding
+// rate history, and get aggregated funding rate statistics across
+// multiple time windows.
+service DriftService {
+  // List all markets with live stats including price, volume, funding
+  // rates, and open interest.
+  //
+  // Returns every active Drift market (both perp and spot) with current
+  // oracle price, mark price, 24h volume, funding rates (long/short and
+  // 24h average), open interest, maker/taker fees, and leverage limits.
+  //
+  // Wraps: GET /stats/markets
+  rpc ListMarkets(ListMarketsRequest) returns (ListMarketsResponse);
+
+  // Get OHLCV candlestick data for a market.
+  //
+  // Returns candlestick bars with both fill-based and oracle-based
+  // OHLCV values plus volume. Useful for charting and technical analysis.
+  // Resolutions: "1" (1m), "5" (5m), "15" (15m), "60" (1h), "240" (4h),
+  // "D" (daily), "W" (weekly), "M" (monthly).
+  //
+  // Wraps: GET /market/{symbol}/candles/{resolution}
+  rpc GetCandles(GetCandlesRequest) returns (GetCandlesResponse);
+
+  // Get recent trades for a market.
+  //
+  // Returns individual fill records with price, size, fees, order
+  // direction, and maker/taker details. Useful for monitoring trade
+  // flow and recent activity on a given market.
+  //
+  // Wraps: GET /market/{symbol}/trades
+  rpc GetTrades(GetTradesRequest) returns (GetTradesResponse);
+
+  // Get funding rate history for a perpetual market.
+  //
+  // Returns individual funding rate update records including the
+  // funding rate for longs and shorts, cumulative funding rates,
+  // oracle and mark price TWAPs, and period revenue. Essential for
+  // funding rate arbitrage analysis.
+  //
+  // Wraps: GET /market/{symbol}/fundingRates
+  rpc GetFundingRates(GetFundingRatesRequest) returns (GetFundingRatesResponse);
+
+  // Get aggregated funding rate statistics across all perp markets.
+  //
+  // Returns average annualized funding rates for every perpetual market
+  // over 24h, 7d, 30d, and 1y windows. Useful for comparing funding
+  // rates across markets and identifying arbitrage opportunities with
+  // other venues like Hyperliquid or Jupiter.
+  //
+  // Wraps: GET /stats/fundingRates
+  rpc GetFundingRateStats(GetFundingRateStatsRequest) returns (GetFundingRateStatsResponse);
+}
+
+// --- Request / Response messages ---
+
+// Request to list all markets.
+message ListMarketsRequest {}
+
+message ListMarketsResponse {
+  // The list of markets (both perp and spot).
+  repeated Market markets = 1;
+}
+
+// Request to get candlestick data.
+message GetCandlesRequest {
+  // Market symbol (e.g. "SOL-PERP", "BTC-PERP"). Required.
+  string symbol = 1;
+  // Candle resolution: "1", "5", "15", "60", "240", "D", "W", or "M". Required.
+  string resolution = 2;
+  // Start timestamp in seconds (Unix epoch). Optional.
+  int64 start_ts = 3;
+  // End timestamp in seconds (Unix epoch). Optional.
+  int64 end_ts = 4;
+  // Maximum number of candles to return (default 100, max 1000). Optional.
+  int64 limit = 5;
+}
+
+message GetCandlesResponse {
+  // The list of candlestick bars.
+  repeated Candle candles = 1;
+}
+
+// Request to get recent trades.
+message GetTradesRequest {
+  // Market symbol (e.g. "SOL-PERP", "BTC-PERP"). Required.
+  string symbol = 1;
+  // Pagination cursor from a previous response. Optional.
+  string page = 2;
+  // Maximum number of trades to return (default 20, max 50). Optional.
+  int64 limit = 3;
+}
+
+message GetTradesResponse {
+  // The list of trade records.
+  repeated Trade trades = 1;
+}
+
+// Request to get funding rate history.
+message GetFundingRatesRequest {
+  // Market symbol (e.g. "SOL-PERP", "BTC-PERP"). Required.
+  string symbol = 1;
+  // Pagination cursor from a previous response. Optional.
+  string page = 2;
+  // Maximum number of records to return (default 20, max 750). Optional.
+  int64 limit = 3;
+}
+
+message GetFundingRatesResponse {
+  // The list of funding rate records.
+  repeated FundingRateRecord records = 1;
+}
+
+// Request to get aggregated funding rate stats.
+message GetFundingRateStatsRequest {}
+
+message GetFundingRateStatsResponse {
+  // Funding rate statistics per market.
+  repeated FundingRateStats markets = 1;
+}
+
+// --- Domain types ---
+
+// A Drift market with live stats.
+message Market {
+  // Market symbol (e.g. "SOL-PERP", "BTC-PERP", "SOL").
+  string symbol = 1;
+  // Numeric market index on the Drift program.
+  int64 market_index = 2;
+  // Market type: "perp" or "spot".
+  string market_type = 3;
+  // Base asset symbol (e.g. "SOL", "BTC").
+  string base_asset = 4;
+  // Quote asset symbol (e.g. "USDC").
+  string quote_asset = 5;
+  // Market status (e.g. "active").
+  string status = 6;
+  // Current oracle price (USD).
+  string oracle_price = 7;
+  // Current mark price (USD).
+  string mark_price = 8;
+  // 24h base volume.
+  string base_volume = 9;
+  // 24h quote volume (USD).
+  string quote_volume = 10;
+  // Long open interest.
+  string open_interest_long = 11;
+  // Short open interest.
+  string open_interest_short = 12;
+  // Funding rate for longs.
+  string funding_rate_long = 13;
+  // Funding rate for shorts.
+  string funding_rate_short = 14;
+  // Average 24h funding rate.
+  string funding_rate_24h = 15;
+  // Last fill price.
+  string price = 16;
+  // 24h price change (absolute).
+  string price_change_24h = 17;
+  // 24h price change (percentage).
+  string price_change_24h_percent = 18;
+  // Maker fee rate (negative means rebate).
+  double maker_fee = 19;
+  // Taker fee rate.
+  double taker_fee = 20;
+}
+
+// A single OHLCV candlestick bar.
+message Candle {
+  // Candle open timestamp (Unix seconds).
+  int64 ts = 1;
+  // Fill-based open price.
+  double fill_open = 2;
+  // Fill-based high price.
+  double fill_high = 3;
+  // Fill-based low price.
+  double fill_low = 4;
+  // Fill-based close price.
+  double fill_close = 5;
+  // Oracle-based open price.
+  double oracle_open = 6;
+  // Oracle-based high price.
+  double oracle_high = 7;
+  // Oracle-based low price.
+  double oracle_low = 8;
+  // Oracle-based close price.
+  double oracle_close = 9;
+  // Quote volume in USD.
+  double quote_volume = 10;
+  // Base volume in base asset units.
+  double base_volume = 11;
+}
+
+// A single trade/fill record.
+message Trade {
+  // Trade timestamp (Unix seconds).
+  int64 ts = 1;
+  // Transaction signature on Solana.
+  string tx_sig = 2;
+  // Base asset amount filled.
+  string base_asset_amount_filled = 3;
+  // Quote asset amount filled (USD).
+  string quote_asset_amount_filled = 4;
+  // Taker fee.
+  string taker_fee = 5;
+  // Maker rebate.
+  string maker_rebate = 6;
+  // Oracle price at the time of trade.
+  string oracle_price = 7;
+  // Trade action (e.g. "fill").
+  string action = 8;
+  // Taker order direction ("long" or "short").
+  string taker_order_direction = 9;
+  // Maker order direction ("long" or "short").
+  string maker_order_direction = 10;
+  // Market symbol.
+  string symbol = 11;
+}
+
+// A single funding rate update record.
+message FundingRateRecord {
+  // Record timestamp (Unix seconds).
+  int64 ts = 1;
+  // Transaction signature on Solana.
+  string tx_sig = 2;
+  // Record ID.
+  int64 record_id = 3;
+  // Market index.
+  int64 market_index = 4;
+  // Market symbol.
+  string symbol = 5;
+  // Funding rate (combined).
+  string funding_rate = 6;
+  // Funding rate for longs.
+  string funding_rate_long = 7;
+  // Funding rate for shorts.
+  string funding_rate_short = 8;
+  // Cumulative funding rate for longs.
+  string cumulative_funding_rate_long = 9;
+  // Cumulative funding rate for shorts.
+  string cumulative_funding_rate_short = 10;
+  // Oracle price TWAP.
+  string oracle_price_twap = 11;
+  // Mark price TWAP.
+  string mark_price_twap = 12;
+  // Period revenue.
+  string period_revenue = 13;
+  // Base asset amount with AMM.
+  string base_asset_amount_with_amm = 14;
+}
+
+// Aggregated funding rate statistics for a market.
+message FundingRateStats {
+  // Market index.
+  int64 market_index = 1;
+  // Market symbol (e.g. "SOL-PERP").
+  string symbol = 2;
+  // Average annualized funding rate over 24 hours.
+  string rate_24h = 3;
+  // Average annualized funding rate over 7 days.
+  string rate_7d = 4;
+  // Average annualized funding rate over 30 days.
+  string rate_30d = 5;
+  // Average annualized funding rate over 1 year.
+  string rate_1y = 6;
+}

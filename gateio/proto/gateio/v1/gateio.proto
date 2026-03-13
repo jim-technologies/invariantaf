@@ -1,0 +1,164 @@
+syntax = "proto3";
+
+package gateio.v1;
+
+// GateioService proxies public market data endpoints from the Gate.io exchange.
+service GateioService {
+  // List spot tickers. Optionally filter by currency pair.
+  rpc ListSpotTickers(ListSpotTickersRequest) returns (ListSpotTickersResponse);
+
+  // Get order book for a spot currency pair.
+  rpc GetSpotOrderbook(GetSpotOrderbookRequest) returns (GetSpotOrderbookResponse);
+
+  // Get candlestick (OHLCV) data for a spot currency pair.
+  rpc GetSpotCandlesticks(GetSpotCandlesticksRequest) returns (GetSpotCandlesticksResponse);
+
+  // List all available spot currency pairs.
+  rpc ListCurrencyPairs(ListCurrencyPairsRequest) returns (ListCurrencyPairsResponse);
+
+  // List futures tickers. Optionally filter by contract name.
+  rpc ListFuturesTickers(ListFuturesTickersRequest) returns (ListFuturesTickersResponse);
+
+  // Get order book for a USDT-settled futures contract.
+  rpc GetFuturesOrderbook(GetFuturesOrderbookRequest) returns (GetFuturesOrderbookResponse);
+}
+
+// --- ListSpotTickers ---
+
+message ListSpotTickersRequest {
+  // Currency pair, e.g. "BTC_USDT" (optional; omit for all tickers)
+  optional string currency_pair = 1;
+}
+
+message SpotTicker {
+  string currency_pair = 1;
+  double last = 2;
+  double lowest_ask = 3;
+  double highest_bid = 4;
+  double change_percentage = 5;
+  double base_volume = 6;
+  double quote_volume = 7;
+  double high_24h = 8;
+  double low_24h = 9;
+}
+
+message ListSpotTickersResponse {
+  repeated SpotTicker tickers = 1;
+}
+
+// --- GetSpotOrderbook ---
+
+message GetSpotOrderbookRequest {
+  // Currency pair (required, e.g. "BTC_USDT")
+  string currency_pair = 1;
+  // Number of entries to return on each side (optional, default 10)
+  optional int32 limit = 2;
+}
+
+message SpotOrderbookLevel {
+  double price = 1;
+  double amount = 2;
+}
+
+message GetSpotOrderbookResponse {
+  int64 current = 1;
+  int64 update = 2;
+  repeated SpotOrderbookLevel asks = 3;
+  repeated SpotOrderbookLevel bids = 4;
+}
+
+// --- GetSpotCandlesticks ---
+
+message GetSpotCandlesticksRequest {
+  // Currency pair (required, e.g. "BTC_USDT")
+  string currency_pair = 1;
+  // Candlestick interval: "10s","1m","5m","15m","30m","1h","4h","8h","1d","7d","30d"
+  optional string interval = 2;
+  // Maximum number of data points (optional, default 100)
+  optional int32 limit = 3;
+}
+
+message Candlestick {
+  int64 timestamp = 1;
+  double open = 2;
+  double high = 3;
+  double low = 4;
+  double close = 5;
+  double base_volume = 6;
+  double quote_volume = 7;
+  bool is_closed = 8;
+}
+
+message GetSpotCandlesticksResponse {
+  repeated Candlestick candlesticks = 1;
+}
+
+// --- ListCurrencyPairs ---
+
+message ListCurrencyPairsRequest {}
+
+message CurrencyPair {
+  string id = 1;
+  string base = 2;
+  string quote = 3;
+  double fee = 4;
+  double min_base_amount = 5;
+  double min_quote_amount = 6;
+  int32 amount_precision = 7;
+  int32 precision = 8;
+  string trade_status = 9;
+}
+
+message ListCurrencyPairsResponse {
+  repeated CurrencyPair currency_pairs = 1;
+}
+
+// --- ListFuturesTickers ---
+
+message ListFuturesTickersRequest {
+  // Contract name, e.g. "BTC_USDT" (optional; omit for all tickers)
+  optional string contract = 1;
+}
+
+message FuturesTicker {
+  string contract = 1;
+  double last = 2;
+  double change_percentage = 3;
+  double volume_24h = 4;
+  double volume_24h_base = 5;
+  double volume_24h_quote = 6;
+  double mark_price = 7;
+  double index_price = 8;
+  double funding_rate = 9;
+  double funding_rate_indicative = 10;
+  double highest_bid = 11;
+  double lowest_ask = 12;
+  double high_24h = 13;
+  double low_24h = 14;
+  double total_size = 15;
+}
+
+message ListFuturesTickersResponse {
+  repeated FuturesTicker tickers = 1;
+}
+
+// --- GetFuturesOrderbook ---
+
+message GetFuturesOrderbookRequest {
+  // Contract name (required, e.g. "BTC_USDT")
+  string contract = 1;
+  // Number of entries to return on each side (optional, default 10)
+  optional int32 limit = 2;
+}
+
+message FuturesOrderbookLevel {
+  double price = 1;
+  double size = 2;
+}
+
+message GetFuturesOrderbookResponse {
+  int64 current = 1;
+  int64 update = 2;
+  repeated FuturesOrderbookLevel asks = 3;
+  repeated FuturesOrderbookLevel bids = 4;
+}

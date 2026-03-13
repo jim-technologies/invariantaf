@@ -1,0 +1,132 @@
+syntax = "proto3";
+
+package marinade.v1;
+
+// MarinadeService provides staking analytics from Marinade Finance,
+// a liquid staking protocol on Solana (mSOL).
+//
+// All endpoints are **free and require no authentication**.
+// Data covers mSOL staking APY, mSOL/SOL price, and Solana
+// validator information from Marinade's validator network.
+//
+// Use this to monitor SOL staking yields, track mSOL pricing,
+// and explore Marinade-tracked validators.
+service MarinadeService {
+
+  // Get the 30-day mSOL staking APY.
+  //
+  // Returns the annualised percentage yield for mSOL computed over
+  // the last 30 days, along with the observation window timestamps
+  // and the mSOL prices at the start and end of the window.
+  // Use this to check the current SOL staking yield via Marinade.
+  rpc GetStakeStats(GetStakeStatsRequest) returns (GetStakeStatsResponse);
+
+  // List Solana validators tracked by Marinade.
+  //
+  // Returns a paginated list of validators with their identity,
+  // vote account, commission, stake amounts, performance metrics,
+  // and datacenter information. Use limit and offset for pagination.
+  rpc ListValidators(ListValidatorsRequest) returns (ListValidatorsResponse);
+
+  // Get detailed information for a single validator.
+  //
+  // Looks up a validator by its vote account address and returns
+  // the same rich detail as ListValidators for that single entry.
+  // Returns an error if the vote account is not found.
+  rpc GetValidatorInfo(GetValidatorInfoRequest) returns (GetValidatorInfoResponse);
+
+  // Get the current mSOL/SOL exchange rate.
+  //
+  // Returns the number of SOL that one mSOL is worth.
+  // Use this to convert between mSOL and SOL amounts or
+  // to track the mSOL peg over time.
+  rpc GetMSOLPrice(GetMSOLPriceRequest) returns (GetMSOLPriceResponse);
+}
+
+// --- Domain types ---
+
+// Core validator information tracked by Marinade.
+message ValidatorInfo {
+  // On-chain identity pubkey.
+  string identity = 1;
+  // Vote account address.
+  string vote_account = 2;
+  // Human-readable validator name.
+  string info_name = 3;
+  // Validator website URL.
+  string info_url = 4;
+  // Validator icon URL.
+  string info_icon_url = 5;
+  // Advertised commission percentage (0-100).
+  int32 commission_advertised = 6;
+  // Total activated stake in lamports (as string to avoid overflow).
+  string activated_stake = 7;
+  // Marinade-delegated stake in lamports.
+  string marinade_stake = 8;
+  // Software version string.
+  string version = 9;
+  // Whether validator is in the superminority set.
+  bool superminority = 10;
+  // Epoch credits earned.
+  int64 credits = 11;
+  // Marinade score (may be null/0 if not scored).
+  double score = 12;
+  // Datacenter city.
+  string dc_city = 13;
+  // Datacenter country.
+  string dc_country = 14;
+  // Average uptime percentage (0.0 - 1.0).
+  double avg_uptime_pct = 15;
+  // Average APY across tracked epochs.
+  double avg_apy = 16;
+  // Total number of tracked epochs.
+  int32 epochs_count = 17;
+  // Skip rate (0.0 - 1.0) from the most recent completed epoch.
+  double skip_rate = 18;
+}
+
+// --- Request / Response messages ---
+
+message GetStakeStatsRequest {}
+
+message GetStakeStatsResponse {
+  // Annualised mSOL staking yield over the last 30 days.
+  double apy = 1;
+  // Start of the observation window (ISO 8601).
+  string start_time = 2;
+  // End of the observation window (ISO 8601).
+  string end_time = 3;
+  // mSOL/SOL price at the start of the window.
+  double start_price = 4;
+  // mSOL/SOL price at the end of the window.
+  double end_price = 5;
+}
+
+message ListValidatorsRequest {
+  // Maximum number of validators to return (default 10).
+  int32 limit = 1;
+  // Offset for pagination (default 0).
+  int32 offset = 2;
+}
+
+message ListValidatorsResponse {
+  // List of validators.
+  repeated ValidatorInfo validators = 1;
+}
+
+message GetValidatorInfoRequest {
+  // Vote account address of the validator to look up.
+  string vote_account = 1;
+}
+
+message GetValidatorInfoResponse {
+  // The validator details.
+  ValidatorInfo validator = 1;
+}
+
+message GetMSOLPriceRequest {}
+
+message GetMSOLPriceResponse {
+  // Current mSOL price denominated in SOL.
+  double price_sol = 1;
+}

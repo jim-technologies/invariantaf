@@ -1,0 +1,248 @@
+syntax = "proto3";
+
+package coinpaprika.v1;
+
+// CoinPaprikaService proxies public endpoints from the CoinPaprika API.
+service CoinPaprikaService {
+  // Get global crypto market statistics.
+  rpc GetGlobal(GetGlobalRequest) returns (GetGlobalResponse);
+
+  // List all coins.
+  rpc ListCoins(ListCoinsRequest) returns (ListCoinsResponse);
+
+  // Get detailed info for a specific coin.
+  rpc GetCoinById(GetCoinByIdRequest) returns (GetCoinByIdResponse);
+
+  // Get ticker (price data) for a specific coin.
+  rpc GetTickerById(GetTickerByIdRequest) returns (GetTickerByIdResponse);
+
+  // List all tickers.
+  rpc ListTickers(ListTickersRequest) returns (ListTickersResponse);
+
+  // Get markets/exchanges where a coin is traded -- key for cross-exchange arb.
+  rpc GetCoinMarkets(GetCoinMarketsRequest) returns (GetCoinMarketsResponse);
+
+  // Get latest OHLCV data for a coin.
+  rpc GetCoinOHLCV(GetCoinOHLCVRequest) returns (GetCoinOHLCVResponse);
+
+  // Search coins by query string.
+  rpc SearchCoins(SearchCoinsRequest) returns (SearchCoinsResponse);
+}
+
+// --- GetGlobal ---
+
+message GetGlobalRequest {}
+
+message GetGlobalResponse {
+  double market_cap_usd = 1;
+  double volume_24h_usd = 2;
+  double bitcoin_dominance_percentage = 3;
+  int32 cryptocurrencies_number = 4;
+  double market_cap_ath_value = 5;
+  string market_cap_ath_date = 6;
+  double volume_24h_ath_value = 7;
+  string volume_24h_ath_date = 8;
+  double volume_24h_percent_from_ath = 9;
+  double volume_24h_percent_to_ath = 10;
+  double market_cap_change_24h = 11;
+  double volume_24h_change_24h = 12;
+  int64 last_updated = 13;
+}
+
+// --- ListCoins ---
+
+message ListCoinsRequest {}
+
+message CoinSummary {
+  string id = 1;
+  string name = 2;
+  string symbol = 3;
+  int32 rank = 4;
+  bool is_new = 5;
+  bool is_active = 6;
+  string type = 7;
+}
+
+message ListCoinsResponse {
+  repeated CoinSummary coins = 1;
+}
+
+// --- GetCoinById ---
+
+message GetCoinByIdRequest {
+  // Coin identifier, e.g. "btc-bitcoin"
+  string coin_id = 1;
+}
+
+message CoinTag {
+  string id = 1;
+  string name = 2;
+  int32 coin_counter = 3;
+  int32 ico_counter = 4;
+}
+
+message TeamMember {
+  string id = 1;
+  string name = 2;
+  string position = 3;
+}
+
+message GetCoinByIdResponse {
+  string id = 1;
+  string name = 2;
+  string symbol = 3;
+  int32 rank = 4;
+  bool is_new = 5;
+  bool is_active = 6;
+  string type = 7;
+  string description = 8;
+  string started_at = 9;
+  bool open_source = 10;
+  string development_status = 11;
+  bool hardware_wallet = 12;
+  string proof_type = 13;
+  string org_structure = 14;
+  string hash_algorithm = 15;
+  string first_data_at = 16;
+  string last_data_at = 17;
+  repeated CoinTag tags = 18;
+  repeated TeamMember team = 19;
+}
+
+// --- GetTickerById ---
+
+message GetTickerByIdRequest {
+  // Coin identifier, e.g. "btc-bitcoin"
+  string coin_id = 1;
+}
+
+message QuoteData {
+  double price = 1;
+  double volume_24h = 2;
+  double volume_24h_change_24h = 3;
+  double market_cap = 4;
+  double market_cap_change_24h = 5;
+  double percent_change_15m = 6;
+  double percent_change_30m = 7;
+  double percent_change_1h = 8;
+  double percent_change_6h = 9;
+  double percent_change_12h = 10;
+  double percent_change_24h = 11;
+  double percent_change_7d = 12;
+  double percent_change_30d = 13;
+  double percent_change_1y = 14;
+  double ath_price = 15;
+  string ath_date = 16;
+  double percent_from_price_ath = 17;
+}
+
+message GetTickerByIdResponse {
+  string id = 1;
+  string name = 2;
+  string symbol = 3;
+  int32 rank = 4;
+  double total_supply = 5;
+  double max_supply = 6;
+  double beta_value = 7;
+  string first_data_at = 8;
+  string last_updated = 9;
+  QuoteData quotes_usd = 10;
+}
+
+// --- ListTickers ---
+
+message ListTickersRequest {}
+
+message TickerEntry {
+  string id = 1;
+  string name = 2;
+  string symbol = 3;
+  int32 rank = 4;
+  double total_supply = 5;
+  double max_supply = 6;
+  double beta_value = 7;
+  string first_data_at = 8;
+  string last_updated = 9;
+  QuoteData quotes_usd = 10;
+}
+
+message ListTickersResponse {
+  repeated TickerEntry tickers = 1;
+}
+
+// --- GetCoinMarkets ---
+
+message GetCoinMarketsRequest {
+  // Coin identifier, e.g. "btc-bitcoin"
+  string coin_id = 1;
+}
+
+message MarketQuote {
+  double price = 1;
+  double volume_24h = 2;
+}
+
+message MarketEntry {
+  string exchange_id = 1;
+  string exchange_name = 2;
+  string pair = 3;
+  string base_currency_id = 4;
+  string base_currency_name = 5;
+  string quote_currency_id = 6;
+  string quote_currency_name = 7;
+  string market_url = 8;
+  string category = 9;
+  string fee_type = 10;
+  bool outlier = 11;
+  double adjusted_volume_24h_share = 12;
+  MarketQuote quotes_usd = 13;
+  string trust_score = 14;
+  string last_updated = 15;
+}
+
+message GetCoinMarketsResponse {
+  repeated MarketEntry markets = 1;
+}
+
+// --- GetCoinOHLCV ---
+
+message GetCoinOHLCVRequest {
+  // Coin identifier, e.g. "btc-bitcoin"
+  string coin_id = 1;
+}
+
+message OHLCVEntry {
+  string time_open = 1;
+  string time_close = 2;
+  double open = 3;
+  double high = 4;
+  double low = 5;
+  double close = 6;
+  double volume = 7;
+  double market_cap = 8;
+}
+
+message GetCoinOHLCVResponse {
+  repeated OHLCVEntry entries = 1;
+}
+
+// --- SearchCoins ---
+
+message SearchCoinsRequest {
+  // Search query string
+  string query = 1;
+}
+
+message SearchCoinResult {
+  string id = 1;
+  string name = 2;
+  string symbol = 3;
+  int32 rank = 4;
+  bool is_new = 5;
+  bool is_active = 6;
+  string type = 7;
+}
+
+message SearchCoinsResponse {
+  repeated SearchCoinResult currencies = 1;
+}

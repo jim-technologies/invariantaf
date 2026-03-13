@@ -110,25 +110,7 @@ def main() -> None:
     for service_name in SERVICE_NAMES:
         server.connect_http(base_url, service_name=service_name)
 
-    args = sys.argv[1:]
-    if "--cli" in args:
-        idx = args.index("--cli")
-        sys.argv = [sys.argv[0], *args[idx + 1 :]]
-        server.serve(cli=True)
-    elif "--http" in args:
-        port = 8080
-        idx = args.index("--http")
-        if idx + 1 < len(args) and args[idx + 1].isdigit():
-            port = int(args[idx + 1])
-        server.serve(http=port)
-    elif "--grpc" in args:
-        port = 50051
-        idx = args.index("--grpc")
-        if idx + 1 < len(args) and args[idx + 1].isdigit():
-            port = int(args[idx + 1])
-        server.serve(grpc=port)
-    else:
-        server.serve(mcp=True)
+    server.serve_from_argv()
 
 
 if __name__ == "__main__":

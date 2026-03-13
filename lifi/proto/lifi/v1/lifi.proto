@@ -1,0 +1,369 @@
+syntax = "proto3";
+
+package lifi.v1;
+
+// LifiService provides cross-chain bridging and DEX aggregation
+// via the Li.Fi protocol.
+//
+// All endpoints are **free and require no authentication** (an optional
+// API key raises rate limits). Data covers cross-chain swap quotes,
+// supported chains and tokens, bridge/DEX tool discovery, available
+// route connections, and transaction status tracking.
+//
+// Use this to get cross-chain swap/bridge quotes, discover supported
+// chains/tokens/bridges, and monitor transaction progress.
+service LifiService {
+
+  // Get a cross-chain swap or bridge quote.
+  //
+  // Returns a full quote including estimated output amount, fees,
+  // gas costs, execution duration, and a ready-to-sign transaction
+  // request. Specify source/destination chains, tokens, amount, and
+  // sender address. Use this to preview and prepare cross-chain
+  // transfers.
+  rpc GetQuote(GetQuoteRequest) returns (GetQuoteResponse);
+
+  // List all supported blockchains.
+  //
+  // Returns every chain that Li.Fi supports for bridging and swapping,
+  // including chain ID, name, native token info, and chain type.
+  // Use this to discover which networks are available.
+  rpc ListChains(ListChainsRequest) returns (ListChainsResponse);
+
+  // List supported tokens for one or more chains.
+  //
+  // Returns tokens available on the specified chains, including
+  // symbol, contract address, decimals, and current USD price.
+  // Use this to discover which tokens can be bridged or swapped.
+  rpc ListTokens(ListTokensRequest) returns (ListTokensResponse);
+
+  // Get available connections between two chains.
+  //
+  // Returns which tokens can be bridged/swapped from one chain to
+  // another. Use this to check route availability before requesting
+  // a quote.
+  rpc GetConnections(GetConnectionsRequest) returns (GetConnectionsResponse);
+
+  // List available bridge and DEX aggregator tools.
+  //
+  // Returns all bridges and exchanges that Li.Fi can route through,
+  // including their supported chain pairs. Use this to understand
+  // which protocols are available for cross-chain operations.
+  rpc ListTools(ListToolsRequest) returns (ListToolsResponse);
+
+  // Check the status of a cross-chain transaction.
+  //
+  // Given a transaction hash (and optionally the bridge used, plus
+  // source/destination chain IDs), returns the current status, any
+  // sub-status detail, and receiving-side transaction info once
+  // completed. Use this to track in-flight bridge transfers.
+  rpc GetStatus(GetStatusRequest) returns (GetStatusResponse);
+}
+
+// --- Domain types ---
+
+// A token on a specific chain.
+message Token {
+  // Contract address (0x000...000 for native tokens).
+  string address = 1;
+  // Chain ID the token lives on.
+  int32 chain_id = 2;
+  // Ticker symbol (e.g. "ETH", "USDC").
+  string symbol = 3;
+  // Number of decimals.
+  int32 decimals = 4;
+  // Human-readable name.
+  string name = 5;
+  // Canonical coin key (e.g. "ETH").
+  string coin_key = 6;
+  // Logo image URL.
+  string logo_uri = 7;
+  // Current price in USD (string to preserve precision).
+  string price_usd = 8;
+}
+
+// Fee or gas cost line item inside a quote estimate.
+message Cost {
+  // Cost label (e.g. "LP Fee", "Gas").
+  string name = 1;
+  // Human-readable description.
+  string description = 2;
+  // Token the cost is denominated in.
+  Token token = 3;
+  // Amount in smallest token unit.
+  string amount = 4;
+  // Equivalent USD value.
+  string amount_usd = 5;
+}
+
+// The estimate section of a quote.
+message Estimate {
+  // Bridge or DEX tool used.
+  string tool = 1;
+  // Approval/spender contract address.
+  string approval_address = 2;
+  // Minimum destination amount (after slippage).
+  string to_amount_min = 3;
+  // Expected destination amount.
+  string to_amount = 4;
+  // Source amount.
+  string from_amount = 5;
+  // Fee cost breakdown.
+  repeated Cost fee_costs = 6;
+  // Gas cost breakdown.
+  repeated Cost gas_costs = 7;
+  // Estimated execution time in seconds.
+  double execution_duration = 8;
+  // Source amount in USD.
+  string from_amount_usd = 9;
+  // Destination amount in USD.
+  string to_amount_usd = 10;
+}
+
+// The action describes what the quote will do.
+message Action {
+  // Source token.
+  Token from_token = 1;
+  // Source amount in smallest unit.
+  string from_amount = 2;
+  // Destination token.
+  Token to_token = 3;
+  // Source chain ID.
+  int32 from_chain_id = 4;
+  // Destination chain ID.
+  int32 to_chain_id = 5;
+  // Slippage tolerance (e.g. 0.03 = 3%).
+  double slippage = 6;
+  // Sender address.
+  string from_address = 7;
+  // Receiver address.
+  string to_address = 8;
+}
+
+// A single step in the quote route.
+message Step {
+  // Step ID.
+  string id = 1;
+  // Step type (e.g. "protocol", "cross", "swap").
+  string type = 2;
+  // Tool used for this step.
+  string tool = 3;
+  // Tool display name.
+  string tool_name = 4;
+  // Tool logo URL.
+  string tool_logo_uri = 5;
+  // Step action details.
+  Action action = 6;
+  // Step estimate details.
+  Estimate estimate = 7;
+}
+
+// An EVM transaction ready to be signed and sent.
+message TransactionRequest {
+  // Value to send (hex).
+  string value = 1;
+  // Target contract address.
+  string to = 2;
+  // Calldata (hex).
+  string data = 3;
+  // Sender address.
+  string from_address = 4;
+  // Chain ID.
+  int32 chain_id = 5;
+  // Gas price (hex).
+  string gas_price = 6;
+  // Gas limit (hex).
+  string gas_limit = 7;
+}
+
+// Information about a supported blockchain.
+message Chain {
+  // Short key (e.g. "eth", "arb").
+  string key = 1;
+  // Chain type (e.g. "EVM", "SVM").
+  string chain_type = 2;
+  // Human-readable chain name.
+  string name = 3;
+  // Native coin symbol.
+  string coin = 4;
+  // Numeric chain ID.
+  int32 id = 5;
+  // Whether this is a mainnet.
+  bool mainnet = 6;
+  // Chain logo URL.
+  string logo_uri = 7;
+  // Native token details.
+  Token native_token = 8;
+}
+
+// A bridge or exchange tool.
+message Tool {
+  // Tool key identifier.
+  string key = 1;
+  // Display name.
+  string name = 2;
+  // Logo URL.
+  string logo_uri = 3;
+}
+
+// A supported chain pair for a bridge tool.
+message ChainPair {
+  // Source chain ID.
+  int64 from_chain_id = 1;
+  // Destination chain ID.
+  int64 to_chain_id = 2;
+}
+
+// A bridge tool with its supported chain pairs.
+message BridgeTool {
+  // Tool key identifier.
+  string key = 1;
+  // Display name.
+  string name = 2;
+  // Logo URL.
+  string logo_uri = 3;
+  // Supported source-to-destination chain pairs.
+  repeated ChainPair supported_chains = 4;
+}
+
+// A single connection describing bridgeable tokens between two chains.
+message Connection {
+  // Source chain ID.
+  int64 from_chain_id = 1;
+  // Destination chain ID.
+  int64 to_chain_id = 2;
+  // Tokens available on the source chain.
+  repeated Token from_tokens = 3;
+  // Tokens available on the destination chain.
+  repeated Token to_tokens = 4;
+}
+
+// Tokens grouped by chain ID.
+message ChainTokens {
+  // Chain ID.
+  int32 chain_id = 1;
+  // Tokens on this chain.
+  repeated Token tokens = 2;
+}
+
+// Receiving-side transaction info for a completed bridge.
+message ReceivingTransaction {
+  // Destination transaction hash.
+  string tx_hash = 1;
+  // Destination chain ID.
+  int32 chain_id = 2;
+  // Amount received (smallest unit).
+  string amount = 3;
+  // Token received.
+  Token token = 4;
+}
+
+// --- Request / Response messages ---
+
+message GetQuoteRequest {
+  // Source chain (name or ID, e.g. "ETH", "1").
+  string from_chain = 1;
+  // Destination chain (name or ID).
+  string to_chain = 2;
+  // Source token address or symbol.
+  string from_token = 3;
+  // Destination token address or symbol.
+  string to_token = 4;
+  // Amount in smallest token unit (wei, etc.).
+  string from_amount = 5;
+  // Sender wallet address.
+  string from_address = 6;
+}
+
+message GetQuoteResponse {
+  // Quote type (e.g. "lifi").
+  string type = 1;
+  // Quote ID.
+  string id = 2;
+  // Primary tool/bridge used.
+  string tool = 3;
+  // Tool display name.
+  string tool_name = 4;
+  // Tool logo URL.
+  string tool_logo_uri = 5;
+  // What the quote does.
+  Action action = 6;
+  // Cost and output estimates.
+  Estimate estimate = 7;
+  // Route steps.
+  repeated Step included_steps = 8;
+  // Ready-to-sign transaction.
+  TransactionRequest transaction_request = 9;
+}
+
+message ListChainsRequest {}
+
+message ListChainsResponse {
+  // All supported chains.
+  repeated Chain chains = 1;
+}
+
+message ListTokensRequest {
+  // Comma-separated chain IDs (e.g. "1,137"). Leave empty for all.
+  string chains = 1;
+}
+
+message ListTokensResponse {
+  // Tokens grouped by chain ID.
+  repeated ChainTokens chain_tokens = 1;
+}
+
+message GetConnectionsRequest {
+  // Source chain ID or key.
+  string from_chain = 1;
+  // Destination chain ID or key.
+  string to_chain = 2;
+}
+
+message GetConnectionsResponse {
+  // Available connections.
+  repeated Connection connections = 1;
+}
+
+message ListToolsRequest {}
+
+message ListToolsResponse {
+  // Available bridge tools.
+  repeated BridgeTool bridges = 1;
+  // Available exchange/DEX tools.
+  repeated Tool exchanges = 2;
+}
+
+message GetStatusRequest {
+  // Transaction hash to check.
+  string tx_hash = 1;
+  // Bridge tool used (optional, speeds up lookup).
+  string bridge = 2;
+  // Source chain ID (optional).
+  int32 from_chain = 3;
+  // Destination chain ID (optional).
+  int32 to_chain = 4;
+}
+
+message GetStatusResponse {
+  // Transaction ID.
+  string transaction_id = 1;
+  // Sending-side transaction hash.
+  string sending_tx_hash = 2;
+  // Receiving-side transaction hash (populated when complete).
+  string receiving_tx_hash = 3;
+  // Overall status (e.g. "PENDING", "DONE", "FAILED", "NOT_FOUND").
+  string status = 4;
+  // Detailed sub-status (e.g. "WAIT_SOURCE_CONFIRMATIONS").
+  string sub_status = 5;
+  // Human-readable sub-status message.
+  string sub_status_msg = 6;
+  // Bridge tool used.
+  string bridge = 7;
+  // Source chain ID.
+  int32 from_chain_id = 8;
+  // Destination chain ID.
+  int32 to_chain_id = 9;
+  // Receiving transaction details.
+  ReceivingTransaction receiving = 10;
+}

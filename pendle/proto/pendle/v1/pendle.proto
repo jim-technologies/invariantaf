@@ -1,0 +1,221 @@
+syntax = "proto3";
+
+package pendle.v1;
+
+option go_package = "github.com/jim-technologies/invariantaf/pendle/proto/pendle/v1;pendlev1";
+
+// PendleService provides read-only access to the Pendle Finance yield
+// tokenization and trading protocol via the public Pendle API v2.
+//
+// Pendle splits yield-bearing tokens into Principal Tokens (PT) and Yield
+// Tokens (YT), enabling users to trade future yield. Markets exist across
+// multiple EVM chains (Ethereum=1, Arbitrum=42161, etc.).
+//
+// No authentication is required. The public API base URL is
+// https://api-v2.pendle.finance/core.
+//
+// Use this service to list yield markets, fetch market data (APY, TVL,
+// implied yield), retrieve asset prices, query historical market data,
+// and get swap pricing for PT/YT tokens.
+service PendleService {
+  // List all yield markets across all supported chains.
+  //
+  // Returns every active Pendle market including the underlying asset,
+  // maturity date, chain, PT/YT addresses, and current liquidity.
+  // Results can be paginated and filtered by chain.
+  //
+  // Wraps: GET /v1/markets/all
+  rpc ListMarkets(ListMarketsRequest) returns (ListMarketsResponse);
+
+  // Get detailed market data for a specific market by chain and address.
+  //
+  // Returns current market metrics including APY (fixed and implied),
+  // total value locked (TVL), implied yield, underlying APY, volume,
+  // and price information for PT and YT tokens.
+  //
+  // Wraps: GET /v2/{chainId}/markets/{address}/data
+  rpc GetMarketData(GetMarketDataRequest) returns (GetMarketDataResponse);
+
+  // Get current prices for Pendle assets/tokens.
+  //
+  // Returns a map of token addresses to their current USD prices.
+  // Useful for pricing PT, YT, SY, and underlying tokens across chains.
+  //
+  // Wraps: GET /v1/prices/assets
+  rpc GetPrices(GetPricesRequest) returns (GetPricesResponse);
+
+  // Get historical market data for a specific market.
+  //
+  // Returns time-series data for a market including historical APY,
+  // TVL, volume, and implied yield. Useful for charting and analysis
+  // of yield trends over time.
+  //
+  // Wraps: GET /v2/{chainId}/markets/{address}/historical-data
+  rpc GetHistoricalData(GetHistoricalDataRequest) returns (GetHistoricalDataResponse);
+
+  // Get swap pricing for PT/YT tokens in a specific market.
+  //
+  // Returns the current swap prices for Principal Tokens and Yield
+  // Tokens in the specified market. Useful for evaluating trade
+  // opportunities and understanding the yield curve.
+  //
+  // Wraps: GET /v1/sdk/{chainId}/markets/{market}/swapping-prices
+  rpc GetSwapPrices(GetSwapPricesRequest) returns (GetSwapPricesResponse);
+}
+
+// --- Request / Response messages ---
+
+// Request to list all yield markets.
+message ListMarketsRequest {
+  // Filter by EVM chain ID (e.g. 1 for Ethereum, 42161 for Arbitrum).
+  // If omitted, returns markets across all chains.
+  int64 chain_id = 1;
+  // Number of results to skip for pagination.
+  int64 skip = 2;
+  // Maximum number of results to return (default determined by API).
+  int64 limit = 3;
+}
+
+message ListMarketsResponse {
+  // The list of yield markets.
+  repeated Market markets = 1;
+  // Total number of markets available (for pagination).
+  int64 total = 2;
+}
+
+// Request to get detailed market data.
+message GetMarketDataRequest {
+  // The EVM chain ID where the market exists (e.g. 1, 42161). Required.
+  int64 chain_id = 1;
+  // The market contract address (hex, 0x-prefixed). Required.
+  string address = 2;
+}
+
+message GetMarketDataResponse {
+  // The detailed market data.
+  MarketData market_data = 1;
+}
+
+// Request to get asset prices.
+message GetPricesRequest {
+  // Filter by EVM chain ID. If omitted, returns prices across all chains.
+  int64 chain_id = 1;
+  // Specific token addresses to query (comma-separated hex addresses).
+  // If omitted, returns all available prices.
+  string addresses = 2;
+}
+
+message GetPricesResponse {
+  // Map of token address to USD price.
+  map<string, double> prices = 1;
+}
+
+// Request to get historical market data.
+message GetHistoricalDataRequest {
+  // The EVM chain ID where the market exists. Required.
+  int64 chain_id = 1;
+  // The market contract address (hex, 0x-prefixed). Required.
+  string address = 2;
+  // Time range: "1w", "1m", "3m", "6m", "1y", or "all".
+  string time_range = 3;
+}
+
+message GetHistoricalDataResponse {
+  // The list of historical data points.
+  repeated HistoricalDataPoint data_points = 1;
+}
+
+// Request to get swap prices for PT/YT.
+message GetSwapPricesRequest {
+  // The EVM chain ID where the market exists. Required.
+  int64 chain_id = 1;
+  // The market contract address (hex, 0x-prefixed). Required.
+  string market = 2;
+}
+
+message GetSwapPricesResponse {
+  // The swap pricing data for the market.
+  SwapPrices swap_prices = 1;
+}
+
+// --- Domain types ---
+
+// A Pendle yield market representing a tradable yield position.
+message Market {
+  // The market contract address.
+  string address = 1;
+  // Human-readable market name.
+  string name = 2;
+  // The EVM chain ID where this market is deployed.
+  int64 chain_id = 3;
+  // The underlying asset symbol (e.g. "stETH", "aUSDC").
+  string underlying_asset = 4;
+  // The maturity/expiry date as an ISO 8601 timestamp string.
+  string expiry = 5;
+  // The Principal Token (PT) address.
+  string pt_address = 6;
+  // The Yield Token (YT) address.
+  string yt_address = 7;
+  // The Standardized Yield (SY) token address.
+  string sy_address = 8;
+  // Current total value locked in USD.
+  double tvl = 9;
+  // Current implied APY as a decimal (e.g. 0.05 = 5%).
+  double implied_apy = 10;
+  // The underlying asset's native APY as a decimal.
+  double underlying_apy = 11;
+}
+
+// Detailed market data including APY, volume, and price metrics.
+message MarketData {
+  // The market contract address.
+  string address = 1;
+  // The EVM chain ID.
+  int64 chain_id = 2;
+  // Total value locked in USD.
+  double tvl = 3;
+  // Current implied APY as a decimal.
+  double implied_apy = 4;
+  // The underlying asset's native APY as a decimal.
+  double underlying_apy = 5;
+  // Fixed APY for PT holders (annualized).
+  double fixed_apy = 6;
+  // 24-hour trading volume in USD.
+  double volume_24h = 7;
+  // Total trading fees collected in USD.
+  double total_fees = 8;
+  // Current PT price in underlying asset terms.
+  double pt_price = 9;
+  // Current YT price in underlying asset terms.
+  double yt_price = 10;
+  // Market liquidity in USD.
+  double liquidity = 11;
+  // The maturity/expiry date as an ISO 8601 timestamp string.
+  string expiry = 12;
+}
+
+// A single historical data point for a market.
+message HistoricalDataPoint {
+  // The timestamp for this data point (ISO 8601).
+  string timestamp = 1;
+  // Total value locked in USD at this time.
+  double tvl = 2;
+  // Implied APY at this time as a decimal.
+  double implied_apy = 3;
+  // Underlying APY at this time as a decimal.
+  double underlying_apy = 4;
+  // Trading volume in USD at this time.
+  double volume = 5;
+}
+
+// Swap pricing data for PT and YT tokens in a market.
+message SwapPrices {
+  // Current PT swap price in underlying terms.
+  double pt_price = 1;
+  // Current YT swap price in underlying terms.
+  double yt_price = 2;
+  // The market contract address.
+  string market = 3;
+  // The EVM chain ID.
+  int64 chain_id = 4;
+}

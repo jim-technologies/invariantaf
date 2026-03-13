@@ -1,0 +1,307 @@
+syntax = "proto3";
+
+package aevo.v1;
+
+option go_package = "github.com/jim-technologies/invariantaf/aevo/proto/aevo/v1;aevov1";
+
+// AevoService provides read-only access to the Aevo decentralized options and
+// perpetuals exchange via the public Aevo REST API.
+//
+// Aevo is an L2 derivatives exchange supporting perpetual futures and options
+// across many crypto assets. It is widely used for options trading strategies
+// such as selling premium, delta hedging, and volatility arbitrage.
+//
+// No authentication is required for these public endpoints. The API base URL
+// is https://api.aevo.xyz.
+//
+// Use this service to list tradeable assets, browse markets (perps + options),
+// fetch orderbook depth, query funding rates (current and historical), get
+// index prices, retrieve market statistics (volume, OI), and view recent
+// trade history.
+service AevoService {
+  // List all tradeable assets on Aevo.
+  //
+  // Returns an array of asset ticker symbols (e.g. "ETH", "BTC", "SOL")
+  // that can be used to query other endpoints.
+  //
+  // Wraps: GET /assets
+  rpc ListAssets(ListAssetsRequest) returns (ListAssetsResponse);
+
+  // List all markets (perpetuals and options) on Aevo.
+  //
+  // Returns detailed instrument information including instrument name,
+  // type (PERPETUAL or OPTIONS), underlying asset, mark/index prices,
+  // price step, leverage limits, and activity status.
+  //
+  // Optionally filter by asset name or instrument type.
+  //
+  // Wraps: GET /markets
+  rpc ListMarkets(ListMarketsRequest) returns (ListMarketsResponse);
+
+  // Get the current orderbook for a specific instrument.
+  //
+  // Returns the top bids and asks with price and quantity for the
+  // specified instrument (e.g. "ETH-PERP", "BTC-PERP"). Useful for
+  // evaluating liquidity and spread before placing trades.
+  //
+  // Wraps: GET /orderbook?instrument_name={name}
+  rpc GetOrderbook(GetOrderbookRequest) returns (GetOrderbookResponse);
+
+  // Get the current funding rate for a perpetual instrument.
+  //
+  // Returns the current funding rate and the timestamp of the next
+  // funding epoch. Funding rates are paid/received by traders holding
+  // perpetual positions.
+  //
+  // Wraps: GET /funding?instrument_name={name}
+  rpc GetFunding(GetFundingRequest) returns (GetFundingResponse);
+
+  // Get historical funding rates for a perpetual instrument.
+  //
+  // Returns a list of past funding rate records including the timestamp,
+  // rate, and mark price at each epoch. Useful for analyzing funding
+  // rate trends and carry trade opportunities.
+  //
+  // Wraps: GET /funding-history?instrument_name={name}
+  rpc GetFundingHistory(GetFundingHistoryRequest) returns (GetFundingHistoryResponse);
+
+  // Get the current index price for an asset.
+  //
+  // Returns the aggregated index (spot) price and its timestamp for the
+  // specified asset. The index price is derived from multiple spot
+  // exchanges and is used to calculate funding rates.
+  //
+  // Wraps: GET /index?asset={asset}
+  rpc GetIndex(GetIndexRequest) returns (GetIndexResponse);
+
+  // Get market statistics for an asset.
+  //
+  // Returns comprehensive market metrics including open interest,
+  // index/mark prices, 24h price changes, daily volumes (buy/sell/total),
+  // total cumulative volume, and average daily funding rate.
+  //
+  // Optionally filter by instrument type (PERPETUAL or OPTIONS).
+  //
+  // Wraps: GET /statistics?asset={asset}
+  rpc GetStatistics(GetStatisticsRequest) returns (GetStatisticsResponse);
+
+  // Get recent trade history for a specific instrument.
+  //
+  // Returns a list of recent trades including trade ID, side (buy/sell),
+  // price, amount, and timestamp. Useful for monitoring market activity
+  // and analyzing trade flow.
+  //
+  // Wraps: GET /instrument/{name}/trade-history
+  rpc GetTradeHistory(GetTradeHistoryRequest) returns (GetTradeHistoryResponse);
+}
+
+// --- Request / Response messages ---
+
+// Request to list all tradeable assets.
+message ListAssetsRequest {}
+
+message ListAssetsResponse {
+  // List of tradeable asset ticker symbols (e.g. "ETH", "BTC").
+  repeated string assets = 1;
+}
+
+// Request to list all markets.
+message ListMarketsRequest {
+  // Filter by underlying asset symbol (e.g. "ETH"). Optional.
+  string asset = 1;
+  // Filter by instrument type: "PERPETUAL" or "OPTION". Optional.
+  string instrument_type = 2;
+}
+
+message ListMarketsResponse {
+  // The list of markets/instruments.
+  repeated Market markets = 1;
+}
+
+// Request to get the orderbook for an instrument.
+message GetOrderbookRequest {
+  // The instrument name (e.g. "ETH-PERP", "BTC-PERP"). Required.
+  string instrument_name = 1;
+}
+
+message GetOrderbookResponse {
+  // The instrument name.
+  string instrument_name = 1;
+  // The instrument type (e.g. "PERPETUAL").
+  string instrument_type = 2;
+  // Top bid levels as [price, quantity] pairs.
+  repeated PriceLevel bids = 3;
+  // Top ask levels as [price, quantity] pairs.
+  repeated PriceLevel asks = 4;
+  // Timestamp of the last update (nanoseconds since epoch, as a string).
+  string last_updated = 5;
+  // Data integrity checksum.
+  string checksum = 6;
+}
+
+// Request to get the current funding rate.
+message GetFundingRequest {
+  // The perpetual instrument name (e.g. "ETH-PERP"). Required.
+  string instrument_name = 1;
+}
+
+message GetFundingResponse {
+  // The current funding rate as a decimal string.
+  string funding_rate = 1;
+  // Timestamp of the next funding epoch (nanoseconds since epoch, as a string).
+  string next_epoch = 2;
+}
+
+// Request to get historical funding rates.
+message GetFundingHistoryRequest {
+  // The perpetual instrument name (e.g. "ETH-PERP"). Required.
+  string instrument_name = 1;
+  // Maximum number of records to return. Optional.
+  int64 limit = 2;
+  // Start time filter (nanosecond timestamp string). Optional.
+  string start_time = 3;
+  // End time filter (nanosecond timestamp string). Optional.
+  string end_time = 4;
+}
+
+message GetFundingHistoryResponse {
+  // List of historical funding rate records.
+  repeated FundingRecord records = 1;
+}
+
+// Request to get the index price for an asset.
+message GetIndexRequest {
+  // The asset symbol (e.g. "ETH", "BTC"). Required.
+  string asset = 1;
+}
+
+message GetIndexResponse {
+  // The current index (spot) price as a decimal string.
+  string price = 1;
+  // Timestamp of the price reading (nanoseconds since epoch, as a string).
+  string timestamp = 2;
+}
+
+// Request to get market statistics for an asset.
+message GetStatisticsRequest {
+  // The asset symbol (e.g. "ETH", "BTC"). Required.
+  string asset = 1;
+  // Filter by instrument type: "PERPETUAL" or "OPTION". Optional.
+  string instrument_type = 2;
+}
+
+message GetStatisticsResponse {
+  // The asset symbol.
+  string asset = 1;
+  // Open interest total as a decimal string (USD).
+  string open_interest = 2;
+  // Current index price as a decimal string.
+  string index_price = 3;
+  // 24h index price change as a decimal string.
+  string index_daily_change = 4;
+  // Current mark price as a decimal string.
+  string mark_price = 5;
+  // Mark price 24 hours ago as a decimal string.
+  string mark_price_24h_ago = 6;
+  // 24h mark price change as a decimal string.
+  string mark_daily_change = 7;
+  // Average daily funding rate as a decimal string.
+  string funding_daily_avg = 8;
+  // 24h buy volume as a decimal string (USD).
+  string daily_buy_volume = 9;
+  // 24h sell volume as a decimal string (USD).
+  string daily_sell_volume = 10;
+  // 24h total volume as a decimal string (USD).
+  string daily_volume = 11;
+  // 24h total volume in contracts as a decimal string.
+  string daily_volume_contracts = 12;
+  // Cumulative total volume as a decimal string (USD).
+  string total_volume = 13;
+}
+
+// Request to get recent trade history for an instrument.
+message GetTradeHistoryRequest {
+  // The instrument name (e.g. "ETH-PERP"). Required.
+  string instrument_name = 1;
+}
+
+message GetTradeHistoryResponse {
+  // Total number of trades returned.
+  string count = 1;
+  // List of recent trades.
+  repeated Trade trades = 2;
+}
+
+// --- Domain types ---
+
+// An instrument/market on Aevo.
+message Market {
+  // Unique numeric instrument identifier.
+  string instrument_id = 1;
+  // The instrument name (e.g. "ETH-PERP").
+  string instrument_name = 2;
+  // The instrument type: "PERPETUAL" or "OPTION".
+  string instrument_type = 3;
+  // The underlying asset symbol (e.g. "ETH").
+  string underlying_asset = 4;
+  // The quote asset (e.g. "USDC").
+  string quote_asset = 5;
+  // Minimum price increment as a decimal string.
+  string price_step = 6;
+  // Minimum quantity increment as a decimal string.
+  string amount_step = 7;
+  // Minimum order value in USD as a decimal string.
+  string min_order_value = 8;
+  // Maximum order value in USD as a decimal string.
+  string max_order_value = 9;
+  // Maximum notional value in USD as a decimal string.
+  string max_notional_value = 10;
+  // Current mark price as a decimal string.
+  string mark_price = 11;
+  // Current index (spot) price as a decimal string.
+  string index_price = 12;
+  // Whether this market is currently active.
+  bool is_active = 13;
+  // Maximum leverage as a decimal string.
+  string max_leverage = 14;
+}
+
+// A price level in the orderbook (bid or ask).
+message PriceLevel {
+  // The price at this level as a decimal string.
+  string price = 1;
+  // The quantity at this level as a decimal string.
+  string quantity = 2;
+}
+
+// A historical funding rate record.
+message FundingRecord {
+  // The instrument name (e.g. "ETH-PERP").
+  string instrument_name = 1;
+  // Timestamp of this funding epoch (nanoseconds since epoch, as a string).
+  string timestamp = 2;
+  // The funding rate at this epoch as a decimal string.
+  string funding_rate = 3;
+  // The mark price at this epoch as a decimal string.
+  string mark_price = 4;
+}
+
+// A single trade from the trade history.
+message Trade {
+  // Unique trade identifier.
+  string trade_id = 1;
+  // Numeric instrument identifier.
+  string instrument_id = 2;
+  // The instrument name (e.g. "ETH-PERP").
+  string instrument_name = 3;
+  // The instrument type (e.g. "PERPETUAL").
+  string instrument_type = 4;
+  // The trade quantity as a decimal string.
+  string amount = 5;
+  // The trade side: "buy" or "sell".
+  string side = 6;
+  // The trade price as a decimal string.
+  string price = 7;
+  // Timestamp when the trade was executed (nanoseconds since epoch, as a string).
+  string created_timestamp = 8;
+}

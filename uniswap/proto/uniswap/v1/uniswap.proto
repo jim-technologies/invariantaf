@@ -1,0 +1,192 @@
+syntax = "proto3";
+
+package uniswap.v1;
+
+option go_package = "github.com/jim-technologies/invariantaf/uniswap/proto/uniswap/v1;uniswapv1";
+
+// UniswapService provides read-only access to Uniswap V3 pool data,
+// token prices, and market analytics via the public GeckoTerminal API.
+//
+// Uniswap is the largest decentralized exchange (DEX) on Ethereum,
+// enabling automated token swaps through concentrated liquidity pools.
+//
+// No authentication is required. The public API base URL is
+// https://api.geckoterminal.com/api/v2.
+//
+// Use this service to list top Uniswap V3 pools, get pool details,
+// fetch token prices, discover trending pools, retrieve OHLCV
+// candlestick data, and search for pools by name or token.
+service UniswapService {
+  // List the top Uniswap V3 pools on Ethereum by volume/liquidity.
+  //
+  // Returns the highest-volume pools on the Uniswap V3 DEX including
+  // pair names, addresses, volume, liquidity, and price data.
+  // Results are paginated.
+  //
+  // Wraps: GET /networks/eth/dexes/uniswap_v3/pools
+  rpc ListTopPools(ListTopPoolsRequest) returns (ListTopPoolsResponse);
+
+  // Get detailed data for a specific pool by its contract address.
+  //
+  // Returns comprehensive pool information including the token pair,
+  // current price, 24h volume, total liquidity, fee tier, and
+  // price change percentages.
+  //
+  // Wraps: GET /networks/eth/pools/{pool_address}
+  rpc GetPool(GetPoolRequest) returns (GetPoolResponse);
+
+  // Get the current USD price for a token by its contract address.
+  //
+  // Returns the latest price for the specified ERC-20 token on
+  // Ethereum. Useful for checking token valuations.
+  //
+  // Wraps: GET /simple/networks/eth/token_price/{token_address}
+  rpc GetTokenPrice(GetTokenPriceRequest) returns (GetTokenPriceResponse);
+
+  // List currently trending pools on Ethereum.
+  //
+  // Returns pools that are trending by recent activity, volume
+  // spikes, or price movements. Useful for discovering new
+  // opportunities and monitoring market sentiment.
+  //
+  // Wraps: GET /networks/eth/trending_pools
+  rpc ListTrendingPools(ListTrendingPoolsRequest) returns (ListTrendingPoolsResponse);
+
+  // Get OHLCV (Open-High-Low-Close-Volume) candlestick data for a pool.
+  //
+  // Returns daily OHLCV candles for a specific pool, useful for
+  // charting and technical analysis. Default limit is 30 days.
+  //
+  // Wraps: GET /networks/eth/pools/{pool_address}/ohlcv/day
+  rpc GetOHLCV(GetOHLCVRequest) returns (GetOHLCVResponse);
+
+  // Search for pools by name, symbol, or token address.
+  //
+  // Returns matching pools across the Ethereum network. Useful for
+  // finding specific trading pairs or discovering pools for a token.
+  //
+  // Wraps: GET /search/pools
+  rpc SearchPools(SearchPoolsRequest) returns (SearchPoolsResponse);
+}
+
+// --- Request / Response messages ---
+
+// Request to list top Uniswap V3 pools.
+message ListTopPoolsRequest {
+  // Page number for pagination (1-indexed). Defaults to 1.
+  int64 page = 1;
+}
+
+message ListTopPoolsResponse {
+  // The list of top pools.
+  repeated Pool pools = 1;
+}
+
+// Request to get a specific pool by address.
+message GetPoolRequest {
+  // The pool contract address (hex, 0x-prefixed). Required.
+  string pool_address = 1;
+}
+
+message GetPoolResponse {
+  // The pool details.
+  Pool pool = 1;
+}
+
+// Request to get a token price.
+message GetTokenPriceRequest {
+  // The ERC-20 token contract address (hex, 0x-prefixed). Required.
+  string token_address = 1;
+}
+
+message GetTokenPriceResponse {
+  // The token contract address.
+  string token_address = 1;
+  // The current USD price of the token.
+  string price_usd = 2;
+}
+
+// Request to list trending pools.
+message ListTrendingPoolsRequest {
+  // Page number for pagination (1-indexed). Defaults to 1.
+  int64 page = 1;
+}
+
+message ListTrendingPoolsResponse {
+  // The list of trending pools.
+  repeated Pool pools = 1;
+}
+
+// Request to get OHLCV data for a pool.
+message GetOHLCVRequest {
+  // The pool contract address (hex, 0x-prefixed). Required.
+  string pool_address = 1;
+  // Number of candles to return (default 30, max 1000).
+  int64 limit = 2;
+}
+
+message GetOHLCVResponse {
+  // The OHLCV candles.
+  repeated OHLCVCandle candles = 1;
+}
+
+// Request to search for pools.
+message SearchPoolsRequest {
+  // Search query string (e.g. token name, symbol, or address). Required.
+  string query = 1;
+  // Filter by network (defaults to "eth" for Ethereum).
+  string network = 2;
+  // Page number for pagination (1-indexed). Defaults to 1.
+  int64 page = 3;
+}
+
+message SearchPoolsResponse {
+  // The list of matching pools.
+  repeated Pool pools = 1;
+}
+
+// --- Domain types ---
+
+// A Uniswap liquidity pool representing a trading pair.
+message Pool {
+  // The pool contract address.
+  string address = 1;
+  // Human-readable pool name (e.g. "WETH / USDC").
+  string name = 2;
+  // The base token symbol.
+  string base_token_symbol = 3;
+  // The quote token symbol.
+  string quote_token_symbol = 4;
+  // The base token address.
+  string base_token_address = 5;
+  // The quote token address.
+  string quote_token_address = 6;
+  // Current price of the base token in USD.
+  string base_token_price_usd = 7;
+  // Current price of the quote token in USD.
+  string quote_token_price_usd = 8;
+  // 24-hour trading volume in USD.
+  string volume_usd_24h = 9;
+  // Total reserve/liquidity in USD.
+  string reserve_in_usd = 10;
+  // Fee tier of the pool (e.g. "0.3%").
+  string fee_tier = 11;
+  // Price change percentage in the last 24 hours.
+  string price_change_24h = 12;
+}
+
+// A single OHLCV candlestick data point.
+message OHLCVCandle {
+  // The timestamp for this candle (Unix epoch seconds).
+  double timestamp = 1;
+  // Opening price.
+  double open = 2;
+  // Highest price during the period.
+  double high = 3;
+  // Lowest price during the period.
+  double low = 4;
+  // Closing price.
+  double close = 5;
+  // Trading volume during the period.
+  double volume = 6;
+}

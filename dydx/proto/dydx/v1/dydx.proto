@@ -1,0 +1,229 @@
+syntax = "proto3";
+
+package dydx.v1;
+
+// DydxService provides market data from dYdX v4, a decentralized
+// perpetual futures exchange built on its own Cosmos appchain.
+//
+// All endpoints are **free and require no authentication**.
+// Data covers perpetual markets, orderbooks, trades, OHLCV candles,
+// and historical funding rates.
+//
+// Use this to monitor perp markets, track funding rates for
+// funding-rate arbitrage, analyze orderbook depth, and chart prices.
+service DydxService {
+
+  // List all perpetual markets on dYdX v4.
+  //
+  // Returns every listed perpetual market with its current price,
+  // 24h price change, open interest, funding rate, volume, and
+  // market configuration (tick size, step size, status).
+  // Use this to scan the full market landscape or find trading opportunities.
+  rpc ListMarkets(ListMarketsRequest) returns (ListMarketsResponse);
+
+  // Get the current orderbook for a perpetual market.
+  //
+  // Returns bid and ask levels with price and size for the specified
+  // market ticker (e.g., "BTC-USD"). Use this to check liquidity,
+  // spread, and market depth before trading.
+  rpc GetOrderbook(GetOrderbookRequest) returns (GetOrderbookResponse);
+
+  // Get recent trades for a perpetual market.
+  //
+  // Returns the most recent trade executions for the specified market
+  // ticker (e.g., "BTC-USD"), including price, size, side, and timestamp.
+  // Use this to monitor real-time trading activity and detect large trades.
+  rpc GetTrades(GetTradesRequest) returns (GetTradesResponse);
+
+  // Get OHLCV candlestick data for a perpetual market.
+  //
+  // Returns candlestick data at the specified resolution for charting
+  // and technical analysis. Supported resolutions: 1MIN, 5MINS, 15MINS,
+  // 30MINS, 1HOUR, 4HOURS, 1DAY.
+  rpc GetCandles(GetCandlesRequest) returns (GetCandlesResponse);
+
+  // Get historical funding rates for a perpetual market.
+  //
+  // Returns past funding rate observations for the specified market
+  // ticker. Critical for funding rate arbitrage strategies — compare
+  // funding rates across venues to identify profitable arb opportunities.
+  rpc GetFundingRates(GetFundingRatesRequest) returns (GetFundingRatesResponse);
+}
+
+// Candle resolution for OHLCV data.
+enum CandleResolution {
+  CANDLE_RESOLUTION_UNSPECIFIED = 0;
+  // 1-minute candles.
+  CANDLE_RESOLUTION_1MIN = 1;
+  // 5-minute candles.
+  CANDLE_RESOLUTION_5MINS = 2;
+  // 15-minute candles.
+  CANDLE_RESOLUTION_15MINS = 3;
+  // 30-minute candles.
+  CANDLE_RESOLUTION_30MINS = 4;
+  // 1-hour candles.
+  CANDLE_RESOLUTION_1HOUR = 5;
+  // 4-hour candles.
+  CANDLE_RESOLUTION_4HOURS = 6;
+  // 1-day candles.
+  CANDLE_RESOLUTION_1DAY = 7;
+}
+
+// Trade side — buy or sell.
+enum TradeSide {
+  TRADE_SIDE_UNSPECIFIED = 0;
+  // Buy side.
+  TRADE_SIDE_BUY = 1;
+  // Sell side.
+  TRADE_SIDE_SELL = 2;
+}
+
+// --- Domain types ---
+
+// A perpetual market on dYdX.
+message PerpetualMarket {
+  // Market ticker, e.g. "BTC-USD".
+  string ticker = 1;
+  // Market status, e.g. "ACTIVE", "PAUSED".
+  string status = 2;
+  // Last traded price.
+  string oracle_price = 3;
+  // 24-hour price change as a decimal (e.g., "0.02" means +2%).
+  string price_change_24h = 4;
+  // Current 24-hour trading volume in USD.
+  string volume_24h = 5;
+  // Total open interest in the base asset.
+  string open_interest = 6;
+  // Current funding rate as a decimal (e.g., "0.000125").
+  string next_funding_rate = 7;
+  // Minimum order size increment.
+  string step_size = 8;
+  // Minimum price increment.
+  string tick_size = 9;
+  // Initial margin fraction required to open a position.
+  string initial_margin_fraction = 10;
+  // Maintenance margin fraction before liquidation.
+  string maintenance_margin_fraction = 11;
+  // Open interest in USD notional.
+  string open_interest_usd = 12;
+}
+
+// A single price level in the order book.
+message OrderbookLevel {
+  // Price at this level.
+  string price = 1;
+  // Total size at this level.
+  string size = 2;
+}
+
+// A single trade execution.
+message Trade {
+  // Trade ID.
+  string id = 1;
+  // Trade side — buy or sell.
+  TradeSide side = 2;
+  // Execution price.
+  string price = 3;
+  // Trade size in base asset units.
+  string size = 4;
+  // Execution timestamp (ISO 8601).
+  string created_at = 5;
+}
+
+// A single OHLCV candlestick.
+message Candle {
+  // Candle start timestamp (ISO 8601).
+  string started_at = 1;
+  // Opening price.
+  string open = 2;
+  // Highest price.
+  string high = 3;
+  // Lowest price.
+  string low = 4;
+  // Closing price.
+  string close = 5;
+  // Volume traded during this candle in base asset units.
+  string base_token_volume = 6;
+  // Volume traded during this candle in USD.
+  string usd_volume = 7;
+  // Number of trades in this candle.
+  int32 trades = 8;
+  // Candle resolution.
+  string resolution = 9;
+}
+
+// A single funding rate observation.
+message FundingRate {
+  // Market ticker, e.g. "BTC-USD".
+  string ticker = 1;
+  // Funding rate as a decimal (e.g., "0.000125" means 0.0125%).
+  string rate = 2;
+  // Price at the time of the funding rate.
+  string price = 3;
+  // Timestamp of the funding rate observation (ISO 8601).
+  string effective_at = 4;
+}
+
+// --- Request / Response messages ---
+
+message ListMarketsRequest {
+  // Optional: limit the number of markets returned (0 = all).
+  int32 limit = 1;
+  // Optional: filter by market ticker (e.g., "BTC-USD"). Empty returns all.
+  string ticker = 2;
+}
+
+message ListMarketsResponse {
+  // List of perpetual markets.
+  repeated PerpetualMarket markets = 1;
+}
+
+message GetOrderbookRequest {
+  // Market ticker, e.g. "BTC-USD".
+  string ticker = 1;
+}
+
+message GetOrderbookResponse {
+  // Bid levels, sorted best (highest) first.
+  repeated OrderbookLevel bids = 1;
+  // Ask levels, sorted best (lowest) first.
+  repeated OrderbookLevel asks = 2;
+}
+
+message GetTradesRequest {
+  // Market ticker, e.g. "BTC-USD".
+  string ticker = 1;
+  // Maximum number of trades to return (default: 100).
+  int32 limit = 2;
+}
+
+message GetTradesResponse {
+  // Recent trades, most recent first.
+  repeated Trade trades = 1;
+}
+
+message GetCandlesRequest {
+  // Market ticker, e.g. "BTC-USD".
+  string ticker = 1;
+  // Candle resolution (1MIN, 5MINS, 15MINS, 30MINS, 1HOUR, 4HOURS, 1DAY).
+  CandleResolution resolution = 2;
+  // Maximum number of candles to return (default: 100).
+  int32 limit = 3;
+}
+
+message GetCandlesResponse {
+  // Candlestick data points, most recent first.
+  repeated Candle candles = 1;
+}
+
+message GetFundingRatesRequest {
+  // Market ticker, e.g. "BTC-USD".
+  string ticker = 1;
+  // Maximum number of funding rate entries to return (default: 100).
+  int32 limit = 2;
+}
+
+message GetFundingRatesResponse {
+  // Historical funding rate observations, most recent first.
+  repeated FundingRate funding_rates = 1;
+}
