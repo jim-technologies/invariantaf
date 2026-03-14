@@ -1,0 +1,139 @@
+syntax = "proto3";
+
+package bravesearch.v1;
+
+option go_package = "github.com/jim-technologies/invariantaf/bravesearch/proto/bravesearch/v1;bravesearchv1";
+
+// BraveSearchService provides access to the Brave Search API for web, news,
+// and image search.
+//
+// Requires BRAVE_API_KEY environment variable for authentication.
+// The API key is passed via the X-Subscription-Token header.
+service BraveSearchService {
+  // Search the web using Brave Search.
+  //
+  // Returns web search results including titles, URLs, descriptions,
+  // and optional extra data like FAQs and infobox.
+  //
+  // Wraps: GET /web/search?q={query}&count={count}&offset={offset}
+  rpc WebSearch(WebSearchRequest) returns (WebSearchResponse);
+
+  // Search news articles using Brave Search.
+  //
+  // Returns recent news articles matching the query with titles,
+  // URLs, descriptions, and publication metadata.
+  //
+  // Wraps: GET /news/search?q={query}&count={count}
+  rpc NewsSearch(NewsSearchRequest) returns (NewsSearchResponse);
+
+  // Search images using Brave Search.
+  //
+  // Returns image results with URLs, thumbnails, dimensions,
+  // and source page information.
+  //
+  // Wraps: GET /images/search?q={query}&count={count}
+  rpc ImageSearch(ImageSearchRequest) returns (ImageSearchResponse);
+}
+
+// --- Request / Response messages ---
+
+// Request for web search.
+message WebSearchRequest {
+  // The search query string. Required.
+  string query = 1;
+  // Number of results to return (default 10, max 20).
+  int32 count = 2;
+  // Zero-based offset for pagination.
+  int32 offset = 3;
+  // Country code to bias results (e.g. "US", "GB", "DE").
+  string country = 4;
+  // Search language code (e.g. "en", "fr", "de").
+  string search_lang = 5;
+  // Freshness filter: "pd" (past day), "pw" (past week), "pm" (past month).
+  string freshness = 6;
+}
+
+message WebSearchResponse {
+  // The web search results.
+  repeated WebResult results = 1;
+  // Total estimated number of results.
+  int64 total_count = 2;
+}
+
+// Request for news search.
+message NewsSearchRequest {
+  // The search query string. Required.
+  string query = 1;
+  // Number of results to return (default 10, max 20).
+  int32 count = 2;
+  // Country code to bias results (e.g. "US", "GB", "DE").
+  string country = 3;
+  // Freshness filter: "pd" (past day), "pw" (past week), "pm" (past month).
+  string freshness = 4;
+}
+
+message NewsSearchResponse {
+  // The news search results.
+  repeated NewsResult results = 1;
+}
+
+// Request for image search.
+message ImageSearchRequest {
+  // The search query string. Required.
+  string query = 1;
+  // Number of results to return (default 10, max 20).
+  int32 count = 2;
+  // Country code to bias results (e.g. "US", "GB", "DE").
+  string country = 3;
+}
+
+message ImageSearchResponse {
+  // The image search results.
+  repeated ImageResult results = 1;
+}
+
+// --- Domain types ---
+
+// A single web search result.
+message WebResult {
+  // Result title.
+  string title = 1;
+  // Result URL.
+  string url = 2;
+  // Result description/snippet.
+  string description = 3;
+  // Page age (e.g. "2 hours ago").
+  string page_age = 4;
+  // Language of the result.
+  string language = 5;
+}
+
+// A single news search result.
+message NewsResult {
+  // Article title.
+  string title = 1;
+  // Article URL.
+  string url = 2;
+  // Article description/snippet.
+  string description = 3;
+  // Publication date (ISO 8601).
+  string age = 4;
+  // Source name.
+  string source = 5;
+}
+
+// A single image search result.
+message ImageResult {
+  // Image title.
+  string title = 1;
+  // Direct image URL.
+  string url = 2;
+  // Source page URL.
+  string source_url = 3;
+  // Image width in pixels.
+  int32 width = 4;
+  // Image height in pixels.
+  int32 height = 5;
+  // Thumbnail URL.
+  string thumbnail_url = 6;
+}

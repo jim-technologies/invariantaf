@@ -75,24 +75,17 @@ jobs:
       max-parallel: 8
       matrix:
         adapter:
-          - alpaca
-          - alphavantage
           - arxiv
           - bybit
           - cocktaildb
-          - coingecko
           - defillama
           - exchangerate
-          - finnhub
           - fred
           - fun
-          - github
           - hackernews
           - hyperliquid
           - kalshi
           - kraken
-          - lichess
-          - nasa
           - opendota
           - openlibrary
           - openweathermap
@@ -103,8 +96,6 @@ jobs:
           - reddit
           - secedgar
           - spacex
-          - stratz
-          - tmdb
           - wikipedia
           - xkcd
     env:
