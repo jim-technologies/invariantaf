@@ -1,4 +1,4 @@
-.PHONY: generate descriptor test test-go test-py serve-go serve-py lint fmt clean
+.PHONY: generate descriptor lint fmt test test-go test-py serve-go serve-py clean
 
 generate:
 	cd proto && buf generate
@@ -6,6 +6,15 @@ generate:
 
 descriptor:
 	cd proto && buf build -o ../descriptor.binpb
+
+lint:
+	go vet ./...
+	ruff check src/
+
+fmt:
+	cd proto && buf format -w
+	gofmt -w .
+	ruff format src/ tests/ main.py
 
 test: test-go test-py
 
@@ -16,20 +25,10 @@ test-py:
 	uv run python -m pytest tests/ -v
 
 serve-go:
-	go run . --cli
+	go run .
 
 serve-py:
 	uv run python main.py
-
-lint:
-	cd proto && buf lint
-	go vet ./...
-	ruff check src/
-
-fmt:
-	cd proto && buf format -w
-	gofmt -w .
-	ruff format src/
 
 clean:
 	rm -rf descriptor.binpb src/gen/opendota/

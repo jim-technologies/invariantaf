@@ -15,29 +15,73 @@ jobs:
         adapter:
           - alpaca
           - alphavantage
+          - alternativeme
           - arxiv
+          - balldontlie
+          - beefy
+          - binance
+          - birdeye
+          - bitget
+          - bls
+          - bravesearch
           - cocktaildb
           - coingecko
+          - coinglass
+          - coinmarketcal
+          - coinpaprika
+          - compound
+          - cryptodotcom
+          - cryptocompare
+          - curve
           - defillama
+          - deribit
+          - dexscreener
+          - dune
+          - dydx
+          - etherscan
           - exchangerate
           - finnhub
+          - footballdata
           - fred
           - fun
+          - gateio
+          - geckoterminal
+          - geminipredictions
           - github
           - hackernews
+          - hyperliquid
+          - jupiter
+          - kraken
+          - kucoin
           - lichess
+          - lido
+          - lifi
+          - marinade
+          - morpho
           - nasa
+          - nhl
+          - nws
+          - oneinch
+          - openmeteo
           - openlibrary
           - openweathermap
+          - orca
           - packageregistry
+          - pandascore
           - pokeapi
+          - polling
           - reddit
           - secedgar
+          - solscan
           - spacex
           - stratz
           - tmdb
+          - twelvedata
+          - usgs
+          - wikimedia
           - wikipedia
           - xkcd
+          - yearn
     steps:
       - uses: actions/checkout@v4
 
@@ -68,29 +112,73 @@ jobs:
       max-parallel: 8
       matrix:
         adapter:
+          - aave
+          - alternativeme
           - arxiv
+          - balldontlie
+          - binance
+          - birdeye
+          - bitget
+          - bls
+          - bravesearch
           - bybit
           - cocktaildb
+          - coinglass
+          - coinmarketcal
+          - coinpaprika
+          - compound
+          - cryptodotcom
+          - cryptocompare
+          - curve
           - defillama
+          - deribit
+          - dexscreener
+          - dune
+          - dydx
+          - etherscan
           - exchangerate
+          - footballdata
           - fred
           - fun
+          - gateio
+          - geckoterminal
+          - geminipredictions
           - hackernews
           - hyperliquid
+          - jsonplaceholder
+          - jupiter
           - kalshi
           - kraken
+          - kucoin
+          - lido
+          - lifi
+          - manifold
+          - marinade
+          - morpho
+          - nhl
+          - nws
+          - oneinch
           - opendota
           - openlibrary
+          - openmeteo
           - openweathermap
+          - opinion
+          - orca
           - packageregistry
+          - pandascore
           - pokeapi
+          - polling
           - polymarket
-          - jsonplaceholder
           - reddit
           - secedgar
+          - solscan
           - spacex
+          - twelvedata
+          - usgs
+          - wikimedia
           - wikipedia
           - xkcd
+          - yearn
     env:
       UV_LINK_MODE: copy
     steps:

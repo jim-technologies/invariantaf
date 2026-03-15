@@ -1,0 +1,137 @@
+syntax = "proto3";
+
+package geminipredictions.v1;
+
+// GeminiPredictionsService proxies Gemini Prediction Markets REST API endpoints.
+service GeminiPredictionsService {
+  // List prediction market events with optional filters (status, category).
+  rpc ListEvents(ListEventsRequest) returns (ListEventsResponse);
+
+  // Get a single prediction market event by its ticker.
+  rpc GetEvent(GetEventRequest) returns (GetEventResponse);
+
+  // List newly listed prediction market events.
+  rpc ListNewlyListedEvents(ListNewlyListedEventsRequest) returns (ListNewlyListedEventsResponse);
+
+  // List recently settled prediction market events.
+  rpc ListRecentlySettledEvents(ListRecentlySettledEventsRequest) returns (ListRecentlySettledEventsResponse);
+
+  // List upcoming prediction market events.
+  rpc ListUpcomingEvents(ListUpcomingEventsRequest) returns (ListUpcomingEventsResponse);
+
+  // List available prediction market categories.
+  rpc ListCategories(ListCategoriesRequest) returns (ListCategoriesResponse);
+}
+
+// --- Common types ---
+
+message ContractPrices {
+  string best_bid = 1;
+  string best_ask = 2;
+  string last_trade_price = 3;
+}
+
+message Contract {
+  string id = 1;
+  string label = 2;
+  string abbreviated_name = 3;
+  string ticker = 4;
+  string instrument_symbol = 5;
+  string status = 6;
+  string market_state = 7;
+  ContractPrices prices = 8;
+  string color = 9;
+  string image_url = 10;
+  string expiry_date = 11;
+  string effective_date = 12;
+  string created_at = 13;
+  string resolved_at = 14;
+  string resolution_side = 15;
+  int32 sort_order = 16;
+}
+
+message Subcategory {
+  int32 id = 1;
+  string slug = 2;
+  string name = 3;
+}
+
+message PredictionEvent {
+  string id = 1;
+  string title = 2;
+  string slug = 3;
+  string description = 4;
+  string image_url = 5;
+  string type = 6;
+  string category = 7;
+  string series = 8;
+  string ticker = 9;
+  string status = 10;
+  string resolved_at = 11;
+  string created_at = 12;
+  repeated Contract contracts = 13;
+  string volume = 14;
+  string volume_24h = 15;
+  repeated string tags = 16;
+  string expiry_date = 17;
+  string effective_date = 18;
+  Subcategory subcategory = 19;
+  bool is_live = 20;
+  string template = 21;
+}
+
+// --- ListEvents ---
+
+message ListEventsRequest {
+  // Filter by status: "active", "settled", etc.
+  optional string status = 1;
+  // Filter by category: "Crypto", "Sports", "Politics", etc.
+  optional string category = 2;
+}
+
+message ListEventsResponse {
+  repeated PredictionEvent events = 1;
+}
+
+// --- GetEvent ---
+
+message GetEventRequest {
+  // The event ticker to look up.
+  string event_ticker = 1;
+}
+
+message GetEventResponse {
+  PredictionEvent event = 1;
+}
+
+// --- ListNewlyListedEvents ---
+
+message ListNewlyListedEventsRequest {}
+
+message ListNewlyListedEventsResponse {
+  repeated PredictionEvent events = 1;
+}
+
+// --- ListRecentlySettledEvents ---
+
+message ListRecentlySettledEventsRequest {}
+
+message ListRecentlySettledEventsResponse {
+  repeated PredictionEvent events = 1;
+}
+
+// --- ListUpcomingEvents ---
+
+message ListUpcomingEventsRequest {}
+
+message ListUpcomingEventsResponse {
+  repeated PredictionEvent events = 1;
+}
+
+// --- ListCategories ---
+
+message ListCategoriesRequest {}
+
+message ListCategoriesResponse {
+  repeated string categories = 1;
+}

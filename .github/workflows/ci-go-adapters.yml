@@ -13,12 +13,40 @@ jobs:
       fail-fast: false
       matrix:
         adapter:
+          - across
+          - aevo
+          - alternativeme
+          - bravesearch
+          - coinbase
+          - coinpaprika
+          - cryptocompare
+          - cryptodotcom
+          - cryptosignal
           - dockerhub
+          - drift
+          - geminipredictions
           - giphy
+          - gmx
           - googlesheets
+          - jito
+          - noaa
+          - okx
+          - opendota
+          - openmeteo
+          - pandascore
+          - pendle
+          - polymarket
+          - predictfun
+          - quicknode
+          - raydium
           - stackexchange
           - steam
+          - temporal
+          - theoddsapi
+          - uniswap
           - unsplash
+          - usgovdata
+          - venus
     steps:
       - uses: actions/checkout@v4
 

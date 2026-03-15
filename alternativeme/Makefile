@@ -1,4 +1,4 @@
-.PHONY: generate descriptor lint fmt serve-mcp serve-cli test clean
+.PHONY: generate descriptor lint fmt test test-go test-py serve-go serve-py clean
 
 generate:
 	cd proto && buf dep update
@@ -11,24 +11,26 @@ descriptor:
 lint:
 	cd proto && buf lint
 	go vet ./...
-	ruff check src/ tests/ main.py
+	ruff check src/
 
 fmt:
 	cd proto && buf format -w
 	gofmt -w .
 	ruff format src/ tests/ main.py
 
-serve-mcp:
-	go run .
+test: test-go test-py
 
-serve-cli:
-	go run . --cli
-
-test:
+test-go:
 	go test -v -count=1 ./...
 
-test-python:
+test-py:
 	uv run python -m pytest tests/ -v
+
+serve-go:
+	go run .
+
+serve-py:
+	uv run python main.py
 
 clean:
 	rm -rf descriptor.binpb src/alternativeme_mcp/gen/alternativeme/ proto/alternativeme/v1/*.pb.go

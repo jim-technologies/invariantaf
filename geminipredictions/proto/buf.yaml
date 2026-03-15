@@ -1,0 +1,9 @@
+version: v2
+modules:
+  - path: .
+lint:
+  ignore_only:
+    RPC_REQUEST_STANDARD_NAME:
+      - geminipredictions/v1/geminipredictions.proto
+    RPC_RESPONSE_STANDARD_NAME:
+      - geminipredictions/v1/geminipredictions.proto

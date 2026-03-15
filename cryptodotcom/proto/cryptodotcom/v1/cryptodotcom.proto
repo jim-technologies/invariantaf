@@ -1,0 +1,131 @@
+syntax = "proto3";
+
+package cryptodotcom.v1;
+
+option go_package = "github.com/jim-technologies/invariantaf/cryptodotcom/proto/cryptodotcom/v1;cryptodotcomv1";
+
+// CryptoDotComService proxies public endpoints from the Crypto.com Exchange API.
+service CryptoDotComService {
+  // List all available trading instruments (pairs).
+  rpc GetInstruments(GetInstrumentsRequest) returns (GetInstrumentsResponse);
+
+  // Get ticker data for one or all instruments.
+  rpc GetTickers(GetTickersRequest) returns (GetTickersResponse);
+
+  // Get the order book for an instrument.
+  rpc GetOrderbook(GetOrderbookRequest) returns (GetOrderbookResponse);
+
+  // Get OHLCV candlestick data for an instrument.
+  rpc GetCandlestick(GetCandlestickRequest) returns (GetCandlestickResponse);
+
+  // Get recent trades for an instrument.
+  rpc GetTrades(GetTradesRequest) returns (GetTradesResponse);
+}
+
+// --- GetInstruments ---
+
+message GetInstrumentsRequest {}
+
+message Instrument {
+  string instrument_name = 1;
+  string quote_currency = 2;
+  string base_currency = 3;
+  string price_decimals = 4;
+  string quantity_decimals = 5;
+  bool margin_trading_enabled = 6;
+}
+
+message GetInstrumentsResponse {
+  repeated Instrument data = 1;
+}
+
+// --- GetTickers ---
+
+message GetTickersRequest {
+  // Instrument name (e.g. "BTC_USDT"). Omit for all tickers.
+  optional string instrument_name = 1;
+}
+
+message Ticker {
+  string instrument_name = 1;
+  string high = 2;
+  string low = 3;
+  string latest_trade = 4;
+  string volume = 5;
+  string best_bid = 6;
+  string best_ask = 7;
+  string price_change = 8;
+  string price_change_percent = 9;
+  int64 timestamp = 10;
+}
+
+message GetTickersResponse {
+  repeated Ticker data = 1;
+}
+
+// --- GetOrderbook ---
+
+message GetOrderbookRequest {
+  // Instrument name (e.g. "BTC_USDT"). Required.
+  string instrument_name = 1;
+  // Depth of the orderbook (default 10, max 50).
+  optional int32 depth = 2;
+}
+
+message OrderbookLevel {
+  string price = 1;
+  string quantity = 2;
+  string count = 3;
+}
+
+message Orderbook {
+  repeated OrderbookLevel bids = 1;
+  repeated OrderbookLevel asks = 2;
+  int64 timestamp = 3;
+}
+
+message GetOrderbookResponse {
+  Orderbook data = 1;
+}
+
+// --- GetCandlestick ---
+
+message GetCandlestickRequest {
+  // Instrument name (e.g. "BTC_USDT"). Required.
+  string instrument_name = 1;
+  // Timeframe: 1m, 5m, 15m, 30m, 1h, 4h, 6h, 12h, 1D, 7D, 14D, 1M.
+  optional string timeframe = 2;
+}
+
+message Candle {
+  int64 timestamp = 1;
+  string open = 2;
+  string high = 3;
+  string low = 4;
+  string close = 5;
+  string volume = 6;
+}
+
+message GetCandlestickResponse {
+  repeated Candle data = 1;
+}
+
+// --- GetTrades ---
+
+message GetTradesRequest {
+  // Instrument name (e.g. "BTC_USDT"). Required.
+  string instrument_name = 1;
+}
+
+message Trade {
+  string trade_id = 1;
+  string instrument_name = 2;
+  string side = 3;
+  string price = 4;
+  string quantity = 5;
+  int64 timestamp = 6;
+}
+
+message GetTradesResponse {
+  repeated Trade data = 1;
+}

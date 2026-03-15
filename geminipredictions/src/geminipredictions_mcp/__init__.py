@@ -1,0 +1,1 @@
+"""Gemini Predictions MCP package."""

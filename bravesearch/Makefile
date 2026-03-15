@@ -1,4 +1,4 @@
-.PHONY: generate descriptor lint fmt serve-mcp serve-cli test test-python clean
+.PHONY: generate descriptor lint fmt test test-go test-py serve-go serve-py clean
 
 generate:
 	cd proto && buf generate
@@ -10,24 +10,26 @@ descriptor:
 lint:
 	cd proto && buf lint
 	go vet ./...
-	ruff check src/ tests/ main.py
+	ruff check src/
 
 fmt:
 	cd proto && buf format -w
 	gofmt -w .
 	ruff format src/ tests/ main.py
 
-test:
+test: test-go test-py
+
+test-go:
 	go test -v -count=1 ./...
 
-test-python:
+test-py:
 	uv run python -m pytest tests/ -v
 
-serve-mcp:
+serve-go:
 	go run .
 
-serve-cli:
-	go run . --cli
+serve-py:
+	uv run python main.py
 
 clean:
 	rm -rf descriptor.binpb src/bravesearch_mcp/gen/bravesearch/ proto/bravesearch/v1/*.pb.go

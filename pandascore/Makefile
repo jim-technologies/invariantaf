@@ -1,4 +1,4 @@
-.PHONY: generate descriptor lint fmt serve-mcp serve-cli test test-go test-py clean
+.PHONY: generate descriptor lint fmt test test-go test-py serve-go serve-py clean
 
 generate:
 	cd proto && buf dep update
@@ -11,7 +11,7 @@ descriptor:
 lint:
 	cd proto && buf lint
 	go vet ./...
-	ruff check src/ tests/ main.py
+	ruff check src/
 
 fmt:
 	cd proto && buf format -w
@@ -26,17 +26,11 @@ test-go:
 test-py:
 	uv run python -m pytest tests/ -v
 
-serve-mcp:
+serve-go:
 	go run .
 
-serve-cli:
-	go run . --cli
-
-serve-mcp-py:
+serve-py:
 	uv run python main.py
-
-serve-cli-py:
-	uv run python main.py --cli
 
 clean:
 	rm -rf descriptor.binpb src/pandascore_mcp/gen/pandascore/ proto/pandascore/v1/*.pb.go

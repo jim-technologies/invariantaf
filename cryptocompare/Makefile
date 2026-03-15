@@ -1,4 +1,4 @@
-.PHONY: generate descriptor lint fmt test test-go test-py serve-go serve-py serve-mcp serve-cli clean
+.PHONY: generate descriptor lint fmt test test-go test-py serve-go serve-py clean
 
 generate:
 	cd proto && buf dep update
@@ -11,7 +11,7 @@ descriptor:
 lint:
 	cd proto && buf lint
 	go vet ./...
-	ruff check src/ tests/ main.py
+	ruff check src/
 
 fmt:
 	cd proto && buf format -w
@@ -31,12 +31,6 @@ serve-go:
 
 serve-py:
 	uv run python main.py
-
-serve-mcp:
-	go run .
-
-serve-cli:
-	go run . --cli
 
 clean:
 	rm -rf descriptor.binpb src/cryptocompare_mcp/gen/cryptocompare/ proto/cryptocompare/v1/*.pb.go

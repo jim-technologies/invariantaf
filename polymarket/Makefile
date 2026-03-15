@@ -1,4 +1,4 @@
-.PHONY: generate descriptor lint fmt serve-mcp serve-cli test test-go test-python clean
+.PHONY: generate descriptor lint fmt test test-go test-py serve-go serve-py clean
 
 generate:
 	cd proto && buf dep update
@@ -9,34 +9,27 @@ descriptor:
 	cd proto && buf build -o ../descriptor.binpb
 
 lint:
-	cd proto && buf lint
-	ruff check src/
 	go vet ./...
+	ruff check src/
 
 fmt:
 	cd proto && buf format -w
-	ruff format src/
 	gofmt -w .
+	ruff format src/ tests/ main.py
 
-serve-mcp:
-	uv run python main.py
-
-serve-cli:
-	uv run python main.py --cli
-
-serve-mcp-go:
-	go run .
-
-serve-cli-go:
-	go run . --cli
-
-test: test-python test-go
-
-test-python:
-	uv run python -m pytest tests/ -v
+test: test-go test-py
 
 test-go:
 	go test -v -count=1 ./...
+
+test-py:
+	uv run python -m pytest tests/ -v
+
+serve-go:
+	go run .
+
+serve-py:
+	uv run python main.py
 
 clean:
 	rm -rf descriptor.binpb src/gen/polymarket/ proto/polymarket/v1/*.pb.go

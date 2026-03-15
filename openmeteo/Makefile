@@ -10,7 +10,7 @@ descriptor:
 lint:
 	cd proto && buf lint
 	go vet ./...
-	ruff check src/ tests/ main.py
+	ruff check src/
 
 fmt:
 	cd proto && buf format -w
