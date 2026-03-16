@@ -111,7 +111,6 @@ class TestLiveMarkets:
         result1 = live_server._cli(
             ["KalshiService", "GetMarkets", "-r", '{"limit": 2}']
         )
-        markets1 = result1["data"]["markets"]
         cursor = result1["data"].get("cursor", "")
         if not cursor:
             pytest.skip("No second page available")

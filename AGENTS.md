@@ -44,16 +44,16 @@ Use one of these patterns (or combine when needed):
 Expected files/directories for new adapters:
 
 - `main.py`
-- `README.md`
 - `Makefile`
 - `pyproject.toml`
+- `uv.lock`
 - `proto/buf.yaml`
 - `proto/buf.gen.yaml`
 - `proto/<provider>/v1/<provider>.proto`
 - `descriptor.binpb` (generated)
-- `src/gen/...` (generated protobuf)
-- `tests/conftest.py`
-- `tests/test_integration.py`
+- `src/<provider>_mcp/service.py`
+- `src/<provider>_mcp/gen/...` (generated protobuf)
+- `tests/test_live.py` (live integration tests, gated by env var)
 
 Optional but recommended for generated adapters:
 
@@ -92,19 +92,21 @@ If a proto is generated, edit the generator/input source, not the generated `.pr
 
 ## 8) Testing Contract (Minimum)
 
-Each adapter should include integration tests that validate:
+Each adapter should include **live integration tests** gated by an env var (e.g., `PROVIDER_RUN_LIVE_TESTS=1`). Do NOT write mock tests that mock HTTP responses — they only test our own mocks and provide no value.
 
-1. Descriptor loads successfully.
-2. Expected tools are registered.
-3. CLI projection works for representative methods.
-4. HTTP projection works for representative methods.
-5. Unknown method/route behavior is correct.
+Tests should:
 
-For authenticated adapters, add tests that verify auth/signature headers are actually applied.
+1. Hit the real API (skipped by default without env var).
+2. Validate response structure.
+3. Handle rate limits and timeouts gracefully (skip, don't fail).
 
-Optional: live API tests behind an explicit env gate (never on by default).
+For Go, include a smoke test that verifies the service can be instantiated.
+
+For authenticated adapters, live tests should also require the API key env var.
 
 ## 9) Build/Lint/Test Contract
+
+### Single-language adapters
 
 Provide consistent Make targets:
 
@@ -112,16 +114,37 @@ Provide consistent Make targets:
 - `make descriptor`
 - `make lint`
 - `make fmt`
-- `make serve-mcp`
-- `make serve-cli`
 - `make test`
 - `make clean`
 
-Before finalizing changes to an adapter, run:
+### Dual-language adapters (Go + Python)
 
-1. `make generate` (if generation applies)
-2. `make lint`
-3. `make test`
+Use standardized target names:
+
+- `make test` — runs both `test-go` and `test-py`
+- `make test-go` — `go test -v -count=1 ./...`
+- `make test-py` — `uv run python -m pytest tests/ -v`
+- `make serve-go` — `go run .`
+- `make serve-py` — `uv run python main.py`
+- `make lint` — both `go vet` and `ruff check`
+
+### Pre-push checklist
+
+**Always lint and test before pushing.** Run from the repo root:
+
+```bash
+make test    # runs all Go + Python tests
+make lint    # runs go vet + ruff check across everything
+```
+
+Or for a single adapter:
+
+```bash
+make -C <adapter> lint
+make -C <adapter> test
+```
+
+CI runs the same `make lint` and `make test` targets — if it passes locally, it passes in CI.
 
 ## 10) README Contract
 
@@ -149,4 +172,6 @@ Each adapter README should include:
 2. Multiple competing host override mechanisms in one adapter.
 3. Silent auth fallbacks that hide missing credentials.
 4. Hand-editing generated artifacts without updating generators.
-5. Shipping adapters without descriptor/registration/projection tests.
+5. Writing mock tests that test mocked HTTP responses — they only validate our own mocks.
+6. Pushing without running `make lint` and `make test` first.
+7. Adding `buf.build/googleapis` deps to buf.yaml without checking CI compatibility.

@@ -9,12 +9,10 @@ has been deprecated.  Tests skip gracefully when the API is unavailable.
 
 from __future__ import annotations
 
-import json
 import os
 import sys
 from pathlib import Path
 
-import httpx
 import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
