@@ -9,6 +9,7 @@ No API key required -- Aave v3 GraphQL is public.
 from __future__ import annotations
 
 import json
+import asyncio
 import os
 import sys
 from pathlib import Path
@@ -32,17 +33,17 @@ def live_server():
     from aave_mcp.service import AaveService
 
     srv = Server.from_descriptor(
-        DESCRIPTOR_PATH, name="test-aave-live", version="0.0.1"
+        DESCRIPTOR_PATH
     )
     servicer = AaveService()
     srv.register(servicer)
     yield srv
-    srv.stop()
+    asyncio.run(srv.stop())
 
 
 def _cli_or_skip(live_server, args):
     try:
-        return live_server._cli(args)
+        return asyncio.run(live_server._cli(args))
     except Exception as exc:
         msg = str(exc)
         if any(code in msg for code in ("404", "429", "500", "502", "503", "Timeout")):

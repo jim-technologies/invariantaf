@@ -24,18 +24,22 @@ class BinanceService:
     ):
         self._base_url = base_url.rstrip("/")
         self._timeout = timeout
-        self._client = httpx.Client(timeout=timeout)
+        self._client = httpx.AsyncClient(timeout=timeout)
+
+    async def aclose(self) -> None:
+        """Close the HTTP client. Idempotent."""
+        await self._client.aclose()
 
     # -------------------------
     # RPC handlers
     # -------------------------
 
-    def GetPrice(self, request: pb.GetPriceRequest, context: Any = None) -> pb.GetPriceResponse:
+    async def GetPrice(self, request: pb.GetPriceRequest, context: Any = None) -> pb.GetPriceResponse:
         query: dict[str, Any] = {}
         if self._has_field(request, "symbol"):
             query["symbol"] = request.symbol
 
-        payload = self._get("/api/v3/ticker/price", query)
+        payload = await self._get("/api/v3/ticker/price", query)
 
         # Normalize: single object -> list
         if isinstance(payload, dict):
@@ -43,12 +47,12 @@ class BinanceService:
 
         return self._parse_message({"prices": payload}, pb.GetPriceResponse)
 
-    def Get24hrStats(self, request: pb.Get24hrStatsRequest, context: Any = None) -> pb.Get24hrStatsResponse:
+    async def Get24hrStats(self, request: pb.Get24hrStatsRequest, context: Any = None) -> pb.Get24hrStatsResponse:
         query: dict[str, Any] = {}
         if self._has_field(request, "symbol"):
             query["symbol"] = request.symbol
 
-        payload = self._get("/api/v3/ticker/24hr", query)
+        payload = await self._get("/api/v3/ticker/24hr", query)
 
         # Normalize: single object -> list
         if isinstance(payload, dict):
@@ -60,16 +64,16 @@ class BinanceService:
 
         return self._parse_message({"tickers": tickers}, pb.Get24hrStatsResponse)
 
-    def GetOrderbook(self, request: pb.GetOrderbookRequest, context: Any = None) -> pb.GetOrderbookResponse:
+    async def GetOrderbook(self, request: pb.GetOrderbookRequest, context: Any = None) -> pb.GetOrderbookResponse:
         query: dict[str, Any] = {"symbol": request.symbol}
         if self._has_field(request, "limit"):
             query["limit"] = request.limit
 
-        payload = self._get("/api/v3/depth", query)
+        payload = await self._get("/api/v3/depth", query)
         self._transform_orderbook(payload)
         return self._parse_message(payload, pb.GetOrderbookResponse)
 
-    def GetKlines(self, request: pb.GetKlinesRequest, context: Any = None) -> pb.GetKlinesResponse:
+    async def GetKlines(self, request: pb.GetKlinesRequest, context: Any = None) -> pb.GetKlinesResponse:
         query: dict[str, Any] = {
             "symbol": request.symbol,
             "interval": request.interval,
@@ -81,7 +85,7 @@ class BinanceService:
         if self._has_field(request, "limit"):
             query["limit"] = request.limit
 
-        payload = self._get("/api/v3/klines", query)
+        payload = await self._get("/api/v3/klines", query)
 
         klines = []
         for row in payload:
@@ -89,12 +93,12 @@ class BinanceService:
 
         return self._parse_message({"klines": klines}, pb.GetKlinesResponse)
 
-    def GetTrades(self, request: pb.GetTradesRequest, context: Any = None) -> pb.GetTradesResponse:
+    async def GetTrades(self, request: pb.GetTradesRequest, context: Any = None) -> pb.GetTradesResponse:
         query: dict[str, Any] = {"symbol": request.symbol}
         if self._has_field(request, "limit"):
             query["limit"] = request.limit
 
-        payload = self._get("/api/v3/trades", query)
+        payload = await self._get("/api/v3/trades", query)
 
         trades = []
         for item in payload:
@@ -102,28 +106,28 @@ class BinanceService:
 
         return self._parse_message({"trades": trades}, pb.GetTradesResponse)
 
-    def GetExchangeInfo(
+    async def GetExchangeInfo(
         self, request: pb.GetExchangeInfoRequest, context: Any = None
     ) -> pb.GetExchangeInfoResponse:
         query: dict[str, Any] = {}
         if self._has_field(request, "symbol"):
             query["symbol"] = request.symbol
 
-        payload = self._get("/api/v3/exchangeInfo", query)
+        payload = await self._get("/api/v3/exchangeInfo", query)
         self._transform_exchange_info(payload)
         return self._parse_message(payload, pb.GetExchangeInfoResponse)
 
-    def GetAvgPrice(self, request: pb.GetAvgPriceRequest, context: Any = None) -> pb.GetAvgPriceResponse:
+    async def GetAvgPrice(self, request: pb.GetAvgPriceRequest, context: Any = None) -> pb.GetAvgPriceResponse:
         query: dict[str, Any] = {"symbol": request.symbol}
-        payload = self._get("/api/v3/avgPrice", query)
+        payload = await self._get("/api/v3/avgPrice", query)
         return self._parse_message(payload, pb.GetAvgPriceResponse)
 
-    def GetBookTicker(self, request: pb.GetBookTickerRequest, context: Any = None) -> pb.GetBookTickerResponse:
+    async def GetBookTicker(self, request: pb.GetBookTickerRequest, context: Any = None) -> pb.GetBookTickerResponse:
         query: dict[str, Any] = {}
         if self._has_field(request, "symbol"):
             query["symbol"] = request.symbol
 
-        payload = self._get("/api/v3/ticker/bookTicker", query)
+        payload = await self._get("/api/v3/ticker/bookTicker", query)
 
         # Normalize: single object -> list
         if isinstance(payload, dict):
@@ -139,9 +143,9 @@ class BinanceService:
     # HTTP helpers
     # -------------------------
 
-    def _get(self, path: str, query: dict[str, Any] | None = None) -> Any:
+    async def _get(self, path: str, query: dict[str, Any] | None = None) -> Any:
         url = self._build_url(path, query)
-        response = self._client.request(
+        response = await self._client.request(
             "GET",
             url,
             headers={"Accept": "application/json"},

@@ -20,7 +20,11 @@ class OneInchService:
         headers = {}
         if self._api_key:
             headers["Authorization"] = f"Bearer {self._api_key}"
-        self._http = httpx.Client(timeout=30, headers=headers)
+        self._http = httpx.AsyncClient(timeout=30, headers=headers)
+
+    async def aclose(self) -> None:
+        """Close the HTTP client. Idempotent."""
+        await self._client.aclose()
 
     def _get(self, path: str, params: dict | None = None) -> Any:
         resp = self._http.get(f"{_BASE_URL}{path}", params=params)
@@ -29,7 +33,7 @@ class OneInchService:
 
     # --- RPCs ---
 
-    def GetQuote(self, request: Any, context: Any = None) -> pb.GetQuoteResponse:
+    async def GetQuote(self, request: Any, context: Any = None) -> pb.GetQuoteResponse:
         chain_id = request.chain_id or 1
         params = {
             "src": request.src,
@@ -45,7 +49,7 @@ class OneInchService:
             gas=raw.get("gas") or 0,
         )
 
-    def GetSwap(self, request: Any, context: Any = None) -> pb.GetSwapResponse:
+    async def GetSwap(self, request: Any, context: Any = None) -> pb.GetSwapResponse:
         chain_id = request.chain_id or 1
         params = {
             "src": request.src,
@@ -71,7 +75,7 @@ class OneInchService:
             tx=tx,
         )
 
-    def GetTokenPrice(self, request: Any, context: Any = None) -> pb.GetTokenPriceResponse:
+    async def GetTokenPrice(self, request: Any, context: Any = None) -> pb.GetTokenPriceResponse:
         chain_id = request.chain_id or 1
         currency = request.currency or "USD"
         params = {
@@ -95,7 +99,7 @@ class OneInchService:
             ))
         return resp
 
-    def GetTokenInfo(self, request: Any, context: Any = None) -> pb.GetTokenInfoResponse:
+    async def GetTokenInfo(self, request: Any, context: Any = None) -> pb.GetTokenInfoResponse:
         chain_id = request.chain_id or 1
         params = {"address": request.address}
         raw = self._get(f"/token/v1.2/{chain_id}", params=params)
@@ -109,7 +113,7 @@ class OneInchService:
         )
         return pb.GetTokenInfoResponse(token=token)
 
-    def SearchTokens(self, request: Any, context: Any = None) -> pb.SearchTokensResponse:
+    async def SearchTokens(self, request: Any, context: Any = None) -> pb.SearchTokensResponse:
         chain_id = request.chain_id or 1
         params = {"query": request.query}
         raw = self._get(f"/token/v1.2/{chain_id}/search", params=params)
@@ -126,7 +130,7 @@ class OneInchService:
             ))
         return resp
 
-    def GetBalances(self, request: Any, context: Any = None) -> pb.GetBalancesResponse:
+    async def GetBalances(self, request: Any, context: Any = None) -> pb.GetBalancesResponse:
         chain_id = request.chain_id or 1
         raw = self._get(f"/balance/v1.2/{chain_id}/balances/{request.address}")
         resp = pb.GetBalancesResponse()

@@ -42,13 +42,17 @@ class OpenMeteoService:
         self._air_quality_base_url = air_quality_base_url.rstrip("/")
         self._marine_base_url = marine_base_url.rstrip("/")
         self._timeout = timeout
-        self._client = httpx.Client(timeout=timeout)
+        self._client = httpx.AsyncClient(timeout=timeout)
+
+    async def aclose(self) -> None:
+        """Close the HTTP client. Idempotent."""
+        await self._client.aclose()
 
     # -------------------------
     # RPC handlers
     # -------------------------
 
-    def GetForecast(
+    async def GetForecast(
         self, request: pb.GetForecastRequest, context: Any = None
     ) -> pb.GetForecastResponse:
         forecast_days = request.forecast_days if self._has_field(request, "forecast_days") else 7
@@ -63,10 +67,10 @@ class OpenMeteoService:
             "forecast_days": forecast_days,
         }
 
-        payload = self._get(self._base_url, "/v1/forecast", query)
+        payload = await self._get(self._base_url, "/v1/forecast", query)
         return self._build_forecast_response(payload, pb.GetForecastResponse)
 
-    def GetHistoricalWeather(
+    async def GetHistoricalWeather(
         self, request: pb.GetHistoricalWeatherRequest, context: Any = None
     ) -> pb.GetHistoricalWeatherResponse:
         timezone = request.timezone if self._has_field(request, "timezone") else "auto"
@@ -81,10 +85,10 @@ class OpenMeteoService:
             "timezone": timezone,
         }
 
-        payload = self._get(self._archive_base_url, "/v1/archive", query)
+        payload = await self._get(self._archive_base_url, "/v1/archive", query)
         return self._build_forecast_response(payload, pb.GetHistoricalWeatherResponse)
 
-    def GetMultiModelForecast(
+    async def GetMultiModelForecast(
         self, request: pb.GetMultiModelForecastRequest, context: Any = None
     ) -> pb.GetMultiModelForecastResponse:
         forecast_days = request.forecast_days if self._has_field(request, "forecast_days") else 7
@@ -98,10 +102,10 @@ class OpenMeteoService:
             "forecast_days": forecast_days,
         }
 
-        payload = self._get(self._base_url, "/v1/forecast", query)
+        payload = await self._get(self._base_url, "/v1/forecast", query)
         return self._build_multi_model_response(payload, models)
 
-    def GetAirQuality(
+    async def GetAirQuality(
         self, request: pb.GetAirQualityRequest, context: Any = None
     ) -> pb.GetAirQualityResponse:
         query: dict[str, Any] = {
@@ -110,10 +114,10 @@ class OpenMeteoService:
             "hourly": "pm2_5,pm10,us_aqi",
         }
 
-        payload = self._get(self._air_quality_base_url, "/v1/air-quality", query)
+        payload = await self._get(self._air_quality_base_url, "/v1/air-quality", query)
         return self._build_air_quality_response(payload)
 
-    def GetMarineWeather(
+    async def GetMarineWeather(
         self, request: pb.GetMarineWeatherRequest, context: Any = None
     ) -> pb.GetMarineWeatherResponse:
         query: dict[str, Any] = {
@@ -122,7 +126,7 @@ class OpenMeteoService:
             "hourly": "wave_height,wave_period,wind_wave_height",
         }
 
-        payload = self._get(self._marine_base_url, "/v1/marine", query)
+        payload = await self._get(self._marine_base_url, "/v1/marine", query)
         return self._build_marine_response(payload)
 
     # -------------------------
@@ -235,11 +239,11 @@ class OpenMeteoService:
     # HTTP helpers
     # -------------------------
 
-    def _get(
+    async def _get(
         self, base_url: str, path: str, query: dict[str, Any] | None = None
     ) -> Any:
         url = self._build_url(base_url, path, query)
-        response = self._client.request(
+        response = await self._client.request(
             "GET",
             url,
             headers={"Accept": "application/json"},

@@ -24,21 +24,25 @@ class GeckoTerminalService:
     ):
         self._base_url = base_url.rstrip("/")
         self._timeout = timeout
-        self._client = httpx.Client(timeout=timeout)
+        self._client = httpx.AsyncClient(timeout=timeout)
+
+    async def aclose(self) -> None:
+        """Close the HTTP client. Idempotent."""
+        await self._client.aclose()
 
     # -------------------------
     # RPC handlers
     # -------------------------
 
-    def ListNetworks(
+    async def ListNetworks(
         self, request: pb.ListNetworksRequest, context: Any = None
     ) -> pb.ListNetworksResponse:
-        payload = self._get("/api/v2/networks")
+        payload = await self._get("/api/v2/networks")
         items = self._extract_list(payload)
         networks = [self._extract_attributes(item, keep_id=True) for item in items]
         return self._parse_message({"networks": networks}, pb.ListNetworksResponse)
 
-    def GetTrendingPools(
+    async def GetTrendingPools(
         self, request: pb.GetTrendingPoolsRequest, context: Any = None
     ) -> pb.GetTrendingPoolsResponse:
         if self._has_field(request, "network") and request.network:
@@ -46,33 +50,33 @@ class GeckoTerminalService:
         else:
             path = "/api/v2/networks/trending_pools"
 
-        payload = self._get(path)
+        payload = await self._get(path)
         items = self._extract_list(payload)
         pools = [self._transform_pool(item) for item in items]
         return self._parse_message({"pools": pools}, pb.GetTrendingPoolsResponse)
 
-    def GetPool(
+    async def GetPool(
         self, request: pb.GetPoolRequest, context: Any = None
     ) -> pb.GetPoolResponse:
         path = f"/api/v2/networks/{request.network}/pools/{request.address}"
-        payload = self._get(path)
+        payload = await self._get(path)
         data = self._extract_data(payload)
         pool = self._transform_pool(data)
         return self._parse_message({"pool": pool}, pb.GetPoolResponse)
 
-    def SearchPools(
+    async def SearchPools(
         self, request: pb.SearchPoolsRequest, context: Any = None
     ) -> pb.SearchPoolsResponse:
         query: dict[str, Any] = {"query": request.query}
         if self._has_field(request, "network") and request.network:
             query["network"] = request.network
 
-        payload = self._get("/api/v2/search/pools", query)
+        payload = await self._get("/api/v2/search/pools", query)
         items = self._extract_list(payload)
         pools = [self._transform_pool(item) for item in items]
         return self._parse_message({"pools": pools}, pb.SearchPoolsResponse)
 
-    def GetPoolOHLCV(
+    async def GetPoolOHLCV(
         self, request: pb.GetPoolOHLCVRequest, context: Any = None
     ) -> pb.GetPoolOHLCVResponse:
         path = (
@@ -85,7 +89,7 @@ class GeckoTerminalService:
         if self._has_field(request, "limit"):
             query["limit"] = request.limit
 
-        payload = self._get(path, query if query else None)
+        payload = await self._get(path, query if query else None)
         data = self._extract_data(payload)
         attrs = data.get("attributes", data) if isinstance(data, dict) else {}
         ohlcv_list = attrs.get("ohlcv_list", []) if isinstance(attrs, dict) else []
@@ -102,20 +106,20 @@ class GeckoTerminalService:
                 })
         return self._parse_message({"candles": candles}, pb.GetPoolOHLCVResponse)
 
-    def GetNewPools(
+    async def GetNewPools(
         self, request: pb.GetNewPoolsRequest, context: Any = None
     ) -> pb.GetNewPoolsResponse:
         path = f"/api/v2/networks/{request.network}/new_pools"
-        payload = self._get(path)
+        payload = await self._get(path)
         items = self._extract_list(payload)
         pools = [self._transform_pool(item) for item in items]
         return self._parse_message({"pools": pools}, pb.GetNewPoolsResponse)
 
-    def GetTopPools(
+    async def GetTopPools(
         self, request: pb.GetTopPoolsRequest, context: Any = None
     ) -> pb.GetTopPoolsResponse:
         path = f"/api/v2/networks/{request.network}/dexes/{request.dex}/pools"
-        payload = self._get(path)
+        payload = await self._get(path)
         items = self._extract_list(payload)
         pools = [self._transform_pool(item) for item in items]
         return self._parse_message({"pools": pools}, pb.GetTopPoolsResponse)
@@ -227,9 +231,9 @@ class GeckoTerminalService:
     # HTTP helpers
     # -------------------------
 
-    def _get(self, path: str, query: dict[str, Any] | None = None) -> Any:
+    async def _get(self, path: str, query: dict[str, Any] | None = None) -> Any:
         url = self._build_url(path, query)
-        response = self._client.request(
+        response = await self._client.request(
             "GET",
             url,
             headers={"Accept": "application/json"},

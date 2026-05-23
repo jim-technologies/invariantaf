@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import sys
+import asyncio
 from pathlib import Path
 
 from invariant import Server
@@ -17,18 +18,32 @@ DESCRIPTOR = Path(__file__).parent / "descriptor.binpb"
 DEFAULT_BASE_URL = "https://api.manifold.markets/v0"
 
 
+def _projection_from_argv(argv: list[str]) -> dict:
+    """Parse [--mcp|--cli|--http [port]|--grpc [port]] into serve() kwargs."""
+    if not argv:
+        return {"mcp": True}
+    cmd = argv[0]
+    if cmd in ("--mcp", "mcp", ""):
+        return {"mcp": True}
+    if cmd in ("--cli", "cli"):
+        return {"cli": True}
+    if cmd in ("--http", "http"):
+        port = int(argv[1]) if len(argv) > 1 else 8080
+        return {"http": port}
+    if cmd in ("--grpc", "grpc"):
+        port = int(argv[1]) if len(argv) > 1 else 50051
+        return {"grpc": port}
+    return {"mcp": True}
+
+
 def main() -> None:
-    server = Server.from_descriptor(
-        str(DESCRIPTOR),
-        name="manifold-mcp",
-        version="0.1.0",
-    )
+    server = Server.from_descriptor(str(DESCRIPTOR))
 
     base_url = DEFAULT_BASE_URL.rstrip("/")
 
     server.connect_http(base_url, service_name="manifold.v1.ManifoldService")
 
-    server.serve_from_argv()
+    asyncio.run(server.serve(**_projection_from_argv(sys.argv[1:])))
 
 
 if __name__ == "__main__":

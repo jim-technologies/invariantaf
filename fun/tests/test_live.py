@@ -14,6 +14,7 @@ All tests hit public (unauthenticated) fun API endpoints:
 from __future__ import annotations
 
 import json
+import asyncio
 import os
 import sys
 from pathlib import Path
@@ -37,12 +38,12 @@ def live_server():
     from fun_mcp.service import FunService
 
     srv = Server.from_descriptor(
-        DESCRIPTOR_PATH, name="test-fun-live", version="0.0.1"
+        DESCRIPTOR_PATH
     )
     servicer = FunService()
     srv.register(servicer)
     yield srv
-    srv.stop()
+    asyncio.run(srv.stop())
 
 
 # --- Shared fixtures for data discovery ---
@@ -51,7 +52,7 @@ def live_server():
 @pytest.fixture(scope="module")
 def dog_breed(live_server):
     """Discover a valid dog breed name for breed-specific tests."""
-    result = live_server._cli(["FunService", "ListDogBreeds"])
+    result = asyncio.run(live_server._cli(["FunService", "ListDogBreeds"]))
     breeds = result.get("breeds", [])
     assert breeds, "expected at least one breed"
     return breeds[0].get("breed", "")
@@ -60,7 +61,7 @@ def dog_breed(live_server):
 @pytest.fixture(scope="module")
 def trivia_category_id(live_server):
     """Discover a valid trivia category ID."""
-    result = live_server._cli(["FunService", "GetTriviaCategories"])
+    result = asyncio.run(live_server._cli(["FunService", "GetTriviaCategories"]))
     categories = result.get("categories", [])
     assert categories, "expected at least one trivia category"
     return categories[0].get("id", 0)
@@ -71,21 +72,21 @@ def trivia_category_id(live_server):
 
 class TestLiveDadJokes:
     def test_get_dad_joke(self, live_server):
-        result = live_server._cli(["FunService", "GetDadJoke"])
+        result = asyncio.run(live_server._cli(["FunService", "GetDadJoke"]))
         joke = result.get("joke", {})
         assert isinstance(joke, dict)
         assert joke.get("id")
         assert joke.get("joke")
 
     def test_search_dad_jokes(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "FunService",
                 "SearchDadJokes",
                 "-r",
                 json.dumps({"query": "cat", "limit": 5}),
             ]
-        )
+        ))
         jokes = result.get("jokes", [])
         assert isinstance(jokes, list)
         # Search might return 0 results for some terms; that is OK
@@ -93,14 +94,14 @@ class TestLiveDadJokes:
         assert int(total) >= 0
 
     def test_search_dad_jokes_with_results(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "FunService",
                 "SearchDadJokes",
                 "-r",
                 json.dumps({"query": "dog", "limit": 3}),
             ]
-        )
+        ))
         jokes = result.get("jokes", [])
         assert isinstance(jokes, list)
         if jokes:
@@ -114,14 +115,14 @@ class TestLiveDadJokes:
 
 class TestLiveTrivia:
     def test_get_trivia(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "FunService",
                 "GetTrivia",
                 "-r",
                 json.dumps({"amount": 3}),
             ]
-        )
+        ))
         questions = result.get("questions", [])
         assert isinstance(questions, list)
         assert len(questions) > 0
@@ -131,28 +132,28 @@ class TestLiveTrivia:
         assert q.get("category")
 
     def test_get_trivia_with_category(self, live_server, trivia_category_id):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "FunService",
                 "GetTrivia",
                 "-r",
                 json.dumps({"amount": 2, "category": trivia_category_id}),
             ]
-        )
+        ))
         questions = result.get("questions", [])
         assert isinstance(questions, list)
         # Trivia API may return fewer than requested if not enough questions
         assert len(questions) >= 0
 
     def test_get_trivia_with_difficulty(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "FunService",
                 "GetTrivia",
                 "-r",
                 json.dumps({"amount": 2, "difficulty": "easy"}),
             ]
-        )
+        ))
         questions = result.get("questions", [])
         assert isinstance(questions, list)
         if questions:
@@ -160,7 +161,7 @@ class TestLiveTrivia:
                 assert q.get("difficulty") == "easy"
 
     def test_get_trivia_categories(self, live_server):
-        result = live_server._cli(["FunService", "GetTriviaCategories"])
+        result = asyncio.run(live_server._cli(["FunService", "GetTriviaCategories"]))
         categories = result.get("categories", [])
         assert isinstance(categories, list)
         assert len(categories) > 0
@@ -174,7 +175,7 @@ class TestLiveTrivia:
 
 class TestLiveQuotes:
     def test_get_random_quote(self, live_server):
-        result = live_server._cli(["FunService", "GetRandomQuote"])
+        result = asyncio.run(live_server._cli(["FunService", "GetRandomQuote"]))
         quote = result.get("quote", {})
         assert isinstance(quote, dict)
         content = quote.get("content", "")
@@ -183,14 +184,14 @@ class TestLiveQuotes:
         assert author
 
     def test_search_quotes(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "FunService",
                 "SearchQuotes",
                 "-r",
                 json.dumps({"query": "life"}),
             ]
-        )
+        ))
         quotes = result.get("quotes", [])
         assert isinstance(quotes, list)
         # Search may return 0 results
@@ -207,7 +208,7 @@ class TestLiveQuotes:
 
 class TestLiveDogImages:
     def test_get_random_dog_image(self, live_server):
-        result = live_server._cli(["FunService", "GetRandomDogImage"])
+        result = asyncio.run(live_server._cli(["FunService", "GetRandomDogImage"]))
         url = result.get("imageUrl") or result.get("image_url", "")
         assert url
         assert url.startswith("http")
@@ -215,20 +216,20 @@ class TestLiveDogImages:
     def test_get_dog_image_by_breed(self, live_server, dog_breed):
         if not dog_breed:
             pytest.skip("no breed name available")
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "FunService",
                 "GetDogImageByBreed",
                 "-r",
                 json.dumps({"breed": dog_breed}),
             ]
-        )
+        ))
         url = result.get("imageUrl") or result.get("image_url", "")
         assert url
         assert url.startswith("http")
 
     def test_list_dog_breeds(self, live_server):
-        result = live_server._cli(["FunService", "ListDogBreeds"])
+        result = asyncio.run(live_server._cli(["FunService", "ListDogBreeds"]))
         breeds = result.get("breeds", [])
         assert isinstance(breeds, list)
         assert len(breeds) > 0
@@ -244,7 +245,7 @@ class TestLiveDogImages:
 
 class TestLiveCatFacts:
     def test_get_random_cat_fact(self, live_server):
-        result = live_server._cli(["FunService", "GetRandomCatFact"])
+        result = asyncio.run(live_server._cli(["FunService", "GetRandomCatFact"]))
         fact = result.get("fact", "")
         assert fact
         assert len(fact) > 0

@@ -16,8 +16,12 @@ class FinnhubService:
     """Implements FinnhubService RPCs via the Finnhub REST API."""
 
     def __init__(self, *, api_key: str | None = None):
-        self._http = httpx.Client(timeout=30)
+        self._http = httpx.AsyncClient(timeout=30)
         self._api_key = api_key or os.environ.get("FINNHUB_API_KEY", "")
+
+    async def aclose(self) -> None:
+        """Close the HTTP client. Idempotent."""
+        await self._client.aclose()
 
     def _get(self, path: str, **params: Any) -> Any:
         params["token"] = self._api_key
@@ -25,7 +29,7 @@ class FinnhubService:
         resp.raise_for_status()
         return resp.json()
 
-    def GetQuote(self, request: Any, context: Any = None) -> pb.GetQuoteResponse:
+    async def GetQuote(self, request: Any, context: Any = None) -> pb.GetQuoteResponse:
         raw = self._get("quote", symbol=request.symbol)
         return pb.GetQuoteResponse(
             current_price=raw.get("c", 0),
@@ -38,7 +42,7 @@ class FinnhubService:
             timestamp=raw.get("t", 0),
         )
 
-    def SearchSymbol(self, request: Any, context: Any = None) -> pb.SearchSymbolResponse:
+    async def SearchSymbol(self, request: Any, context: Any = None) -> pb.SearchSymbolResponse:
         raw = self._get("search", q=request.query)
         resp = pb.SearchSymbolResponse(count=raw.get("count", 0))
         for r in raw.get("result", []):
@@ -50,7 +54,7 @@ class FinnhubService:
             ))
         return resp
 
-    def GetCompanyProfile(self, request: Any, context: Any = None) -> pb.GetCompanyProfileResponse:
+    async def GetCompanyProfile(self, request: Any, context: Any = None) -> pb.GetCompanyProfileResponse:
         raw = self._get("stock/profile2", symbol=request.symbol)
         return pb.GetCompanyProfileResponse(
             ticker=raw.get("ticker", ""),
@@ -67,7 +71,7 @@ class FinnhubService:
             phone=raw.get("phone", ""),
         )
 
-    def GetCompanyNews(self, request: Any, context: Any = None) -> pb.GetCompanyNewsResponse:
+    async def GetCompanyNews(self, request: Any, context: Any = None) -> pb.GetCompanyNewsResponse:
         params = {"symbol": request.symbol}
         if request.from_date:
             params["from"] = request.from_date
@@ -89,7 +93,7 @@ class FinnhubService:
             ))
         return resp
 
-    def GetEarningsCalendar(self, request: Any, context: Any = None) -> pb.GetEarningsCalendarResponse:
+    async def GetEarningsCalendar(self, request: Any, context: Any = None) -> pb.GetEarningsCalendarResponse:
         params = {}
         if request.from_date:
             params["from"] = request.from_date
@@ -111,7 +115,7 @@ class FinnhubService:
             ))
         return resp
 
-    def GetRecommendationTrends(self, request: Any, context: Any = None) -> pb.GetRecommendationTrendsResponse:
+    async def GetRecommendationTrends(self, request: Any, context: Any = None) -> pb.GetRecommendationTrendsResponse:
         raw = self._get("stock/recommendation", symbol=request.symbol)
         resp = pb.GetRecommendationTrendsResponse()
         for r in raw:
@@ -125,7 +129,7 @@ class FinnhubService:
             ))
         return resp
 
-    def GetInsiderTransactions(self, request: Any, context: Any = None) -> pb.GetInsiderTransactionsResponse:
+    async def GetInsiderTransactions(self, request: Any, context: Any = None) -> pb.GetInsiderTransactionsResponse:
         raw = self._get("stock/insider-transactions", symbol=request.symbol)
         resp = pb.GetInsiderTransactionsResponse()
         for t in raw.get("data", []):
@@ -140,7 +144,7 @@ class FinnhubService:
             ))
         return resp
 
-    def GetMarketNews(self, request: Any, context: Any = None) -> pb.GetMarketNewsResponse:
+    async def GetMarketNews(self, request: Any, context: Any = None) -> pb.GetMarketNewsResponse:
         params = {"category": request.category or "general"}
         if request.min_id:
             params["minId"] = request.min_id
@@ -160,11 +164,11 @@ class FinnhubService:
             ))
         return resp
 
-    def GetPeers(self, request: Any, context: Any = None) -> pb.GetPeersResponse:
+    async def GetPeers(self, request: Any, context: Any = None) -> pb.GetPeersResponse:
         raw = self._get("stock/peers", symbol=request.symbol)
         return pb.GetPeersResponse(peers=raw if isinstance(raw, list) else [])
 
-    def GetBasicFinancials(self, request: Any, context: Any = None) -> pb.GetBasicFinancialsResponse:
+    async def GetBasicFinancials(self, request: Any, context: Any = None) -> pb.GetBasicFinancialsResponse:
         raw = self._get("stock/metric", symbol=request.symbol, metric=request.metric or "all")
         m = raw.get("metric", {})
         return pb.GetBasicFinancialsResponse(

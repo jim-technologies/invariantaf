@@ -9,6 +9,7 @@ All tests hit public (unauthenticated) SpaceX v4 API endpoints.
 from __future__ import annotations
 
 import json
+import asyncio
 import os
 import sys
 from pathlib import Path
@@ -32,12 +33,12 @@ def live_server():
     from invariant import Server
 
     srv = Server.from_descriptor(
-        DESCRIPTOR_PATH, name="test-spacex-live", version="0.0.1"
+        DESCRIPTOR_PATH
     )
     svc = SpaceXService()
     srv.register(svc)
     yield srv
-    srv.stop()
+    asyncio.run(srv.stop())
 
 
 # --- Shared fixtures ---
@@ -46,7 +47,7 @@ def live_server():
 @pytest.fixture(scope="module")
 def discovered_launch(live_server):
     """Discover a launch for tests that need a launch ID."""
-    result = live_server._cli(["SpaceXService", "GetLatestLaunch"])
+    result = asyncio.run(live_server._cli(["SpaceXService", "GetLatestLaunch"]))
     launch = result.get("launch", {})
     assert launch, "expected a launch from GetLatestLaunch"
     return launch
@@ -55,7 +56,7 @@ def discovered_launch(live_server):
 @pytest.fixture(scope="module")
 def discovered_rocket_id(live_server):
     """Discover a rocket ID for detail tests."""
-    result = live_server._cli(["SpaceXService", "GetRockets"])
+    result = asyncio.run(live_server._cli(["SpaceXService", "GetRockets"]))
     rockets = result.get("rockets", [])
     assert rockets, "expected at least one rocket"
     return rockets[0]["id"]
@@ -66,7 +67,7 @@ def discovered_rocket_id(live_server):
 
 class TestLiveCompany:
     def test_get_company_info(self, live_server):
-        result = live_server._cli(["SpaceXService", "GetCompanyInfo"])
+        result = asyncio.run(live_server._cli(["SpaceXService", "GetCompanyInfo"]))
         assert result.get("name") == "SpaceX"
         assert result.get("founder") == "Elon Musk"
         assert result.get("ceo")
@@ -78,7 +79,7 @@ class TestLiveCompany:
 
 class TestLiveLaunches:
     def test_get_latest_launch(self, live_server):
-        result = live_server._cli(["SpaceXService", "GetLatestLaunch"])
+        result = asyncio.run(live_server._cli(["SpaceXService", "GetLatestLaunch"]))
         assert "launch" in result
         launch = result["launch"]
         assert "name" in launch
@@ -86,7 +87,7 @@ class TestLiveLaunches:
         assert "flightNumber" in launch or "flight_number" in launch
 
     def test_get_launches(self, live_server):
-        result = live_server._cli(["SpaceXService", "GetLaunches"])
+        result = asyncio.run(live_server._cli(["SpaceXService", "GetLaunches"]))
         assert "launches" in result
         launches = result["launches"]
         assert isinstance(launches, list)
@@ -96,14 +97,14 @@ class TestLiveLaunches:
         launch_id = discovered_launch.get("id", "")
         if not launch_id:
             pytest.skip("no launch id found")
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             ["SpaceXService", "GetLaunch", "-r", json.dumps({"id": launch_id})]
-        )
+        ))
         assert "launch" in result
         assert result["launch"]["id"] == launch_id
 
     def test_get_upcoming_launches(self, live_server):
-        result = live_server._cli(["SpaceXService", "GetUpcomingLaunches"])
+        result = asyncio.run(live_server._cli(["SpaceXService", "GetUpcomingLaunches"]))
         assert "launches" in result
         launches = result["launches"]
         assert isinstance(launches, list)
@@ -117,7 +118,7 @@ class TestLiveLaunches:
 
 class TestLiveRockets:
     def test_get_rockets(self, live_server):
-        result = live_server._cli(["SpaceXService", "GetRockets"])
+        result = asyncio.run(live_server._cli(["SpaceXService", "GetRockets"]))
         assert "rockets" in result
         rockets = result["rockets"]
         assert isinstance(rockets, list)
@@ -127,9 +128,9 @@ class TestLiveRockets:
         assert "id" in r
 
     def test_get_rocket_by_id(self, live_server, discovered_rocket_id):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             ["SpaceXService", "GetRocket", "-r", json.dumps({"id": discovered_rocket_id})]
-        )
+        ))
         assert "rocket" in result
         rocket = result["rocket"]
         assert rocket["id"] == discovered_rocket_id
@@ -141,7 +142,7 @@ class TestLiveRockets:
 
 class TestLiveCrew:
     def test_get_crew(self, live_server):
-        result = live_server._cli(["SpaceXService", "GetCrew"])
+        result = asyncio.run(live_server._cli(["SpaceXService", "GetCrew"]))
         assert "crew" in result
         crew = result["crew"]
         assert isinstance(crew, list)
@@ -156,7 +157,7 @@ class TestLiveCrew:
 
 class TestLiveStarlink:
     def test_get_starlink(self, live_server):
-        result = live_server._cli(["SpaceXService", "GetStarlink"])
+        result = asyncio.run(live_server._cli(["SpaceXService", "GetStarlink"]))
         assert "satellites" in result
         sats = result["satellites"]
         assert isinstance(sats, list)
@@ -170,7 +171,7 @@ class TestLiveStarlink:
 
 class TestLiveLaunchpads:
     def test_get_launchpads(self, live_server):
-        result = live_server._cli(["SpaceXService", "GetLaunchpads"])
+        result = asyncio.run(live_server._cli(["SpaceXService", "GetLaunchpads"]))
         assert "launchpads" in result
         pads = result["launchpads"]
         assert isinstance(pads, list)

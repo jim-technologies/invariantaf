@@ -27,20 +27,24 @@ class TwelveDataService:
         self._base_url = base_url.rstrip("/")
         self._api_key = api_key or os.getenv("TWELVEDATA_API_KEY", "")
         self._timeout = timeout
-        self._client = httpx.Client(timeout=timeout)
+        self._client = httpx.AsyncClient(timeout=timeout)
+
+    async def aclose(self) -> None:
+        """Close the HTTP client. Idempotent."""
+        await self._client.aclose()
 
     # -------------------------
     # RPC handlers
     # -------------------------
 
-    def GetQuote(
+    async def GetQuote(
         self, request: pb.GetQuoteRequest, context: Any = None
     ) -> pb.GetQuoteResponse:
         query: dict[str, Any] = {"symbol": request.symbol}
-        payload = self._get("/quote", query)
+        payload = await self._get("/quote", query)
         return self._parse_message(self._normalize_quote(payload), pb.GetQuoteResponse)
 
-    def GetTimeSeries(
+    async def GetTimeSeries(
         self, request: pb.GetTimeSeriesRequest, context: Any = None
     ) -> pb.GetTimeSeriesResponse:
         query: dict[str, Any] = {
@@ -50,52 +54,52 @@ class TwelveDataService:
         if self._has_field(request, "outputsize"):
             query["outputsize"] = request.outputsize
 
-        payload = self._get("/time_series", query)
+        payload = await self._get("/time_series", query)
         return self._parse_message(self._normalize_time_series(payload), pb.GetTimeSeriesResponse)
 
-    def GetPrice(
+    async def GetPrice(
         self, request: pb.GetPriceRequest, context: Any = None
     ) -> pb.GetPriceResponse:
         query: dict[str, Any] = {"symbol": request.symbol}
-        payload = self._get("/price", query)
+        payload = await self._get("/price", query)
         price = self._safe_float(payload.get("price", 0))
         return self._parse_message({"price": price}, pb.GetPriceResponse)
 
-    def ListStocks(
+    async def ListStocks(
         self, request: pb.ListStocksRequest, context: Any = None
     ) -> pb.ListStocksResponse:
         query: dict[str, Any] = {}
         if self._has_field(request, "exchange"):
             query["exchange"] = request.exchange
 
-        payload = self._get("/stocks", query)
+        payload = await self._get("/stocks", query)
         stocks = self._extract_data_list(payload)
         return self._parse_message({"stocks": stocks}, pb.ListStocksResponse)
 
-    def ListForexPairs(
+    async def ListForexPairs(
         self, request: pb.ListForexPairsRequest, context: Any = None
     ) -> pb.ListForexPairsResponse:
-        payload = self._get("/forex_pairs", {})
+        payload = await self._get("/forex_pairs", {})
         pairs = self._extract_data_list(payload)
         return self._parse_message({"pairs": pairs}, pb.ListForexPairsResponse)
 
-    def ListCryptoPairs(
+    async def ListCryptoPairs(
         self, request: pb.ListCryptoPairsRequest, context: Any = None
     ) -> pb.ListCryptoPairsResponse:
-        payload = self._get("/cryptocurrencies", {})
+        payload = await self._get("/cryptocurrencies", {})
         pairs = self._extract_data_list(payload)
         return self._parse_message({"pairs": pairs}, pb.ListCryptoPairsResponse)
 
-    def GetExchangeRate(
+    async def GetExchangeRate(
         self, request: pb.GetExchangeRateRequest, context: Any = None
     ) -> pb.GetExchangeRateResponse:
         query: dict[str, Any] = {"symbol": request.symbol}
-        payload = self._get("/exchange_rate", query)
+        payload = await self._get("/exchange_rate", query)
         return self._parse_message(
             self._normalize_exchange_rate(payload), pb.GetExchangeRateResponse
         )
 
-    def GetEarningsCalendar(
+    async def GetEarningsCalendar(
         self, request: pb.GetEarningsCalendarRequest, context: Any = None
     ) -> pb.GetEarningsCalendarResponse:
         query: dict[str, Any] = {}
@@ -104,7 +108,7 @@ class TwelveDataService:
         if self._has_field(request, "end_date"):
             query["end_date"] = request.end_date
 
-        payload = self._get("/earnings", query)
+        payload = await self._get("/earnings", query)
         earnings = self._extract_earnings(payload)
         return self._parse_message({"earnings": earnings}, pb.GetEarningsCalendarResponse)
 
@@ -197,9 +201,9 @@ class TwelveDataService:
     # HTTP helpers
     # -------------------------
 
-    def _get(self, path: str, query: dict[str, Any] | None = None) -> Any:
+    async def _get(self, path: str, query: dict[str, Any] | None = None) -> Any:
         url = self._build_url(path, query)
-        response = self._client.request(
+        response = await self._client.request(
             "GET",
             url,
             headers={"Accept": "application/json"},

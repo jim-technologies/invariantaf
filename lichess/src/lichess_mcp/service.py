@@ -21,7 +21,11 @@ class LichessService:
         headers = {"Accept": "application/json"}
         if self._api_token:
             headers["Authorization"] = f"Bearer {self._api_token}"
-        self._http = httpx.Client(timeout=30, headers=headers)
+        self._http = httpx.AsyncClient(timeout=30, headers=headers)
+
+    async def aclose(self) -> None:
+        """Close the HTTP client. Idempotent."""
+        await self._client.aclose()
 
     def _get(self, path: str, params: dict | None = None, headers: dict | None = None) -> Any:
         h = dict(headers or {})
@@ -44,7 +48,7 @@ class LichessService:
                 results.append(json.loads(line))
         return results
 
-    def GetUser(self, request: Any, context: Any = None) -> pb.GetUserResponse:
+    async def GetUser(self, request: Any, context: Any = None) -> pb.GetUserResponse:
         raw = self._get(f"/api/user/{request.username}")
 
         perfs_map = {}
@@ -72,7 +76,7 @@ class LichessService:
             perfs=perfs_map,
         )
 
-    def GetUserRatingHistory(self, request: Any, context: Any = None) -> pb.GetUserRatingHistoryResponse:
+    async def GetUserRatingHistory(self, request: Any, context: Any = None) -> pb.GetUserRatingHistoryResponse:
         raw = self._get(f"/api/user/{request.username}/rating-history")
 
         resp = pb.GetUserRatingHistoryResponse()
@@ -91,7 +95,7 @@ class LichessService:
             ))
         return resp
 
-    def GetUserGames(self, request: Any, context: Any = None) -> pb.GetUserGamesResponse:
+    async def GetUserGames(self, request: Any, context: Any = None) -> pb.GetUserGamesResponse:
         params = {}
         max_games = request.max or 10
         params["max"] = max_games
@@ -108,19 +112,19 @@ class LichessService:
             resp.games.append(self._parse_game(g))
         return resp
 
-    def GetGame(self, request: Any, context: Any = None) -> pb.GetGameResponse:
+    async def GetGame(self, request: Any, context: Any = None) -> pb.GetGameResponse:
         raw = self._get(f"/game/export/{request.game_id}", params={"pgnInJson": "true"})
         return pb.GetGameResponse(game=self._parse_game(raw))
 
-    def GetDailyPuzzle(self, request: Any, context: Any = None) -> pb.GetDailyPuzzleResponse:
+    async def GetDailyPuzzle(self, request: Any, context: Any = None) -> pb.GetDailyPuzzleResponse:
         raw = self._get("/api/puzzle/daily")
         return pb.GetDailyPuzzleResponse(puzzle=self._parse_puzzle(raw))
 
-    def GetPuzzle(self, request: Any, context: Any = None) -> pb.GetPuzzleResponse:
+    async def GetPuzzle(self, request: Any, context: Any = None) -> pb.GetPuzzleResponse:
         raw = self._get(f"/api/puzzle/{request.id}")
         return pb.GetPuzzleResponse(puzzle=self._parse_puzzle(raw))
 
-    def GetLeaderboard(self, request: Any, context: Any = None) -> pb.GetLeaderboardResponse:
+    async def GetLeaderboard(self, request: Any, context: Any = None) -> pb.GetLeaderboardResponse:
         nb = request.nb or 10
         perf_type = request.perf_type or "bullet"
         raw = self._get(f"/api/player/top/{nb}/{perf_type}")
@@ -135,7 +139,7 @@ class LichessService:
             ))
         return resp
 
-    def GetCloudEval(self, request: Any, context: Any = None) -> pb.GetCloudEvalResponse:
+    async def GetCloudEval(self, request: Any, context: Any = None) -> pb.GetCloudEvalResponse:
         params = {"fen": request.fen}
         if request.multi_pv:
             params["multiPv"] = request.multi_pv
@@ -154,7 +158,7 @@ class LichessService:
             ))
         return resp
 
-    def GetOnline(self, request: Any, context: Any = None) -> pb.GetOnlineResponse:
+    async def GetOnline(self, request: Any, context: Any = None) -> pb.GetOnlineResponse:
         # Lichess /api/user/count returns a plain integer, but we request JSON header.
         # The response is actually just a number, so we handle it specially.
         resp = self._http.get(
@@ -172,7 +176,7 @@ class LichessService:
             count = data if isinstance(data, int) else data.get("count", 0)
         return pb.GetOnlineResponse(count=count)
 
-    def GetTeam(self, request: Any, context: Any = None) -> pb.GetTeamResponse:
+    async def GetTeam(self, request: Any, context: Any = None) -> pb.GetTeamResponse:
         raw = self._get(f"/api/team/{request.team_id}")
 
         leaders = []

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import asyncio
 import sys
 from pathlib import Path
 
@@ -21,12 +22,26 @@ def _env(name: str) -> str:
     return (os.getenv(name) or "").strip()
 
 
+def _projection_from_argv(argv: list[str]) -> dict:
+    """Parse [--mcp|--cli|--http [port]|--grpc [port]] into serve() kwargs."""
+    if not argv:
+        return {"mcp": True}
+    cmd = argv[0]
+    if cmd in ("--mcp", "mcp", ""):
+        return {"mcp": True}
+    if cmd in ("--cli", "cli"):
+        return {"cli": True}
+    if cmd in ("--http", "http"):
+        port = int(argv[1]) if len(argv) > 1 else 8080
+        return {"http": port}
+    if cmd in ("--grpc", "grpc"):
+        port = int(argv[1]) if len(argv) > 1 else 50051
+        return {"grpc": port}
+    return {"mcp": True}
+
+
 def main() -> None:
-    server = Server.from_descriptor(
-        str(DESCRIPTOR),
-        name="kraken-mcp",
-        version="0.1.0",
-    )
+    server = Server.from_descriptor(str(DESCRIPTOR))
 
     spot_base_url = (_env("KRAKEN_SPOT_BASE_URL") or DEFAULT_SPOT_BASE_URL).rstrip("/")
     futures_base_url = (_env("KRAKEN_FUTURES_BASE_URL") or DEFAULT_FUTURES_BASE_URL).rstrip("/")
@@ -39,7 +54,7 @@ def main() -> None:
     server.register(servicer, service_name="kraken.v1.KrakenSpotService")
     server.register(servicer, service_name="kraken.v1.KrakenFuturesService")
 
-    server.serve_from_argv()
+    asyncio.run(server.serve(**_projection_from_argv(sys.argv[1:])))
 
 
 if __name__ == "__main__":

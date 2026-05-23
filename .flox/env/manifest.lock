@@ -1,16 +1,20 @@
 {
   "lockfile-version": 1,
   "manifest": {
-    "version": 1,
+    "schema-version": "1.11.0",
     "install": {
       "buf": {
         "pkg-path": "buf"
       },
       "gcc": {
-        "pkg-path": "gcc"
+        "pkg-path": "gcc",
+        "outputs": "all"
       },
       "go": {
         "pkg-path": "go"
+      },
+      "protobuf": {
+        "pkg-path": "protobuf"
       },
       "python3": {
         "pkg-path": "python3"
@@ -44,8 +48,9 @@
       "rev_date": "2026-02-23T12:05:20Z",
       "scrape_date": "2026-02-25T04:46:01.640765Z",
       "stabilities": [
+        "staging",
         "unstable",
-        "staging"
+        "stable"
       ],
       "unfree": false,
       "version": "1.64.0",
@@ -74,8 +79,9 @@
       "rev_date": "2026-02-23T12:05:20Z",
       "scrape_date": "2026-02-25T05:24:01.119504Z",
       "stabilities": [
+        "staging",
         "unstable",
-        "staging"
+        "stable"
       ],
       "unfree": false,
       "version": "1.64.0",
@@ -104,8 +110,9 @@
       "rev_date": "2026-02-23T12:05:20Z",
       "scrape_date": "2026-02-25T06:09:08.261131Z",
       "stabilities": [
+        "staging",
         "unstable",
-        "staging"
+        "stable"
       ],
       "unfree": false,
       "version": "1.64.0",
@@ -134,8 +141,9 @@
       "rev_date": "2026-02-23T12:05:20Z",
       "scrape_date": "2026-02-25T07:00:09.673553Z",
       "stabilities": [
+        "staging",
         "unstable",
-        "staging"
+        "stable"
       ],
       "unfree": false,
       "version": "1.64.0",
@@ -164,8 +172,9 @@
       "rev_date": "2026-02-23T12:05:20Z",
       "scrape_date": "2026-02-25T04:46:02.734386Z",
       "stabilities": [
+        "staging",
         "unstable",
-        "staging"
+        "stable"
       ],
       "unfree": false,
       "version": "15.2.0",
@@ -197,13 +206,15 @@
       "rev_date": "2026-02-23T12:05:20Z",
       "scrape_date": "2026-02-25T05:24:02.556443Z",
       "stabilities": [
+        "staging",
         "unstable",
-        "staging"
+        "stable"
       ],
       "unfree": false,
       "version": "15.2.0",
       "outputs_to_install": [
         "man",
+        "out",
         "out",
         "out"
       ],
@@ -231,8 +242,9 @@
       "rev_date": "2026-02-23T12:05:20Z",
       "scrape_date": "2026-02-25T06:09:09.273437Z",
       "stabilities": [
+        "staging",
         "unstable",
-        "staging"
+        "stable"
       ],
       "unfree": false,
       "version": "15.2.0",
@@ -264,13 +276,15 @@
       "rev_date": "2026-02-23T12:05:20Z",
       "scrape_date": "2026-02-25T07:00:11.394850Z",
       "stabilities": [
+        "staging",
         "unstable",
-        "staging"
+        "stable"
       ],
       "unfree": false,
       "version": "15.2.0",
       "outputs_to_install": [
         "man",
+        "out",
         "out",
         "out"
       ],
@@ -298,12 +312,15 @@
       "rev_date": "2026-02-23T12:05:20Z",
       "scrape_date": "2026-02-25T04:46:02.939142Z",
       "stabilities": [
+        "staging",
         "unstable",
-        "staging"
+        "stable"
       ],
       "unfree": false,
       "version": "1.25.7",
       "outputs_to_install": [
+        "out",
+        "out",
         "out"
       ],
       "outputs": {
@@ -328,8 +345,9 @@
       "rev_date": "2026-02-23T12:05:20Z",
       "scrape_date": "2026-02-25T05:24:03.278112Z",
       "stabilities": [
+        "staging",
         "unstable",
-        "staging"
+        "stable"
       ],
       "unfree": false,
       "version": "1.25.7",
@@ -358,8 +376,9 @@
       "rev_date": "2026-02-23T12:05:20Z",
       "scrape_date": "2026-02-25T06:09:09.512982Z",
       "stabilities": [
+        "staging",
         "unstable",
-        "staging"
+        "stable"
       ],
       "unfree": false,
       "version": "1.25.7",
@@ -388,16 +407,150 @@
       "rev_date": "2026-02-23T12:05:20Z",
       "scrape_date": "2026-02-25T07:00:12.218111Z",
       "stabilities": [
+        "staging",
         "unstable",
-        "staging"
+        "stable"
       ],
       "unfree": false,
       "version": "1.25.7",
       "outputs_to_install": [
+        "out",
         "out"
       ],
       "outputs": {
         "out": "/nix/store/pz4pxhmlqd3q72crp2sx90k85gf2rqyp-go-1.25.7"
+      },
+      "system": "x86_64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "protobuf",
+      "broken": false,
+      "derivation": "/nix/store/34rsrdl7v9hglfg8xmix1h3drwj3pln0-protobuf-33.5.drv",
+      "description": "Google's data interchange format",
+      "install_id": "protobuf",
+      "license": "BSD-3-Clause",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=2fc6539b481e1d2569f25f8799236694180c0993",
+      "name": "protobuf-33.5",
+      "pname": "protobuf",
+      "rev": "2fc6539b481e1d2569f25f8799236694180c0993",
+      "rev_count": 953160,
+      "rev_date": "2026-02-23T12:05:20Z",
+      "scrape_date": "2026-02-25T04:46:41.387869Z",
+      "stabilities": [
+        "staging",
+        "unstable",
+        "stable"
+      ],
+      "unfree": false,
+      "version": "33.5",
+      "outputs_to_install": [
+        "out",
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/w7ixs70mwsbkr6h7x158s28wxj5ksqlz-protobuf-33.5"
+      },
+      "system": "aarch64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "protobuf",
+      "broken": false,
+      "derivation": "/nix/store/3qb8sz1l3n3hdg0d70nn1hdpj852r78x-protobuf-33.5.drv",
+      "description": "Google's data interchange format",
+      "install_id": "protobuf",
+      "license": "BSD-3-Clause",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=2fc6539b481e1d2569f25f8799236694180c0993",
+      "name": "protobuf-33.5",
+      "pname": "protobuf",
+      "rev": "2fc6539b481e1d2569f25f8799236694180c0993",
+      "rev_count": 953160,
+      "rev_date": "2026-02-23T12:05:20Z",
+      "scrape_date": "2026-02-25T05:24:57.924318Z",
+      "stabilities": [
+        "staging",
+        "unstable",
+        "stable"
+      ],
+      "unfree": false,
+      "version": "33.5",
+      "outputs_to_install": [
+        "out",
+        "out",
+        "out"
+      ],
+      "outputs": {
+        "debug": "/nix/store/d90d9v8m7d9ldz92ivhgq0wqqch2rxhr-protobuf-33.5-debug",
+        "out": "/nix/store/600hwaz4l959b7lxzxd4hjyml9rzjkgb-protobuf-33.5"
+      },
+      "system": "aarch64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "protobuf",
+      "broken": false,
+      "derivation": "/nix/store/1czl714w305cl4ypqs2yy0vi46ww4nh0-protobuf-33.5.drv",
+      "description": "Google's data interchange format",
+      "install_id": "protobuf",
+      "license": "BSD-3-Clause",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=2fc6539b481e1d2569f25f8799236694180c0993",
+      "name": "protobuf-33.5",
+      "pname": "protobuf",
+      "rev": "2fc6539b481e1d2569f25f8799236694180c0993",
+      "rev_count": 953160,
+      "rev_date": "2026-02-23T12:05:20Z",
+      "scrape_date": "2026-02-25T06:09:47.266281Z",
+      "stabilities": [
+        "staging",
+        "unstable",
+        "stable"
+      ],
+      "unfree": false,
+      "version": "33.5",
+      "outputs_to_install": [
+        "out",
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/k3akiv87fwy0vp4i83yr24lg5j56ccgc-protobuf-33.5"
+      },
+      "system": "x86_64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "protobuf",
+      "broken": false,
+      "derivation": "/nix/store/97lcscjzy7k22rbss7c790p0kdn3w863-protobuf-33.5.drv",
+      "description": "Google's data interchange format",
+      "install_id": "protobuf",
+      "license": "BSD-3-Clause",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=2fc6539b481e1d2569f25f8799236694180c0993",
+      "name": "protobuf-33.5",
+      "pname": "protobuf",
+      "rev": "2fc6539b481e1d2569f25f8799236694180c0993",
+      "rev_count": 953160,
+      "rev_date": "2026-02-23T12:05:20Z",
+      "scrape_date": "2026-02-25T07:01:13.834601Z",
+      "stabilities": [
+        "staging",
+        "unstable",
+        "stable"
+      ],
+      "unfree": false,
+      "version": "33.5",
+      "outputs_to_install": [
+        "out",
+        "out",
+        "out"
+      ],
+      "outputs": {
+        "debug": "/nix/store/vappv4dq10ka28ypl2df8czfffmnmv35-protobuf-33.5-debug",
+        "out": "/nix/store/8sbmq3x389mnh8kz3lp3m2r43p4xp33h-protobuf-33.5"
       },
       "system": "x86_64-linux",
       "group": "toplevel",
@@ -418,12 +571,15 @@
       "rev_date": "2026-02-23T12:05:20Z",
       "scrape_date": "2026-02-25T04:46:41.814670Z",
       "stabilities": [
+        "staging",
         "unstable",
-        "staging"
+        "stable"
       ],
       "unfree": false,
       "version": "3.13.12",
       "outputs_to_install": [
+        "out",
+        "out",
         "out"
       ],
       "outputs": {
@@ -448,12 +604,15 @@
       "rev_date": "2026-02-23T12:05:20Z",
       "scrape_date": "2026-02-25T05:24:58.548340Z",
       "stabilities": [
+        "staging",
         "unstable",
-        "staging"
+        "stable"
       ],
       "unfree": false,
       "version": "3.13.12",
       "outputs_to_install": [
+        "out",
+        "out",
         "out",
         "out"
       ],
@@ -480,12 +639,14 @@
       "rev_date": "2026-02-23T12:05:20Z",
       "scrape_date": "2026-02-25T06:09:47.680026Z",
       "stabilities": [
+        "staging",
         "unstable",
-        "staging"
+        "stable"
       ],
       "unfree": false,
       "version": "3.13.12",
       "outputs_to_install": [
+        "out",
         "out"
       ],
       "outputs": {
@@ -510,12 +671,16 @@
       "rev_date": "2026-02-23T12:05:20Z",
       "scrape_date": "2026-02-25T07:01:14.558961Z",
       "stabilities": [
+        "staging",
         "unstable",
-        "staging"
+        "stable"
       ],
       "unfree": false,
       "version": "3.13.12",
       "outputs_to_install": [
+        "out",
+        "out",
+        "out",
         "out",
         "out"
       ],
@@ -542,8 +707,9 @@
       "rev_date": "2026-02-23T12:05:20Z",
       "scrape_date": "2026-02-25T04:47:31.250752Z",
       "stabilities": [
+        "staging",
         "unstable",
-        "staging"
+        "stable"
       ],
       "unfree": false,
       "version": "0.15.1",
@@ -572,8 +738,9 @@
       "rev_date": "2026-02-23T12:05:20Z",
       "scrape_date": "2026-02-25T05:25:58.471387Z",
       "stabilities": [
+        "staging",
         "unstable",
-        "staging"
+        "stable"
       ],
       "unfree": false,
       "version": "0.15.1",
@@ -602,8 +769,9 @@
       "rev_date": "2026-02-23T12:05:20Z",
       "scrape_date": "2026-02-25T06:10:37.906002Z",
       "stabilities": [
+        "staging",
         "unstable",
-        "staging"
+        "stable"
       ],
       "unfree": false,
       "version": "0.15.1",
@@ -632,8 +800,9 @@
       "rev_date": "2026-02-23T12:05:20Z",
       "scrape_date": "2026-02-25T07:02:20.064819Z",
       "stabilities": [
+        "staging",
         "unstable",
-        "staging"
+        "stable"
       ],
       "unfree": false,
       "version": "0.15.1",
@@ -662,8 +831,9 @@
       "rev_date": "2026-02-23T12:05:20Z",
       "scrape_date": "2026-02-25T04:48:25.875225Z",
       "stabilities": [
+        "staging",
         "unstable",
-        "staging"
+        "stable"
       ],
       "unfree": false,
       "version": "0.10.4",
@@ -692,8 +862,9 @@
       "rev_date": "2026-02-23T12:05:20Z",
       "scrape_date": "2026-02-25T05:27:08.194782Z",
       "stabilities": [
+        "staging",
         "unstable",
-        "staging"
+        "stable"
       ],
       "unfree": false,
       "version": "0.10.4",
@@ -722,8 +893,9 @@
       "rev_date": "2026-02-23T12:05:20Z",
       "scrape_date": "2026-02-25T06:11:33.134995Z",
       "stabilities": [
+        "staging",
         "unstable",
-        "staging"
+        "stable"
       ],
       "unfree": false,
       "version": "0.10.4",
@@ -752,8 +924,9 @@
       "rev_date": "2026-02-23T12:05:20Z",
       "scrape_date": "2026-02-25T07:03:34.022261Z",
       "stabilities": [
+        "staging",
         "unstable",
-        "staging"
+        "stable"
       ],
       "unfree": false,
       "version": "0.10.4",

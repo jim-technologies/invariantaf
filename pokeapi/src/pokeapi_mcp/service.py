@@ -15,14 +15,18 @@ class PokeAPIService:
     """Implements PokeAPIService RPCs via the free PokeAPI v2."""
 
     def __init__(self):
-        self._http = httpx.Client(timeout=30)
+        self._http = httpx.AsyncClient(timeout=30)
+
+    async def aclose(self) -> None:
+        """Close the HTTP client. Idempotent."""
+        await self._client.aclose()
 
     def _get(self, path: str, params: dict | None = None) -> Any:
         resp = self._http.get(f"{_BASE_URL}{path}", params=params)
         resp.raise_for_status()
         return resp.json()
 
-    def GetPokemon(self, request: Any, context: Any = None) -> pb.GetPokemonResponse:
+    async def GetPokemon(self, request: Any, context: Any = None) -> pb.GetPokemonResponse:
         raw = self._get(f"/pokemon/{request.name_or_id}")
 
         types = []
@@ -72,7 +76,7 @@ class PokeAPIService:
             order=raw.get("order", 0),
         )
 
-    def GetPokemonSpecies(self, request: Any, context: Any = None) -> pb.GetPokemonSpeciesResponse:
+    async def GetPokemonSpecies(self, request: Any, context: Any = None) -> pb.GetPokemonSpeciesResponse:
         raw = self._get(f"/pokemon-species/{request.name_or_id}")
 
         # Get English flavor text.
@@ -113,7 +117,7 @@ class PokeAPIService:
             shape=shape.get("name", "") or "",
         )
 
-    def GetAbility(self, request: Any, context: Any = None) -> pb.GetAbilityResponse:
+    async def GetAbility(self, request: Any, context: Any = None) -> pb.GetAbilityResponse:
         raw = self._get(f"/ability/{request.name_or_id}")
 
         # Get English effect.
@@ -142,7 +146,7 @@ class PokeAPIService:
             pokemon=pokemon,
         )
 
-    def GetMove(self, request: Any, context: Any = None) -> pb.GetMoveResponse:
+    async def GetMove(self, request: Any, context: Any = None) -> pb.GetMoveResponse:
         raw = self._get(f"/move/{request.name_or_id}")
 
         # Get English effect.
@@ -171,7 +175,7 @@ class PokeAPIService:
             priority=raw.get("priority", 0),
         )
 
-    def GetType(self, request: Any, context: Any = None) -> pb.GetTypeResponse:
+    async def GetType(self, request: Any, context: Any = None) -> pb.GetTypeResponse:
         raw = self._get(f"/type/{request.name_or_id}")
 
         dr = raw.get("damage_relations", {})
@@ -203,7 +207,7 @@ class PokeAPIService:
             moves=move_names,
         )
 
-    def GetEvolutionChain(self, request: Any, context: Any = None) -> pb.GetEvolutionChainResponse:
+    async def GetEvolutionChain(self, request: Any, context: Any = None) -> pb.GetEvolutionChainResponse:
         raw = self._get(f"/evolution-chain/{request.id}")
 
         def parse_chain(chain_data: dict) -> pb.EvolutionLink:
@@ -243,7 +247,7 @@ class PokeAPIService:
             chain=chain,
         )
 
-    def GetGeneration(self, request: Any, context: Any = None) -> pb.GetGenerationResponse:
+    async def GetGeneration(self, request: Any, context: Any = None) -> pb.GetGenerationResponse:
         raw = self._get(f"/generation/{request.name_or_id}")
 
         main_region = raw.get("main_region", {})
@@ -260,7 +264,7 @@ class PokeAPIService:
             types=types,
         )
 
-    def GetItem(self, request: Any, context: Any = None) -> pb.GetItemResponse:
+    async def GetItem(self, request: Any, context: Any = None) -> pb.GetItemResponse:
         raw = self._get(f"/item/{request.name_or_id}")
 
         # Get English effect.
@@ -286,7 +290,7 @@ class PokeAPIService:
             sprite=sprites.get("default", "") or "",
         )
 
-    def GetNature(self, request: Any, context: Any = None) -> pb.GetNatureResponse:
+    async def GetNature(self, request: Any, context: Any = None) -> pb.GetNatureResponse:
         raw = self._get(f"/nature/{request.name_or_id}")
 
         increased_stat = raw.get("increased_stat", {}) or {}
@@ -299,7 +303,7 @@ class PokeAPIService:
             decreased_stat=decreased_stat.get("name", "") or "",
         )
 
-    def ListPokemon(self, request: Any, context: Any = None) -> pb.ListPokemonResponse:
+    async def ListPokemon(self, request: Any, context: Any = None) -> pb.ListPokemonResponse:
         params = {
             "limit": request.limit or 20,
             "offset": request.offset or 0,

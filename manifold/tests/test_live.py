@@ -10,6 +10,7 @@ No API key or credentials are needed.
 from __future__ import annotations
 
 import json
+import asyncio
 import os
 import sys
 from pathlib import Path
@@ -35,7 +36,7 @@ def _cli_or_skip(live_server, service, method, params=None):
     if params is not None:
         cli_args += ["-r", json.dumps(params)]
     try:
-        return live_server._cli(cli_args)
+        return asyncio.run(live_server._cli(cli_args))
     except Exception as exc:
         msg = str(exc)
         for code in _CLI_OR_SKIP_CODES:
@@ -52,11 +53,11 @@ def live_server():
     base_url = (os.getenv("MANIFOLD_BASE_URL") or DEFAULT_BASE_URL).rstrip("/")
 
     srv = Server.from_descriptor(
-        DESCRIPTOR_PATH, name="test-manifold-live", version="0.0.1"
+        DESCRIPTOR_PATH
     )
     srv.connect_http(base_url, service_name="manifold.v1.ManifoldService")
     yield srv
-    srv.stop()
+    asyncio.run(srv.stop())
 
 
 class TestLiveListMarkets:

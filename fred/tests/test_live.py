@@ -9,6 +9,7 @@ Requires a free FRED API key from https://fred.stlouisfed.org/docs/api/api_key.h
 from __future__ import annotations
 
 import json
+import asyncio
 import os
 import sys
 from pathlib import Path
@@ -35,40 +36,40 @@ def live_server():
     from fred_mcp.service import FREDService
 
     srv = Server.from_descriptor(
-        DESCRIPTOR_PATH, name="test-fred-live", version="0.0.1"
+        DESCRIPTOR_PATH
     )
     servicer = FREDService()
     srv.register(servicer)
     yield srv
-    srv.stop()
+    asyncio.run(srv.stop())
 
 
 class TestLiveGetSeries:
     def test_get_gdp_series(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             ["FREDService", "GetSeries", "-r", json.dumps({"series_id": "GDP"})]
-        )
+        ))
         assert "series" in result
         s = result["series"]
         assert s["id"] == "GDP"
         assert "title" in s
 
     def test_get_cpi_series(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             ["FREDService", "GetSeries", "-r", json.dumps({"series_id": "CPIAUCSL"})]
-        )
+        ))
         assert result["series"]["id"] == "CPIAUCSL"
 
 
 class TestLiveGetObservations:
     def test_get_gdp_observations(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             ["FREDService", "GetSeriesObservations", "-r", json.dumps({
                 "series_id": "GDP",
                 "observation_start": "2024-01-01",
                 "observation_end": "2024-12-31",
             })]
-        )
+        ))
         assert "observations" in result
         obs = result["observations"]
         assert isinstance(obs, list)
@@ -79,27 +80,27 @@ class TestLiveGetObservations:
 
 class TestLiveSearchSeries:
     def test_search_inflation(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             ["FREDService", "SearchSeries", "-r", json.dumps({
                 "search_text": "consumer price index",
                 "limit": 5,
             })]
-        )
+        ))
         assert "results" in result
         assert len(result["results"]) > 0
 
 
 class TestLiveCategories:
     def test_get_root_category(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             ["FREDService", "GetCategory", "-r", json.dumps({"category_id": 0})]
-        )
+        ))
         assert "category" in result
 
     def test_get_category_children(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             ["FREDService", "GetCategoryChildren", "-r", json.dumps({"category_id": 0})]
-        )
+        ))
         assert "categories" in result
         assert len(result["categories"]) > 0
 
@@ -107,8 +108,8 @@ class TestLiveCategories:
 class TestLiveReleases:
     def test_get_release(self, live_server):
         # Release 10 = Consumer Price Index
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             ["FREDService", "GetRelease", "-r", json.dumps({"release_id": 10})]
-        )
+        ))
         assert "release" in result
         assert result["release"]["id"] == 10

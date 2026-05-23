@@ -24,35 +24,39 @@ class BitgetService:
     ):
         self._base_url = base_url.rstrip("/")
         self._timeout = timeout
-        self._client = httpx.Client(timeout=timeout)
+        self._client = httpx.AsyncClient(timeout=timeout)
+
+    async def aclose(self) -> None:
+        """Close the HTTP client. Idempotent."""
+        await self._client.aclose()
 
     # -------------------------
     # RPC handlers
     # -------------------------
 
-    def ListSpotTickers(
+    async def ListSpotTickers(
         self, request: pb.ListSpotTickersRequest, context: Any = None
     ) -> pb.ListSpotTickersResponse:
         query: dict[str, Any] = {}
         if self._has_field(request, "symbol"):
             query["symbol"] = request.symbol
 
-        data = self._get("/api/v2/spot/market/tickers", query)
+        data = await self._get("/api/v2/spot/market/tickers", query)
         tickers = data if isinstance(data, list) else []
         return self._parse_message({"tickers": tickers}, pb.ListSpotTickersResponse)
 
-    def GetSpotOrderbook(
+    async def GetSpotOrderbook(
         self, request: pb.GetSpotOrderbookRequest, context: Any = None
     ) -> pb.GetSpotOrderbookResponse:
         query: dict[str, Any] = {"symbol": request.symbol}
         if self._has_field(request, "limit"):
             query["limit"] = request.limit
 
-        data = self._get("/api/v2/spot/market/orderbook", query)
+        data = await self._get("/api/v2/spot/market/orderbook", query)
         self._transform_orderbook(data)
         return self._parse_message(data, pb.GetSpotOrderbookResponse)
 
-    def GetSpotCandles(
+    async def GetSpotCandles(
         self, request: pb.GetSpotCandlesRequest, context: Any = None
     ) -> pb.GetSpotCandlesResponse:
         query: dict[str, Any] = {
@@ -62,20 +66,20 @@ class BitgetService:
         if self._has_field(request, "limit"):
             query["limit"] = request.limit
 
-        data = self._get("/api/v2/spot/market/candles", query)
+        data = await self._get("/api/v2/spot/market/candles", query)
         candles = self._transform_candles(data)
         return self._parse_message({"candles": candles}, pb.GetSpotCandlesResponse)
 
-    def ListFuturesTickers(
+    async def ListFuturesTickers(
         self, request: pb.ListFuturesTickersRequest, context: Any = None
     ) -> pb.ListFuturesTickersResponse:
         query: dict[str, Any] = {"productType": request.product_type}
 
-        data = self._get("/api/v2/mix/market/tickers", query)
+        data = await self._get("/api/v2/mix/market/tickers", query)
         tickers = data if isinstance(data, list) else []
         return self._parse_message({"tickers": tickers}, pb.ListFuturesTickersResponse)
 
-    def GetFuturesOrderbook(
+    async def GetFuturesOrderbook(
         self, request: pb.GetFuturesOrderbookRequest, context: Any = None
     ) -> pb.GetFuturesOrderbookResponse:
         query: dict[str, Any] = {
@@ -85,7 +89,7 @@ class BitgetService:
         if self._has_field(request, "limit"):
             query["limit"] = request.limit
 
-        data = self._get("/api/v2/mix/market/merge-depth", query)
+        data = await self._get("/api/v2/mix/market/merge-depth", query)
         self._transform_orderbook(data)
         return self._parse_message(data, pb.GetFuturesOrderbookResponse)
 
@@ -93,9 +97,9 @@ class BitgetService:
     # HTTP helpers
     # -------------------------
 
-    def _get(self, path: str, query: dict[str, Any] | None = None) -> Any:
+    async def _get(self, path: str, query: dict[str, Any] | None = None) -> Any:
         url = self._build_url(path, query)
-        response = self._client.request(
+        response = await self._client.request(
             "GET",
             url,
             headers={"Accept": "application/json"},

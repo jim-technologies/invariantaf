@@ -17,17 +17,21 @@ class SolscanService:
 
     def __init__(self):
         api_key = os.environ.get("SOLSCAN_API_KEY", "")
-        self._http = httpx.Client(
+        self._http = httpx.AsyncClient(
             timeout=30,
             headers={"token": api_key},
         )
+
+    async def aclose(self) -> None:
+        """Close the HTTP client. Idempotent."""
+        await self._client.aclose()
 
     def _get(self, path: str, params: dict | None = None) -> Any:
         resp = self._http.get(f"{_BASE_URL}{path}", params=params)
         resp.raise_for_status()
         return resp.json()
 
-    def GetAccountInfo(self, request: Any, context: Any = None) -> pb.GetAccountInfoResponse:
+    async def GetAccountInfo(self, request: Any, context: Any = None) -> pb.GetAccountInfoResponse:
         raw = self._get("/account", params={"address": request.address})
         data = raw.get("data") or raw
         account = pb.AccountInfo(
@@ -40,7 +44,7 @@ class SolscanService:
         )
         return pb.GetAccountInfoResponse(account=account)
 
-    def GetAccountTokens(self, request: Any, context: Any = None) -> pb.GetAccountTokensResponse:
+    async def GetAccountTokens(self, request: Any, context: Any = None) -> pb.GetAccountTokensResponse:
         raw = self._get("/account/token-accounts", params={"address": request.address})
         data = raw.get("data") or raw
         if isinstance(data, dict):
@@ -59,7 +63,7 @@ class SolscanService:
             ))
         return resp
 
-    def GetAccountTransactions(self, request: Any, context: Any = None) -> pb.GetAccountTransactionsResponse:
+    async def GetAccountTransactions(self, request: Any, context: Any = None) -> pb.GetAccountTransactionsResponse:
         limit = request.limit if request.limit else 10
         raw = self._get("/account/transactions", params={
             "address": request.address,
@@ -86,7 +90,7 @@ class SolscanService:
             ))
         return resp
 
-    def GetTokenMeta(self, request: Any, context: Any = None) -> pb.GetTokenMetaResponse:
+    async def GetTokenMeta(self, request: Any, context: Any = None) -> pb.GetTokenMetaResponse:
         raw = self._get("/token/meta", params={"address": request.address})
         data = raw.get("data") or raw
         token = pb.TokenMeta(
@@ -101,7 +105,7 @@ class SolscanService:
         )
         return pb.GetTokenMetaResponse(token=token)
 
-    def GetTokenPrice(self, request: Any, context: Any = None) -> pb.GetTokenPriceResponse:
+    async def GetTokenPrice(self, request: Any, context: Any = None) -> pb.GetTokenPriceResponse:
         raw = self._get("/token/price", params={"address": request.address})
         data = raw.get("data") or raw
         price = pb.TokenPrice(
@@ -110,7 +114,7 @@ class SolscanService:
         )
         return pb.GetTokenPriceResponse(price=price)
 
-    def GetTokenHolders(self, request: Any, context: Any = None) -> pb.GetTokenHoldersResponse:
+    async def GetTokenHolders(self, request: Any, context: Any = None) -> pb.GetTokenHoldersResponse:
         page = request.page if request.page else 1
         page_size = request.page_size if request.page_size else 10
         raw = self._get("/token/holders", params={
@@ -135,7 +139,7 @@ class SolscanService:
             ))
         return resp
 
-    def GetMarketInfo(self, request: Any, context: Any = None) -> pb.GetMarketInfoResponse:
+    async def GetMarketInfo(self, request: Any, context: Any = None) -> pb.GetMarketInfoResponse:
         raw = self._get(f"/market/token/{request.address}")
         data = raw.get("data") or raw
         market = pb.MarketInfo(

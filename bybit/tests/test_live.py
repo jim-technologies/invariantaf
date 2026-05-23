@@ -10,6 +10,7 @@ All private/trading endpoints (account, trade, position, asset) are skipped.
 from __future__ import annotations
 
 import json
+import asyncio
 import os
 import sys
 from pathlib import Path
@@ -36,12 +37,12 @@ def live_server():
     base_url = (os.getenv("BYBIT_BASE_URL") or DEFAULT_BASE_URL).rstrip("/")
 
     srv = Server.from_descriptor(
-        DESCRIPTOR_PATH, name="test-bybit-live", version="0.0.1"
+        DESCRIPTOR_PATH
     )
     # Only connect BybitMarketService for public endpoints -- no auth needed
     srv.connect_http(base_url, service_name="bybit.v1.BybitMarketService")
     yield srv
-    srv.stop()
+    asyncio.run(srv.stop())
 
 
 # --- Server Time ---
@@ -49,7 +50,7 @@ def live_server():
 
 class TestLiveServerTime:
     def test_get_server_time(self, live_server):
-        result = live_server._cli(["BybitMarketService", "Time"])
+        result = asyncio.run(live_server._cli(["BybitMarketService", "Time"]))
         assert int(result.get("retCode", -1)) == 0
         assert "result" in result
         res = result["result"]
@@ -61,14 +62,14 @@ class TestLiveServerTime:
 
 class TestLiveInstruments:
     def test_get_instruments_linear(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "BybitMarketService",
                 "Instrument",
                 "-r",
                 json.dumps({"category": "linear"}),
             ]
-        )
+        ))
         assert int(result.get("retCode", -1)) == 0
         assert "result" in result
         res = result["result"]
@@ -78,14 +79,14 @@ class TestLiveInstruments:
         assert len(instruments) > 0
 
     def test_get_instruments_spot(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "BybitMarketService",
                 "Instrument",
                 "-r",
                 json.dumps({"category": "spot"}),
             ]
-        )
+        ))
         assert int(result.get("retCode", -1)) == 0
         res = result["result"]
         assert "list" in res
@@ -97,14 +98,14 @@ class TestLiveInstruments:
 
 class TestLiveTickers:
     def test_get_tickers_linear(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "BybitMarketService",
                 "Tickers",
                 "-r",
                 json.dumps({"category": "linear", "symbol": "BTCUSDT"}),
             ]
-        )
+        ))
         assert int(result.get("retCode", -1)) == 0
         res = result["result"]
         assert "list" in res
@@ -113,14 +114,14 @@ class TestLiveTickers:
         assert len(tickers) > 0
 
     def test_get_tickers_spot(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "BybitMarketService",
                 "Tickers",
                 "-r",
                 json.dumps({"category": "spot", "symbol": "BTCUSDT"}),
             ]
-        )
+        ))
         assert int(result.get("retCode", -1)) == 0
         res = result["result"]
         assert "list" in res
@@ -132,14 +133,14 @@ class TestLiveTickers:
 
 class TestLiveOrderbook:
     def test_get_orderbook(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "BybitMarketService",
                 "Orderbook",
                 "-r",
                 json.dumps({"category": "linear", "symbol": "BTCUSDT"}),
             ]
-        )
+        ))
         assert int(result.get("retCode", -1)) == 0
         res = result["result"]
         # Orderbook should have bids and asks arrays
@@ -151,7 +152,7 @@ class TestLiveOrderbook:
 
 class TestLiveKline:
     def test_get_kline(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "BybitMarketService",
                 "Kline",
@@ -163,7 +164,7 @@ class TestLiveKline:
                     "limit": 5,
                 }),
             ]
-        )
+        ))
         assert int(result.get("retCode", -1)) == 0
         res = result["result"]
         assert "list" in res
@@ -177,7 +178,7 @@ class TestLiveKline:
 
 class TestLiveRecentTrades:
     def test_get_recent_trades(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "BybitMarketService",
                 "RecentTrade",
@@ -188,7 +189,7 @@ class TestLiveRecentTrades:
                     "limit": 5,
                 }),
             ]
-        )
+        ))
         assert int(result.get("retCode", -1)) == 0
         res = result["result"]
         assert "list" in res
@@ -202,7 +203,7 @@ class TestLiveRecentTrades:
 
 class TestLiveOpenInterest:
     def test_get_open_interest(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "BybitMarketService",
                 "OpenInterest",
@@ -213,7 +214,7 @@ class TestLiveOpenInterest:
                     "intervalTime": "1h",
                 }),
             ]
-        )
+        ))
         assert int(result.get("retCode", -1)) == 0
         res = result["result"]
         assert "list" in res
@@ -224,7 +225,7 @@ class TestLiveOpenInterest:
 
 class TestLiveFundingRate:
     def test_get_funding_rate_history(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "BybitMarketService",
                 "HistoryFundRate",
@@ -234,7 +235,7 @@ class TestLiveFundingRate:
                     "symbol": "BTCUSDT",
                 }),
             ]
-        )
+        ))
         assert int(result.get("retCode", -1)) == 0
         res = result["result"]
         assert "list" in res
@@ -246,7 +247,7 @@ class TestLiveFundingRate:
 
 class TestLiveInsurance:
     def test_get_insurance(self, live_server):
-        result = live_server._cli(["BybitMarketService", "Insurance"])
+        result = asyncio.run(live_server._cli(["BybitMarketService", "Insurance"]))
         assert int(result.get("retCode", -1)) == 0
         res = result["result"]
         assert "list" in res or "updatedTime" in res
@@ -258,14 +259,14 @@ class TestLiveInsurance:
 class TestLiveRiskLimit:
     def test_get_risk_limit(self, live_server):
         try:
-            result = live_server._cli(
+            result = asyncio.run(live_server._cli(
                 [
                     "BybitMarketService",
                     "RiskLimit",
                     "-r",
                     json.dumps({"category": "linear"}),
                 ]
-            )
+            ))
         except Exception as exc:
             if "timed out" in str(exc).lower():
                 pytest.skip("RiskLimit endpoint timed out")
@@ -280,14 +281,14 @@ class TestLiveRiskLimit:
 
 class TestLiveDeliveryPrice:
     def test_get_delivery_price(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "BybitMarketService",
                 "DeliveryPrice",
                 "-r",
                 json.dumps({"category": "linear"}),
             ]
-        )
+        ))
         assert int(result.get("retCode", -1)) == 0
         res = result["result"]
         assert "list" in res
@@ -298,7 +299,7 @@ class TestLiveDeliveryPrice:
 
 class TestLiveLongShortRatio:
     def test_get_long_short_ratio(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "BybitMarketService",
                 "LongShortRatio",
@@ -309,7 +310,7 @@ class TestLiveLongShortRatio:
                     "period": "1h",
                 }),
             ]
-        )
+        ))
         assert int(result.get("retCode", -1)) == 0
         res = result["result"]
         assert "list" in res

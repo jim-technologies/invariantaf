@@ -33,14 +33,18 @@ class DydxService:
 
     def __init__(self, base_url: str = _BASE_URL):
         self._base_url = base_url
-        self._http = httpx.Client(timeout=30)
+        self._http = httpx.AsyncClient(timeout=30)
+
+    async def aclose(self) -> None:
+        """Close the HTTP client. Idempotent."""
+        await self._client.aclose()
 
     def _get(self, path: str, params: dict | None = None) -> Any:
         resp = self._http.get(f"{self._base_url}{path}", params=params)
         resp.raise_for_status()
         return resp.json()
 
-    def ListMarkets(self, request: Any, context: Any = None) -> pb.ListMarketsResponse:
+    async def ListMarkets(self, request: Any, context: Any = None) -> pb.ListMarketsResponse:
         params = {}
         ticker = getattr(request, "ticker", "") or ""
         limit = getattr(request, "limit", 0) or 0
@@ -71,7 +75,7 @@ class DydxService:
 
         return pb.ListMarketsResponse(markets=markets)
 
-    def GetOrderbook(self, request: Any, context: Any = None) -> pb.GetOrderbookResponse:
+    async def GetOrderbook(self, request: Any, context: Any = None) -> pb.GetOrderbookResponse:
         ticker = request.ticker if hasattr(request, "ticker") else "BTC-USD"
         raw = self._get(f"/orderbooks/perpetualMarket/{ticker}")
 
@@ -91,7 +95,7 @@ class DydxService:
 
         return pb.GetOrderbookResponse(bids=bids, asks=asks)
 
-    def GetTrades(self, request: Any, context: Any = None) -> pb.GetTradesResponse:
+    async def GetTrades(self, request: Any, context: Any = None) -> pb.GetTradesResponse:
         ticker = request.ticker if hasattr(request, "ticker") else "BTC-USD"
         params = {}
         limit = getattr(request, "limit", 0) or 0
@@ -113,7 +117,7 @@ class DydxService:
 
         return pb.GetTradesResponse(trades=trades)
 
-    def GetCandles(self, request: Any, context: Any = None) -> pb.GetCandlesResponse:
+    async def GetCandles(self, request: Any, context: Any = None) -> pb.GetCandlesResponse:
         ticker = request.ticker if hasattr(request, "ticker") else "BTC-USD"
         resolution = _RESOLUTION_MAP.get(
             getattr(request, "resolution", pb.CANDLE_RESOLUTION_UNSPECIFIED),
@@ -142,7 +146,7 @@ class DydxService:
 
         return pb.GetCandlesResponse(candles=candles)
 
-    def GetFundingRates(self, request: Any, context: Any = None) -> pb.GetFundingRatesResponse:
+    async def GetFundingRates(self, request: Any, context: Any = None) -> pb.GetFundingRatesResponse:
         ticker = request.ticker if hasattr(request, "ticker") else "BTC-USD"
         params = {}
         limit = getattr(request, "limit", 0) or 0

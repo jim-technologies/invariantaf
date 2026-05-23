@@ -10,6 +10,7 @@ No API key or authentication is required.
 from __future__ import annotations
 
 import json
+import asyncio
 import os
 import sys
 from pathlib import Path
@@ -33,17 +34,17 @@ def live_server():
     from morpho_mcp.service import MorphoService
 
     srv = Server.from_descriptor(
-        DESCRIPTOR_PATH, name="test-morpho-live", version="0.0.1"
+        DESCRIPTOR_PATH
     )
     servicer = MorphoService()
     srv.register(servicer)
     yield srv
-    srv.stop()
+    asyncio.run(srv.stop())
 
 
 class TestLiveMarkets:
     def test_list_markets(self, live_server):
-        result = live_server._cli(["MorphoService", "ListMarkets"])
+        result = asyncio.run(live_server._cli(["MorphoService", "ListMarkets"]))
         assert "markets" in result
         markets = result["markets"]
         assert isinstance(markets, list)
@@ -52,16 +53,16 @@ class TestLiveMarkets:
         assert "unique_key" in m or "uniqueKey" in m
 
     def test_list_markets_with_pagination(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             ["MorphoService", "ListMarkets", "-r", json.dumps({"first": 3})]
-        )
+        ))
         markets = result.get("markets", [])
         assert len(markets) <= 3
 
 
 class TestLiveVaults:
     def test_list_vaults(self, live_server):
-        result = live_server._cli(["MorphoService", "ListVaults"])
+        result = asyncio.run(live_server._cli(["MorphoService", "ListVaults"]))
         assert "vaults" in result
         vaults = result["vaults"]
         assert isinstance(vaults, list)
@@ -71,9 +72,9 @@ class TestLiveVaults:
         assert "name" in v
 
     def test_list_vaults_with_pagination(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             ["MorphoService", "ListVaults", "-r", json.dumps({"first": 2})]
-        )
+        ))
         vaults = result.get("vaults", [])
         assert len(vaults) <= 2
 
@@ -81,13 +82,13 @@ class TestLiveVaults:
 class TestLiveMarketPositions:
     def test_list_positions_empty_user(self, live_server):
         """A random address likely has no positions -- should return empty list."""
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "MorphoService",
                 "ListMarketPositions",
                 "-r",
                 json.dumps({"user_address": "0x0000000000000000000000000000000000000001"}),
             ]
-        )
+        ))
         assert "positions" in result
         assert isinstance(result["positions"], list)

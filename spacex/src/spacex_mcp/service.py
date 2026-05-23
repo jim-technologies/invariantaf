@@ -15,7 +15,11 @@ class SpaceXService:
     """Implements SpaceXService RPCs via the public SpaceX v4 API."""
 
     def __init__(self):
-        self._http = httpx.Client(timeout=30, headers={"Accept": "application/json"})
+        self._http = httpx.AsyncClient(timeout=30, headers={"Accept": "application/json"})
+
+    async def aclose(self) -> None:
+        """Close the HTTP client. Idempotent."""
+        await self._client.aclose()
 
     def _get(self, path: str, params: dict | None = None) -> Any:
         resp = self._http.get(f"{_BASE_URL}{path}", params=params or {})
@@ -132,49 +136,49 @@ class SpaceXService:
     # RPCs
     # ------------------------------------------------------------------
 
-    def GetLatestLaunch(self, request: Any, context: Any = None) -> pb.GetLatestLaunchResponse:
+    async def GetLatestLaunch(self, request: Any, context: Any = None) -> pb.GetLatestLaunchResponse:
         raw = self._get("/v4/launches/latest")
         return pb.GetLatestLaunchResponse(launch=self._parse_launch(raw))
 
-    def GetLaunches(self, request: Any, context: Any = None) -> pb.GetLaunchesResponse:
+    async def GetLaunches(self, request: Any, context: Any = None) -> pb.GetLaunchesResponse:
         raw = self._get("/v4/launches")
         return pb.GetLaunchesResponse(
             launches=[self._parse_launch(launch) for launch in raw],
         )
 
-    def GetLaunch(self, request: Any, context: Any = None) -> pb.GetLaunchResponse:
+    async def GetLaunch(self, request: Any, context: Any = None) -> pb.GetLaunchResponse:
         raw = self._get(f"/v4/launches/{request.id}")
         return pb.GetLaunchResponse(launch=self._parse_launch(raw))
 
-    def GetRockets(self, request: Any, context: Any = None) -> pb.GetRocketsResponse:
+    async def GetRockets(self, request: Any, context: Any = None) -> pb.GetRocketsResponse:
         raw = self._get("/v4/rockets")
         return pb.GetRocketsResponse(
             rockets=[self._parse_rocket(r) for r in raw],
         )
 
-    def GetRocket(self, request: Any, context: Any = None) -> pb.GetRocketResponse:
+    async def GetRocket(self, request: Any, context: Any = None) -> pb.GetRocketResponse:
         raw = self._get(f"/v4/rockets/{request.id}")
         return pb.GetRocketResponse(rocket=self._parse_rocket(raw))
 
-    def GetCrew(self, request: Any, context: Any = None) -> pb.GetCrewResponse:
+    async def GetCrew(self, request: Any, context: Any = None) -> pb.GetCrewResponse:
         raw = self._get("/v4/crew")
         return pb.GetCrewResponse(
             crew=[self._parse_crew(c) for c in raw],
         )
 
-    def GetStarlink(self, request: Any, context: Any = None) -> pb.GetStarlinkResponse:
+    async def GetStarlink(self, request: Any, context: Any = None) -> pb.GetStarlinkResponse:
         raw = self._get("/v4/starlink")
         return pb.GetStarlinkResponse(
             satellites=[self._parse_starlink(s) for s in raw],
         )
 
-    def GetLaunchpads(self, request: Any, context: Any = None) -> pb.GetLaunchpadsResponse:
+    async def GetLaunchpads(self, request: Any, context: Any = None) -> pb.GetLaunchpadsResponse:
         raw = self._get("/v4/launchpads")
         return pb.GetLaunchpadsResponse(
             launchpads=[self._parse_launchpad(lp) for lp in raw],
         )
 
-    def GetCompanyInfo(self, request: Any, context: Any = None) -> pb.GetCompanyInfoResponse:
+    async def GetCompanyInfo(self, request: Any, context: Any = None) -> pb.GetCompanyInfoResponse:
         raw = self._get("/v4/company")
         hq = raw.get("headquarters") or {}
         links = raw.get("links") or {}
@@ -200,7 +204,7 @@ class SpaceXService:
             elon_twitter=links.get("elon_twitter", ""),
         )
 
-    def GetUpcomingLaunches(self, request: Any, context: Any = None) -> pb.GetUpcomingLaunchesResponse:
+    async def GetUpcomingLaunches(self, request: Any, context: Any = None) -> pb.GetUpcomingLaunchesResponse:
         raw = self._get("/v4/launches/upcoming")
         return pb.GetUpcomingLaunchesResponse(
             launches=[self._parse_launch(launch) for launch in raw],

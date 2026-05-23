@@ -26,7 +26,11 @@ class JupiterService:
         headers = {}
         if key:
             headers["x-api-key"] = key
-        self._http = httpx.Client(timeout=30, headers=headers)
+        self._http = httpx.AsyncClient(timeout=30, headers=headers)
+
+    async def aclose(self) -> None:
+        """Close the HTTP client. Idempotent."""
+        await self._client.aclose()
 
     def _get(self, url: str, params: dict | None = None) -> Any:
         resp = self._http.get(url, params=params)
@@ -40,7 +44,7 @@ class JupiterService:
 
     # --- Price ---
 
-    def GetPrice(self, request: Any, context: Any = None) -> pb.GetPriceResponse:
+    async def GetPrice(self, request: Any, context: Any = None) -> pb.GetPriceResponse:
         raw = self._get(f"{_BASE_URL}/price/v3", params={"ids": request.ids})
         resp = pb.GetPriceResponse()
         for mint, info in raw.items():
@@ -62,7 +66,7 @@ class JupiterService:
 
     # --- Quote ---
 
-    def GetQuote(self, request: Any, context: Any = None) -> pb.GetQuoteResponse:
+    async def GetQuote(self, request: Any, context: Any = None) -> pb.GetQuoteResponse:
         params = {
             "inputMint": request.input_mint,
             "outputMint": request.output_mint,
@@ -95,7 +99,7 @@ class JupiterService:
 
     # --- Swap ---
 
-    def Swap(self, request: Any, context: Any = None) -> pb.SwapResponse:
+    async def Swap(self, request: Any, context: Any = None) -> pb.SwapResponse:
         quote = json.loads(request.quote_response)
         body = {
             "quoteResponse": quote,
@@ -110,7 +114,7 @@ class JupiterService:
 
     # --- Token Lists ---
 
-    def ListTokens(self, request: Any, context: Any = None) -> pb.ListTokensResponse:
+    async def ListTokens(self, request: Any, context: Any = None) -> pb.ListTokensResponse:
         raw = self._get(
             f"{_BASE_URL}/tokens/v2/search",
             params={"query": request.query},
@@ -120,7 +124,7 @@ class JupiterService:
             resp.tokens.append(self._parse_token(t))
         return resp
 
-    def ListVerifiedTokens(self, request: Any, context: Any = None) -> pb.ListVerifiedTokensResponse:
+    async def ListVerifiedTokens(self, request: Any, context: Any = None) -> pb.ListVerifiedTokensResponse:
         raw = self._get(
             f"{_BASE_URL}/tokens/v2/tag",
             params={"query": "verified"},
@@ -132,7 +136,7 @@ class JupiterService:
 
     # --- Markets ---
 
-    def ListMarkets(self, request: Any, context: Any = None) -> pb.ListMarketsResponse:
+    async def ListMarkets(self, request: Any, context: Any = None) -> pb.ListMarketsResponse:
         raw = self._get(f"{_BASE_URL}/swap/v1/markets")
         resp = pb.ListMarketsResponse()
         if isinstance(raw, list):

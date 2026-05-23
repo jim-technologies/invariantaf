@@ -21,7 +21,7 @@ class SECEdgarService:
         user_agent = os.environ.get(
             "SEC_EDGAR_USER_AGENT", "InvariantMCP/1.0 (contact@example.com)"
         )
-        self._http = httpx.Client(
+        self._http = httpx.AsyncClient(
             timeout=30,
             headers={
                 "User-Agent": user_agent,
@@ -30,6 +30,10 @@ class SECEdgarService:
         )
         self._data_url = _DATA_URL
         self._efts_url = _EFTS_URL
+
+    async def aclose(self) -> None:
+        """Close the HTTP client. Idempotent."""
+        await self._client.aclose()
 
     # ── helpers ──────────────────────────────────────────────────────────
 
@@ -56,7 +60,7 @@ class SECEdgarService:
 
     # ── RPCs ─────────────────────────────────────────────────────────────
 
-    def SearchCompany(self, request: Any, context: Any = None) -> pb.SearchCompanyResponse:
+    async def SearchCompany(self, request: Any, context: Any = None) -> pb.SearchCompanyResponse:
         params: dict[str, Any] = {"q": request.query}
         if request.limit and request.limit > 0:
             params["count"] = request.limit
@@ -78,7 +82,7 @@ class SECEdgarService:
 
         return resp
 
-    def GetCompanyFilings(self, request: Any, context: Any = None) -> pb.GetCompanyFilingsResponse:
+    async def GetCompanyFilings(self, request: Any, context: Any = None) -> pb.GetCompanyFilingsResponse:
         cik = self._pad_cik(request.cik)
         raw = self._get_data(f"/submissions/CIK{cik}.json")
 
@@ -127,7 +131,7 @@ class SECEdgarService:
         resp.total_filings = len(forms)
         return resp
 
-    def GetCompanyFacts(self, request: Any, context: Any = None) -> pb.GetCompanyFactsResponse:
+    async def GetCompanyFacts(self, request: Any, context: Any = None) -> pb.GetCompanyFactsResponse:
         cik = self._pad_cik(request.cik)
         raw = self._get_data(f"/api/xbrl/companyfacts/CIK{cik}.json")
 
@@ -158,7 +162,7 @@ class SECEdgarService:
 
         return resp
 
-    def GetCompanyConcept(self, request: Any, context: Any = None) -> pb.GetCompanyConceptResponse:
+    async def GetCompanyConcept(self, request: Any, context: Any = None) -> pb.GetCompanyConceptResponse:
         cik = self._pad_cik(request.cik)
         taxonomy = request.taxonomy or "us-gaap"
         concept = request.concept
@@ -191,7 +195,7 @@ class SECEdgarService:
 
         return resp
 
-    def SearchFullText(self, request: Any, context: Any = None) -> pb.SearchFullTextResponse:
+    async def SearchFullText(self, request: Any, context: Any = None) -> pb.SearchFullTextResponse:
         params: dict[str, Any] = {"q": request.query}
         if request.form_type:
             params["forms"] = request.form_type
@@ -228,7 +232,7 @@ class SECEdgarService:
 
         return resp
 
-    def GetFiling(self, request: Any, context: Any = None) -> pb.GetFilingResponse:
+    async def GetFiling(self, request: Any, context: Any = None) -> pb.GetFilingResponse:
         accession = self._normalize_accession(request.accession_number)
         acc_no_dashes = accession.replace("-", "")
         # Extract CIK from first 10 digits of accession
@@ -268,7 +272,7 @@ class SECEdgarService:
 
         return resp
 
-    def GetInsiderTransactions(self, request: Any, context: Any = None) -> pb.GetInsiderTransactionsResponse:
+    async def GetInsiderTransactions(self, request: Any, context: Any = None) -> pb.GetInsiderTransactionsResponse:
         cik = self._pad_cik(request.cik)
         limit = request.limit if request.limit > 0 else 20
 
@@ -305,7 +309,7 @@ class SECEdgarService:
 
         return resp
 
-    def GetInstitutionalHoldings(self, request: Any, context: Any = None) -> pb.GetInstitutionalHoldingsResponse:
+    async def GetInstitutionalHoldings(self, request: Any, context: Any = None) -> pb.GetInstitutionalHoldingsResponse:
         cik = self._pad_cik(request.cik)
         limit = request.limit if request.limit > 0 else 20
 
@@ -337,7 +341,7 @@ class SECEdgarService:
 
         return resp
 
-    def GetTickerToCIK(self, request: Any, context: Any = None) -> pb.GetTickerToCIKResponse:
+    async def GetTickerToCIK(self, request: Any, context: Any = None) -> pb.GetTickerToCIKResponse:
         ticker = request.ticker.upper()
 
         raw = self._get_data("/files/company_tickers.json")
@@ -353,7 +357,7 @@ class SECEdgarService:
 
         return pb.GetTickerToCIKResponse(ticker=ticker)
 
-    def GetRecentFilings(self, request: Any, context: Any = None) -> pb.GetRecentFilingsResponse:
+    async def GetRecentFilings(self, request: Any, context: Any = None) -> pb.GetRecentFilingsResponse:
         params: dict[str, Any] = {}
         if request.form_type:
             params["forms"] = request.form_type

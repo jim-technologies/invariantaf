@@ -43,8 +43,12 @@ class AlphaVantageService:
     """Implements AlphaVantageService RPCs via the Alpha Vantage API."""
 
     def __init__(self, *, api_key: str | None = None):
-        self._http = httpx.Client(timeout=30)
+        self._http = httpx.AsyncClient(timeout=30)
         self._api_key = api_key or os.environ.get("ALPHA_VANTAGE_API_KEY", "demo")
+
+    async def aclose(self) -> None:
+        """Close the HTTP client. Idempotent."""
+        await self._client.aclose()
 
     def _get(self, function: str, **params: Any) -> Any:
         params["function"] = function
@@ -55,7 +59,7 @@ class AlphaVantageService:
 
     # --- RPCs ---
 
-    def GetQuote(self, request: Any, context: Any = None) -> pb.GetQuoteResponse:
+    async def GetQuote(self, request: Any, context: Any = None) -> pb.GetQuoteResponse:
         raw = self._get("GLOBAL_QUOTE", symbol=request.symbol)
         quote = raw.get("Global Quote", {})
         return pb.GetQuoteResponse(
@@ -71,7 +75,7 @@ class AlphaVantageService:
             change_percent=quote.get("10. change percent", ""),
         )
 
-    def SearchSymbol(self, request: Any, context: Any = None) -> pb.SearchSymbolResponse:
+    async def SearchSymbol(self, request: Any, context: Any = None) -> pb.SearchSymbolResponse:
         raw = self._get("SYMBOL_SEARCH", keywords=request.keywords)
         resp = pb.SearchSymbolResponse()
         for m in raw.get("bestMatches", []):
@@ -115,18 +119,18 @@ class AlphaVantageService:
             ))
         return resp
 
-    def GetDailyTimeSeries(self, request: Any, context: Any = None) -> pb.GetTimeSeriesResponse:
+    async def GetDailyTimeSeries(self, request: Any, context: Any = None) -> pb.GetTimeSeriesResponse:
         params = {"symbol": request.symbol}
         if request.outputsize:
             params["outputsize"] = request.outputsize
         raw = self._get("TIME_SERIES_DAILY", **params)
         return self._parse_time_series(raw, "Time Series (Daily)")
 
-    def GetWeeklyTimeSeries(self, request: Any, context: Any = None) -> pb.GetTimeSeriesResponse:
+    async def GetWeeklyTimeSeries(self, request: Any, context: Any = None) -> pb.GetTimeSeriesResponse:
         raw = self._get("TIME_SERIES_WEEKLY", symbol=request.symbol)
         return self._parse_time_series(raw, "Weekly Time Series")
 
-    def GetMonthlyTimeSeries(self, request: Any, context: Any = None) -> pb.GetTimeSeriesResponse:
+    async def GetMonthlyTimeSeries(self, request: Any, context: Any = None) -> pb.GetTimeSeriesResponse:
         raw = self._get("TIME_SERIES_MONTHLY", symbol=request.symbol)
         return self._parse_time_series(raw, "Monthly Time Series")
 
@@ -152,7 +156,7 @@ class AlphaVantageService:
             ))
         return resp
 
-    def GetSMA(self, request: Any, context: Any = None) -> pb.GetIndicatorResponse:
+    async def GetSMA(self, request: Any, context: Any = None) -> pb.GetIndicatorResponse:
         interval = _INTERVAL_MAP.get(request.interval or "daily", "daily")
         raw = self._get(
             "SMA",
@@ -163,7 +167,7 @@ class AlphaVantageService:
         )
         return self._parse_indicator(raw, "Technical Analysis: SMA", "SMA")
 
-    def GetRSI(self, request: Any, context: Any = None) -> pb.GetIndicatorResponse:
+    async def GetRSI(self, request: Any, context: Any = None) -> pb.GetIndicatorResponse:
         interval = _INTERVAL_MAP.get(request.interval or "daily", "daily")
         raw = self._get(
             "RSI",
@@ -174,7 +178,7 @@ class AlphaVantageService:
         )
         return self._parse_indicator(raw, "Technical Analysis: RSI", "RSI")
 
-    def GetMACD(self, request: Any, context: Any = None) -> pb.GetMACDResponse:
+    async def GetMACD(self, request: Any, context: Any = None) -> pb.GetMACDResponse:
         interval = _INTERVAL_MAP.get(request.interval or "daily", "daily")
         params = {
             "symbol": request.symbol,
@@ -207,7 +211,7 @@ class AlphaVantageService:
             ))
         return resp
 
-    def GetCompanyOverview(self, request: Any, context: Any = None) -> pb.GetCompanyOverviewResponse:
+    async def GetCompanyOverview(self, request: Any, context: Any = None) -> pb.GetCompanyOverviewResponse:
         raw = self._get("OVERVIEW", symbol=request.symbol)
         return pb.GetCompanyOverviewResponse(
             symbol=raw.get("Symbol", ""),
@@ -238,7 +242,7 @@ class AlphaVantageService:
             forward_pe=_safe_float(raw.get("ForwardPE")),
         )
 
-    def GetEarnings(self, request: Any, context: Any = None) -> pb.GetEarningsResponse:
+    async def GetEarnings(self, request: Any, context: Any = None) -> pb.GetEarningsResponse:
         raw = self._get("EARNINGS", symbol=request.symbol)
         resp = pb.GetEarningsResponse(
             symbol=raw.get("symbol", request.symbol),

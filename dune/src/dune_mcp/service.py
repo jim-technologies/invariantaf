@@ -55,7 +55,11 @@ class DuneService:
     """Implements DuneService RPCs via the Dune Analytics API."""
 
     def __init__(self):
-        self._http = httpx.Client(timeout=30)
+        self._http = httpx.AsyncClient(timeout=30)
+
+    async def aclose(self) -> None:
+        """Close the HTTP client. Idempotent."""
+        await self._client.aclose()
 
     def _headers(self) -> dict[str, str]:
         return {"X-Dune-API-Key": _get_api_key()}
@@ -70,7 +74,7 @@ class DuneService:
         resp.raise_for_status()
         return resp.json()
 
-    def ExecuteQuery(self, request: Any, context: Any = None) -> pb.ExecuteQueryResponse:
+    async def ExecuteQuery(self, request: Any, context: Any = None) -> pb.ExecuteQueryResponse:
         body: dict[str, Any] = {}
         if request.query_parameters:
             params = {}
@@ -84,13 +88,13 @@ class DuneService:
             state=raw.get("state", "QUERY_STATE_PENDING") or "",
         )
 
-    def GetExecutionStatus(self, request: Any, context: Any = None) -> pb.GetExecutionStatusResponse:
+    async def GetExecutionStatus(self, request: Any, context: Any = None) -> pb.GetExecutionStatusResponse:
         raw = self._get(f"{_BASE_URL}/execution/{request.execution_id}/status")
         return pb.GetExecutionStatusResponse(
             execution=_parse_execution_metadata(raw),
         )
 
-    def GetExecutionResults(self, request: Any, context: Any = None) -> pb.GetExecutionResultsResponse:
+    async def GetExecutionResults(self, request: Any, context: Any = None) -> pb.GetExecutionResultsResponse:
         raw = self._get(f"{_BASE_URL}/execution/{request.execution_id}/results")
         result = raw.get("result") or {}
         return pb.GetExecutionResultsResponse(
@@ -99,7 +103,7 @@ class DuneService:
             rows=_rows_to_json_strings(result.get("rows")),
         )
 
-    def GetLatestResults(self, request: Any, context: Any = None) -> pb.GetLatestResultsResponse:
+    async def GetLatestResults(self, request: Any, context: Any = None) -> pb.GetLatestResultsResponse:
         raw = self._get(f"{_BASE_URL}/query/{request.query_id}/results")
         result = raw.get("result") or {}
         return pb.GetLatestResultsResponse(
@@ -108,7 +112,7 @@ class DuneService:
             rows=_rows_to_json_strings(result.get("rows")),
         )
 
-    def CancelExecution(self, request: Any, context: Any = None) -> pb.CancelExecutionResponse:
+    async def CancelExecution(self, request: Any, context: Any = None) -> pb.CancelExecutionResponse:
         raw = self._post(f"{_BASE_URL}/execution/{request.execution_id}/cancel")
         return pb.CancelExecutionResponse(
             success=bool(raw.get("success", True)),

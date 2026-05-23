@@ -26,13 +26,17 @@ class GeminiPredictionsService:
         self._base_url = base_url.rstrip("/")
         self._api_key = api_key
         self._timeout = timeout
-        self._client = httpx.Client(timeout=timeout)
+        self._client = httpx.AsyncClient(timeout=timeout)
+
+    async def aclose(self) -> None:
+        """Close the HTTP client. Idempotent."""
+        await self._client.aclose()
 
     # -------------------------
     # RPC handlers
     # -------------------------
 
-    def ListEvents(
+    async def ListEvents(
         self, request: pb.ListEventsRequest, context: Any = None
     ) -> pb.ListEventsResponse:
         query: dict[str, Any] = {}
@@ -41,12 +45,12 @@ class GeminiPredictionsService:
         if self._has_field(request, "category"):
             query["category"] = request.category
 
-        payload = self._get("/v1/prediction-markets/events", query)
+        payload = await self._get("/v1/prediction-markets/events", query)
         raw_events = self._extract_events(payload)
         events = [self._transform_event(e) for e in raw_events]
         return self._parse_message({"events": events}, pb.ListEventsResponse)
 
-    def GetEvent(
+    async def GetEvent(
         self, request: pb.GetEventRequest, context: Any = None
     ) -> pb.GetEventResponse:
         ticker = request.event_ticker
@@ -54,7 +58,7 @@ class GeminiPredictionsService:
             raise ValueError("event_ticker is required")
 
         path = f"/v1/prediction-markets/events/{urllib.parse.quote(ticker, safe='')}"
-        payload = self._get(path)
+        payload = await self._get(path)
 
         # The single-event endpoint may return the event directly or wrapped.
         event_data = payload
@@ -66,36 +70,36 @@ class GeminiPredictionsService:
         event = self._transform_event(event_data)
         return self._parse_message({"event": event}, pb.GetEventResponse)
 
-    def ListNewlyListedEvents(
+    async def ListNewlyListedEvents(
         self, request: pb.ListNewlyListedEventsRequest, context: Any = None
     ) -> pb.ListNewlyListedEventsResponse:
-        payload = self._get("/v1/prediction-markets/events/newly-listed")
+        payload = await self._get("/v1/prediction-markets/events/newly-listed")
         raw_events = self._extract_events(payload)
         events = [self._transform_event(e) for e in raw_events]
         return self._parse_message({"events": events}, pb.ListNewlyListedEventsResponse)
 
-    def ListRecentlySettledEvents(
+    async def ListRecentlySettledEvents(
         self, request: pb.ListRecentlySettledEventsRequest, context: Any = None
     ) -> pb.ListRecentlySettledEventsResponse:
-        payload = self._get("/v1/prediction-markets/events/recently-settled")
+        payload = await self._get("/v1/prediction-markets/events/recently-settled")
         raw_events = self._extract_events(payload)
         events = [self._transform_event(e) for e in raw_events]
         return self._parse_message(
             {"events": events}, pb.ListRecentlySettledEventsResponse
         )
 
-    def ListUpcomingEvents(
+    async def ListUpcomingEvents(
         self, request: pb.ListUpcomingEventsRequest, context: Any = None
     ) -> pb.ListUpcomingEventsResponse:
-        payload = self._get("/v1/prediction-markets/events/upcoming")
+        payload = await self._get("/v1/prediction-markets/events/upcoming")
         raw_events = self._extract_events(payload)
         events = [self._transform_event(e) for e in raw_events]
         return self._parse_message({"events": events}, pb.ListUpcomingEventsResponse)
 
-    def ListCategories(
+    async def ListCategories(
         self, request: pb.ListCategoriesRequest, context: Any = None
     ) -> pb.ListCategoriesResponse:
-        payload = self._get("/v1/prediction-markets/categories")
+        payload = await self._get("/v1/prediction-markets/categories")
         categories = []
         if isinstance(payload, dict):
             raw = payload.get("categories", [])
@@ -201,13 +205,13 @@ class GeminiPredictionsService:
     # HTTP helpers
     # -------------------------
 
-    def _get(self, path: str, query: dict[str, Any] | None = None) -> Any:
+    async def _get(self, path: str, query: dict[str, Any] | None = None) -> Any:
         url = self._build_url(path, query)
         headers: dict[str, str] = {"Accept": "application/json"}
         if self._api_key:
             headers["X-GEMINI-APIKEY"] = self._api_key
 
-        response = self._client.request("GET", url, headers=headers)
+        response = await self._client.request("GET", url, headers=headers)
 
         try:
             payload = response.json() if response.content else {}

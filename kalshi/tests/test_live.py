@@ -10,6 +10,7 @@ Set KALSHI_BASE_URL to override the default API base URL.
 from __future__ import annotations
 
 import json
+import asyncio
 import os
 import sys
 from pathlib import Path
@@ -36,11 +37,11 @@ def live_server():
         or "https://api.elections.kalshi.com/trade-api/v2"
     ).rstrip("/")
     srv = Server.from_descriptor(
-        DESCRIPTOR_PATH, name="test-kalshi-live", version="0.0.1"
+        DESCRIPTOR_PATH
     )
     srv.connect_http(base_url, service_name="kalshi.v1.KalshiService")
     yield srv
-    srv.stop()
+    asyncio.run(srv.stop())
 
 
 # --- Exchange metadata ---
@@ -48,19 +49,19 @@ def live_server():
 
 class TestLiveExchange:
     def test_get_exchange_status(self, live_server):
-        result = live_server._cli(["KalshiService", "GetExchangeStatus"])
+        result = asyncio.run(live_server._cli(["KalshiService", "GetExchangeStatus"]))
         assert "data" in result
         data = result["data"]
         assert isinstance(data.get("exchange_active"), bool)
 
     def test_get_exchange_schedule(self, live_server):
-        result = live_server._cli(["KalshiService", "GetExchangeSchedule"])
+        result = asyncio.run(live_server._cli(["KalshiService", "GetExchangeSchedule"]))
         assert "data" in result
         data = result["data"]
         assert "schedule" in data or isinstance(data, dict)
 
     def test_get_exchange_announcements(self, live_server):
-        result = live_server._cli(["KalshiService", "GetExchangeAnnouncements"])
+        result = asyncio.run(live_server._cli(["KalshiService", "GetExchangeAnnouncements"]))
         assert "data" in result
 
 
@@ -70,9 +71,9 @@ class TestLiveExchange:
 @pytest.fixture(scope="module")
 def market_ticker(live_server):
     """Discover a valid market ticker once for all tests that need one."""
-    result = live_server._cli(
+    result = asyncio.run(live_server._cli(
         ["KalshiService", "GetMarkets", "-r", '{"limit": 1}']
-    )
+    ))
     markets = result["data"]["markets"]
     assert markets, "expected at least one market"
     return markets[0]["ticker"]
@@ -81,9 +82,9 @@ def market_ticker(live_server):
 @pytest.fixture(scope="module")
 def event_info(live_server):
     """Discover event info (event_ticker, series_ticker, market ticker) once."""
-    result = live_server._cli(
+    result = asyncio.run(live_server._cli(
         ["KalshiService", "GetEvents", "-r", '{"limit": 5}']
-    )
+    ))
     events = result["data"]["events"]
     assert events, "expected at least one event"
     return events
@@ -94,9 +95,9 @@ def event_info(live_server):
 
 class TestLiveMarkets:
     def test_get_markets(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             ["KalshiService", "GetMarkets", "-r", '{"limit": 3}']
-        )
+        ))
         assert "data" in result
         markets = result["data"].get("markets")
         assert isinstance(markets, list)
@@ -108,29 +109,29 @@ class TestLiveMarkets:
 
     def test_get_markets_pagination(self, live_server):
         # Fetch page 1
-        result1 = live_server._cli(
+        result1 = asyncio.run(live_server._cli(
             ["KalshiService", "GetMarkets", "-r", '{"limit": 2}']
-        )
+        ))
         cursor = result1["data"].get("cursor", "")
         if not cursor:
             pytest.skip("No second page available")
 
         # Fetch page 2 with cursor
-        result2 = live_server._cli(
+        result2 = asyncio.run(live_server._cli(
             [
                 "KalshiService",
                 "GetMarkets",
                 "-r",
                 json.dumps({"limit": 2, "cursor": cursor}),
             ]
-        )
+        ))
         markets2 = result2["data"]["markets"]
         assert len(markets2) > 0
 
     def test_get_market_by_ticker(self, live_server, market_ticker):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             ["KalshiService", "GetMarket", "-r", json.dumps({"ticker": market_ticker})]
-        )
+        ))
         assert "data" in result
         assert result["data"]["market"]["ticker"] == market_ticker
 
@@ -140,9 +141,9 @@ class TestLiveMarkets:
 
 class TestLiveEvents:
     def test_get_events(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             ["KalshiService", "GetEvents", "-r", '{"limit": 3}']
-        )
+        ))
         assert "data" in result
         events = result["data"].get("events")
         assert isinstance(events, list)
@@ -153,14 +154,14 @@ class TestLiveEvents:
 
     def test_get_event(self, live_server, event_info):
         event_ticker = event_info[0]["event_ticker"]
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "KalshiService",
                 "GetEvent",
                 "-r",
                 json.dumps({"event_ticker": event_ticker}),
             ]
-        )
+        ))
         assert "data" in result
         assert result["data"]["event"]["event_ticker"] == event_ticker
 
@@ -170,7 +171,7 @@ class TestLiveEvents:
 
 class TestLiveSeries:
     def test_get_series_list(self, live_server):
-        result = live_server._cli(["KalshiService", "GetSeriesList"])
+        result = asyncio.run(live_server._cli(["KalshiService", "GetSeriesList"]))
         assert "data" in result
 
 
@@ -179,28 +180,28 @@ class TestLiveSeries:
 
 class TestLiveMarketData:
     def test_get_market_orderbook(self, live_server, market_ticker):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "KalshiService",
                 "GetMarketOrderbook",
                 "-r",
                 json.dumps({"ticker": market_ticker}),
             ]
-        )
+        ))
         assert "data" in result
         ob = result["data"]
         # Response may contain "orderbook" or "orderbook_fp" depending on the market
         assert "orderbook" in ob or "orderbook_fp" in ob or "yes" in ob or "no" in ob
 
     def test_get_trades(self, live_server, market_ticker):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "KalshiService",
                 "GetTrades",
                 "-r",
                 json.dumps({"ticker": market_ticker, "limit": 5}),
             ]
-        )
+        ))
         assert "data" in result
 
     def test_get_market_candlesticks(self, live_server, event_info):
@@ -219,7 +220,7 @@ class TestLiveMarketData:
         if not series_ticker or not ticker:
             pytest.skip("cannot find series_ticker + market ticker for candlestick test")
 
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "KalshiService",
                 "GetMarketCandlesticks",
@@ -230,5 +231,5 @@ class TestLiveMarketData:
                     "period_interval": 60,
                 }),
             ]
-        )
+        ))
         assert "data" in result

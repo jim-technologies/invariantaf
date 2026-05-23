@@ -66,7 +66,11 @@ class AaveService:
     """Implements AaveService RPCs via the Aave v3 GraphQL API."""
 
     def __init__(self):
-        self._http = httpx.Client(timeout=30, follow_redirects=True)
+        self._http = httpx.AsyncClient(timeout=30, follow_redirects=True)
+
+    async def aclose(self) -> None:
+        """Close the HTTP client. Idempotent."""
+        await self._client.aclose()
 
     def _query(self, query: str, variables: dict | None = None) -> Any:
         body: dict[str, Any] = {"query": query}
@@ -109,7 +113,7 @@ class AaveService:
             borrowing_enabled=borrowing_enabled,
         )
 
-    def GetMarkets(self, request: Any, context: Any = None) -> pb.GetMarketsResponse:
+    async def GetMarkets(self, request: Any, context: Any = None) -> pb.GetMarketsResponse:
         chain_ids = list(request.chain_ids) if request.chain_ids else [1]
         raw = self._query(_MARKETS_QUERY, {"chainIds": chain_ids})
         resp = pb.GetMarketsResponse()
@@ -141,13 +145,13 @@ class AaveService:
             ))
         return resp
 
-    def GetSupplyAPYHistory(self, request: Any, context: Any = None) -> pb.GetAPYHistoryResponse:
+    async def GetSupplyAPYHistory(self, request: Any, context: Any = None) -> pb.GetAPYHistoryResponse:
         return self._get_apy_history(_SUPPLY_APY_HISTORY_QUERY, "supplyAPYHistory", request)
 
-    def GetBorrowAPYHistory(self, request: Any, context: Any = None) -> pb.GetAPYHistoryResponse:
+    async def GetBorrowAPYHistory(self, request: Any, context: Any = None) -> pb.GetAPYHistoryResponse:
         return self._get_apy_history(_BORROW_APY_HISTORY_QUERY, "borrowAPYHistory", request)
 
-    def GetReserve(self, request: Any, context: Any = None) -> pb.GetReserveResponse:
+    async def GetReserve(self, request: Any, context: Any = None) -> pb.GetReserveResponse:
         raw = self._query(_RESERVE_QUERY, {
             "market": request.market_address,
             "token": request.underlying_token,

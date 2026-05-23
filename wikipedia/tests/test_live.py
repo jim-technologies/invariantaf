@@ -10,6 +10,7 @@ No API key or authentication is required.
 from __future__ import annotations
 
 import json
+import asyncio
 import os
 import sys
 from pathlib import Path
@@ -33,12 +34,12 @@ def live_server():
     from wikipedia_mcp.service import WikipediaService
 
     srv = Server.from_descriptor(
-        DESCRIPTOR_PATH, name="test-wikipedia-live", version="0.0.1"
+        DESCRIPTOR_PATH
     )
     svc = WikipediaService()
     srv.register(svc)
     yield srv
-    srv.stop()
+    asyncio.run(srv.stop())
 
 
 # --- Search ---
@@ -46,9 +47,9 @@ def live_server():
 
 class TestLiveSearch:
     def test_search(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             ["WikipediaService", "Search", "-r", json.dumps({"query": "quantum computing", "limit": 5})]
-        )
+        ))
         assert "results" in result
         results = result["results"]
         assert isinstance(results, list)
@@ -61,9 +62,9 @@ class TestLiveSearch:
         assert int(val) > 0
 
     def test_search_returns_page_ids(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             ["WikipediaService", "Search", "-r", json.dumps({"query": "Python programming", "limit": 3})]
-        )
+        ))
         results = result["results"]
         assert len(results) > 0
         for r in results:
@@ -77,17 +78,17 @@ class TestLiveSearch:
 
 class TestLiveGetPage:
     def test_get_page(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             ["WikipediaService", "GetPage", "-r", '{"title": "Albert_Einstein"}']
-        )
+        ))
         assert result.get("title") == "Albert Einstein"
         assert result.get("extract")
         assert len(result["extract"]) > 50
 
     def test_get_page_has_metadata(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             ["WikipediaService", "GetPage", "-r", '{"title": "Python_(programming_language)"}']
-        )
+        ))
         assert "Python" in result.get("title", "")
         assert result.get("description") or result.get("extract")
         page_id = result.get("pageId") or result.get("page_id")
@@ -100,9 +101,9 @@ class TestLiveGetPage:
 
 class TestLiveGetFullPage:
     def test_get_full_page(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             ["WikipediaService", "GetFullPage", "-r", '{"title": "Albert_Einstein"}']
-        )
+        ))
         assert result.get("title") == "Albert Einstein"
         assert result.get("content")
         # Full page content should be substantial
@@ -114,7 +115,7 @@ class TestLiveGetFullPage:
 
 class TestLiveGetRandom:
     def test_get_random(self, live_server):
-        result = live_server._cli(["WikipediaService", "GetRandom"])
+        result = asyncio.run(live_server._cli(["WikipediaService", "GetRandom"]))
         assert "pages" in result
         pages = result["pages"]
         assert isinstance(pages, list)
@@ -124,9 +125,9 @@ class TestLiveGetRandom:
         assert page["title"]  # not empty
 
     def test_get_random_multiple(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             ["WikipediaService", "GetRandom", "-r", '{"count": 3}']
-        )
+        ))
         pages = result["pages"]
         assert len(pages) == 3
 
@@ -136,9 +137,9 @@ class TestLiveGetRandom:
 
 class TestLiveGetOnThisDay:
     def test_get_on_this_day(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             ["WikipediaService", "GetOnThisDay", "-r", '{"month": 7, "day": 4}']
-        )
+        ))
         assert "events" in result
         events = result["events"]
         assert isinstance(events, list)
@@ -154,9 +155,9 @@ class TestLiveGetOnThisDay:
 class TestLiveGetMostRead:
     def test_get_most_read(self, live_server):
         # Use a date that is safely in the past
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             ["WikipediaService", "GetMostRead", "-r", '{"year": 2025, "month": 1, "day": 15}']
-        )
+        ))
         assert "articles" in result
         articles = result["articles"]
         assert isinstance(articles, list)
@@ -172,9 +173,9 @@ class TestLiveGetMostRead:
 
 class TestLiveGetLanguages:
     def test_get_languages(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             ["WikipediaService", "GetLanguages", "-r", '{"title": "Albert_Einstein"}']
-        )
+        ))
         assert "languages" in result
         languages = result["languages"]
         assert isinstance(languages, list)
@@ -189,9 +190,9 @@ class TestLiveGetLanguages:
 
 class TestLiveGetCategories:
     def test_get_categories(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             ["WikipediaService", "GetCategories", "-r", '{"title": "Albert_Einstein"}']
-        )
+        ))
         assert "categories" in result
         categories = result["categories"]
         assert isinstance(categories, list)
@@ -205,9 +206,9 @@ class TestLiveGetCategories:
 
 class TestLiveGetLinks:
     def test_get_links(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             ["WikipediaService", "GetLinks", "-r", '{"title": "Albert_Einstein"}']
-        )
+        ))
         assert "links" in result
         links = result["links"]
         assert isinstance(links, list)
@@ -219,9 +220,9 @@ class TestLiveGetLinks:
 
 class TestLiveGetImages:
     def test_get_images(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             ["WikipediaService", "GetImages", "-r", '{"title": "Albert_Einstein"}']
-        )
+        ))
         assert "images" in result
         images = result["images"]
         assert isinstance(images, list)

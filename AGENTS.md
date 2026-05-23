@@ -45,10 +45,10 @@ Expected files/directories for new adapters:
 
 - `main.py`
 - `Makefile`
-- `pyproject.toml`
+- `pyproject.toml`  (`requires-python = ">=3.11"`)
 - `uv.lock`
 - `proto/buf.yaml`
-- `proto/buf.gen.yaml`
+- `proto/buf.gen.yaml`  (Python output goes to `../src/<provider>_mcp/gen`)
 - `proto/<provider>/v1/<provider>.proto`
 - `descriptor.binpb` (generated)
 - `src/<provider>_mcp/service.py`
@@ -60,13 +60,63 @@ Optional but recommended for generated adapters:
 - `openapi/` (or other vendored spec input)
 - `scripts/` generation scripts
 
+### Python async requirements
+
+The framework is async-native. Adapters MUST follow these rules:
+
+1. **All RPC handler methods are `async def`.** `Server.register()` rejects sync
+   handlers with `TypeError`.
+2. **`main.py` runs the server via `asyncio.run(server.serve(...))`.**
+   `Server.serve()` is a coroutine that takes kwargs (`mcp=True`, `cli=True`,
+   `http=<port>`, `grpc=<port>`). There is no `serve_from_argv()` — parse argv
+   yourself.
+3. **HTTP clients are `httpx.AsyncClient`, not `httpx.Client`.** Sync clients
+   inside `async def` block the event loop. Internal helper methods that touch
+   the client should also be `async def`, with `await` on every call.
+4. **Expose `async def aclose(self)`** that calls `await self._client.aclose()`
+   so tests / future framework versions can drain the connection pool cleanly.
+5. **`Server.from_descriptor(path)`** takes only the path now. The old
+   `name=`/`version=` kwargs are gone — name and version are framework-level
+   constants.
+
+A minimal `main.py`:
+
+```python
+import asyncio, sys
+from pathlib import Path
+from invariant import Server
+from foo_mcp.service import FooService
+
+DESCRIPTOR = Path(__file__).parent / "descriptor.binpb"
+
+def _projection_from_argv(argv):
+    if not argv: return {"mcp": True}
+    cmd = argv[0]
+    if cmd in ("--cli",):  return {"cli": True}
+    if cmd in ("--http",): return {"http": int(argv[1]) if len(argv) > 1 else 8080}
+    if cmd in ("--grpc",): return {"grpc": int(argv[1]) if len(argv) > 1 else 50051}
+    return {"mcp": True}
+
+def main():
+    server = Server.from_descriptor(str(DESCRIPTOR))
+    server.register(FooService(), service_name="foo.v1.FooService")
+    asyncio.run(server.serve(**_projection_from_argv(sys.argv[1:])))
+
+if __name__ == "__main__":
+    main()
+```
+
 ## 5) Standard Project Layout (Go)
 
 Go adapters typically:
 
 - embed `descriptor.binpb` via `//go:embed`
 - initialize with `invariant.ServerFromBytes(...)`
-- register a servicer and call `server.Serve(invariant.MCP())`
+- register a servicer and call `server.Serve(ctx, invariant.MCP())`
+
+`Serve` requires a `context.Context` — typically `context.Background()`. The
+old `server.Name`/`server.Version` setters are gone (those are framework
+constants now).
 
 Keep Go projects similarly self-contained under their provider directory.
 

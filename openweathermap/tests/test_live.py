@@ -9,6 +9,7 @@ Requires a free API key from https://openweathermap.org/api
 from __future__ import annotations
 
 import json
+import asyncio
 import os
 import sys
 from pathlib import Path
@@ -35,19 +36,19 @@ def live_server():
     from openweathermap_mcp.service import OpenWeatherMapService
 
     srv = Server.from_descriptor(
-        DESCRIPTOR_PATH, name="test-owm-live", version="0.0.1"
+        DESCRIPTOR_PATH
     )
     servicer = OpenWeatherMapService()
     srv.register(servicer)
     yield srv
-    srv.stop()
+    asyncio.run(srv.stop())
 
 
 class TestLiveCurrentWeather:
     def test_get_by_city(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             ["OpenWeatherMapService", "GetCurrentWeather", "-r", json.dumps({"city": "London"})]
-        )
+        ))
         assert "weather" in result
         w = result["weather"]
         assert "temp" in w
@@ -55,20 +56,20 @@ class TestLiveCurrentWeather:
         assert w.get("city_name") == "London"
 
     def test_get_by_coords(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             ["OpenWeatherMapService", "GetCurrentWeatherByCoords", "-r", json.dumps({
                 "lat": 40.7128, "lon": -74.006,
             })]
-        )
+        ))
         assert "weather" in result
         assert "temp" in result["weather"]
 
 
 class TestLiveForecast:
     def test_get_forecast(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             ["OpenWeatherMapService", "GetForecast", "-r", json.dumps({"city": "Tokyo"})]
-        )
+        ))
         assert "items" in result
         assert len(result["items"]) > 0
         item = result["items"][0]
@@ -78,11 +79,11 @@ class TestLiveForecast:
 
 class TestLiveAirQuality:
     def test_get_air_quality(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             ["OpenWeatherMapService", "GetAirQuality", "-r", json.dumps({
                 "lat": 51.5074, "lon": -0.1278,
             })]
-        )
+        ))
         assert "data" in result
         d = result["data"]
         assert "aqi" in d
@@ -90,9 +91,9 @@ class TestLiveAirQuality:
 
 class TestLiveGeocode:
     def test_geocode(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             ["OpenWeatherMapService", "GetGeocode", "-r", json.dumps({"city": "Paris"})]
-        )
+        ))
         assert "locations" in result
         assert len(result["locations"]) > 0
         loc = result["locations"][0]

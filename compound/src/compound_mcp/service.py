@@ -75,21 +75,25 @@ class CompoundService:
     """Implements CompoundService RPCs via the free Compound v2 API."""
 
     def __init__(self):
-        self._http = httpx.Client(timeout=30)
+        self._http = httpx.AsyncClient(timeout=30)
+
+    async def aclose(self) -> None:
+        """Close the HTTP client. Idempotent."""
+        await self._client.aclose()
 
     def _get(self, url: str, params: dict | None = None) -> Any:
         resp = self._http.get(url, params=params)
         resp.raise_for_status()
         return resp.json()
 
-    def ListCTokens(self, request: Any, context: Any = None) -> pb.ListCTokensResponse:
+    async def ListCTokens(self, request: Any, context: Any = None) -> pb.ListCTokensResponse:
         raw = self._get(f"{_BASE_URL}/ctoken")
         resp = pb.ListCTokensResponse()
         for ct in raw.get("cToken", []):
             resp.ctokens.append(_parse_ctoken(ct))
         return resp
 
-    def GetMarketHistory(self, request: Any, context: Any = None) -> pb.GetMarketHistoryResponse:
+    async def GetMarketHistory(self, request: Any, context: Any = None) -> pb.GetMarketHistoryResponse:
         params: dict[str, Any] = {"asset": request.asset}
         if request.min_block_timestamp:
             params["min_block_timestamp"] = request.min_block_timestamp
@@ -101,7 +105,7 @@ class CompoundService:
             resp.points.append(_parse_market_history_point(pt))
         return resp
 
-    def ListProposals(self, request: Any, context: Any = None) -> pb.ListProposalsResponse:
+    async def ListProposals(self, request: Any, context: Any = None) -> pb.ListProposalsResponse:
         params: dict[str, Any] = {}
         if request.limit:
             params["page_size"] = request.limit

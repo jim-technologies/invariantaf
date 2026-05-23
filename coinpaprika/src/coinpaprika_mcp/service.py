@@ -24,70 +24,74 @@ class CoinPaprikaService:
     ):
         self._base_url = base_url.rstrip("/")
         self._timeout = timeout
-        self._client = httpx.Client(timeout=timeout)
+        self._client = httpx.AsyncClient(timeout=timeout)
+
+    async def aclose(self) -> None:
+        """Close the HTTP client. Idempotent."""
+        await self._client.aclose()
 
     # -------------------------
     # RPC handlers
     # -------------------------
 
-    def GetGlobal(
+    async def GetGlobal(
         self, request: pb.GetGlobalRequest, context: Any = None
     ) -> pb.GetGlobalResponse:
-        payload = self._get("/global")
+        payload = await self._get("/global")
         return self._parse_message(payload, pb.GetGlobalResponse)
 
-    def ListCoins(
+    async def ListCoins(
         self, request: pb.ListCoinsRequest, context: Any = None
     ) -> pb.ListCoinsResponse:
-        payload = self._get("/coins")
+        payload = await self._get("/coins")
         coins = payload if isinstance(payload, list) else []
         return self._parse_message({"coins": coins}, pb.ListCoinsResponse)
 
-    def GetCoinById(
+    async def GetCoinById(
         self, request: pb.GetCoinByIdRequest, context: Any = None
     ) -> pb.GetCoinByIdResponse:
         coin_id = request.coin_id
-        payload = self._get(f"/coins/{coin_id}")
+        payload = await self._get(f"/coins/{coin_id}")
         return self._parse_message(payload, pb.GetCoinByIdResponse)
 
-    def GetTickerById(
+    async def GetTickerById(
         self, request: pb.GetTickerByIdRequest, context: Any = None
     ) -> pb.GetTickerByIdResponse:
         coin_id = request.coin_id
-        payload = self._get(f"/tickers/{coin_id}")
+        payload = await self._get(f"/tickers/{coin_id}")
         result = self._transform_ticker(payload)
         return self._parse_message(result, pb.GetTickerByIdResponse)
 
-    def ListTickers(
+    async def ListTickers(
         self, request: pb.ListTickersRequest, context: Any = None
     ) -> pb.ListTickersResponse:
-        payload = self._get("/tickers")
+        payload = await self._get("/tickers")
         tickers_raw = payload if isinstance(payload, list) else []
         tickers = [self._transform_ticker(t) for t in tickers_raw]
         return self._parse_message({"tickers": tickers}, pb.ListTickersResponse)
 
-    def GetCoinMarkets(
+    async def GetCoinMarkets(
         self, request: pb.GetCoinMarketsRequest, context: Any = None
     ) -> pb.GetCoinMarketsResponse:
         coin_id = request.coin_id
-        payload = self._get(f"/coins/{coin_id}/markets")
+        payload = await self._get(f"/coins/{coin_id}/markets")
         markets_raw = payload if isinstance(payload, list) else []
         markets = [self._transform_market(m) for m in markets_raw]
         return self._parse_message({"markets": markets}, pb.GetCoinMarketsResponse)
 
-    def GetCoinOHLCV(
+    async def GetCoinOHLCV(
         self, request: pb.GetCoinOHLCVRequest, context: Any = None
     ) -> pb.GetCoinOHLCVResponse:
         coin_id = request.coin_id
-        payload = self._get(f"/coins/{coin_id}/ohlcv/latest/")
+        payload = await self._get(f"/coins/{coin_id}/ohlcv/latest/")
         entries = payload if isinstance(payload, list) else []
         return self._parse_message({"entries": entries}, pb.GetCoinOHLCVResponse)
 
-    def SearchCoins(
+    async def SearchCoins(
         self, request: pb.SearchCoinsRequest, context: Any = None
     ) -> pb.SearchCoinsResponse:
         query: dict[str, Any] = {"q": request.query, "c": "currencies"}
-        payload = self._get("/search/", query)
+        payload = await self._get("/search/", query)
         currencies = []
         if isinstance(payload, dict):
             currencies = payload.get("currencies", [])
@@ -97,9 +101,9 @@ class CoinPaprikaService:
     # HTTP helpers
     # -------------------------
 
-    def _get(self, path: str, query: dict[str, Any] | None = None) -> Any:
+    async def _get(self, path: str, query: dict[str, Any] | None = None) -> Any:
         url = self._build_url(path, query)
-        response = self._client.request(
+        response = await self._client.request(
             "GET",
             url,
             headers={"Accept": "application/json"},

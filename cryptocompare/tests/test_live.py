@@ -10,6 +10,7 @@ No API keys or credentials needed.
 from __future__ import annotations
 
 import json
+import asyncio
 import os
 import sys
 import time
@@ -35,7 +36,7 @@ def _cli_or_skip(live_server, service, method, params=None):
     if params:
         args.extend(["-r", json.dumps(params)])
     try:
-        result = live_server._cli(args)
+        result = asyncio.run(live_server._cli(args))
     except Exception as exc:
         msg = str(exc)
         for code in ("429", "500", "502", "503"):
@@ -63,12 +64,12 @@ def live_server():
     base_url = (os.getenv("CRYPTOCOMPARE_BASE_URL") or DEFAULT_BASE_URL).rstrip("/")
 
     srv = Server.from_descriptor(
-        DESCRIPTOR_PATH, name="test-cryptocompare-live", version="0.0.1"
+        DESCRIPTOR_PATH
     )
     servicer = CryptoCompareService(base_url=base_url)
     srv.register(servicer, service_name="cryptocompare.v1.CryptoCompareService")
     yield srv
-    srv.stop()
+    asyncio.run(srv.stop())
 
 
 # --- GetPrice ---

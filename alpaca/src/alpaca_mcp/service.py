@@ -21,13 +21,17 @@ class AlpacaService:
             "https://api.alpaca.markets" if live else "https://paper-api.alpaca.markets"
         )
         self._data_url = "https://data.alpaca.markets"
-        self._http = httpx.Client(
+        self._http = httpx.AsyncClient(
             timeout=30,
             headers={
                 "APCA-API-KEY-ID": self._api_key,
                 "APCA-API-SECRET-KEY": self._secret_key,
             },
         )
+
+    async def aclose(self) -> None:
+        """Close the HTTP client. Idempotent."""
+        await self._client.aclose()
 
     def _get(self, path: str, params: dict | None = None) -> Any:
         resp = self._http.get(f"{self._base_url}{path}", params=params or {})
@@ -51,7 +55,7 @@ class AlpacaService:
 
     # --- Account ---
 
-    def GetAccount(self, request: Any, context: Any = None) -> pb.GetAccountResponse:
+    async def GetAccount(self, request: Any, context: Any = None) -> pb.GetAccountResponse:
         raw = self._get("/v2/account")
         return pb.GetAccountResponse(
             id=raw.get("id", ""),
@@ -71,20 +75,20 @@ class AlpacaService:
 
     # --- Positions ---
 
-    def GetPositions(self, request: Any, context: Any = None) -> pb.GetPositionsResponse:
+    async def GetPositions(self, request: Any, context: Any = None) -> pb.GetPositionsResponse:
         raw = self._get("/v2/positions")
         resp = pb.GetPositionsResponse()
         for p in raw:
             resp.positions.append(_raw_to_position(p))
         return resp
 
-    def GetPosition(self, request: Any, context: Any = None) -> pb.Position:
+    async def GetPosition(self, request: Any, context: Any = None) -> pb.Position:
         raw = self._get(f"/v2/positions/{request.symbol}")
         return _raw_to_position(raw)
 
     # --- Orders ---
 
-    def PlaceOrder(self, request: Any, context: Any = None) -> pb.PlaceOrderResponse:
+    async def PlaceOrder(self, request: Any, context: Any = None) -> pb.PlaceOrderResponse:
         body: dict[str, Any] = {
             "symbol": request.symbol,
             "side": request.side,
@@ -114,7 +118,7 @@ class AlpacaService:
             created_at=raw.get("created_at", ""),
         )
 
-    def GetOrders(self, request: Any, context: Any = None) -> pb.GetOrdersResponse:
+    async def GetOrders(self, request: Any, context: Any = None) -> pb.GetOrdersResponse:
         params: dict[str, Any] = {}
         if request.status:
             params["status"] = request.status
@@ -126,7 +130,7 @@ class AlpacaService:
             resp.orders.append(_raw_to_order(o))
         return resp
 
-    def CancelOrder(self, request: Any, context: Any = None) -> pb.CancelOrderResponse:
+    async def CancelOrder(self, request: Any, context: Any = None) -> pb.CancelOrderResponse:
         try:
             self._delete(f"/v2/orders/{request.order_id}")
             return pb.CancelOrderResponse(success=True)
@@ -137,7 +141,7 @@ class AlpacaService:
 
     # --- Assets ---
 
-    def GetAsset(self, request: Any, context: Any = None) -> pb.GetAssetResponse:
+    async def GetAsset(self, request: Any, context: Any = None) -> pb.GetAssetResponse:
         raw = self._get(f"/v2/assets/{request.symbol}")
         return pb.GetAssetResponse(
             id=raw.get("id", ""),
@@ -154,7 +158,7 @@ class AlpacaService:
 
     # --- Market Data ---
 
-    def GetBars(self, request: Any, context: Any = None) -> pb.GetBarsResponse:
+    async def GetBars(self, request: Any, context: Any = None) -> pb.GetBarsResponse:
         params: dict[str, Any] = {}
         if request.timeframe:
             params["timeframe"] = request.timeframe
@@ -180,7 +184,7 @@ class AlpacaService:
             ))
         return resp
 
-    def GetLatestQuote(self, request: Any, context: Any = None) -> pb.GetLatestQuoteResponse:
+    async def GetLatestQuote(self, request: Any, context: Any = None) -> pb.GetLatestQuoteResponse:
         raw = self._get_data(f"/v2/stocks/{request.symbol}/quotes/latest")
         quote = raw.get("quote", {})
         return pb.GetLatestQuoteResponse(
@@ -192,7 +196,7 @@ class AlpacaService:
             timestamp=quote.get("t", ""),
         )
 
-    def GetLatestTrade(self, request: Any, context: Any = None) -> pb.GetLatestTradeResponse:
+    async def GetLatestTrade(self, request: Any, context: Any = None) -> pb.GetLatestTradeResponse:
         raw = self._get_data(f"/v2/stocks/{request.symbol}/trades/latest")
         trade = raw.get("trade", {})
         return pb.GetLatestTradeResponse(

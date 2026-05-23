@@ -11,6 +11,7 @@ Set OPENDOTA_API_KEY for higher rate limits (optional).
 from __future__ import annotations
 
 import json
+import asyncio
 import os
 import sys
 from pathlib import Path
@@ -39,11 +40,11 @@ def live_server():
     ).rstrip("/")
 
     srv = Server.from_descriptor(
-        DESCRIPTOR_PATH, name="test-opendota-live", version="0.0.1"
+        DESCRIPTOR_PATH
     )
     srv.connect_http(base_url, service_name="opendota.v1.OpenDotaService")
     yield srv
-    srv.stop()
+    asyncio.run(srv.stop())
 
 
 # --- Shared fixtures for data discovery ---
@@ -52,7 +53,7 @@ def live_server():
 @pytest.fixture(scope="module")
 def pro_player_account_id(live_server):
     """Discover a valid pro player account_id for tests that need one."""
-    result = live_server._cli(["OpenDotaService", "GetProPlayers"])
+    result = asyncio.run(live_server._cli(["OpenDotaService", "GetProPlayers"]))
     data = result.get("data", [])
     assert data, "expected at least one pro player"
     account_id = data[0].get("account_id")
@@ -63,7 +64,7 @@ def pro_player_account_id(live_server):
 @pytest.fixture(scope="module")
 def hero_id(live_server):
     """Discover a valid hero_id for tests that need one."""
-    result = live_server._cli(["OpenDotaService", "GetHeroes"])
+    result = asyncio.run(live_server._cli(["OpenDotaService", "GetHeroes"]))
     data = result.get("data", [])
     assert data, "expected at least one hero"
     hid = data[0].get("id")
@@ -74,9 +75,9 @@ def hero_id(live_server):
 @pytest.fixture(scope="module")
 def team_id(live_server):
     """Discover a valid team_id for tests that need one."""
-    result = live_server._cli(
+    result = asyncio.run(live_server._cli(
         ["OpenDotaService", "GetTeams", "-r", json.dumps({"query": {"page": 0}})]
-    )
+    ))
     data = result.get("data", [])
     assert data, "expected at least one team"
     tid = data[0].get("team_id")
@@ -89,7 +90,7 @@ def team_id(live_server):
 
 class TestLiveHealth:
     def test_get_health(self, live_server):
-        result = live_server._cli(["OpenDotaService", "GetHealth"])
+        result = asyncio.run(live_server._cli(["OpenDotaService", "GetHealth"]))
         assert "data" in result
         data = result["data"]
         assert isinstance(data, dict)
@@ -100,7 +101,7 @@ class TestLiveHealth:
 
 class TestLiveHeroes:
     def test_get_heroes(self, live_server):
-        result = live_server._cli(["OpenDotaService", "GetHeroes"])
+        result = asyncio.run(live_server._cli(["OpenDotaService", "GetHeroes"]))
         assert "data" in result
         data = result["data"]
         assert isinstance(data, list)
@@ -110,21 +111,21 @@ class TestLiveHeroes:
         assert "localized_name" in h or "name" in h
 
     def test_get_hero_stats(self, live_server):
-        result = live_server._cli(["OpenDotaService", "GetHeroStats"])
+        result = asyncio.run(live_server._cli(["OpenDotaService", "GetHeroStats"]))
         assert "data" in result
         data = result["data"]
         assert isinstance(data, list)
         assert len(data) > 0
 
     def test_get_hero_matchups(self, live_server, hero_id):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "OpenDotaService",
                 "GetHeroMatchups",
                 "-r",
                 json.dumps({"hero_id": hero_id}),
             ]
-        )
+        ))
         assert "data" in result
         data = result["data"]
         assert isinstance(data, list)
@@ -134,27 +135,27 @@ class TestLiveHeroes:
             assert "games_played" in m or "wins" in m
 
     def test_get_hero_durations(self, live_server, hero_id):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "OpenDotaService",
                 "GetHeroDurations",
                 "-r",
                 json.dumps({"hero_id": hero_id}),
             ]
-        )
+        ))
         assert "data" in result
         data = result["data"]
         assert isinstance(data, list)
 
     def test_get_hero_matches(self, live_server, hero_id):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "OpenDotaService",
                 "GetHeroMatches",
                 "-r",
                 json.dumps({"hero_id": hero_id}),
             ]
-        )
+        ))
         assert "data" in result
         data = result["data"]
         assert isinstance(data, list)
@@ -165,7 +166,7 @@ class TestLiveHeroes:
 
 class TestLivePlayers:
     def test_get_pro_players(self, live_server):
-        result = live_server._cli(["OpenDotaService", "GetProPlayers"])
+        result = asyncio.run(live_server._cli(["OpenDotaService", "GetProPlayers"]))
         assert "data" in result
         data = result["data"]
         assert isinstance(data, list)
@@ -174,92 +175,92 @@ class TestLivePlayers:
         assert "account_id" in p
 
     def test_get_player(self, live_server, pro_player_account_id):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "OpenDotaService",
                 "GetPlayer",
                 "-r",
                 json.dumps({"account_id": pro_player_account_id}),
             ]
-        )
+        ))
         assert "data" in result
         data = result["data"]
         assert isinstance(data, dict)
 
     def test_get_player_win_loss(self, live_server, pro_player_account_id):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "OpenDotaService",
                 "GetPlayerWinLoss",
                 "-r",
                 json.dumps({"account_id": pro_player_account_id}),
             ]
-        )
+        ))
         assert "data" in result
         data = result["data"]
         assert "win" in data or "lose" in data
 
     def test_get_player_recent_matches(self, live_server, pro_player_account_id):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "OpenDotaService",
                 "GetPlayerRecentMatches",
                 "-r",
                 json.dumps({"account_id": pro_player_account_id}),
             ]
-        )
+        ))
         assert "data" in result
         data = result["data"]
         assert isinstance(data, list)
 
     def test_get_player_heroes(self, live_server, pro_player_account_id):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "OpenDotaService",
                 "GetPlayerHeroes",
                 "-r",
                 json.dumps({"account_id": pro_player_account_id}),
             ]
-        )
+        ))
         assert "data" in result
         data = result["data"]
         assert isinstance(data, list)
 
     def test_get_player_totals(self, live_server, pro_player_account_id):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "OpenDotaService",
                 "GetPlayerTotals",
                 "-r",
                 json.dumps({"account_id": pro_player_account_id}),
             ]
-        )
+        ))
         assert "data" in result
         data = result["data"]
         assert isinstance(data, list)
 
     def test_search_players(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "OpenDotaService",
                 "SearchPlayers",
                 "-r",
                 json.dumps({"query": {"q": "dendi"}}),
             ]
-        )
+        ))
         assert "data" in result
         data = result["data"]
         assert isinstance(data, list)
 
     def test_get_player_rankings(self, live_server, pro_player_account_id):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "OpenDotaService",
                 "GetPlayerRankings",
                 "-r",
                 json.dumps({"account_id": pro_player_account_id}),
             ]
-        )
+        ))
         assert "data" in result
         data = result["data"]
         assert isinstance(data, list)
@@ -270,14 +271,14 @@ class TestLivePlayers:
 
 class TestLiveTeams:
     def test_get_teams(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "OpenDotaService",
                 "GetTeams",
                 "-r",
                 json.dumps({"query": {"page": 0}}),
             ]
-        )
+        ))
         assert "data" in result
         data = result["data"]
         assert isinstance(data, list)
@@ -286,40 +287,40 @@ class TestLiveTeams:
         assert "team_id" in t
 
     def test_get_team(self, live_server, team_id):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "OpenDotaService",
                 "GetTeam",
                 "-r",
                 json.dumps({"team_id": team_id}),
             ]
-        )
+        ))
         assert "data" in result
         data = result["data"]
         assert isinstance(data, dict)
 
     def test_get_team_players(self, live_server, team_id):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "OpenDotaService",
                 "GetTeamPlayers",
                 "-r",
                 json.dumps({"team_id": team_id}),
             ]
-        )
+        ))
         assert "data" in result
         data = result["data"]
         assert isinstance(data, list)
 
     def test_get_team_heroes(self, live_server, team_id):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "OpenDotaService",
                 "GetTeamHeroes",
                 "-r",
                 json.dumps({"team_id": team_id}),
             ]
-        )
+        ))
         assert "data" in result
         data = result["data"]
         assert isinstance(data, list)
@@ -330,7 +331,7 @@ class TestLiveTeams:
 
 class TestLiveLeagues:
     def test_get_leagues(self, live_server):
-        result = live_server._cli(["OpenDotaService", "GetLeagues"])
+        result = asyncio.run(live_server._cli(["OpenDotaService", "GetLeagues"]))
         assert "data" in result
         data = result["data"]
         assert isinstance(data, list)
@@ -344,73 +345,73 @@ class TestLiveLeagues:
 
 class TestLiveGameData:
     def test_get_benchmarks(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "OpenDotaService",
                 "GetBenchmarks",
                 "-r",
                 json.dumps({"query": {"hero_id": 1}}),
             ]
-        )
+        ))
         assert "data" in result
         data = result["data"]
         assert isinstance(data, dict)
 
     def test_get_distributions(self, live_server):
-        result = live_server._cli(["OpenDotaService", "GetDistributions"])
+        result = asyncio.run(live_server._cli(["OpenDotaService", "GetDistributions"]))
         assert "data" in result
         data = result["data"]
         assert isinstance(data, dict)
 
     def test_get_constants_resource(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "OpenDotaService",
                 "GetConstantsResource",
                 "-r",
                 json.dumps({"resource": "heroes"}),
             ]
-        )
+        ))
         assert "data" in result
         data = result["data"]
         assert isinstance(data, (dict, list))
 
     def test_get_rankings(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "OpenDotaService",
                 "GetRankings",
                 "-r",
                 json.dumps({"query": {"hero_id": 1}}),
             ]
-        )
+        ))
         assert "data" in result
         data = result["data"]
         assert isinstance(data, dict)
 
     def test_get_pro_matches(self, live_server):
-        result = live_server._cli(["OpenDotaService", "GetProMatches"])
+        result = asyncio.run(live_server._cli(["OpenDotaService", "GetProMatches"]))
         assert "data" in result
         data = result["data"]
         assert isinstance(data, list)
         assert len(data) > 0
 
     def test_get_public_matches(self, live_server):
-        result = live_server._cli(["OpenDotaService", "GetPublicMatches"])
+        result = asyncio.run(live_server._cli(["OpenDotaService", "GetPublicMatches"]))
         assert "data" in result
         data = result["data"]
         assert isinstance(data, list)
         assert len(data) > 0
 
     def test_get_live(self, live_server):
-        result = live_server._cli(["OpenDotaService", "GetLive"])
+        result = asyncio.run(live_server._cli(["OpenDotaService", "GetLive"]))
         assert "data" in result
         # Live data may be empty if no games are happening
         data = result["data"]
         assert isinstance(data, list)
 
     def test_get_schema(self, live_server):
-        result = live_server._cli(["OpenDotaService", "GetSchema"])
+        result = asyncio.run(live_server._cli(["OpenDotaService", "GetSchema"]))
         assert "data" in result
         data = result["data"]
         assert isinstance(data, list)
@@ -423,7 +424,7 @@ class TestLiveGameData:
 class TestLiveMatches:
     def test_get_pro_match(self, live_server):
         """Fetch a pro match ID first, then retrieve its data."""
-        pro_result = live_server._cli(["OpenDotaService", "GetProMatches"])
+        pro_result = asyncio.run(live_server._cli(["OpenDotaService", "GetProMatches"]))
         matches = pro_result.get("data", [])
         if not matches:
             pytest.skip("no pro matches available")
@@ -431,14 +432,14 @@ class TestLiveMatches:
         if not match_id:
             pytest.skip("no match_id in pro match data")
 
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "OpenDotaService",
                 "GetMatch",
                 "-r",
                 json.dumps({"match_id": match_id}),
             ]
-        )
+        ))
         assert "data" in result
         data = result["data"]
         assert isinstance(data, dict)

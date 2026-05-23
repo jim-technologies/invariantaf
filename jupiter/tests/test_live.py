@@ -10,6 +10,7 @@ and set the JUPITER_API_KEY environment variable.
 from __future__ import annotations
 
 import json
+import asyncio
 import os
 import sys
 from pathlib import Path
@@ -37,12 +38,12 @@ def live_server():
     from jupiter_mcp.service import JupiterService
 
     srv = Server.from_descriptor(
-        DESCRIPTOR_PATH, name="test-jupiter-live", version="0.0.1"
+        DESCRIPTOR_PATH
     )
     servicer = JupiterService()
     srv.register(servicer)
     yield srv
-    srv.stop()
+    asyncio.run(srv.stop())
 
 
 # --- Prices ---
@@ -50,12 +51,12 @@ def live_server():
 
 class TestLivePrices:
     def test_get_price_single(self, live_server):
-        result = live_server._cli([
+        result = asyncio.run(live_server._cli([
             "JupiterService",
             "GetPrice",
             "-r",
             json.dumps({"ids": SOL_MINT}),
-        ])
+        ]))
         assert "prices" in result
         prices = result["prices"]
         assert isinstance(prices, list)
@@ -66,12 +67,12 @@ class TestLivePrices:
         assert p["price"] > 0
 
     def test_get_price_multiple(self, live_server):
-        result = live_server._cli([
+        result = asyncio.run(live_server._cli([
             "JupiterService",
             "GetPrice",
             "-r",
             json.dumps({"ids": f"{SOL_MINT},{USDC_MINT}"}),
-        ])
+        ]))
         assert "prices" in result
         prices = result["prices"]
         assert len(prices) >= 2
@@ -83,7 +84,7 @@ class TestLivePrices:
 class TestLiveQuotes:
     def test_get_quote_sol_to_usdc(self, live_server):
         # Quote for 0.01 SOL -> USDC
-        result = live_server._cli([
+        result = asyncio.run(live_server._cli([
             "JupiterService",
             "GetQuote",
             "-r",
@@ -93,7 +94,7 @@ class TestLiveQuotes:
                 "amount": "10000000",
                 "slippage_bps": 50,
             }),
-        ])
+        ]))
         # Check key fields are present (camelCase or snake_case).
         assert result.get("inputMint") or result.get("input_mint")
         assert result.get("outAmount") or result.get("out_amount")
@@ -109,12 +110,12 @@ class TestLiveQuotes:
 
 class TestLiveTokens:
     def test_list_tokens_search(self, live_server):
-        result = live_server._cli([
+        result = asyncio.run(live_server._cli([
             "JupiterService",
             "ListTokens",
             "-r",
             json.dumps({"query": "SOL"}),
-        ])
+        ]))
         assert "tokens" in result
         tokens = result["tokens"]
         assert isinstance(tokens, list)
@@ -123,7 +124,7 @@ class TestLiveTokens:
         assert "symbol" in t
 
     def test_list_verified_tokens(self, live_server):
-        result = live_server._cli(["JupiterService", "ListVerifiedTokens"])
+        result = asyncio.run(live_server._cli(["JupiterService", "ListVerifiedTokens"]))
         assert "tokens" in result
         tokens = result["tokens"]
         assert isinstance(tokens, list)

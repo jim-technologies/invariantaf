@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from gen.aave.v1 import aave_pb2
+from aave_mcp.gen.aave.v1 import aave_pb2
 
 
 def test_proto_no_struct_or_value_fields():

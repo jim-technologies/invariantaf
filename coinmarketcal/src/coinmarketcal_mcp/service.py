@@ -26,13 +26,17 @@ class CoinMarketCalService:
         self._base_url = base_url.rstrip("/")
         self._api_key = api_key
         self._timeout = timeout
-        self._client = httpx.Client(timeout=timeout)
+        self._client = httpx.AsyncClient(timeout=timeout)
+
+    async def aclose(self) -> None:
+        """Close the HTTP client. Idempotent."""
+        await self._client.aclose()
 
     # -------------------------
     # RPC handlers
     # -------------------------
 
-    def ListEvents(
+    async def ListEvents(
         self, request: pb.ListEventsRequest, context: Any = None
     ) -> pb.ListEventsResponse:
         query: dict[str, Any] = {}
@@ -53,22 +57,22 @@ class CoinMarketCalService:
         if self._has_field(request, "show_only"):
             query["showOnly"] = request.show_only
 
-        payload = self._get("/events", query or None)
+        payload = await self._get("/events", query or None)
         return self._build_events_response(payload)
 
-    def ListCategories(
+    async def ListCategories(
         self, request: pb.ListCategoriesRequest, context: Any = None
     ) -> pb.ListCategoriesResponse:
-        payload = self._get("/categories")
+        payload = await self._get("/categories")
         categories = self._extract_body(payload)
         if isinstance(categories, list):
             return self._parse_message({"categories": categories}, pb.ListCategoriesResponse)
         return self._parse_message({"categories": []}, pb.ListCategoriesResponse)
 
-    def ListCoins(
+    async def ListCoins(
         self, request: pb.ListCoinsRequest, context: Any = None
     ) -> pb.ListCoinsResponse:
-        payload = self._get("/coins")
+        payload = await self._get("/coins")
         coins = self._extract_body(payload)
         if isinstance(coins, list):
             normalized = []
@@ -161,13 +165,13 @@ class CoinMarketCalService:
     # HTTP helpers
     # -------------------------
 
-    def _get(self, path: str, query: dict[str, Any] | None = None) -> Any:
+    async def _get(self, path: str, query: dict[str, Any] | None = None) -> Any:
         url = self._build_url(path, query)
         headers: dict[str, str] = {"Accept": "application/json"}
         if self._api_key:
             headers["x-api-key"] = self._api_key
 
-        response = self._client.request("GET", url, headers=headers)
+        response = await self._client.request("GET", url, headers=headers)
 
         try:
             payload = response.json() if response.content else {}

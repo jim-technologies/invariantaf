@@ -9,6 +9,7 @@ Only PUBLIC market-data endpoints are tested (no auth required).
 from __future__ import annotations
 
 import json
+import asyncio
 import os
 import sys
 from pathlib import Path
@@ -36,12 +37,12 @@ def live_server():
     base_url = (os.getenv("BINANCE_BASE_URL") or DEFAULT_BASE_URL).rstrip("/")
 
     srv = Server.from_descriptor(
-        DESCRIPTOR_PATH, name="test-binance-live", version="0.0.1"
+        DESCRIPTOR_PATH
     )
     servicer = BinanceService(base_url=base_url)
     srv.register(servicer, service_name="binance.v1.BinanceMarketService")
     yield srv
-    srv.stop()
+    asyncio.run(srv.stop())
 
 
 # --- GetPrice ---
@@ -49,9 +50,9 @@ def live_server():
 
 class TestLiveGetPrice:
     def test_get_price_single(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             ["BinanceMarketService", "GetPrice", "-r", json.dumps({"symbol": "BTCUSDT"})]
-        )
+        ))
         assert "prices" in result
         prices = result["prices"]
         assert len(prices) == 1
@@ -59,7 +60,7 @@ class TestLiveGetPrice:
         assert float(prices[0]["price"]) > 0
 
     def test_get_price_all(self, live_server):
-        result = live_server._cli(["BinanceMarketService", "GetPrice"])
+        result = asyncio.run(live_server._cli(["BinanceMarketService", "GetPrice"]))
         assert "prices" in result
         prices = result["prices"]
         assert isinstance(prices, list)
@@ -73,9 +74,9 @@ class TestLiveGetPrice:
 
 class TestLiveGet24hrStats:
     def test_get_24hr_stats(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             ["BinanceMarketService", "Get24hrStats", "-r", json.dumps({"symbol": "BTCUSDT"})]
-        )
+        ))
         assert "tickers" in result
         tickers = result["tickers"]
         assert len(tickers) == 1
@@ -91,14 +92,14 @@ class TestLiveGet24hrStats:
 
 class TestLiveGetOrderbook:
     def test_get_orderbook(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "BinanceMarketService",
                 "GetOrderbook",
                 "-r",
                 json.dumps({"symbol": "BTCUSDT", "limit": 5}),
             ]
-        )
+        ))
         assert "bids" in result
         assert "asks" in result
         assert len(result["bids"]) > 0
@@ -115,14 +116,14 @@ class TestLiveGetOrderbook:
 
 class TestLiveGetKlines:
     def test_get_klines(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "BinanceMarketService",
                 "GetKlines",
                 "-r",
                 json.dumps({"symbol": "BTCUSDT", "interval": "1h", "limit": 5}),
             ]
-        )
+        ))
         assert "klines" in result
         klines = result["klines"]
         assert isinstance(klines, list)
@@ -141,14 +142,14 @@ class TestLiveGetKlines:
 
 class TestLiveGetTrades:
     def test_get_trades(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "BinanceMarketService",
                 "GetTrades",
                 "-r",
                 json.dumps({"symbol": "BTCUSDT", "limit": 5}),
             ]
-        )
+        ))
         assert "trades" in result
         trades = result["trades"]
         assert isinstance(trades, list)
@@ -164,14 +165,14 @@ class TestLiveGetTrades:
 
 class TestLiveGetExchangeInfo:
     def test_get_exchange_info_single(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "BinanceMarketService",
                 "GetExchangeInfo",
                 "-r",
                 json.dumps({"symbol": "BTCUSDT"}),
             ]
-        )
+        ))
         assert result["timezone"] == "UTC"
         assert "symbols" in result
         symbols = result["symbols"]
@@ -183,14 +184,14 @@ class TestLiveGetExchangeInfo:
         assert sym["status"] == "TRADING"
 
     def test_get_exchange_info_has_rate_limits(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "BinanceMarketService",
                 "GetExchangeInfo",
                 "-r",
                 json.dumps({"symbol": "BTCUSDT"}),
             ]
-        )
+        ))
         assert "rateLimits" in result
         assert len(result["rateLimits"]) > 0
 
@@ -200,9 +201,9 @@ class TestLiveGetExchangeInfo:
 
 class TestLiveGetAvgPrice:
     def test_get_avg_price(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             ["BinanceMarketService", "GetAvgPrice", "-r", json.dumps({"symbol": "BTCUSDT"})]
-        )
+        ))
         assert "price" in result
         assert float(result["price"]) > 0
         assert result["mins"] > 0
@@ -213,9 +214,9 @@ class TestLiveGetAvgPrice:
 
 class TestLiveGetBookTicker:
     def test_get_book_ticker_single(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             ["BinanceMarketService", "GetBookTicker", "-r", json.dumps({"symbol": "BTCUSDT"})]
-        )
+        ))
         assert "tickers" in result
         tickers = result["tickers"]
         assert len(tickers) == 1
@@ -225,7 +226,7 @@ class TestLiveGetBookTicker:
         assert float(t["askPrice"]) > 0
 
     def test_get_book_ticker_all(self, live_server):
-        result = live_server._cli(["BinanceMarketService", "GetBookTicker"])
+        result = asyncio.run(live_server._cli(["BinanceMarketService", "GetBookTicker"]))
         assert "tickers" in result
         tickers = result["tickers"]
         assert isinstance(tickers, list)

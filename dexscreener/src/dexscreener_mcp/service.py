@@ -44,23 +44,27 @@ class DexScreenerService:
     ):
         self._base_url = base_url.rstrip("/")
         self._timeout = timeout
-        self._client = httpx.Client(timeout=timeout)
+        self._client = httpx.AsyncClient(timeout=timeout)
+
+    async def aclose(self) -> None:
+        """Close the HTTP client. Idempotent."""
+        await self._client.aclose()
 
     # -------------------------
     # RPC handlers
     # -------------------------
 
-    def SearchPairs(
+    async def SearchPairs(
         self, request: pb.SearchPairsRequest, context: Any = None
     ) -> pb.SearchPairsResponse:
-        payload = self._get(f"/latest/dex/search?q={request.query}")
+        payload = await self._get(f"/latest/dex/search?q={request.query}")
         pairs = self._extract_pairs(payload)
         return self._parse_message({"pairs": pairs}, pb.SearchPairsResponse)
 
-    def GetPairsByChainAndAddress(
+    async def GetPairsByChainAndAddress(
         self, request: pb.GetPairsByChainAndAddressRequest, context: Any = None
     ) -> pb.GetPairsByChainAndAddressResponse:
-        payload = self._get(
+        payload = await self._get(
             f"/latest/dex/pairs/{request.chain_id}/{request.pair_addresses}"
         )
         pairs = self._extract_pairs(payload)
@@ -68,44 +72,44 @@ class DexScreenerService:
             {"pairs": pairs}, pb.GetPairsByChainAndAddressResponse
         )
 
-    def GetTokenPairs(
+    async def GetTokenPairs(
         self, request: pb.GetTokenPairsRequest, context: Any = None
     ) -> pb.GetTokenPairsResponse:
-        payload = self._get(f"/latest/dex/tokens/{request.token_addresses}")
+        payload = await self._get(f"/latest/dex/tokens/{request.token_addresses}")
         pairs = self._extract_pairs(payload)
         return self._parse_message({"pairs": pairs}, pb.GetTokenPairsResponse)
 
-    def GetLatestTokenProfiles(
+    async def GetLatestTokenProfiles(
         self, request: pb.GetLatestTokenProfilesRequest, context: Any = None
     ) -> pb.GetLatestTokenProfilesResponse:
-        payload = self._get("/token-profiles/latest/v1")
+        payload = await self._get("/token-profiles/latest/v1")
         profiles = self._normalize_profiles(payload)
         return self._parse_message(
             {"profiles": profiles}, pb.GetLatestTokenProfilesResponse
         )
 
-    def GetLatestBoostedTokens(
+    async def GetLatestBoostedTokens(
         self, request: pb.GetLatestBoostedTokensRequest, context: Any = None
     ) -> pb.GetLatestBoostedTokensResponse:
-        payload = self._get("/token-boosts/latest/v1")
+        payload = await self._get("/token-boosts/latest/v1")
         tokens = self._normalize_boosted_tokens(payload)
         return self._parse_message(
             {"tokens": tokens}, pb.GetLatestBoostedTokensResponse
         )
 
-    def GetTopBoostedTokens(
+    async def GetTopBoostedTokens(
         self, request: pb.GetTopBoostedTokensRequest, context: Any = None
     ) -> pb.GetTopBoostedTokensResponse:
-        payload = self._get("/token-boosts/top/v1")
+        payload = await self._get("/token-boosts/top/v1")
         tokens = self._normalize_boosted_tokens(payload)
         return self._parse_message(
             {"tokens": tokens}, pb.GetTopBoostedTokensResponse
         )
 
-    def GetOrdersByToken(
+    async def GetOrdersByToken(
         self, request: pb.GetOrdersByTokenRequest, context: Any = None
     ) -> pb.GetOrdersByTokenResponse:
-        payload = self._get(
+        payload = await self._get(
             f"/orders/v1/{request.chain_id}/{request.token_address}"
         )
         return self._parse_orders(payload)
@@ -114,9 +118,9 @@ class DexScreenerService:
     # HTTP helpers
     # -------------------------
 
-    def _get(self, path: str) -> Any:
+    async def _get(self, path: str) -> Any:
         url = f"{self._base_url}{path}"
-        response = self._client.request(
+        response = await self._client.request(
             "GET",
             url,
             headers={"Accept": "application/json"},

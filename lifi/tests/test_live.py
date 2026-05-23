@@ -10,6 +10,7 @@ No API key or authentication is required (the API is free).
 from __future__ import annotations
 
 import json
+import asyncio
 import os
 import sys
 from pathlib import Path
@@ -33,12 +34,12 @@ def live_server():
     from lifi_mcp.service import LifiService
 
     srv = Server.from_descriptor(
-        DESCRIPTOR_PATH, name="test-lifi-live", version="0.0.1"
+        DESCRIPTOR_PATH
     )
     servicer = LifiService()
     srv.register(servicer)
     yield srv
-    srv.stop()
+    asyncio.run(srv.stop())
 
 
 # --- Chains ---
@@ -46,7 +47,7 @@ def live_server():
 
 class TestLiveListChains:
     def test_list_chains(self, live_server):
-        result = live_server._cli(["LifiService", "ListChains"])
+        result = asyncio.run(live_server._cli(["LifiService", "ListChains"]))
         assert "chains" in result
         chains = result["chains"]
         assert isinstance(chains, list)
@@ -56,7 +57,7 @@ class TestLiveListChains:
         assert "id" in c
 
     def test_has_ethereum(self, live_server):
-        result = live_server._cli(["LifiService", "ListChains"])
+        result = asyncio.run(live_server._cli(["LifiService", "ListChains"]))
         chains = result["chains"]
         names = [c["name"] for c in chains]
         assert "Ethereum" in names
@@ -67,14 +68,14 @@ class TestLiveListChains:
 
 class TestLiveListTokens:
     def test_list_tokens_for_ethereum(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "LifiService",
                 "ListTokens",
                 "-r",
                 json.dumps({"chains": "1"}),
             ]
-        )
+        ))
         key = "chainTokens" if "chainTokens" in result else "chain_tokens"
         assert key in result
         chain_tokens = result[key]
@@ -90,14 +91,14 @@ class TestLiveListTokens:
 
 class TestLiveGetConnections:
     def test_get_connections_eth_to_arb(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "LifiService",
                 "GetConnections",
                 "-r",
                 json.dumps({"fromChain": "1", "toChain": "42161"}),
             ]
-        )
+        ))
         assert "connections" in result
         connections = result["connections"]
         assert isinstance(connections, list)
@@ -109,7 +110,7 @@ class TestLiveGetConnections:
 
 class TestLiveListTools:
     def test_list_tools(self, live_server):
-        result = live_server._cli(["LifiService", "ListTools"])
+        result = asyncio.run(live_server._cli(["LifiService", "ListTools"]))
         assert "bridges" in result
         assert "exchanges" in result
         bridges = result["bridges"]
@@ -120,7 +121,7 @@ class TestLiveListTools:
         assert "name" in b
 
     def test_exchanges_exist(self, live_server):
-        result = live_server._cli(["LifiService", "ListTools"])
+        result = asyncio.run(live_server._cli(["LifiService", "ListTools"]))
         exchanges = result["exchanges"]
         assert isinstance(exchanges, list)
         assert len(exchanges) > 0
@@ -131,7 +132,7 @@ class TestLiveListTools:
 
 class TestLiveGetQuote:
     def test_get_quote_eth_to_arb(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "LifiService",
                 "GetQuote",
@@ -147,7 +148,7 @@ class TestLiveGetQuote:
                     }
                 ),
             ]
-        )
+        ))
         assert "action" in result
         assert "estimate" in result
         assert result.get("tool") or result.get("id")
@@ -159,7 +160,7 @@ class TestLiveGetQuote:
 class TestLiveGetStatus:
     def test_get_status_not_found(self, live_server):
         """Query a fake tx hash -- should return NOT_FOUND or similar."""
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "LifiService",
                 "GetStatus",
@@ -170,6 +171,6 @@ class TestLiveGetStatus:
                     }
                 ),
             ]
-        )
+        ))
         # The API should return a status field even for unknown transactions.
         assert "status" in result

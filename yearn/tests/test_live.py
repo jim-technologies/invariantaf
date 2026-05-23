@@ -10,6 +10,7 @@ No API key or authentication is required.
 from __future__ import annotations
 
 import json
+import asyncio
 import os
 import sys
 from pathlib import Path
@@ -33,12 +34,12 @@ def live_server():
     from yearn_mcp.service import YearnService
 
     srv = Server.from_descriptor(
-        DESCRIPTOR_PATH, name="test-yearn-live", version="0.0.1"
+        DESCRIPTOR_PATH
     )
     servicer = YearnService()
     srv.register(servicer)
     yield srv
-    srv.stop()
+    asyncio.run(srv.stop())
 
 
 # --- Shared fixtures for discovery ---
@@ -47,7 +48,7 @@ def live_server():
 @pytest.fixture(scope="module")
 def first_vault_address(live_server):
     """Discover a vault address for tests that need one."""
-    result = live_server._cli(["YearnService", "ListVaults"])
+    result = asyncio.run(live_server._cli(["YearnService", "ListVaults"]))
     vaults = result.get("vaults", [])
     assert vaults, "expected at least one vault on Ethereum"
     address = vaults[0].get("address", "")
@@ -60,7 +61,7 @@ def first_vault_address(live_server):
 
 class TestLiveListVaults:
     def test_ethereum_vaults(self, live_server):
-        result = live_server._cli(["YearnService", "ListVaults"])
+        result = asyncio.run(live_server._cli(["YearnService", "ListVaults"]))
         assert "vaults" in result
         vaults = result["vaults"]
         assert isinstance(vaults, list)
@@ -70,52 +71,52 @@ class TestLiveListVaults:
         assert "name" in v
 
     def test_vault_has_tvl(self, live_server):
-        result = live_server._cli(["YearnService", "ListVaults"])
+        result = asyncio.run(live_server._cli(["YearnService", "ListVaults"]))
         vaults = result["vaults"]
         v = vaults[0]
         assert "tvl" in v
 
     def test_vault_has_apr(self, live_server):
-        result = live_server._cli(["YearnService", "ListVaults"])
+        result = asyncio.run(live_server._cli(["YearnService", "ListVaults"]))
         vaults = result["vaults"]
         v = vaults[0]
         assert "apr" in v
 
     def test_vault_has_token(self, live_server):
-        result = live_server._cli(["YearnService", "ListVaults"])
+        result = asyncio.run(live_server._cli(["YearnService", "ListVaults"]))
         vaults = result["vaults"]
         v = vaults[0]
         assert "token" in v
         assert "symbol" in v["token"]
 
     def test_optimism_vaults(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             ["YearnService", "ListVaults", "-r", json.dumps({"chainId": 10})]
-        )
+        ))
         assert "vaults" in result
         vaults = result["vaults"]
         assert isinstance(vaults, list)
 
     def test_arbitrum_vaults(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             ["YearnService", "ListVaults", "-r", json.dumps({"chainId": 42161})]
-        )
+        ))
         assert "vaults" in result
         vaults = result["vaults"]
         assert isinstance(vaults, list)
 
     def test_polygon_vaults(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             ["YearnService", "ListVaults", "-r", json.dumps({"chainId": 137})]
-        )
+        ))
         assert "vaults" in result
         vaults = result["vaults"]
         assert isinstance(vaults, list)
 
     def test_base_vaults(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             ["YearnService", "ListVaults", "-r", json.dumps({"chainId": 8453})]
-        )
+        ))
         assert "vaults" in result
         vaults = result["vaults"]
         assert isinstance(vaults, list)
@@ -126,14 +127,14 @@ class TestLiveListVaults:
 
 class TestLiveGetVault:
     def test_get_single_vault(self, live_server, first_vault_address):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "YearnService",
                 "GetVault",
                 "-r",
                 json.dumps({"chainId": 1, "address": first_vault_address}),
             ]
-        )
+        ))
         assert "vault" in result
         vault = result["vault"]
         assert "address" in vault
@@ -142,14 +143,14 @@ class TestLiveGetVault:
         assert "apr" in vault
 
     def test_vault_has_fees(self, live_server, first_vault_address):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "YearnService",
                 "GetVault",
                 "-r",
                 json.dumps({"chainId": 1, "address": first_vault_address}),
             ]
-        )
+        ))
         vault = result["vault"]
         assert "fees" in vault
 
@@ -159,7 +160,7 @@ class TestLiveGetVault:
 
 class TestLiveListAllVaults:
     def test_returns_vaults_from_multiple_chains(self, live_server):
-        result = live_server._cli(["YearnService", "ListAllVaults"])
+        result = asyncio.run(live_server._cli(["YearnService", "ListAllVaults"]))
         assert "vaults" in result
         vaults = result["vaults"]
         assert isinstance(vaults, list)

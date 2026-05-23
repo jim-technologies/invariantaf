@@ -58,7 +58,7 @@ class HyperliquidService:
 
     # --- Market Data (read-only) ---
 
-    def GetMeta(self, request: Any, context: Any = None) -> pb.GetMetaResponse:
+    async def GetMeta(self, request: Any, context: Any = None) -> pb.GetMetaResponse:
         raw = self._info.meta()
         resp = pb.GetMetaResponse()
         for asset in raw.get("universe", []):
@@ -71,14 +71,14 @@ class HyperliquidService:
             )
         return resp
 
-    def GetAllMids(self, request: Any, context: Any = None) -> pb.GetAllMidsResponse:
+    async def GetAllMids(self, request: Any, context: Any = None) -> pb.GetAllMidsResponse:
         raw = self._info.all_mids()
         resp = pb.GetAllMidsResponse()
         for coin, price in raw.items():
             resp.mids[coin] = str(price)
         return resp
 
-    def GetOrderbook(self, request: Any, context: Any = None) -> pb.GetOrderbookResponse:
+    async def GetOrderbook(self, request: Any, context: Any = None) -> pb.GetOrderbookResponse:
         raw = self._info.l2_snapshot(request.coin)
         resp = pb.GetOrderbookResponse()
         levels = raw.get("levels", [[], []])
@@ -88,7 +88,7 @@ class HyperliquidService:
             resp.asks.append(pb.OrderbookLevel(price=ask["px"], size=ask["sz"]))
         return resp
 
-    def GetCandles(self, request: Any, context: Any = None) -> pb.GetCandlesResponse:
+    async def GetCandles(self, request: Any, context: Any = None) -> pb.GetCandlesResponse:
         interval = _INTERVAL_MAP.get(request.interval, "1h")
         raw = self._info.candles_snapshot(
             request.coin, interval, request.start_time, request.end_time
@@ -109,7 +109,7 @@ class HyperliquidService:
 
     # --- Account Data (read-only, needs address) ---
 
-    def GetAccountState(self, request: Any, context: Any = None) -> pb.GetAccountStateResponse:
+    async def GetAccountState(self, request: Any, context: Any = None) -> pb.GetAccountStateResponse:
         raw = self._info.user_state(request.address)
         resp = pb.GetAccountStateResponse(
             account_value=raw.get("marginSummary", {}).get("accountValue", ""),
@@ -149,7 +149,7 @@ class HyperliquidService:
             )
         return resp
 
-    def GetOpenOrders(self, request: Any, context: Any = None) -> pb.GetOpenOrdersResponse:
+    async def GetOpenOrders(self, request: Any, context: Any = None) -> pb.GetOpenOrdersResponse:
         raw = self._info.open_orders(request.address)
         resp = pb.GetOpenOrdersResponse()
         for o in raw:
@@ -166,7 +166,7 @@ class HyperliquidService:
             )
         return resp
 
-    def GetFills(self, request: Any, context: Any = None) -> pb.GetFillsResponse:
+    async def GetFills(self, request: Any, context: Any = None) -> pb.GetFillsResponse:
         raw = self._info.user_fills(request.address)
         resp = pb.GetFillsResponse()
         for f in raw:
@@ -186,7 +186,7 @@ class HyperliquidService:
 
     # --- Trading (authenticated) ---
 
-    def PlaceOrder(self, request: Any, context: Any = None) -> pb.PlaceOrderResponse:
+    async def PlaceOrder(self, request: Any, context: Any = None) -> pb.PlaceOrderResponse:
         exchange = self._require_exchange()
         is_buy = request.side == pb.SIDE_BUY
         tif_map = {
@@ -210,7 +210,7 @@ class HyperliquidService:
         except Exception as e:
             return pb.PlaceOrderResponse(success=False, error=str(e))
 
-    def CancelOrder(self, request: Any, context: Any = None) -> pb.CancelOrderResponse:
+    async def CancelOrder(self, request: Any, context: Any = None) -> pb.CancelOrderResponse:
         exchange = self._require_exchange()
         try:
             result = exchange.cancel(request.coin, request.order_id)
@@ -223,7 +223,7 @@ class HyperliquidService:
         except Exception as e:
             return pb.CancelOrderResponse(success=False, error=str(e))
 
-    def MarketOpen(self, request: Any, context: Any = None) -> pb.MarketOpenResponse:
+    async def MarketOpen(self, request: Any, context: Any = None) -> pb.MarketOpenResponse:
         exchange = self._require_exchange()
         is_buy = request.side == pb.SIDE_BUY
         slippage = request.slippage if request.HasField("slippage") else 0.01
@@ -235,7 +235,7 @@ class HyperliquidService:
         except Exception as e:
             return pb.MarketOpenResponse(success=False, error=str(e))
 
-    def MarketClose(self, request: Any, context: Any = None) -> pb.MarketCloseResponse:
+    async def MarketClose(self, request: Any, context: Any = None) -> pb.MarketCloseResponse:
         exchange = self._require_exchange()
         slippage = request.slippage if request.HasField("slippage") else 0.01
 
@@ -248,7 +248,7 @@ class HyperliquidService:
         except Exception as e:
             return pb.MarketCloseResponse(success=False, error=str(e))
 
-    def UpdateLeverage(self, request: Any, context: Any = None) -> pb.UpdateLeverageResponse:
+    async def UpdateLeverage(self, request: Any, context: Any = None) -> pb.UpdateLeverageResponse:
         exchange = self._require_exchange()
         try:
             result = exchange.update_leverage(request.leverage, request.coin, is_cross=request.is_cross)
@@ -258,7 +258,7 @@ class HyperliquidService:
         except Exception as e:
             return pb.UpdateLeverageResponse(success=False, error=str(e))
 
-    def Transfer(self, request: Any, context: Any = None) -> pb.TransferResponse:
+    async def Transfer(self, request: Any, context: Any = None) -> pb.TransferResponse:
         exchange = self._require_exchange()
         try:
             result = exchange.usd_transfer(float(request.amount), request.destination)

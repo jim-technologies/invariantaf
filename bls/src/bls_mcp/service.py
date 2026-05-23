@@ -97,7 +97,11 @@ class BLSService:
     """Implements BLSService RPCs via the BLS Public Data API v2."""
 
     def __init__(self):
-        self._http = httpx.Client(timeout=30)
+        self._http = httpx.AsyncClient(timeout=30)
+
+    async def aclose(self) -> None:
+        """Close the HTTP client. Idempotent."""
+        await self._client.aclose()
 
     def _post(self, body: dict) -> Any:
         resp = self._http.post(
@@ -119,7 +123,7 @@ class BLSService:
         body = _build_body(series_ids, start_year, end_year, catalog)
         return self._post(body)
 
-    def GetSeriesData(self, request: Any, context: Any = None) -> pb.GetSeriesDataResponse:
+    async def GetSeriesData(self, request: Any, context: Any = None) -> pb.GetSeriesDataResponse:
         raw = self._fetch_series(
             [request.series_id],
             request.start_year,
@@ -132,7 +136,7 @@ class BLSService:
             series = pb.SeriesData(series_id=request.series_id)
         return pb.GetSeriesDataResponse(series=series)
 
-    def GetMultipleSeries(self, request: Any, context: Any = None) -> pb.GetMultipleSeriesResponse:
+    async def GetMultipleSeries(self, request: Any, context: Any = None) -> pb.GetMultipleSeriesResponse:
         raw = self._fetch_series(
             list(request.series_ids),
             request.start_year,
@@ -143,7 +147,7 @@ class BLSService:
             series_list.append(_parse_series(s))
         return pb.GetMultipleSeriesResponse(series=series_list)
 
-    def GetLatestCPI(self, request: Any, context: Any = None) -> pb.GetLatestCPIResponse:
+    async def GetLatestCPI(self, request: Any, context: Any = None) -> pb.GetLatestCPIResponse:
         raw = self._fetch_series([_SERIES_CPI_U])
         results = raw.get("Results", {}).get("series", [])
         observation = None
@@ -155,7 +159,7 @@ class BLSService:
             observation=observation,
         )
 
-    def GetLatestUnemployment(self, request: Any, context: Any = None) -> pb.GetLatestUnemploymentResponse:
+    async def GetLatestUnemployment(self, request: Any, context: Any = None) -> pb.GetLatestUnemploymentResponse:
         raw = self._fetch_series([_SERIES_UNEMPLOYMENT])
         results = raw.get("Results", {}).get("series", [])
         observation = None
@@ -167,7 +171,7 @@ class BLSService:
             observation=observation,
         )
 
-    def GetLatestNonfarmPayrolls(self, request: Any, context: Any = None) -> pb.GetLatestNonfarmPayrollsResponse:
+    async def GetLatestNonfarmPayrolls(self, request: Any, context: Any = None) -> pb.GetLatestNonfarmPayrollsResponse:
         raw = self._fetch_series([_SERIES_NONFARM_PAYROLLS])
         results = raw.get("Results", {}).get("series", [])
         observation = None
@@ -179,7 +183,7 @@ class BLSService:
             observation=observation,
         )
 
-    def SearchSeries(self, request: Any, context: Any = None) -> pb.SearchSeriesResponse:
+    async def SearchSeries(self, request: Any, context: Any = None) -> pb.SearchSeriesResponse:
         raw = self._fetch_series(list(request.series_ids), catalog=True)
         results_list = []
         for s in raw.get("Results", {}).get("series", []):

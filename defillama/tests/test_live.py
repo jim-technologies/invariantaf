@@ -10,6 +10,7 @@ No API key or authentication is required.
 from __future__ import annotations
 
 import json
+import asyncio
 import os
 import sys
 from pathlib import Path
@@ -33,12 +34,12 @@ def live_server():
     from defillama_mcp.service import DefiLlamaService
 
     srv = Server.from_descriptor(
-        DESCRIPTOR_PATH, name="test-defillama-live", version="0.0.1"
+        DESCRIPTOR_PATH
     )
     servicer = DefiLlamaService()
     srv.register(servicer)
     yield srv
-    srv.stop()
+    asyncio.run(srv.stop())
 
 
 # --- Shared fixtures for discovery ---
@@ -47,7 +48,7 @@ def live_server():
 @pytest.fixture(scope="module")
 def first_protocol_slug(live_server):
     """Discover a protocol slug for tests that need one."""
-    result = live_server._cli(["DefiLlamaService", "GetProtocols"])
+    result = asyncio.run(live_server._cli(["DefiLlamaService", "GetProtocols"]))
     protocols = result.get("protocols", [])
     assert protocols, "expected at least one protocol"
     slug = protocols[0].get("slug", "")
@@ -60,7 +61,7 @@ def first_protocol_slug(live_server):
 
 class TestLiveProtocols:
     def test_get_protocols(self, live_server):
-        result = live_server._cli(["DefiLlamaService", "GetProtocols"])
+        result = asyncio.run(live_server._cli(["DefiLlamaService", "GetProtocols"]))
         assert "protocols" in result
         protocols = result["protocols"]
         assert isinstance(protocols, list)
@@ -70,28 +71,28 @@ class TestLiveProtocols:
         assert "slug" in p
 
     def test_get_protocol_detail(self, live_server, first_protocol_slug):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "DefiLlamaService",
                 "GetProtocol",
                 "-r",
                 json.dumps({"slug": first_protocol_slug}),
             ]
-        )
+        ))
         assert "protocol" in result
         detail = result["protocol"]
         assert "name" in detail
         assert "chains" in detail
 
     def test_get_tvl(self, live_server, first_protocol_slug):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "DefiLlamaService",
                 "GetTVL",
                 "-r",
                 json.dumps({"slug": first_protocol_slug}),
             ]
-        )
+        ))
         assert "tvl" in result
         assert isinstance(result["tvl"], (int, float))
 
@@ -101,7 +102,7 @@ class TestLiveProtocols:
 
 class TestLiveChains:
     def test_get_chains(self, live_server):
-        result = live_server._cli(["DefiLlamaService", "GetChains"])
+        result = asyncio.run(live_server._cli(["DefiLlamaService", "GetChains"]))
         assert "chains" in result
         chains = result["chains"]
         assert isinstance(chains, list)
@@ -115,7 +116,7 @@ class TestLiveChains:
 
 class TestLiveGlobalTVL:
     def test_get_global_tvl(self, live_server):
-        result = live_server._cli(["DefiLlamaService", "GetGlobalTVL"])
+        result = asyncio.run(live_server._cli(["DefiLlamaService", "GetGlobalTVL"]))
         key = "dataPoints" if "dataPoints" in result else "data_points"
         assert key in result
         data_points = result[key]
@@ -130,7 +131,7 @@ class TestLiveGlobalTVL:
 
 class TestLiveStablecoins:
     def test_get_stablecoins(self, live_server):
-        result = live_server._cli(["DefiLlamaService", "GetStablecoins"])
+        result = asyncio.run(live_server._cli(["DefiLlamaService", "GetStablecoins"]))
         assert "stablecoins" in result
         stablecoins = result["stablecoins"]
         assert isinstance(stablecoins, list)
@@ -140,7 +141,7 @@ class TestLiveStablecoins:
         assert "symbol" in s
 
     def test_get_stablecoin_chains(self, live_server):
-        result = live_server._cli(["DefiLlamaService", "GetStablecoinChains"])
+        result = asyncio.run(live_server._cli(["DefiLlamaService", "GetStablecoinChains"]))
         assert "chains" in result
         chains = result["chains"]
         assert isinstance(chains, list)
@@ -154,7 +155,7 @@ class TestLiveStablecoins:
 
 class TestLiveYieldPools:
     def test_get_yield_pools(self, live_server):
-        result = live_server._cli(["DefiLlamaService", "GetYieldPools"])
+        result = asyncio.run(live_server._cli(["DefiLlamaService", "GetYieldPools"]))
         assert "pools" in result
         pools = result["pools"]
         assert isinstance(pools, list)
@@ -169,7 +170,7 @@ class TestLiveYieldPools:
 
 class TestLiveDexVolumes:
     def test_get_dex_volumes(self, live_server):
-        result = live_server._cli(["DefiLlamaService", "GetDexVolumes"])
+        result = asyncio.run(live_server._cli(["DefiLlamaService", "GetDexVolumes"]))
         assert result.get("total24h") or result.get("total_24h")
         assert "protocols" in result
         protocols = result["protocols"]
@@ -182,7 +183,7 @@ class TestLiveDexVolumes:
 
 class TestLiveFees:
     def test_get_fees(self, live_server):
-        result = live_server._cli(["DefiLlamaService", "GetFees"])
+        result = asyncio.run(live_server._cli(["DefiLlamaService", "GetFees"]))
         assert result.get("total24h") or result.get("total_24h")
         assert "protocols" in result
         protocols = result["protocols"]

@@ -84,14 +84,18 @@ class CurveService:
     """Implements CurveService RPCs via the free Curve Finance API."""
 
     def __init__(self):
-        self._http = httpx.Client(timeout=30)
+        self._http = httpx.AsyncClient(timeout=30)
+
+    async def aclose(self) -> None:
+        """Close the HTTP client. Idempotent."""
+        await self._client.aclose()
 
     def _get(self, url: str, params: dict | None = None) -> Any:
         resp = self._http.get(url, params=params, follow_redirects=True)
         resp.raise_for_status()
         return resp.json()
 
-    def GetPools(self, request: Any, context: Any = None) -> pb.GetPoolsResponse:
+    async def GetPools(self, request: Any, context: Any = None) -> pb.GetPoolsResponse:
         blockchain_id = request.blockchain_id or "ethereum"
         registry_id = request.registry_id or "main"
         raw = self._get(f"{_BASE_URL}/v1/getPools/{blockchain_id}/{registry_id}")
@@ -100,7 +104,7 @@ class CurveService:
             resp.pools.append(_parse_pool(p))
         return resp
 
-    def GetApys(self, request: Any, context: Any = None) -> pb.GetApysResponse:
+    async def GetApys(self, request: Any, context: Any = None) -> pb.GetApysResponse:
         raw = self._get(f"{_BASE_URL}/api/getSubgraphData/ethereum")
         resp = pb.GetApysResponse()
         for p in raw.get("data", {}).get("poolList", []):
@@ -115,7 +119,7 @@ class CurveService:
             ))
         return resp
 
-    def GetVolumes(self, request: Any, context: Any = None) -> pb.GetVolumesResponse:
+    async def GetVolumes(self, request: Any, context: Any = None) -> pb.GetVolumesResponse:
         raw = self._get(f"{_BASE_URL}/v1/getVolumes")
         resp = pb.GetVolumesResponse()
         for p in raw.get("data", {}).get("pools", []):
@@ -130,19 +134,19 @@ class CurveService:
             ))
         return resp
 
-    def GetTVL(self, request: Any, context: Any = None) -> pb.GetTVLResponse:
+    async def GetTVL(self, request: Any, context: Any = None) -> pb.GetTVLResponse:
         raw = self._get(f"{_BASE_URL}/v1/getTVL")
         resp = pb.GetTVLResponse()
         for p in raw.get("data", {}).get("poolData", []):
             resp.pools.append(_parse_pool(p))
         return resp
 
-    def GetFactoryTVL(self, request: Any, context: Any = None) -> pb.GetFactoryTVLResponse:
+    async def GetFactoryTVL(self, request: Any, context: Any = None) -> pb.GetFactoryTVLResponse:
         raw = self._get(f"{_BASE_URL}/v1/getFactoryTVL")
         factory_balances = _to_float(raw.get("data", {}).get("factoryBalances"))
         return pb.GetFactoryTVLResponse(factory_balances=factory_balances)
 
-    def GetWeeklyFees(self, request: Any, context: Any = None) -> pb.GetWeeklyFeesResponse:
+    async def GetWeeklyFees(self, request: Any, context: Any = None) -> pb.GetWeeklyFeesResponse:
         raw = self._get(f"{_BASE_URL}/v1/getWeeklyFees")
         data = raw.get("data", {})
         resp = pb.GetWeeklyFeesResponse()
@@ -156,12 +160,12 @@ class CurveService:
         resp.total_fees = _to_float(total_fees_data.get("fees"))
         return resp
 
-    def GetETHPrice(self, request: Any, context: Any = None) -> pb.GetETHPriceResponse:
+    async def GetETHPrice(self, request: Any, context: Any = None) -> pb.GetETHPriceResponse:
         raw = self._get(f"{_BASE_URL}/v1/getETHprice")
         price = _to_float(raw.get("data", {}).get("price"))
         return pb.GetETHPriceResponse(price=price)
 
-    def GetSubgraphData(self, request: Any, context: Any = None) -> pb.GetSubgraphDataResponse:
+    async def GetSubgraphData(self, request: Any, context: Any = None) -> pb.GetSubgraphDataResponse:
         blockchain_id = request.blockchain_id or "ethereum"
         raw = self._get(f"{_BASE_URL}/api/getSubgraphData/{blockchain_id}")
         resp = pb.GetSubgraphDataResponse()

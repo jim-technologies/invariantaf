@@ -23,7 +23,7 @@ class NwsService:
     ):
         self._base_url = base_url.rstrip("/")
         self._timeout = timeout
-        self._client = httpx.Client(
+        self._client = httpx.AsyncClient(
             timeout=timeout,
             follow_redirects=True,
             headers={
@@ -32,16 +32,20 @@ class NwsService:
             },
         )
 
+    async def aclose(self) -> None:
+        """Close the HTTP client. Idempotent."""
+        await self._client.aclose()
+
     # -------------------------
     # RPC handlers
     # -------------------------
 
-    def GetPointMetadata(
+    async def GetPointMetadata(
         self, request: pb.GetPointMetadataRequest, context: Any = None
     ) -> pb.GetPointMetadataResponse:
         lat = self._fmt_coord(request.latitude)
         lon = self._fmt_coord(request.longitude)
-        data = self._get(f"/points/{lat},{lon}")
+        data = await self._get(f"/points/{lat},{lon}")
         props = data.get("properties", {})
         location = props.get("relativeLocation", {}).get("properties", {})
         return self._parse_message(
@@ -57,31 +61,31 @@ class NwsService:
             pb.GetPointMetadataResponse,
         )
 
-    def GetForecast(
+    async def GetForecast(
         self, request: pb.GetForecastRequest, context: Any = None
     ) -> pb.GetForecastResponse:
-        office, gx, gy = self._resolve_grid(request.latitude, request.longitude)
-        data = self._get(f"/gridpoints/{office}/{gx},{gy}/forecast")
+        office, gx, gy = await self._resolve_grid(request.latitude, request.longitude)
+        data = await self._get(f"/gridpoints/{office}/{gx},{gy}/forecast")
         periods = self._extract_periods(data)
         return self._parse_message({"periods": periods}, pb.GetForecastResponse)
 
-    def GetHourlyForecast(
+    async def GetHourlyForecast(
         self, request: pb.GetHourlyForecastRequest, context: Any = None
     ) -> pb.GetHourlyForecastResponse:
-        office, gx, gy = self._resolve_grid(request.latitude, request.longitude)
-        data = self._get(f"/gridpoints/{office}/{gx},{gy}/forecast/hourly")
+        office, gx, gy = await self._resolve_grid(request.latitude, request.longitude)
+        data = await self._get(f"/gridpoints/{office}/{gx},{gy}/forecast/hourly")
         periods = self._extract_periods(data)
         return self._parse_message({"periods": periods}, pb.GetHourlyForecastResponse)
 
-    def GetAlerts(
+    async def GetAlerts(
         self, request: pb.GetAlertsRequest, context: Any = None
     ) -> pb.GetAlertsResponse:
         if self._has_field(request, "area"):
-            data = self._get("/alerts/active", {"area": request.area})
+            data = await self._get("/alerts/active", {"area": request.area})
         elif self._has_field(request, "latitude") and self._has_field(request, "longitude"):
             lat = self._fmt_coord(request.latitude)
             lon = self._fmt_coord(request.longitude)
-            data = self._get("/alerts/active", {"point": f"{lat},{lon}"})
+            data = await self._get("/alerts/active", {"point": f"{lat},{lon}"})
         else:
             return self._parse_message({"alerts": []}, pb.GetAlertsResponse)
 
@@ -104,12 +108,12 @@ class NwsService:
             })
         return self._parse_message({"alerts": alerts}, pb.GetAlertsResponse)
 
-    def GetStations(
+    async def GetStations(
         self, request: pb.GetStationsRequest, context: Any = None
     ) -> pb.GetStationsResponse:
         lat = self._fmt_coord(request.latitude)
         lon = self._fmt_coord(request.longitude)
-        data = self._get(f"/points/{lat},{lon}/stations")
+        data = await self._get(f"/points/{lat},{lon}/stations")
         features = data.get("features", [])
         stations = []
         for f in features:
@@ -126,11 +130,11 @@ class NwsService:
             })
         return self._parse_message({"stations": stations}, pb.GetStationsResponse)
 
-    def GetLatestObservation(
+    async def GetLatestObservation(
         self, request: pb.GetLatestObservationRequest, context: Any = None
     ) -> pb.GetLatestObservationResponse:
         station_id = request.station_id
-        data = self._get(f"/stations/{station_id}/observations/latest")
+        data = await self._get(f"/stations/{station_id}/observations/latest")
         props = data.get("properties", {})
 
         def _obs_value(raw: Any) -> dict[str, Any]:
@@ -161,11 +165,11 @@ class NwsService:
     # Internal helpers
     # -------------------------
 
-    def _resolve_grid(self, latitude: float, longitude: float) -> tuple[str, int, int]:
+    async def _resolve_grid(self, latitude: float, longitude: float) -> tuple[str, int, int]:
         """Resolve lat/lon to NWS grid coordinates via the /points endpoint."""
         lat = self._fmt_coord(latitude)
         lon = self._fmt_coord(longitude)
-        data = self._get(f"/points/{lat},{lon}")
+        data = await self._get(f"/points/{lat},{lon}")
         props = data.get("properties", {})
         return props["gridId"], props["gridX"], props["gridY"]
 
@@ -199,9 +203,9 @@ class NwsService:
     # HTTP helpers
     # -------------------------
 
-    def _get(self, path: str, query: dict[str, Any] | None = None) -> Any:
+    async def _get(self, path: str, query: dict[str, Any] | None = None) -> Any:
         url = self._build_url(path, query)
-        response = self._client.request("GET", url)
+        response = await self._client.request("GET", url)
 
         try:
             payload = response.json() if response.content else {}

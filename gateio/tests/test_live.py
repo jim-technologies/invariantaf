@@ -10,6 +10,7 @@ No API keys or credentials needed.
 from __future__ import annotations
 
 import json
+import asyncio
 import os
 import sys
 from pathlib import Path
@@ -34,7 +35,7 @@ def _cli_or_skip(live_server, service, method, params=None):
     if params:
         args.extend(["-r", json.dumps(params)])
     try:
-        return live_server._cli(args)
+        return asyncio.run(live_server._cli(args))
     except Exception as exc:
         msg = str(exc)
         for code in ("429", "500", "502", "503"):
@@ -52,12 +53,12 @@ def live_server():
     base_url = (os.getenv("GATEIO_BASE_URL") or DEFAULT_BASE_URL).rstrip("/")
 
     srv = Server.from_descriptor(
-        DESCRIPTOR_PATH, name="test-gateio-live", version="0.0.1"
+        DESCRIPTOR_PATH
     )
     servicer = GateioService(base_url=base_url)
     srv.register(servicer, service_name="gateio.v1.GateioService")
     yield srv
-    srv.stop()
+    asyncio.run(srv.stop())
 
 
 # --- ListSpotTickers ---

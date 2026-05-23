@@ -17,10 +17,14 @@ class WikipediaService:
     """Implements WikipediaService RPCs via the free Wikipedia APIs."""
 
     def __init__(self):
-        self._http = httpx.Client(
+        self._http = httpx.AsyncClient(
             timeout=30,
             headers={"User-Agent": _USER_AGENT},
         )
+
+    async def aclose(self) -> None:
+        """Close the HTTP client. Idempotent."""
+        await self._client.aclose()
 
     def _rest_get(self, path: str) -> Any:
         resp = self._http.get(f"{_REST_BASE}{path}")
@@ -33,7 +37,7 @@ class WikipediaService:
         resp.raise_for_status()
         return resp.json()
 
-    def Search(self, request: Any, context: Any = None) -> pb.SearchResponse:
+    async def Search(self, request: Any, context: Any = None) -> pb.SearchResponse:
         limit = request.limit or 10
         raw = self._action_get({
             "action": "query",
@@ -54,7 +58,7 @@ class WikipediaService:
             ))
         return resp
 
-    def GetPage(self, request: Any, context: Any = None) -> pb.GetPageResponse:
+    async def GetPage(self, request: Any, context: Any = None) -> pb.GetPageResponse:
         raw = self._rest_get(f"/page/summary/{request.title}")
         thumbnail = raw.get("thumbnail", {}) or {}
         content_urls = raw.get("content_urls", {}) or {}
@@ -68,7 +72,7 @@ class WikipediaService:
             content_url=desktop.get("page", ""),
         )
 
-    def GetFullPage(self, request: Any, context: Any = None) -> pb.GetFullPageResponse:
+    async def GetFullPage(self, request: Any, context: Any = None) -> pb.GetFullPageResponse:
         raw = self._action_get({
             "action": "query",
             "prop": "extracts",
@@ -85,7 +89,7 @@ class WikipediaService:
             )
         return pb.GetFullPageResponse()
 
-    def GetRandom(self, request: Any, context: Any = None) -> pb.GetRandomResponse:
+    async def GetRandom(self, request: Any, context: Any = None) -> pb.GetRandomResponse:
         count = request.count or 1
         resp = pb.GetRandomResponse()
         for _ in range(count):
@@ -103,7 +107,7 @@ class WikipediaService:
             ))
         return resp
 
-    def GetOnThisDay(self, request: Any, context: Any = None) -> pb.GetOnThisDayResponse:
+    async def GetOnThisDay(self, request: Any, context: Any = None) -> pb.GetOnThisDayResponse:
         mm = f"{request.month:02d}"
         dd = f"{request.day:02d}"
         raw = self._rest_get(f"/feed/onthisday/events/{mm}/{dd}")
@@ -129,7 +133,7 @@ class WikipediaService:
             ))
         return resp
 
-    def GetMostRead(self, request: Any, context: Any = None) -> pb.GetMostReadResponse:
+    async def GetMostRead(self, request: Any, context: Any = None) -> pb.GetMostReadResponse:
         yyyy = f"{request.year:04d}"
         mm = f"{request.month:02d}"
         dd = f"{request.day:02d}"
@@ -148,7 +152,7 @@ class WikipediaService:
             ))
         return resp
 
-    def GetLanguages(self, request: Any, context: Any = None) -> pb.GetLanguagesResponse:
+    async def GetLanguages(self, request: Any, context: Any = None) -> pb.GetLanguagesResponse:
         raw = self._action_get({
             "action": "query",
             "prop": "langlinks",
@@ -165,7 +169,7 @@ class WikipediaService:
                 ))
         return resp
 
-    def GetCategories(self, request: Any, context: Any = None) -> pb.GetCategoriesResponse:
+    async def GetCategories(self, request: Any, context: Any = None) -> pb.GetCategoriesResponse:
         raw = self._action_get({
             "action": "query",
             "prop": "categories",
@@ -179,7 +183,7 @@ class WikipediaService:
                 resp.categories.append(cat.get("title", ""))
         return resp
 
-    def GetLinks(self, request: Any, context: Any = None) -> pb.GetLinksResponse:
+    async def GetLinks(self, request: Any, context: Any = None) -> pb.GetLinksResponse:
         raw = self._action_get({
             "action": "query",
             "prop": "links",
@@ -193,7 +197,7 @@ class WikipediaService:
                 resp.links.append(link.get("title", ""))
         return resp
 
-    def GetImages(self, request: Any, context: Any = None) -> pb.GetImagesResponse:
+    async def GetImages(self, request: Any, context: Any = None) -> pb.GetImagesResponse:
         raw = self._action_get({
             "action": "query",
             "prop": "images",

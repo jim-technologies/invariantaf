@@ -16,14 +16,18 @@ class MarinadeService:
     """Implements MarinadeService RPCs via the free Marinade APIs."""
 
     def __init__(self):
-        self._http = httpx.Client(timeout=30)
+        self._http = httpx.AsyncClient(timeout=30)
+
+    async def aclose(self) -> None:
+        """Close the HTTP client. Idempotent."""
+        await self._client.aclose()
 
     def _get(self, url: str, params: dict | None = None) -> Any:
         resp = self._http.get(url, params=params)
         resp.raise_for_status()
         return resp.json()
 
-    def GetStakeStats(self, request: Any, context: Any = None) -> pb.GetStakeStatsResponse:
+    async def GetStakeStats(self, request: Any, context: Any = None) -> pb.GetStakeStatsResponse:
         raw = self._get(f"{_MARINADE_API_URL}/msol/apy/30d")
         return pb.GetStakeStatsResponse(
             apy=raw.get("value", 0),
@@ -33,7 +37,7 @@ class MarinadeService:
             end_price=raw.get("end_price", 0),
         )
 
-    def ListValidators(self, request: Any, context: Any = None) -> pb.ListValidatorsResponse:
+    async def ListValidators(self, request: Any, context: Any = None) -> pb.ListValidatorsResponse:
         limit = request.limit if hasattr(request, "limit") and request.limit else 10
         offset = request.offset if hasattr(request, "offset") and request.offset else 0
         raw = self._get(
@@ -45,7 +49,7 @@ class MarinadeService:
             validators.append(_parse_validator(v))
         return pb.ListValidatorsResponse(validators=validators)
 
-    def GetValidatorInfo(self, request: Any, context: Any = None) -> pb.GetValidatorInfoResponse:
+    async def GetValidatorInfo(self, request: Any, context: Any = None) -> pb.GetValidatorInfoResponse:
         vote_account = request.vote_account if hasattr(request, "vote_account") else ""
         raw = self._get(
             f"{_VALIDATORS_API_URL}/validators",
@@ -56,7 +60,7 @@ class MarinadeService:
             return pb.GetValidatorInfoResponse()
         return pb.GetValidatorInfoResponse(validator=_parse_validator(validators[0]))
 
-    def GetMSOLPrice(self, request: Any, context: Any = None) -> pb.GetMSOLPriceResponse:
+    async def GetMSOLPrice(self, request: Any, context: Any = None) -> pb.GetMSOLPriceResponse:
         raw = self._get(f"{_MARINADE_API_URL}/msol/price_sol")
         # The API returns a bare number (float).
         price = raw if isinstance(raw, (int, float)) else 0

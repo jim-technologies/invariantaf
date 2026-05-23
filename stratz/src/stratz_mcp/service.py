@@ -162,9 +162,13 @@ class StratzService:
     """Implements StratzService RPCs via STRATZ GraphQL."""
 
     def __init__(self, *, api_key: str | None = None, base_url: str | None = None):
-        self._http = httpx.Client(timeout=45)
+        self._http = httpx.AsyncClient(timeout=45)
         self._api_key = api_key or os.environ.get("STRATZ_API_KEY", "")
         self._base_url = (base_url or os.environ.get("STRATZ_BASE_URL") or _DEFAULT_BASE_URL).rstrip("/")
+
+    async def aclose(self) -> None:
+        """Close the HTTP client. Idempotent."""
+        await self._client.aclose()
 
     def _headers(self) -> dict[str, str]:
         headers = {
@@ -209,7 +213,7 @@ class StratzService:
             data = {}
         return _to_struct(data)
 
-    def ExecuteRawQuery(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def ExecuteRawQuery(self, request: Any, context: Any = None) -> struct_pb2.Struct:
         variables = {}
         if request.HasField("variables"):
             variables = json_format.MessageToDict(request.variables)
@@ -219,35 +223,35 @@ class StratzService:
             operation_name=request.operation_name or None,
         )
 
-    def GetMatchSummary(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def GetMatchSummary(self, request: Any, context: Any = None) -> struct_pb2.Struct:
         return self._graphql(
             _QUERY_MATCH_SUMMARY,
             variables={"matchId": request.match_id},
             operation_name="GetMatchSummary",
         )
 
-    def GetMatchPlayers(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def GetMatchPlayers(self, request: Any, context: Any = None) -> struct_pb2.Struct:
         return self._graphql(
             _QUERY_MATCH_PLAYERS,
             variables={"matchId": request.match_id},
             operation_name="GetMatchPlayers",
         )
 
-    def GetMatchLaneOutcomes(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def GetMatchLaneOutcomes(self, request: Any, context: Any = None) -> struct_pb2.Struct:
         return self._graphql(
             _QUERY_MATCH_LANE_OUTCOMES,
             variables={"matchId": request.match_id},
             operation_name="GetMatchLaneOutcomes",
         )
 
-    def GetMatchDotaPlusLevels(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def GetMatchDotaPlusLevels(self, request: Any, context: Any = None) -> struct_pb2.Struct:
         return self._graphql(
             _QUERY_MATCH_DOTAPLUS_LEVELS,
             variables={"matchId": request.match_id},
             operation_name="GetMatchDotaPlusLevels",
         )
 
-    def GetPlayerRecentMatches(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def GetPlayerRecentMatches(self, request: Any, context: Any = None) -> struct_pb2.Struct:
         variables: dict[str, Any] = {
             "steamAccountId": request.steam_account_id,
             "take": request.take or 10,
@@ -259,25 +263,25 @@ class StratzService:
             operation_name="GetPlayerRecentMatches",
         )
 
-    def GetConstantsHeroes(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def GetConstantsHeroes(self, request: Any, context: Any = None) -> struct_pb2.Struct:
         return self._graphql(
             _QUERY_CONSTANTS_HEROES,
             operation_name="GetConstantsHeroes",
         )
 
-    def GetConstantsItems(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def GetConstantsItems(self, request: Any, context: Any = None) -> struct_pb2.Struct:
         return self._graphql(
             _QUERY_CONSTANTS_ITEMS,
             operation_name="GetConstantsItems",
         )
 
-    def GetConstantsAbilities(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def GetConstantsAbilities(self, request: Any, context: Any = None) -> struct_pb2.Struct:
         return self._graphql(
             _QUERY_CONSTANTS_ABILITIES,
             operation_name="GetConstantsAbilities",
         )
 
-    def GetHeroNeutralItemStats(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def GetHeroNeutralItemStats(self, request: Any, context: Any = None) -> struct_pb2.Struct:
         # Enum literals must be injected into the query string (GraphQL enum values are not quoted).
         raw_brackets = list(request.bracket_basic_ids) or ["DIVINE_IMMORTAL"]
         brackets: list[str] = []

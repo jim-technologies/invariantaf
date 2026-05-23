@@ -6,7 +6,7 @@
 ##
 ## -------------------------------------------------------------------
 # Flox manifest version managed by Flox CLI
-version = 1
+schema-version = "1.11.0"
 
 
 ## Install Packages --------------------------------------------------
@@ -17,10 +17,12 @@ version = 1
 [install]
 python3.pkg-path = "python3"
 buf.pkg-path = "buf"
+protobuf.pkg-path = "protobuf"
 uv.pkg-path = "uv"
 ruff.pkg-path = "ruff"
 go.pkg-path = "go"
 gcc.pkg-path = "gcc"
+gcc.outputs = "all"
 # gum.pkg-path = "gum"
 # gum.version = "^0.14.5"
 

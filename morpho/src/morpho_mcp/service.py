@@ -123,7 +123,11 @@ class MorphoService:
     """Implements MorphoService RPCs via the Morpho GraphQL API."""
 
     def __init__(self):
-        self._http = httpx.Client(timeout=30)
+        self._http = httpx.AsyncClient(timeout=30)
+
+    async def aclose(self) -> None:
+        """Close the HTTP client. Idempotent."""
+        await self._client.aclose()
 
     # ------------------------------------------------------------------
     # Internal helpers
@@ -234,7 +238,7 @@ class MorphoService:
     # RPC implementations
     # ------------------------------------------------------------------
 
-    def ListMarkets(self, request: Any, context: Any = None) -> pb.ListMarketsResponse:
+    async def ListMarkets(self, request: Any, context: Any = None) -> pb.ListMarketsResponse:
         first = request.first if hasattr(request, "first") and request.first else 10
         first = min(first, 100)
         skip = request.skip if hasattr(request, "skip") and request.skip else 0
@@ -261,7 +265,7 @@ class MorphoService:
         markets = [self._parse_market(m) for m in items]
         return pb.ListMarketsResponse(markets=markets)
 
-    def GetMarket(self, request: Any, context: Any = None) -> pb.GetMarketResponse:
+    async def GetMarket(self, request: Any, context: Any = None) -> pb.GetMarketResponse:
         unique_key = getattr(request, "unique_key", "") or ""
         if not unique_key:
             raise ValueError("unique_key is required")
@@ -275,7 +279,7 @@ class MorphoService:
         raw = data.get("marketByUniqueKey", {})
         return pb.GetMarketResponse(market=self._parse_market(raw))
 
-    def ListVaults(self, request: Any, context: Any = None) -> pb.ListVaultsResponse:
+    async def ListVaults(self, request: Any, context: Any = None) -> pb.ListVaultsResponse:
         first = request.first if hasattr(request, "first") and request.first else 10
         first = min(first, 100)
         skip = request.skip if hasattr(request, "skip") and request.skip else 0
@@ -305,7 +309,7 @@ class MorphoService:
         vaults = [self._parse_vault(v) for v in items]
         return pb.ListVaultsResponse(vaults=vaults)
 
-    def GetVault(self, request: Any, context: Any = None) -> pb.GetVaultResponse:
+    async def GetVault(self, request: Any, context: Any = None) -> pb.GetVaultResponse:
         address = getattr(request, "address", "") or ""
         if not address:
             raise ValueError("address is required")
@@ -319,7 +323,7 @@ class MorphoService:
         raw = data.get("vaultByAddress", {})
         return pb.GetVaultResponse(vault=self._parse_vault(raw))
 
-    def ListMarketPositions(
+    async def ListMarketPositions(
         self, request: Any, context: Any = None
     ) -> pb.ListMarketPositionsResponse:
         user_address = getattr(request, "user_address", "") or ""

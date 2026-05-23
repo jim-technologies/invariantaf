@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	_ "embed"
 	"fmt"
 	"os"
@@ -18,18 +19,18 @@ func main() {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
-	server.Name = "alternativeme-mcp"
-	server.Version = "0.1.0"
 
 	if err := server.Register(NewAlternativeMeService()); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 
+	ctx := context.Background()
+
 	args := os.Args[1:]
 	if len(args) > 0 && args[0] == "--cli" {
 		os.Args = append([]string{os.Args[0]}, args[1:]...)
-		if err := server.Serve(invariant.CLI()); err != nil {
+		if err := server.Serve(ctx, invariant.CLI()); err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
 		}
@@ -42,7 +43,7 @@ func main() {
 				port = p
 			}
 		}
-		if err := server.Serve(invariant.HTTP(port)); err != nil {
+		if err := server.Serve(ctx, invariant.HTTP(port)); err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
 		}
@@ -55,13 +56,13 @@ func main() {
 				port = p
 			}
 		}
-		if err := server.Serve(invariant.GRPC(port)); err != nil {
+		if err := server.Serve(ctx, invariant.GRPC(port)); err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
 		}
 		return
 	}
-	if err := server.Serve(invariant.MCP()); err != nil {
+	if err := server.Serve(ctx, invariant.MCP()); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}

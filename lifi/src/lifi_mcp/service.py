@@ -99,7 +99,11 @@ class LifiService:
     """Implements LifiService RPCs via the free Li.Fi API."""
 
     def __init__(self):
-        self._http = httpx.Client(timeout=30)
+        self._http = httpx.AsyncClient(timeout=30)
+
+    async def aclose(self) -> None:
+        """Close the HTTP client. Idempotent."""
+        await self._client.aclose()
 
     def _get(self, path: str, params: dict | None = None) -> Any:
         resp = self._http.get(f"{_BASE_URL}{path}", params=params)
@@ -108,7 +112,7 @@ class LifiService:
 
     # ----- RPCs -----
 
-    def GetQuote(self, request: Any, context: Any = None) -> pb.GetQuoteResponse:
+    async def GetQuote(self, request: Any, context: Any = None) -> pb.GetQuoteResponse:
         params = {
             "fromChain": request.from_chain,
             "toChain": request.to_chain,
@@ -135,7 +139,7 @@ class LifiService:
             ),
         )
 
-    def ListChains(self, request: Any, context: Any = None) -> pb.ListChainsResponse:
+    async def ListChains(self, request: Any, context: Any = None) -> pb.ListChainsResponse:
         raw = self._get("/chains")
         chains = []
         for c in raw.get("chains", []):
@@ -154,7 +158,7 @@ class LifiService:
             )
         return pb.ListChainsResponse(chains=chains)
 
-    def ListTokens(self, request: Any, context: Any = None) -> pb.ListTokensResponse:
+    async def ListTokens(self, request: Any, context: Any = None) -> pb.ListTokensResponse:
         params = {}
         chains_val = request.chains if hasattr(request, "chains") and request.chains else ""
         if chains_val:
@@ -172,7 +176,7 @@ class LifiService:
             )
         return pb.ListTokensResponse(chain_tokens=chain_tokens)
 
-    def GetConnections(
+    async def GetConnections(
         self, request: Any, context: Any = None
     ) -> pb.GetConnectionsResponse:
         params = {}
@@ -195,7 +199,7 @@ class LifiService:
             )
         return pb.GetConnectionsResponse(connections=connections)
 
-    def ListTools(self, request: Any, context: Any = None) -> pb.ListToolsResponse:
+    async def ListTools(self, request: Any, context: Any = None) -> pb.ListToolsResponse:
         raw = self._get("/tools")
         bridges = []
         for b in raw.get("bridges", []):
@@ -226,7 +230,7 @@ class LifiService:
             )
         return pb.ListToolsResponse(bridges=bridges, exchanges=exchanges)
 
-    def GetStatus(self, request: Any, context: Any = None) -> pb.GetStatusResponse:
+    async def GetStatus(self, request: Any, context: Any = None) -> pb.GetStatusResponse:
         params: dict[str, Any] = {"txHash": request.tx_hash}
         if hasattr(request, "bridge") and request.bridge:
             params["bridge"] = request.bridge

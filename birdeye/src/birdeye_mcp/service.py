@@ -27,26 +27,30 @@ class BirdeyeService:
         self._base_url = base_url.rstrip("/")
         self._api_key = api_key or os.getenv("BIRDEYE_API_KEY", "")
         self._timeout = timeout
-        self._client = httpx.Client(timeout=timeout)
+        self._client = httpx.AsyncClient(timeout=timeout)
+
+    async def aclose(self) -> None:
+        """Close the HTTP client. Idempotent."""
+        await self._client.aclose()
 
     # -------------------------
     # RPC handlers
     # -------------------------
 
-    def GetTokenPrice(
+    async def GetTokenPrice(
         self, request: pb.GetTokenPriceRequest, context: Any = None
     ) -> pb.GetTokenPriceResponse:
         query: dict[str, Any] = {"address": request.address}
-        payload = self._get("/defi/price", query)
+        payload = await self._get("/defi/price", query)
         data = self._extract_data(payload)
         transformed = self._transform_token_price(data)
         return self._parse_message(transformed, pb.GetTokenPriceResponse)
 
-    def GetMultiPrice(
+    async def GetMultiPrice(
         self, request: pb.GetMultiPriceRequest, context: Any = None
     ) -> pb.GetMultiPriceResponse:
         query: dict[str, Any] = {"list_address": request.list_address}
-        payload = self._get("/defi/multi_price", query)
+        payload = await self._get("/defi/multi_price", query)
         data = self._extract_data(payload)
         # data is a dict of {address: {value, updateUnixTime, ...}}
         prices: dict[str, dict[str, Any]] = {}
@@ -56,16 +60,16 @@ class BirdeyeService:
                     prices[addr] = self._transform_token_price(info)
         return self._parse_message({"prices": prices}, pb.GetMultiPriceResponse)
 
-    def GetTokenOverview(
+    async def GetTokenOverview(
         self, request: pb.GetTokenOverviewRequest, context: Any = None
     ) -> pb.GetTokenOverviewResponse:
         query: dict[str, Any] = {"address": request.address}
-        payload = self._get("/defi/token_overview", query)
+        payload = await self._get("/defi/token_overview", query)
         data = self._extract_data(payload)
         transformed = self._transform_token_overview(data)
         return self._parse_message(transformed, pb.GetTokenOverviewResponse)
 
-    def ListTokens(
+    async def ListTokens(
         self, request: pb.ListTokensRequest, context: Any = None
     ) -> pb.ListTokensResponse:
         query: dict[str, Any] = {}
@@ -78,13 +82,13 @@ class BirdeyeService:
         if self._has_field(request, "offset"):
             query["offset"] = request.offset
 
-        payload = self._get("/defi/tokenlist", query)
+        payload = await self._get("/defi/tokenlist", query)
         data = self._extract_data(payload)
         tokens_raw = data.get("tokens", []) if isinstance(data, dict) else []
         tokens = [self._transform_token_list_item(t) for t in tokens_raw]
         return self._parse_message({"tokens": tokens}, pb.ListTokensResponse)
 
-    def GetOHLCV(
+    async def GetOHLCV(
         self, request: pb.GetOHLCVRequest, context: Any = None
     ) -> pb.GetOHLCVResponse:
         query: dict[str, Any] = {
@@ -93,7 +97,7 @@ class BirdeyeService:
             "time_from": request.time_from,
             "time_to": request.time_to,
         }
-        payload = self._get("/defi/ohlcv", query)
+        payload = await self._get("/defi/ohlcv", query)
         data = self._extract_data(payload)
         items_raw = data.get("items", []) if isinstance(data, dict) else []
         if isinstance(data, list):
@@ -101,7 +105,7 @@ class BirdeyeService:
         items = [self._transform_ohlcv_item(item) for item in items_raw]
         return self._parse_message({"items": items}, pb.GetOHLCVResponse)
 
-    def GetTradesToken(
+    async def GetTradesToken(
         self, request: pb.GetTradesTokenRequest, context: Any = None
     ) -> pb.GetTradesTokenResponse:
         query: dict[str, Any] = {"address": request.address}
@@ -110,7 +114,7 @@ class BirdeyeService:
         if self._has_field(request, "offset"):
             query["offset"] = request.offset
 
-        payload = self._get("/defi/txs/token", query)
+        payload = await self._get("/defi/txs/token", query)
         data = self._extract_data(payload)
         items_raw = data.get("items", []) if isinstance(data, dict) else []
         if isinstance(data, list):
@@ -118,14 +122,14 @@ class BirdeyeService:
         items = [self._transform_trade_item(item) for item in items_raw]
         return self._parse_message({"items": items}, pb.GetTradesTokenResponse)
 
-    def SearchToken(
+    async def SearchToken(
         self, request: pb.SearchTokenRequest, context: Any = None
     ) -> pb.SearchTokenResponse:
         query: dict[str, Any] = {
             "keyword": request.keyword,
             "chain": "solana",
         }
-        payload = self._get("/defi/v3/search", query)
+        payload = await self._get("/defi/v3/search", query)
         data = self._extract_data(payload)
         # v3/search returns items list of token results
         items_raw = data.get("items", []) if isinstance(data, dict) else []
@@ -148,7 +152,7 @@ class BirdeyeService:
     # HTTP helpers
     # -------------------------
 
-    def _get(self, path: str, query: dict[str, Any] | None = None) -> Any:
+    async def _get(self, path: str, query: dict[str, Any] | None = None) -> Any:
         url = self._build_url(path, query)
         headers: dict[str, str] = {
             "Accept": "application/json",
@@ -157,7 +161,7 @@ class BirdeyeService:
         if self._api_key:
             headers["X-API-KEY"] = self._api_key
 
-        response = self._client.request("GET", url, headers=headers)
+        response = await self._client.request("GET", url, headers=headers)
 
         try:
             payload = response.json() if response.content else {}

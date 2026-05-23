@@ -18,7 +18,11 @@ class PackageRegistryService:
     """Implements PackageRegistryService RPCs via NPM and PyPI APIs."""
 
     def __init__(self):
-        self._http = httpx.Client(timeout=30)
+        self._http = httpx.AsyncClient(timeout=30)
+
+    async def aclose(self) -> None:
+        """Close the HTTP client. Idempotent."""
+        await self._client.aclose()
 
     def _get(self, url: str, params: dict | None = None) -> Any:
         resp = self._http.get(url, params=params)
@@ -27,7 +31,7 @@ class PackageRegistryService:
 
     # --- NPM RPCs ---
 
-    def SearchNPM(self, request: Any, context: Any = None) -> pb.SearchNPMResponse:
+    async def SearchNPM(self, request: Any, context: Any = None) -> pb.SearchNPMResponse:
         size = request.size or 20
         raw = self._get(f"{_NPM_REGISTRY}/-/v1/search", params={
             "text": request.query,
@@ -51,7 +55,7 @@ class PackageRegistryService:
             ))
         return resp
 
-    def GetNPMPackage(self, request: Any, context: Any = None) -> pb.GetNPMPackageResponse:
+    async def GetNPMPackage(self, request: Any, context: Any = None) -> pb.GetNPMPackageResponse:
         raw = self._get(f"{_NPM_REGISTRY}/{request.name}")
         dist_tags = raw.get("dist-tags", {})
         latest = dist_tags.get("latest", "")
@@ -79,7 +83,7 @@ class PackageRegistryService:
             ))
         return resp
 
-    def GetNPMDownloads(self, request: Any, context: Any = None) -> pb.GetNPMDownloadsResponse:
+    async def GetNPMDownloads(self, request: Any, context: Any = None) -> pb.GetNPMDownloadsResponse:
         raw = self._get(f"{_NPM_DOWNLOADS}/downloads/point/last-week/{request.name}")
         return pb.GetNPMDownloadsResponse(
             package_name=raw.get("package", ""),
@@ -88,7 +92,7 @@ class PackageRegistryService:
             end_date=raw.get("end", ""),
         )
 
-    def GetNPMVersions(self, request: Any, context: Any = None) -> pb.GetNPMVersionsResponse:
+    async def GetNPMVersions(self, request: Any, context: Any = None) -> pb.GetNPMVersionsResponse:
         raw = self._get(f"{_NPM_REGISTRY}/{request.name}")
         time_map = raw.get("time", {})
         versions_map = raw.get("versions", {})
@@ -100,7 +104,7 @@ class PackageRegistryService:
             ))
         return resp
 
-    def GetNPMDependencies(self, request: Any, context: Any = None) -> pb.GetNPMDependenciesResponse:
+    async def GetNPMDependencies(self, request: Any, context: Any = None) -> pb.GetNPMDependenciesResponse:
         raw = self._get(f"{_NPM_REGISTRY}/{request.name}")
         dist_tags = raw.get("dist-tags", {})
         target_version = request.version or dist_tags.get("latest", "")
@@ -121,7 +125,7 @@ class PackageRegistryService:
 
     # --- PyPI RPCs ---
 
-    def GetPyPIPackage(self, request: Any, context: Any = None) -> pb.GetPyPIPackageResponse:
+    async def GetPyPIPackage(self, request: Any, context: Any = None) -> pb.GetPyPIPackageResponse:
         raw = self._get(f"{_PYPI_BASE}/pypi/{request.name}/json")
         info = raw.get("info", {})
         project_urls = info.get("project_urls") or {}
@@ -141,7 +145,7 @@ class PackageRegistryService:
             resp.project_urls.append(pb.PyPIProjectURL(label=label, url=url))
         return resp
 
-    def GetPyPIVersion(self, request: Any, context: Any = None) -> pb.GetPyPIVersionResponse:
+    async def GetPyPIVersion(self, request: Any, context: Any = None) -> pb.GetPyPIVersionResponse:
         raw = self._get(f"{_PYPI_BASE}/pypi/{request.name}/{request.version}/json")
         info = raw.get("info", {})
         releases = raw.get("releases", {})
@@ -160,7 +164,7 @@ class PackageRegistryService:
             upload_date=upload_date,
         )
 
-    def GetPyPIReleases(self, request: Any, context: Any = None) -> pb.GetPyPIReleasesResponse:
+    async def GetPyPIReleases(self, request: Any, context: Any = None) -> pb.GetPyPIReleasesResponse:
         raw = self._get(f"{_PYPI_BASE}/pypi/{request.name}/json")
         releases = raw.get("releases", {})
         resp = pb.GetPyPIReleasesResponse(package_name=raw.get("info", {}).get("name", ""))
@@ -174,7 +178,7 @@ class PackageRegistryService:
             ))
         return resp
 
-    def GetPyPIDownloads(self, request: Any, context: Any = None) -> pb.GetPyPIDownloadsResponse:
+    async def GetPyPIDownloads(self, request: Any, context: Any = None) -> pb.GetPyPIDownloadsResponse:
         raw = self._get(f"{_PYPISTATS_BASE}/api/packages/{request.name}/recent")
         data = raw.get("data", {})
         return pb.GetPyPIDownloadsResponse(
@@ -184,7 +188,7 @@ class PackageRegistryService:
             last_month=data.get("last_month", 0),
         )
 
-    def GetPyPIDependencies(self, request: Any, context: Any = None) -> pb.GetPyPIDependenciesResponse:
+    async def GetPyPIDependencies(self, request: Any, context: Any = None) -> pb.GetPyPIDependenciesResponse:
         if request.version:
             raw = self._get(f"{_PYPI_BASE}/pypi/{request.name}/{request.version}/json")
         else:

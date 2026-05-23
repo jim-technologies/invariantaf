@@ -17,8 +17,12 @@ class OpenWeatherMapService:
     """Implements OpenWeatherMapService RPCs via the OpenWeatherMap API."""
 
     def __init__(self, *, api_key: str | None = None):
-        self._http = httpx.Client(timeout=30)
+        self._http = httpx.AsyncClient(timeout=30)
         self._api_key = api_key or os.environ.get("OPENWEATHERMAP_API_KEY")
+
+    async def aclose(self) -> None:
+        """Close the HTTP client. Idempotent."""
+        await self._client.aclose()
 
     def _get(self, path: str, params: dict | None = None) -> Any:
         p = dict(params or {})
@@ -66,7 +70,7 @@ class OpenWeatherMapService:
             lon=coord.get("lon", 0),
         )
 
-    def GetCurrentWeather(self, request: Any, context: Any = None) -> pb.GetCurrentWeatherResponse:
+    async def GetCurrentWeather(self, request: Any, context: Any = None) -> pb.GetCurrentWeatherResponse:
         raw = self._get("/data/2.5/weather", params={
             "q": request.city,
             "units": "metric",
@@ -75,7 +79,7 @@ class OpenWeatherMapService:
             weather=self._parse_current_weather(raw),
         )
 
-    def GetCurrentWeatherByCoords(self, request: Any, context: Any = None) -> pb.GetCurrentWeatherResponse:
+    async def GetCurrentWeatherByCoords(self, request: Any, context: Any = None) -> pb.GetCurrentWeatherResponse:
         raw = self._get("/data/2.5/weather", params={
             "lat": request.lat,
             "lon": request.lon,
@@ -85,7 +89,7 @@ class OpenWeatherMapService:
             weather=self._parse_current_weather(raw),
         )
 
-    def GetForecast(self, request: Any, context: Any = None) -> pb.GetForecastResponse:
+    async def GetForecast(self, request: Any, context: Any = None) -> pb.GetForecastResponse:
         raw = self._get("/data/2.5/forecast", params={
             "q": request.city,
             "units": "metric",
@@ -115,7 +119,7 @@ class OpenWeatherMapService:
             ))
         return resp
 
-    def GetAirQuality(self, request: Any, context: Any = None) -> pb.GetAirQualityResponse:
+    async def GetAirQuality(self, request: Any, context: Any = None) -> pb.GetAirQualityResponse:
         raw = self._get("/data/2.5/air_pollution", params={
             "lat": request.lat,
             "lon": request.lon,
@@ -141,7 +145,7 @@ class OpenWeatherMapService:
             ),
         )
 
-    def GetUVIndex(self, request: Any, context: Any = None) -> pb.GetUVIndexResponse:
+    async def GetUVIndex(self, request: Any, context: Any = None) -> pb.GetUVIndexResponse:
         raw = self._get("/data/2.5/uvi", params={
             "lat": request.lat,
             "lon": request.lon,
@@ -153,7 +157,7 @@ class OpenWeatherMapService:
             lon=raw.get("lon", 0),
         )
 
-    def GetGeocode(self, request: Any, context: Any = None) -> pb.GetGeocodeResponse:
+    async def GetGeocode(self, request: Any, context: Any = None) -> pb.GetGeocodeResponse:
         raw = self._get("/geo/1.0/direct", params={
             "q": request.city,
             "limit": request.limit or 5,
@@ -169,7 +173,7 @@ class OpenWeatherMapService:
             ))
         return resp
 
-    def GetReverseGeocode(self, request: Any, context: Any = None) -> pb.GetReverseGeocodeResponse:
+    async def GetReverseGeocode(self, request: Any, context: Any = None) -> pb.GetReverseGeocodeResponse:
         raw = self._get("/geo/1.0/reverse", params={
             "lat": request.lat,
             "lon": request.lon,
@@ -186,7 +190,7 @@ class OpenWeatherMapService:
             ))
         return resp
 
-    def GetOneCall(self, request: Any, context: Any = None) -> pb.GetOneCallResponse:
+    async def GetOneCall(self, request: Any, context: Any = None) -> pb.GetOneCallResponse:
         raw = self._get("/data/3.0/onecall", params={
             "lat": request.lat,
             "lon": request.lon,
@@ -277,7 +281,7 @@ class OpenWeatherMapService:
 
         return resp
 
-    def GetHistoricalWeather(self, request: Any, context: Any = None) -> pb.GetHistoricalWeatherResponse:
+    async def GetHistoricalWeather(self, request: Any, context: Any = None) -> pb.GetHistoricalWeatherResponse:
         raw = self._get("/data/3.0/onecall/timemachine", params={
             "lat": request.lat,
             "lon": request.lon,
@@ -309,7 +313,7 @@ class OpenWeatherMapService:
 
         return resp
 
-    def GetWeatherMap(self, request: Any, context: Any = None) -> pb.GetWeatherMapResponse:
+    async def GetWeatherMap(self, request: Any, context: Any = None) -> pb.GetWeatherMapResponse:
         layer = request.layer or "clouds_new"
         url = f"{_TILE_URL}/map/{layer}/{request.z}/{request.x}/{request.y}.png"
         if self._api_key:

@@ -17,14 +17,18 @@ class DefiLlamaService:
     """Implements DefiLlamaService RPCs via the free DeFiLlama API."""
 
     def __init__(self):
-        self._http = httpx.Client(timeout=30)
+        self._http = httpx.AsyncClient(timeout=30)
+
+    async def aclose(self) -> None:
+        """Close the HTTP client. Idempotent."""
+        await self._client.aclose()
 
     def _get(self, url: str, params: dict | None = None) -> Any:
         resp = self._http.get(url, params=params)
         resp.raise_for_status()
         return resp.json()
 
-    def GetProtocols(self, request: Any, context: Any = None) -> pb.GetProtocolsResponse:
+    async def GetProtocols(self, request: Any, context: Any = None) -> pb.GetProtocolsResponse:
         raw = self._get(f"{_BASE_URL}/protocols")
         resp = pb.GetProtocolsResponse()
         for p in raw:
@@ -48,7 +52,7 @@ class DefiLlamaService:
             ))
         return resp
 
-    def GetProtocol(self, request: Any, context: Any = None) -> pb.GetProtocolResponse:
+    async def GetProtocol(self, request: Any, context: Any = None) -> pb.GetProtocolResponse:
         raw = self._get(f"{_BASE_URL}/protocol/{request.slug}")
         tvl_history = []
         for dp in raw.get("tvl", []):
@@ -77,12 +81,12 @@ class DefiLlamaService:
         )
         return pb.GetProtocolResponse(protocol=detail)
 
-    def GetTVL(self, request: Any, context: Any = None) -> pb.GetTVLResponse:
+    async def GetTVL(self, request: Any, context: Any = None) -> pb.GetTVLResponse:
         raw = self._get(f"{_BASE_URL}/tvl/{request.slug}")
         tvl = float(raw) if isinstance(raw, (int, float)) else 0
         return pb.GetTVLResponse(tvl=tvl)
 
-    def GetChains(self, request: Any, context: Any = None) -> pb.GetChainsResponse:
+    async def GetChains(self, request: Any, context: Any = None) -> pb.GetChainsResponse:
         raw = self._get(f"{_BASE_URL}/v2/chains")
         resp = pb.GetChainsResponse()
         for c in raw:
@@ -95,7 +99,7 @@ class DefiLlamaService:
             ))
         return resp
 
-    def GetGlobalTVL(self, request: Any, context: Any = None) -> pb.GetGlobalTVLResponse:
+    async def GetGlobalTVL(self, request: Any, context: Any = None) -> pb.GetGlobalTVLResponse:
         raw = self._get(f"{_BASE_URL}/v2/historicalChainTvl")
         resp = pb.GetGlobalTVLResponse()
         for dp in raw:
@@ -105,7 +109,7 @@ class DefiLlamaService:
             ))
         return resp
 
-    def GetStablecoins(self, request: Any, context: Any = None) -> pb.GetStablecoinsResponse:
+    async def GetStablecoins(self, request: Any, context: Any = None) -> pb.GetStablecoinsResponse:
         raw = self._get(f"{_STABLECOINS_URL}/stablecoins")
         resp = pb.GetStablecoinsResponse()
         for s in raw.get("peggedAssets", []):
@@ -130,7 +134,7 @@ class DefiLlamaService:
             ))
         return resp
 
-    def GetYieldPools(self, request: Any, context: Any = None) -> pb.GetYieldPoolsResponse:
+    async def GetYieldPools(self, request: Any, context: Any = None) -> pb.GetYieldPoolsResponse:
         raw = self._get(f"{_YIELDS_URL}/pools")
         resp = pb.GetYieldPoolsResponse()
         for p in raw.get("data", []):
@@ -155,7 +159,7 @@ class DefiLlamaService:
             ))
         return resp
 
-    def GetDexVolumes(self, request: Any, context: Any = None) -> pb.GetDexVolumesResponse:
+    async def GetDexVolumes(self, request: Any, context: Any = None) -> pb.GetDexVolumesResponse:
         raw = self._get(f"{_BASE_URL}/overview/dexs")
         resp = pb.GetDexVolumesResponse(
             total_24h=raw.get("total24h") or 0,
@@ -182,7 +186,7 @@ class DefiLlamaService:
             ))
         return resp
 
-    def GetFees(self, request: Any, context: Any = None) -> pb.GetFeesResponse:
+    async def GetFees(self, request: Any, context: Any = None) -> pb.GetFeesResponse:
         raw = self._get(f"{_BASE_URL}/overview/fees")
         resp = pb.GetFeesResponse(
             total_24h=raw.get("total24h") or 0,
@@ -208,7 +212,7 @@ class DefiLlamaService:
             ))
         return resp
 
-    def GetStablecoinChains(self, request: Any, context: Any = None) -> pb.GetStablecoinChainsResponse:
+    async def GetStablecoinChains(self, request: Any, context: Any = None) -> pb.GetStablecoinChainsResponse:
         raw = self._get(f"{_STABLECOINS_URL}/stablecoinchains")
         resp = pb.GetStablecoinChainsResponse()
         for c in raw:

@@ -24,13 +24,17 @@ class DeribitService:
     ):
         self._base_url = base_url.rstrip("/")
         self._timeout = timeout
-        self._client = httpx.Client(timeout=timeout)
+        self._client = httpx.AsyncClient(timeout=timeout)
+
+    async def aclose(self) -> None:
+        """Close the HTTP client. Idempotent."""
+        await self._client.aclose()
 
     # -------------------------
     # RPC handlers
     # -------------------------
 
-    def GetInstruments(
+    async def GetInstruments(
         self, request: pb.GetInstrumentsRequest, context: Any = None
     ) -> pb.GetInstrumentsResponse:
         query: dict[str, Any] = {"currency": request.currency}
@@ -39,42 +43,42 @@ class DeribitService:
         if self._has_field(request, "expired"):
             query["expired"] = request.expired
 
-        payload = self._get("/api/v2/public/get_instruments", query)
+        payload = await self._get("/api/v2/public/get_instruments", query)
         instruments = payload if isinstance(payload, list) else payload.get("result", payload)
         if isinstance(instruments, list):
             return self._parse_message({"instruments": instruments}, pb.GetInstrumentsResponse)
         return self._parse_message({"instruments": []}, pb.GetInstrumentsResponse)
 
-    def GetOrderbook(
+    async def GetOrderbook(
         self, request: pb.GetOrderbookRequest, context: Any = None
     ) -> pb.GetOrderbookResponse:
         query: dict[str, Any] = {"instrument_name": request.instrument_name}
         if self._has_field(request, "depth"):
             query["depth"] = request.depth
 
-        payload = self._get("/api/v2/public/get_order_book", query)
+        payload = await self._get("/api/v2/public/get_order_book", query)
         result = self._extract_result(payload)
         self._transform_orderbook(result)
         return self._parse_message(result, pb.GetOrderbookResponse)
 
-    def GetTicker(
+    async def GetTicker(
         self, request: pb.GetTickerRequest, context: Any = None
     ) -> pb.GetTickerResponse:
         query: dict[str, Any] = {"instrument_name": request.instrument_name}
 
-        payload = self._get("/api/v2/public/ticker", query)
+        payload = await self._get("/api/v2/public/ticker", query)
         result = self._extract_result(payload)
         self._transform_ticker(result)
         return self._parse_message(result, pb.GetTickerResponse)
 
-    def GetBookSummaryByCurrency(
+    async def GetBookSummaryByCurrency(
         self, request: pb.GetBookSummaryByCurrencyRequest, context: Any = None
     ) -> pb.GetBookSummaryByCurrencyResponse:
         query: dict[str, Any] = {"currency": request.currency}
         if self._has_field(request, "kind"):
             query["kind"] = request.kind
 
-        payload = self._get("/api/v2/public/get_book_summary_by_currency", query)
+        payload = await self._get("/api/v2/public/get_book_summary_by_currency", query)
         result = self._extract_result(payload)
         summaries = result if isinstance(result, list) else []
         transformed = []
@@ -82,12 +86,12 @@ class DeribitService:
             transformed.append(self._transform_book_summary(s))
         return self._parse_message({"summaries": transformed}, pb.GetBookSummaryByCurrencyResponse)
 
-    def GetHistoricalVolatility(
+    async def GetHistoricalVolatility(
         self, request: pb.GetHistoricalVolatilityRequest, context: Any = None
     ) -> pb.GetHistoricalVolatilityResponse:
         query: dict[str, Any] = {"currency": request.currency}
 
-        payload = self._get("/api/v2/public/get_historical_volatility", query)
+        payload = await self._get("/api/v2/public/get_historical_volatility", query)
         result = self._extract_result(payload)
         points = []
         if isinstance(result, list):
@@ -96,7 +100,7 @@ class DeribitService:
                     points.append({"timestamp": int(item[0]), "volatility": float(item[1])})
         return self._parse_message({"data": points}, pb.GetHistoricalVolatilityResponse)
 
-    def GetFundingRateValue(
+    async def GetFundingRateValue(
         self, request: pb.GetFundingRateValueRequest, context: Any = None
     ) -> pb.GetFundingRateValueResponse:
         query: dict[str, Any] = {
@@ -105,22 +109,22 @@ class DeribitService:
             "end_timestamp": request.end_timestamp,
         }
 
-        payload = self._get("/api/v2/public/get_funding_rate_value", query)
+        payload = await self._get("/api/v2/public/get_funding_rate_value", query)
         result = self._extract_result(payload)
         if isinstance(result, (int, float)):
             return self._parse_message({"funding_rate": float(result)}, pb.GetFundingRateValueResponse)
         return self._parse_message({"funding_rate": 0.0}, pb.GetFundingRateValueResponse)
 
-    def GetIndexPrice(
+    async def GetIndexPrice(
         self, request: pb.GetIndexPriceRequest, context: Any = None
     ) -> pb.GetIndexPriceResponse:
         query: dict[str, Any] = {"index_name": request.index_name}
 
-        payload = self._get("/api/v2/public/get_index_price", query)
+        payload = await self._get("/api/v2/public/get_index_price", query)
         result = self._extract_result(payload)
         return self._parse_message(result, pb.GetIndexPriceResponse)
 
-    def GetTradingviewChartData(
+    async def GetTradingviewChartData(
         self, request: pb.GetTradingviewChartDataRequest, context: Any = None
     ) -> pb.GetTradingviewChartDataResponse:
         query: dict[str, Any] = {
@@ -130,7 +134,7 @@ class DeribitService:
             "resolution": request.resolution,
         }
 
-        payload = self._get("/api/v2/public/get_tradingview_chart_data", query)
+        payload = await self._get("/api/v2/public/get_tradingview_chart_data", query)
         result = self._extract_result(payload)
         return self._parse_message(result, pb.GetTradingviewChartDataResponse)
 
@@ -146,9 +150,9 @@ class DeribitService:
     # HTTP helpers
     # -------------------------
 
-    def _get(self, path: str, query: dict[str, Any] | None = None) -> Any:
+    async def _get(self, path: str, query: dict[str, Any] | None = None) -> Any:
         url = self._build_url(path, query)
-        response = self._client.request(
+        response = await self._client.request(
             "GET",
             url,
             headers={"Accept": "application/json"},

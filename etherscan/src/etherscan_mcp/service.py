@@ -57,8 +57,12 @@ class EtherscanService:
     """Implements EtherscanService RPCs via the Etherscan API."""
 
     def __init__(self):
-        self._http = httpx.Client(timeout=30)
+        self._http = httpx.AsyncClient(timeout=30)
         self._api_key = os.environ.get("ETHERSCAN_API_KEY", "")
+
+    async def aclose(self) -> None:
+        """Close the HTTP client. Idempotent."""
+        await self._client.aclose()
 
     def _get(self, params: dict) -> Any:
         params["apikey"] = self._api_key
@@ -67,7 +71,7 @@ class EtherscanService:
         data = resp.json()
         return data
 
-    def GetBalance(self, request: Any, context: Any = None) -> pb.GetBalanceResponse:
+    async def GetBalance(self, request: Any, context: Any = None) -> pb.GetBalanceResponse:
         data = self._get({
             "module": "account",
             "action": "balance",
@@ -75,7 +79,7 @@ class EtherscanService:
         })
         return pb.GetBalanceResponse(balance=str(data.get("result", "")))
 
-    def GetTokenBalance(self, request: Any, context: Any = None) -> pb.GetTokenBalanceResponse:
+    async def GetTokenBalance(self, request: Any, context: Any = None) -> pb.GetTokenBalanceResponse:
         data = self._get({
             "module": "account",
             "action": "tokenbalance",
@@ -84,7 +88,7 @@ class EtherscanService:
         })
         return pb.GetTokenBalanceResponse(balance=str(data.get("result", "")))
 
-    def GetTransactions(self, request: Any, context: Any = None) -> pb.GetTransactionsResponse:
+    async def GetTransactions(self, request: Any, context: Any = None) -> pb.GetTransactionsResponse:
         start_block = request.start_block if request.start_block else 0
         end_block = request.end_block if request.end_block else 99999999
         sort = request.sort if request.sort else "desc"
@@ -103,7 +107,7 @@ class EtherscanService:
                 resp.transactions.append(_parse_transaction(t))
         return resp
 
-    def GetTokenTransfers(self, request: Any, context: Any = None) -> pb.GetTokenTransfersResponse:
+    async def GetTokenTransfers(self, request: Any, context: Any = None) -> pb.GetTokenTransfersResponse:
         start_block = request.start_block if request.start_block else 0
         end_block = request.end_block if request.end_block else 99999999
         sort = request.sort if request.sort else "desc"
@@ -122,7 +126,7 @@ class EtherscanService:
                 resp.transfers.append(_parse_token_transfer(t))
         return resp
 
-    def GetGasPrice(self, request: Any, context: Any = None) -> pb.GetGasPriceResponse:
+    async def GetGasPrice(self, request: Any, context: Any = None) -> pb.GetGasPriceResponse:
         data = self._get({
             "module": "gastracker",
             "action": "gasoracle",
@@ -137,7 +141,7 @@ class EtherscanService:
         )
         return pb.GetGasPriceResponse(gas_oracle=gas_oracle)
 
-    def GetETHPrice(self, request: Any, context: Any = None) -> pb.GetETHPriceResponse:
+    async def GetETHPrice(self, request: Any, context: Any = None) -> pb.GetETHPriceResponse:
         data = self._get({
             "module": "stats",
             "action": "ethprice",
@@ -151,7 +155,7 @@ class EtherscanService:
         )
         return pb.GetETHPriceResponse(eth_price=eth_price)
 
-    def GetContractABI(self, request: Any, context: Any = None) -> pb.GetContractABIResponse:
+    async def GetContractABI(self, request: Any, context: Any = None) -> pb.GetContractABIResponse:
         data = self._get({
             "module": "contract",
             "action": "getabi",

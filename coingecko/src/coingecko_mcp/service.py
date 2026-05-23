@@ -16,8 +16,12 @@ class CoinGeckoService:
     """Implements CoinGeckoService RPCs via the free CoinGecko API."""
 
     def __init__(self, *, api_key: str | None = None):
-        self._http = httpx.Client(timeout=30)
+        self._http = httpx.AsyncClient(timeout=30)
         self._api_key = api_key or os.environ.get("COINGECKO_API_KEY")
+
+    async def aclose(self) -> None:
+        """Close the HTTP client. Idempotent."""
+        await self._client.aclose()
 
     def _get(self, path: str, params: dict | None = None) -> Any:
         p = dict(params or {})
@@ -27,7 +31,7 @@ class CoinGeckoService:
         resp.raise_for_status()
         return resp.json()
 
-    def GetPrice(self, request: Any, context: Any = None) -> pb.GetPriceResponse:
+    async def GetPrice(self, request: Any, context: Any = None) -> pb.GetPriceResponse:
         vs = request.vs_currency or "usd"
         params = {
             "ids": request.ids,
@@ -51,7 +55,7 @@ class CoinGeckoService:
             ))
         return resp
 
-    def Search(self, request: Any, context: Any = None) -> pb.SearchResponse:
+    async def Search(self, request: Any, context: Any = None) -> pb.SearchResponse:
         raw = self._get("/search", params={"query": request.query})
         resp = pb.SearchResponse()
         for c in raw.get("coins", []):
@@ -77,7 +81,7 @@ class CoinGeckoService:
             ))
         return resp
 
-    def GetTrending(self, request: Any, context: Any = None) -> pb.GetTrendingResponse:
+    async def GetTrending(self, request: Any, context: Any = None) -> pb.GetTrendingResponse:
         raw = self._get("/search/trending")
         resp = pb.GetTrendingResponse()
         for item in raw.get("coins", []):
@@ -106,7 +110,7 @@ class CoinGeckoService:
             ))
         return resp
 
-    def GetMarkets(self, request: Any, context: Any = None) -> pb.GetMarketsResponse:
+    async def GetMarkets(self, request: Any, context: Any = None) -> pb.GetMarketsResponse:
         params = {
             "vs_currency": request.vs_currency or "usd",
             "order": request.order or "market_cap_desc",
@@ -145,7 +149,7 @@ class CoinGeckoService:
             ))
         return resp
 
-    def GetCoin(self, request: Any, context: Any = None) -> pb.GetCoinResponse:
+    async def GetCoin(self, request: Any, context: Any = None) -> pb.GetCoinResponse:
         raw = self._get(f"/coins/{request.coin_id}", params={
             "localization": "false",
             "tickers": "false",
@@ -189,7 +193,7 @@ class CoinGeckoService:
             watchlist_users=raw.get("watchlist_portfolio_users") or 0,
         )
 
-    def GetMarketChart(self, request: Any, context: Any = None) -> pb.GetMarketChartResponse:
+    async def GetMarketChart(self, request: Any, context: Any = None) -> pb.GetMarketChartResponse:
         raw = self._get(f"/coins/{request.coin_id}/market_chart", params={
             "vs_currency": request.vs_currency or "usd",
             "days": request.days or "7",
@@ -203,7 +207,7 @@ class CoinGeckoService:
             resp.total_volumes.append(pb.TimestampValue(timestamp=int(ts), value=val))
         return resp
 
-    def GetOHLC(self, request: Any, context: Any = None) -> pb.GetOHLCResponse:
+    async def GetOHLC(self, request: Any, context: Any = None) -> pb.GetOHLCResponse:
         raw = self._get(f"/coins/{request.coin_id}/ohlc", params={
             "vs_currency": request.vs_currency or "usd",
             "days": request.days or "7",
@@ -219,7 +223,7 @@ class CoinGeckoService:
             ))
         return resp
 
-    def GetGlobal(self, request: Any, context: Any = None) -> pb.GetGlobalResponse:
+    async def GetGlobal(self, request: Any, context: Any = None) -> pb.GetGlobalResponse:
         raw = self._get("/global")
         data = raw.get("data", {})
         mcp = data.get("market_cap_percentage", {})
@@ -234,7 +238,7 @@ class CoinGeckoService:
             updated_at=data.get("updated_at", 0),
         )
 
-    def GetCategories(self, request: Any, context: Any = None) -> pb.GetCategoriesResponse:
+    async def GetCategories(self, request: Any, context: Any = None) -> pb.GetCategoriesResponse:
         raw = self._get("/coins/categories", params={
             "order": request.order or "market_cap_desc",
         })
@@ -251,7 +255,7 @@ class CoinGeckoService:
             ))
         return resp
 
-    def GetExchangeRates(self, request: Any, context: Any = None) -> pb.GetExchangeRatesResponse:
+    async def GetExchangeRates(self, request: Any, context: Any = None) -> pb.GetExchangeRatesResponse:
         raw = self._get("/exchange_rates")
         resp = pb.GetExchangeRatesResponse()
         for code, data in raw.get("rates", {}).items():

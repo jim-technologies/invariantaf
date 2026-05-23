@@ -10,6 +10,7 @@ No API key or authentication is required.
 from __future__ import annotations
 
 import json
+import asyncio
 import os
 import sys
 from pathlib import Path
@@ -33,12 +34,12 @@ def live_server():
     from exchangerate_mcp.service import ExchangeRateService
 
     srv = Server.from_descriptor(
-        DESCRIPTOR_PATH, name="test-exchangerate-live", version="0.0.1"
+        DESCRIPTOR_PATH
     )
     servicer = ExchangeRateService()
     srv.register(servicer)
     yield srv
-    srv.stop()
+    asyncio.run(srv.stop())
 
 
 # --- Latest Rates ---
@@ -46,7 +47,7 @@ def live_server():
 
 class TestLiveLatestRates:
     def test_get_latest_all(self, live_server):
-        result = live_server._cli(["ExchangeRateService", "GetLatestAll"])
+        result = asyncio.run(live_server._cli(["ExchangeRateService", "GetLatestAll"]))
         assert "rates" in result
         rates = result["rates"]
         assert isinstance(rates, dict)
@@ -57,14 +58,14 @@ class TestLiveLatestRates:
         assert "USD" in rates
 
     def test_get_latest_rates_with_base(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "ExchangeRateService",
                 "GetLatestRates",
                 "-r",
                 json.dumps({"base": "USD"}),
             ]
-        )
+        ))
         assert "rates" in result
         assert result.get("base") == "USD"
         rates = result["rates"]
@@ -73,14 +74,14 @@ class TestLiveLatestRates:
         assert "EUR" in rates
 
     def test_get_latest_for_currencies(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "ExchangeRateService",
                 "GetLatestForCurrencies",
                 "-r",
                 json.dumps({"base": "EUR", "symbols": "USD,GBP,JPY"}),
             ]
-        )
+        ))
         assert "rates" in result
         rates = result["rates"]
         assert isinstance(rates, dict)
@@ -95,7 +96,7 @@ class TestLiveLatestRates:
 
 class TestLiveCurrencies:
     def test_list_currencies(self, live_server):
-        result = live_server._cli(["ExchangeRateService", "ListCurrencies"])
+        result = asyncio.run(live_server._cli(["ExchangeRateService", "ListCurrencies"]))
         assert "currencies" in result
         currencies = result["currencies"]
         assert isinstance(currencies, dict)
@@ -112,14 +113,14 @@ class TestLiveCurrencies:
 
 class TestLiveConvert:
     def test_convert(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "ExchangeRateService",
                 "Convert",
                 "-r",
                 json.dumps({"from": "USD", "to": "EUR", "amount": 100}),
             ]
-        )
+        ))
         assert "rates" in result
         rates = result["rates"]
         assert "EUR" in rates
@@ -128,7 +129,7 @@ class TestLiveConvert:
         assert result.get("amount") == 100.0
 
     def test_convert_historical(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "ExchangeRateService",
                 "ConvertHistorical",
@@ -140,7 +141,7 @@ class TestLiveConvert:
                     "amount": 50,
                 }),
             ]
-        )
+        ))
         assert "rates" in result
         rates = result["rates"]
         assert "EUR" in rates
@@ -154,14 +155,14 @@ class TestLiveConvert:
 
 class TestLiveHistoricalRates:
     def test_get_historical_rates(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "ExchangeRateService",
                 "GetHistoricalRates",
                 "-r",
                 json.dumps({"date": "2024-01-15", "base": "EUR"}),
             ]
-        )
+        ))
         assert "rates" in result
         rates = result["rates"]
         assert isinstance(rates, dict)
@@ -170,7 +171,7 @@ class TestLiveHistoricalRates:
         assert result.get("date") == "2024-01-15"
 
     def test_get_historical_for_currencies(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "ExchangeRateService",
                 "GetHistoricalForCurrencies",
@@ -181,7 +182,7 @@ class TestLiveHistoricalRates:
                     "symbols": "USD,GBP",
                 }),
             ]
-        )
+        ))
         assert "rates" in result
         rates = result["rates"]
         assert "USD" in rates
@@ -193,7 +194,7 @@ class TestLiveHistoricalRates:
 
 class TestLiveTimeSeries:
     def test_get_time_series(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "ExchangeRateService",
                 "GetTimeSeries",
@@ -205,7 +206,7 @@ class TestLiveTimeSeries:
                     "symbols": "USD,GBP",
                 }),
             ]
-        )
+        ))
         key = "dailyRates" if "dailyRates" in result else "daily_rates"
         assert key in result
         daily_rates = result[key]
@@ -217,7 +218,7 @@ class TestLiveTimeSeries:
         assert "rates" in day
 
     def test_get_time_series_for_pair(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "ExchangeRateService",
                 "GetTimeSeriesForPair",
@@ -229,7 +230,7 @@ class TestLiveTimeSeries:
                     "to": "EUR",
                 }),
             ]
-        )
+        ))
         key = "dailyRates" if "dailyRates" in result else "daily_rates"
         assert key in result
         daily_rates = result[key]

@@ -125,14 +125,18 @@ class YearnService:
     """Implements YearnService RPCs via the free yDaemon API."""
 
     def __init__(self):
-        self._http = httpx.Client(timeout=30)
+        self._http = httpx.AsyncClient(timeout=30)
+
+    async def aclose(self) -> None:
+        """Close the HTTP client. Idempotent."""
+        await self._client.aclose()
 
     def _get(self, url: str, params: dict | None = None) -> Any:
         resp = self._http.get(url, params=params)
         resp.raise_for_status()
         return resp.json()
 
-    def ListVaults(self, request: Any, context: Any = None) -> pb.ListVaultsResponse:
+    async def ListVaults(self, request: Any, context: Any = None) -> pb.ListVaultsResponse:
         chain_id = request.chain_id if request.chain_id else 1
         raw = self._get(f"{_BASE_URL}/{chain_id}/vaults/all")
         resp = pb.ListVaultsResponse()
@@ -140,13 +144,13 @@ class YearnService:
             resp.vaults.append(_parse_vault(v))
         return resp
 
-    def GetVault(self, request: Any, context: Any = None) -> pb.GetVaultResponse:
+    async def GetVault(self, request: Any, context: Any = None) -> pb.GetVaultResponse:
         chain_id = request.chain_id if request.chain_id else 1
         raw = self._get(f"{_BASE_URL}/{chain_id}/vaults/{request.address}")
         vault = _parse_vault(raw)
         return pb.GetVaultResponse(vault=vault)
 
-    def ListAllVaults(self, request: Any, context: Any = None) -> pb.ListAllVaultsResponse:
+    async def ListAllVaults(self, request: Any, context: Any = None) -> pb.ListAllVaultsResponse:
         resp = pb.ListAllVaultsResponse()
         for chain_id in _SUPPORTED_CHAINS:
             try:

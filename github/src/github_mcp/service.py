@@ -20,14 +20,18 @@ class GitHubService:
         headers = {"Accept": "application/vnd.github+json"}
         if self._token:
             headers["Authorization"] = f"Bearer {self._token}"
-        self._http = httpx.Client(timeout=30, headers=headers)
+        self._http = httpx.AsyncClient(timeout=30, headers=headers)
+
+    async def aclose(self) -> None:
+        """Close the HTTP client. Idempotent."""
+        await self._client.aclose()
 
     def _get(self, path: str, params: dict | None = None) -> Any:
         resp = self._http.get(f"{_BASE_URL}{path}", params=params)
         resp.raise_for_status()
         return resp.json()
 
-    def SearchRepos(self, request: Any, context: Any = None) -> pb.SearchReposResponse:
+    async def SearchRepos(self, request: Any, context: Any = None) -> pb.SearchReposResponse:
         params: dict[str, Any] = {"q": request.query}
         if request.sort:
             params["sort"] = request.sort
@@ -63,7 +67,7 @@ class GitHubService:
             ))
         return resp
 
-    def SearchUsers(self, request: Any, context: Any = None) -> pb.SearchUsersResponse:
+    async def SearchUsers(self, request: Any, context: Any = None) -> pb.SearchUsersResponse:
         params: dict[str, Any] = {"q": request.query}
         if request.sort:
             params["sort"] = request.sort
@@ -86,7 +90,7 @@ class GitHubService:
             ))
         return resp
 
-    def GetUser(self, request: Any, context: Any = None) -> pb.GetUserResponse:
+    async def GetUser(self, request: Any, context: Any = None) -> pb.GetUserResponse:
         raw = self._get(f"/users/{request.username}")
         return pb.GetUserResponse(user=pb.User(
             id=raw.get("id", 0),
@@ -106,7 +110,7 @@ class GitHubService:
             created_at=raw.get("created_at") or "",
         ))
 
-    def GetRepo(self, request: Any, context: Any = None) -> pb.GetRepoResponse:
+    async def GetRepo(self, request: Any, context: Any = None) -> pb.GetRepoResponse:
         raw = self._get(f"/repos/{request.owner}/{request.repo}")
         return pb.GetRepoResponse(repo=pb.Repository(
             id=raw.get("id", 0),
@@ -129,7 +133,7 @@ class GitHubService:
             topics=raw.get("topics") or [],
         ))
 
-    def ListRepoIssues(self, request: Any, context: Any = None) -> pb.ListRepoIssuesResponse:
+    async def ListRepoIssues(self, request: Any, context: Any = None) -> pb.ListRepoIssuesResponse:
         params: dict[str, Any] = {}
         if request.state:
             params["state"] = request.state
@@ -161,7 +165,7 @@ class GitHubService:
             ))
         return resp
 
-    def GetIssue(self, request: Any, context: Any = None) -> pb.GetIssueResponse:
+    async def GetIssue(self, request: Any, context: Any = None) -> pb.GetIssueResponse:
         raw = self._get(f"/repos/{request.owner}/{request.repo}/issues/{request.issue_number}")
         return pb.GetIssueResponse(issue=pb.Issue(
             id=raw.get("id", 0),
@@ -180,7 +184,7 @@ class GitHubService:
             is_pull_request=bool(raw.get("pull_request")),
         ))
 
-    def ListRepoPulls(self, request: Any, context: Any = None) -> pb.ListRepoPullsResponse:
+    async def ListRepoPulls(self, request: Any, context: Any = None) -> pb.ListRepoPullsResponse:
         params: dict[str, Any] = {}
         if request.state:
             params["state"] = request.state
@@ -211,7 +215,7 @@ class GitHubService:
             ))
         return resp
 
-    def GetPull(self, request: Any, context: Any = None) -> pb.GetPullResponse:
+    async def GetPull(self, request: Any, context: Any = None) -> pb.GetPullResponse:
         raw = self._get(f"/repos/{request.owner}/{request.repo}/pulls/{request.pull_number}")
         return pb.GetPullResponse(pull=pb.PullRequest(
             id=raw.get("id", 0),
@@ -236,14 +240,14 @@ class GitHubService:
             updated_at=raw.get("updated_at") or "",
         ))
 
-    def ListRepoLanguages(self, request: Any, context: Any = None) -> pb.ListRepoLanguagesResponse:
+    async def ListRepoLanguages(self, request: Any, context: Any = None) -> pb.ListRepoLanguagesResponse:
         raw = self._get(f"/repos/{request.owner}/{request.repo}/languages")
         resp = pb.ListRepoLanguagesResponse()
         for lang, bytes_count in raw.items():
             resp.languages[lang] = bytes_count
         return resp
 
-    def GetRateLimit(self, request: Any, context: Any = None) -> pb.GetRateLimitResponse:
+    async def GetRateLimit(self, request: Any, context: Any = None) -> pb.GetRateLimitResponse:
         raw = self._get("/rate_limit")
         core = (raw.get("resources") or {}).get("core", {})
         return pb.GetRateLimitResponse(

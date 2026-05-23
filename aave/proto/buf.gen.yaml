@@ -1,4 +1,4 @@
 version: v2
 plugins:
   - protoc_builtin: python
-    out: ../src/gen
+    out: ../src/aave_mcp/gen

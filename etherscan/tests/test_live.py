@@ -10,6 +10,7 @@ A free tier API key is available at https://etherscan.io/apis.
 from __future__ import annotations
 
 import json
+import asyncio
 import os
 import sys
 from pathlib import Path
@@ -38,12 +39,12 @@ def live_server():
     from etherscan_mcp.service import EtherscanService
 
     srv = Server.from_descriptor(
-        DESCRIPTOR_PATH, name="test-etherscan-live", version="0.0.1"
+        DESCRIPTOR_PATH
     )
     servicer = EtherscanService()
     srv.register(servicer)
     yield srv
-    srv.stop()
+    asyncio.run(srv.stop())
 
 
 # --- GetBalance ---
@@ -51,16 +52,16 @@ def live_server():
 
 class TestLiveGetBalance:
     def test_get_balance(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             ["EtherscanService", "GetBalance", "-r", json.dumps({"address": VITALIK_ADDRESS})]
-        )
+        ))
         assert "balance" in result
         assert result["balance"] != ""
 
     def test_balance_is_numeric(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             ["EtherscanService", "GetBalance", "-r", json.dumps({"address": VITALIK_ADDRESS})]
-        )
+        ))
         assert result["balance"].isdigit()
 
 
@@ -69,14 +70,14 @@ class TestLiveGetBalance:
 
 class TestLiveGetTokenBalance:
     def test_get_token_balance(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "EtherscanService",
                 "GetTokenBalance",
                 "-r",
                 json.dumps({"address": VITALIK_ADDRESS, "contractAddress": USDC_CONTRACT}),
             ]
-        )
+        ))
         assert "balance" in result
 
 
@@ -85,18 +86,18 @@ class TestLiveGetTokenBalance:
 
 class TestLiveGetTransactions:
     def test_get_transactions(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             ["EtherscanService", "GetTransactions", "-r", json.dumps({"address": VITALIK_ADDRESS})]
-        )
+        ))
         assert "transactions" in result
         txs = result["transactions"]
         assert isinstance(txs, list)
         assert len(txs) > 0
 
     def test_transaction_has_fields(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             ["EtherscanService", "GetTransactions", "-r", json.dumps({"address": VITALIK_ADDRESS})]
-        )
+        ))
         tx = result["transactions"][0]
         assert "hash" in tx
         assert "value" in tx
@@ -108,17 +109,17 @@ class TestLiveGetTransactions:
 
 class TestLiveGetTokenTransfers:
     def test_get_token_transfers(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             ["EtherscanService", "GetTokenTransfers", "-r", json.dumps({"address": VITALIK_ADDRESS})]
-        )
+        ))
         assert "transfers" in result
         transfers = result["transfers"]
         assert isinstance(transfers, list)
 
     def test_transfer_has_token_info(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             ["EtherscanService", "GetTokenTransfers", "-r", json.dumps({"address": VITALIK_ADDRESS})]
-        )
+        ))
         transfers = result["transfers"]
         if len(transfers) > 0:
             t = transfers[0]
@@ -131,11 +132,11 @@ class TestLiveGetTokenTransfers:
 
 class TestLiveGetGasPrice:
     def test_get_gas_price(self, live_server):
-        result = live_server._cli(["EtherscanService", "GetGasPrice"])
+        result = asyncio.run(live_server._cli(["EtherscanService", "GetGasPrice"]))
         assert "gasOracle" in result or "gas_oracle" in result
 
     def test_gas_oracle_fields(self, live_server):
-        result = live_server._cli(["EtherscanService", "GetGasPrice"])
+        result = asyncio.run(live_server._cli(["EtherscanService", "GetGasPrice"]))
         oracle = result.get("gasOracle") or result.get("gas_oracle", {})
         assert "safeGasPrice" in oracle or "safe_gas_price" in oracle
         assert "proposeGasPrice" in oracle or "propose_gas_price" in oracle
@@ -147,11 +148,11 @@ class TestLiveGetGasPrice:
 
 class TestLiveGetETHPrice:
     def test_get_eth_price(self, live_server):
-        result = live_server._cli(["EtherscanService", "GetETHPrice"])
+        result = asyncio.run(live_server._cli(["EtherscanService", "GetETHPrice"]))
         assert "ethPrice" in result or "eth_price" in result
 
     def test_eth_price_fields(self, live_server):
-        result = live_server._cli(["EtherscanService", "GetETHPrice"])
+        result = asyncio.run(live_server._cli(["EtherscanService", "GetETHPrice"]))
         price = result.get("ethPrice") or result.get("eth_price", {})
         assert "ethusd" in price
         assert "ethbtc" in price
@@ -162,16 +163,16 @@ class TestLiveGetETHPrice:
 
 class TestLiveGetContractABI:
     def test_get_contract_abi(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             ["EtherscanService", "GetContractABI", "-r", json.dumps({"address": UNISWAP_ROUTER})]
-        )
+        ))
         assert "abi" in result
         assert result["abi"] != ""
 
     def test_abi_is_json(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             ["EtherscanService", "GetContractABI", "-r", json.dumps({"address": UNISWAP_ROUTER})]
-        )
+        ))
         import json as json_mod
         abi = json_mod.loads(result["abi"])
         assert isinstance(abi, list)

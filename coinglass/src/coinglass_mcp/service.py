@@ -20,7 +20,11 @@ class CoinGlassService:
         api_key = os.environ.get("COINGLASS_API_KEY")
         if api_key:
             headers["coinglassSecret"] = api_key
-        self._http = httpx.Client(timeout=30, headers=headers)
+        self._http = httpx.AsyncClient(timeout=30, headers=headers)
+
+    async def aclose(self) -> None:
+        """Close the HTTP client. Idempotent."""
+        await self._client.aclose()
 
     def _get(self, path: str, params: dict | None = None) -> Any:
         resp = self._http.get(f"{_BASE_URL}{path}", params=params)
@@ -31,7 +35,7 @@ class CoinGlassService:
             return body["data"]
         return body
 
-    def GetFundingRate(self, request: Any, context: Any = None) -> pb.GetFundingRateResponse:
+    async def GetFundingRate(self, request: Any, context: Any = None) -> pb.GetFundingRateResponse:
         params = {}
         if request.symbol:
             params["symbol"] = request.symbol
@@ -44,13 +48,13 @@ class CoinGlassService:
             resp.data.append(_parse_funding_rate(raw))
         return resp
 
-    def GetOpenInterest(self, request: Any, context: Any = None) -> pb.GetOpenInterestResponse:
+    async def GetOpenInterest(self, request: Any, context: Any = None) -> pb.GetOpenInterestResponse:
         params = {"symbol": request.symbol} if request.symbol else {}
         raw = self._get("/open_interest", params=params or None)
         oi_data = _parse_open_interest(raw, request.symbol)
         return pb.GetOpenInterestResponse(data=oi_data)
 
-    def GetLiquidation(self, request: Any, context: Any = None) -> pb.GetLiquidationResponse:
+    async def GetLiquidation(self, request: Any, context: Any = None) -> pb.GetLiquidationResponse:
         params = {}
         if request.symbol:
             params["symbol"] = request.symbol
@@ -63,7 +67,7 @@ class CoinGlassService:
                 resp.records.append(_parse_liquidation(item))
         return resp
 
-    def GetLongShortRatio(self, request: Any, context: Any = None) -> pb.GetLongShortRatioResponse:
+    async def GetLongShortRatio(self, request: Any, context: Any = None) -> pb.GetLongShortRatioResponse:
         params = {}
         if request.symbol:
             params["symbol"] = request.symbol
@@ -76,7 +80,7 @@ class CoinGlassService:
                 resp.records.append(_parse_long_short(item))
         return resp
 
-    def GetOIHistory(self, request: Any, context: Any = None) -> pb.GetOIHistoryResponse:
+    async def GetOIHistory(self, request: Any, context: Any = None) -> pb.GetOIHistoryResponse:
         params = {}
         if request.symbol:
             params["symbol"] = request.symbol

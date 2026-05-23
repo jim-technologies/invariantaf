@@ -10,6 +10,7 @@ No API key or authentication is required.
 from __future__ import annotations
 
 import json
+import asyncio
 import os
 import sys
 from pathlib import Path
@@ -33,12 +34,12 @@ def live_server():
     from lido_mcp.service import LidoService
 
     srv = Server.from_descriptor(
-        DESCRIPTOR_PATH, name="test-lido-live", version="0.0.1"
+        DESCRIPTOR_PATH
     )
     servicer = LidoService()
     srv.register(servicer)
     yield srv
-    srv.stop()
+    asyncio.run(srv.stop())
 
 
 # --- stETH APR ---
@@ -46,7 +47,7 @@ def live_server():
 
 class TestLiveStETHApr:
     def test_get_steth_apr(self, live_server):
-        result = live_server._cli(["LidoService", "GetStETHApr"])
+        result = asyncio.run(live_server._cli(["LidoService", "GetStETHApr"]))
         assert "data" in result
         data = result["data"]
         assert "apr" in data
@@ -54,7 +55,7 @@ class TestLiveStETHApr:
         assert data["apr"] > 0, "APR should be positive"
 
     def test_get_steth_apr_has_meta(self, live_server):
-        result = live_server._cli(["LidoService", "GetStETHApr"])
+        result = asyncio.run(live_server._cli(["LidoService", "GetStETHApr"]))
         assert "meta" in result
         meta = result["meta"]
         assert meta.get("symbol") == "stETH"
@@ -63,7 +64,7 @@ class TestLiveStETHApr:
         assert meta.get(key) == 1, "expected Ethereum mainnet (chainId=1)"
 
     def test_get_steth_apr_has_timestamp(self, live_server):
-        result = live_server._cli(["LidoService", "GetStETHApr"])
+        result = asyncio.run(live_server._cli(["LidoService", "GetStETHApr"]))
         data = result["data"]
         key = "timeUnix" if "timeUnix" in data else "time_unix"
         assert key in data
@@ -75,14 +76,14 @@ class TestLiveStETHApr:
 
 class TestLiveStETHAprSMA:
     def test_get_steth_apr_sma(self, live_server):
-        result = live_server._cli(["LidoService", "GetStETHAprSMA"])
+        result = asyncio.run(live_server._cli(["LidoService", "GetStETHAprSMA"]))
         sma_key = "smaApr" if "smaApr" in result else "sma_apr"
         assert sma_key in result
         assert isinstance(result[sma_key], (int, float))
         assert result[sma_key] > 0, "SMA APR should be positive"
 
     def test_get_steth_apr_sma_has_aprs(self, live_server):
-        result = live_server._cli(["LidoService", "GetStETHAprSMA"])
+        result = asyncio.run(live_server._cli(["LidoService", "GetStETHAprSMA"]))
         assert "aprs" in result
         aprs = result["aprs"]
         assert isinstance(aprs, list)
@@ -92,7 +93,7 @@ class TestLiveStETHAprSMA:
         assert isinstance(first["apr"], (int, float))
 
     def test_get_steth_apr_sma_has_meta(self, live_server):
-        result = live_server._cli(["LidoService", "GetStETHAprSMA"])
+        result = asyncio.run(live_server._cli(["LidoService", "GetStETHAprSMA"]))
         assert "meta" in result
         meta = result["meta"]
         assert meta.get("symbol") == "stETH"
@@ -103,26 +104,26 @@ class TestLiveStETHAprSMA:
 
 class TestLiveWithdrawalTime:
     def test_get_withdrawal_time(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "LidoService",
                 "GetWithdrawalTime",
                 "-r",
                 json.dumps({"amount": 32}),
             ]
-        )
+        ))
         assert "status" in result
         assert result["status"] in ("calculated", "pending")
 
     def test_get_withdrawal_time_has_request_info(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "LidoService",
                 "GetWithdrawalTime",
                 "-r",
                 json.dumps({"amount": 1}),
             ]
-        )
+        ))
         key = "requestInfo" if "requestInfo" in result else "request_info"
         assert key in result
         info = result[key]
@@ -130,12 +131,12 @@ class TestLiveWithdrawalTime:
         assert fin_at_key in info, "expected finalizationAt timestamp"
 
     def test_get_withdrawal_time_small_amount(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "LidoService",
                 "GetWithdrawalTime",
                 "-r",
                 json.dumps({"amount": 0.1}),
             ]
-        )
+        ))
         assert "status" in result

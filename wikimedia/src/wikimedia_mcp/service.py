@@ -25,67 +25,71 @@ class WikimediaService:
     ):
         self._base_url = base_url.rstrip("/")
         self._timeout = timeout
-        self._client = httpx.Client(
+        self._client = httpx.AsyncClient(
             timeout=timeout,
             headers={"User-Agent": USER_AGENT},
         )
+
+    async def aclose(self) -> None:
+        """Close the HTTP client. Idempotent."""
+        await self._client.aclose()
 
     # -------------------------
     # RPC handlers
     # -------------------------
 
-    def GetPageviews(
+    async def GetPageviews(
         self, request: pb.GetPageviewsRequest, context: Any = None
     ) -> pb.GetPageviewsResponse:
         path = (
             f"/metrics/pageviews/per-article/en.wikipedia/all-access/all-agents"
             f"/{request.article}/daily/{request.start}/{request.end}"
         )
-        payload = self._get(path)
+        payload = await self._get(path)
         items = payload.get("items", [])
         return self._parse_message({"items": items}, pb.GetPageviewsResponse)
 
-    def GetTopPages(
+    async def GetTopPages(
         self, request: pb.GetTopPagesRequest, context: Any = None
     ) -> pb.GetTopPagesResponse:
         path = (
             f"/metrics/pageviews/top/en.wikipedia/all-access"
             f"/{request.year}/{request.month}/{request.day}"
         )
-        payload = self._get(path)
+        payload = await self._get(path)
         articles = self._extract_top_articles(payload)
         return self._parse_message({"articles": articles}, pb.GetTopPagesResponse)
 
-    def GetAggregatePageviews(
+    async def GetAggregatePageviews(
         self, request: pb.GetAggregatePageviewsRequest, context: Any = None
     ) -> pb.GetAggregatePageviewsResponse:
         path = (
             f"/metrics/pageviews/aggregate/en.wikipedia/all-access/all-agents"
             f"/daily/{request.start}/{request.end}"
         )
-        payload = self._get(path)
+        payload = await self._get(path)
         items = payload.get("items", [])
         return self._parse_message({"items": items}, pb.GetAggregatePageviewsResponse)
 
-    def GetMostViewed(
+    async def GetMostViewed(
         self, request: pb.GetMostViewedRequest, context: Any = None
     ) -> pb.GetMostViewedResponse:
         path = (
             f"/metrics/pageviews/top/en.wikipedia/all-access"
             f"/{request.year}/{request.month}/all-days"
         )
-        payload = self._get(path)
+        payload = await self._get(path)
         articles = self._extract_top_articles(payload)
         return self._parse_message({"articles": articles}, pb.GetMostViewedResponse)
 
-    def GetUniqueDevices(
+    async def GetUniqueDevices(
         self, request: pb.GetUniqueDevicesRequest, context: Any = None
     ) -> pb.GetUniqueDevicesResponse:
         path = (
             f"/metrics/unique-devices/en.wikipedia/all-sites"
             f"/daily/{request.start}/{request.end}"
         )
-        payload = self._get(path)
+        payload = await self._get(path)
         items = payload.get("items", [])
         return self._parse_message({"items": items}, pb.GetUniqueDevicesResponse)
 
@@ -114,9 +118,9 @@ class WikimediaService:
     # HTTP helpers
     # -------------------------
 
-    def _get(self, path: str) -> Any:
+    async def _get(self, path: str) -> Any:
         url = f"{self._base_url}{path}"
-        response = self._client.request(
+        response = await self._client.request(
             "GET",
             url,
             headers={"Accept": "application/json"},

@@ -24,13 +24,17 @@ class CryptoCompareService:
     ):
         self._base_url = base_url.rstrip("/")
         self._timeout = timeout
-        self._client = httpx.Client(timeout=timeout)
+        self._client = httpx.AsyncClient(timeout=timeout)
+
+    async def aclose(self) -> None:
+        """Close the HTTP client. Idempotent."""
+        await self._client.aclose()
 
     # -------------------------
     # RPC handlers
     # -------------------------
 
-    def GetPrice(
+    async def GetPrice(
         self, request: pb.GetPriceRequest, context: Any = None
     ) -> pb.GetPriceResponse:
         query: dict[str, Any] = {
@@ -38,12 +42,12 @@ class CryptoCompareService:
             "tsyms": request.tsyms,
         }
 
-        payload = self._get("/data/price", query)
+        payload = await self._get("/data/price", query)
         # Response is like {"USD": 64500, "EUR": 59000}
         prices = {k: float(v) for k, v in payload.items() if isinstance(v, (int, float))}
         return self._parse_message({"prices": prices}, pb.GetPriceResponse)
 
-    def GetMultiPrice(
+    async def GetMultiPrice(
         self, request: pb.GetMultiPriceRequest, context: Any = None
     ) -> pb.GetMultiPriceResponse:
         query: dict[str, Any] = {
@@ -51,7 +55,7 @@ class CryptoCompareService:
             "tsyms": request.tsyms,
         }
 
-        payload = self._get("/data/pricemulti", query)
+        payload = await self._get("/data/pricemulti", query)
         # Response is like {"BTC": {"USD": 64500}, "ETH": {"USD": 2500}}
         rows = []
         for from_sym, prices_map in payload.items():
@@ -60,7 +64,7 @@ class CryptoCompareService:
                 rows.append({"from_symbol": from_sym, "prices": prices})
         return self._parse_message({"rows": rows}, pb.GetMultiPriceResponse)
 
-    def GetFullPrice(
+    async def GetFullPrice(
         self, request: pb.GetFullPriceRequest, context: Any = None
     ) -> pb.GetFullPriceResponse:
         query: dict[str, Any] = {
@@ -68,7 +72,7 @@ class CryptoCompareService:
             "tsyms": request.tsyms,
         }
 
-        payload = self._get("/data/pricemultifull", query)
+        payload = await self._get("/data/pricemultifull", query)
         # Response is {"RAW": {"BTC": {"USD": {...fields...}}}}
         raw = payload.get("RAW", {})
         coins = []
@@ -90,7 +94,7 @@ class CryptoCompareService:
                         })
         return self._parse_message({"coins": coins}, pb.GetFullPriceResponse)
 
-    def GetHistoHour(
+    async def GetHistoHour(
         self, request: pb.GetHistoHourRequest, context: Any = None
     ) -> pb.GetHistoHourResponse:
         query: dict[str, Any] = {
@@ -100,12 +104,12 @@ class CryptoCompareService:
         if self._has_field(request, "limit"):
             query["limit"] = request.limit
 
-        payload = self._get("/data/v2/histohour", query)
+        payload = await self._get("/data/v2/histohour", query)
         # Response is {"Data": {"Data": [{...ohlcv...}]}}
         candles = self._extract_histo_data(payload)
         return self._parse_message({"candles": candles}, pb.GetHistoHourResponse)
 
-    def GetHistoDay(
+    async def GetHistoDay(
         self, request: pb.GetHistoDayRequest, context: Any = None
     ) -> pb.GetHistoDayResponse:
         query: dict[str, Any] = {
@@ -115,12 +119,12 @@ class CryptoCompareService:
         if self._has_field(request, "limit"):
             query["limit"] = request.limit
 
-        payload = self._get("/data/v2/histoday", query)
+        payload = await self._get("/data/v2/histoday", query)
         # Response is {"Data": {"Data": [{...ohlcv...}]}}
         candles = self._extract_histo_data(payload)
         return self._parse_message({"candles": candles}, pb.GetHistoDayResponse)
 
-    def GetTopByVolume(
+    async def GetTopByVolume(
         self, request: pb.GetTopByVolumeRequest, context: Any = None
     ) -> pb.GetTopByVolumeResponse:
         query: dict[str, Any] = {
@@ -129,7 +133,7 @@ class CryptoCompareService:
         if self._has_field(request, "limit"):
             query["limit"] = request.limit
 
-        payload = self._get("/data/top/totalvolfull", query)
+        payload = await self._get("/data/top/totalvolfull", query)
         # Response is {"Data": [{...}]}
         data = payload.get("Data", [])
         coins = []
@@ -179,9 +183,9 @@ class CryptoCompareService:
     # HTTP helpers
     # -------------------------
 
-    def _get(self, path: str, query: dict[str, Any] | None = None) -> Any:
+    async def _get(self, path: str, query: dict[str, Any] | None = None) -> Any:
         url = self._build_url(path, query)
-        response = self._client.request(
+        response = await self._client.request(
             "GET",
             url,
             headers={"Accept": "application/json"},

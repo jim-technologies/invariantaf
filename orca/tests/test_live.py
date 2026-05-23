@@ -10,6 +10,7 @@ No API key or authentication is required.
 from __future__ import annotations
 
 import json
+import asyncio
 import os
 import sys
 from pathlib import Path
@@ -33,12 +34,12 @@ def live_server():
     from orca_mcp.service import OrcaService
 
     srv = Server.from_descriptor(
-        DESCRIPTOR_PATH, name="test-orca-live", version="0.0.1"
+        DESCRIPTOR_PATH
     )
     servicer = OrcaService()
     srv.register(servicer)
     yield srv
-    srv.stop()
+    asyncio.run(srv.stop())
 
 
 # --- Shared fixtures for discovery ---
@@ -47,7 +48,7 @@ def live_server():
 @pytest.fixture(scope="module")
 def first_pool_address(live_server):
     """Discover a pool address for tests that need one."""
-    result = live_server._cli(["OrcaService", "ListPools", "-r", '{"limit": 1}'])
+    result = asyncio.run(live_server._cli(["OrcaService", "ListPools", "-r", '{"limit": 1}']))
     pools = result.get("pools", [])
     assert pools, "expected at least one pool"
     address = pools[0].get("address", "")
@@ -58,7 +59,7 @@ def first_pool_address(live_server):
 @pytest.fixture(scope="module")
 def first_token_address(live_server):
     """Discover a token mint address for tests that need one."""
-    result = live_server._cli(["OrcaService", "ListTokens", "-r", '{"limit": 1}'])
+    result = asyncio.run(live_server._cli(["OrcaService", "ListTokens", "-r", '{"limit": 1}']))
     tokens = result.get("tokens", [])
     assert tokens, "expected at least one token"
     address = tokens[0].get("address", "")
@@ -71,7 +72,7 @@ def first_token_address(live_server):
 
 class TestLivePools:
     def test_list_pools(self, live_server):
-        result = live_server._cli(["OrcaService", "ListPools", "-r", '{"limit": 5}'])
+        result = asyncio.run(live_server._cli(["OrcaService", "ListPools", "-r", '{"limit": 5}']))
         assert "pools" in result
         pools = result["pools"]
         assert isinstance(pools, list)
@@ -81,27 +82,27 @@ class TestLivePools:
         assert "tokenA" in p or "token_a" in p
 
     def test_get_pool(self, live_server, first_pool_address):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "OrcaService",
                 "GetPool",
                 "-r",
                 json.dumps({"address": first_pool_address}),
             ]
-        )
+        ))
         assert "pool" in result
         pool = result["pool"]
         assert "address" in pool
 
     def test_search_pools(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "OrcaService",
                 "SearchPools",
                 "-r",
                 json.dumps({"query": "SOL-USDC", "limit": 3}),
             ]
-        )
+        ))
         assert "pools" in result
         pools = result["pools"]
         assert isinstance(pools, list)
@@ -113,7 +114,7 @@ class TestLivePools:
 
 class TestLiveTokens:
     def test_list_tokens(self, live_server):
-        result = live_server._cli(["OrcaService", "ListTokens", "-r", '{"limit": 5}'])
+        result = asyncio.run(live_server._cli(["OrcaService", "ListTokens", "-r", '{"limit": 5}']))
         assert "tokens" in result
         tokens = result["tokens"]
         assert isinstance(tokens, list)
@@ -122,27 +123,27 @@ class TestLiveTokens:
         assert "address" in t
 
     def test_get_token(self, live_server, first_token_address):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "OrcaService",
                 "GetToken",
                 "-r",
                 json.dumps({"mintAddress": first_token_address}),
             ]
-        )
+        ))
         assert "token" in result
         token = result["token"]
         assert "address" in token
 
     def test_search_tokens(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "OrcaService",
                 "SearchTokens",
                 "-r",
                 json.dumps({"query": "ORCA", "limit": 3}),
             ]
-        )
+        ))
         assert "tokens" in result
         tokens = result["tokens"]
         assert isinstance(tokens, list)
@@ -154,12 +155,12 @@ class TestLiveTokens:
 
 class TestLiveProtocol:
     def test_get_protocol_stats(self, live_server):
-        result = live_server._cli(["OrcaService", "GetProtocolStats"])
+        result = asyncio.run(live_server._cli(["OrcaService", "GetProtocolStats"]))
         assert "tvl" in result
         assert result.get("volume24hUsdc") or result.get("volume_24h_usdc")
 
     def test_get_protocol_token(self, live_server):
-        result = live_server._cli(["OrcaService", "GetProtocolToken"])
+        result = asyncio.run(live_server._cli(["OrcaService", "GetProtocolToken"]))
         assert result.get("symbol") == "ORCA"
         assert result.get("name") == "Orca"
         assert "price" in result
@@ -170,13 +171,13 @@ class TestLiveProtocol:
 
 class TestLiveLockedLiquidity:
     def test_get_locked_liquidity(self, live_server, first_pool_address):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "OrcaService",
                 "GetLockedLiquidity",
                 "-r",
                 json.dumps({"address": first_pool_address}),
             ]
-        )
+        ))
         # entries may be empty for some pools — just verify the shape
         assert isinstance(result.get("entries", []), list)

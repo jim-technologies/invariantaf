@@ -25,13 +25,17 @@ class BallDontLieService:
         self._base_url = base_url.rstrip("/")
         self._api_key = api_key
         self._timeout = timeout
-        self._client = httpx.Client(timeout=timeout)
+        self._client = httpx.AsyncClient(timeout=timeout)
+
+    async def aclose(self) -> None:
+        """Close the HTTP client. Idempotent."""
+        await self._client.aclose()
 
     # -------------------------
     # RPC handlers
     # -------------------------
 
-    def ListNBAPlayers(
+    async def ListNBAPlayers(
         self, request: pb.ListNBAPlayersRequest, context: Any = None
     ) -> pb.ListNBAPlayersResponse:
         params: list[tuple[str, str]] = []
@@ -42,22 +46,22 @@ class BallDontLieService:
         if self._has_field(request, "cursor"):
             params.append(("cursor", str(request.cursor)))
 
-        payload = self._get("/nba/players", params)
+        payload = await self._get("/nba/players", params)
         return self._parse_response(payload, pb.ListNBAPlayersResponse)
 
-    def GetNBAPlayer(
+    async def GetNBAPlayer(
         self, request: pb.GetNBAPlayerRequest, context: Any = None
     ) -> pb.GetNBAPlayerResponse:
-        payload = self._get(f"/nba/players/{request.id}")
+        payload = await self._get(f"/nba/players/{request.id}")
         return self._parse_response({"data": payload.get("data", payload)}, pb.GetNBAPlayerResponse)
 
-    def ListNBATeams(
+    async def ListNBATeams(
         self, request: pb.ListNBATeamsRequest, context: Any = None
     ) -> pb.ListNBATeamsResponse:
-        payload = self._get("/nba/teams")
+        payload = await self._get("/nba/teams")
         return self._parse_response(payload, pb.ListNBATeamsResponse)
 
-    def ListNBAGames(
+    async def ListNBAGames(
         self, request: pb.ListNBAGamesRequest, context: Any = None
     ) -> pb.ListNBAGamesResponse:
         params: list[tuple[str, str]] = []
@@ -72,16 +76,16 @@ class BallDontLieService:
         if self._has_field(request, "cursor"):
             params.append(("cursor", str(request.cursor)))
 
-        payload = self._get("/nba/games", params)
+        payload = await self._get("/nba/games", params)
         return self._parse_response(payload, pb.ListNBAGamesResponse)
 
-    def GetNBAGame(
+    async def GetNBAGame(
         self, request: pb.GetNBAGameRequest, context: Any = None
     ) -> pb.GetNBAGameResponse:
-        payload = self._get(f"/nba/games/{request.id}")
+        payload = await self._get(f"/nba/games/{request.id}")
         return self._parse_response({"data": payload.get("data", payload)}, pb.GetNBAGameResponse)
 
-    def GetNBAStats(
+    async def GetNBAStats(
         self, request: pb.GetNBAStatsRequest, context: Any = None
     ) -> pb.GetNBAStatsResponse:
         params: list[tuple[str, str]] = []
@@ -94,10 +98,10 @@ class BallDontLieService:
         if self._has_field(request, "cursor"):
             params.append(("cursor", str(request.cursor)))
 
-        payload = self._get("/nba/stats", params)
+        payload = await self._get("/nba/stats", params)
         return self._parse_response(payload, pb.GetNBAStatsResponse)
 
-    def GetNBASeasonAverages(
+    async def GetNBASeasonAverages(
         self, request: pb.GetNBASeasonAveragesRequest, context: Any = None
     ) -> pb.GetNBASeasonAveragesResponse:
         params: list[tuple[str, str]] = []
@@ -106,30 +110,30 @@ class BallDontLieService:
         for pid in request.player_ids:
             params.append(("player_ids[]", str(pid)))
 
-        payload = self._get("/nba/season_averages", params)
+        payload = await self._get("/nba/season_averages", params)
         return self._parse_response(payload, pb.GetNBASeasonAveragesResponse)
 
-    def ListNBAStandings(
+    async def ListNBAStandings(
         self, request: pb.ListNBAStandingsRequest, context: Any = None
     ) -> pb.ListNBAStandingsResponse:
         params: list[tuple[str, str]] = []
         if self._has_field(request, "season"):
             params.append(("season", str(request.season)))
 
-        payload = self._get("/nba/standings", params)
+        payload = await self._get("/nba/standings", params)
         return self._parse_response(payload, pb.ListNBAStandingsResponse)
 
     # -------------------------
     # HTTP helpers
     # -------------------------
 
-    def _get(self, path: str, params: list[tuple[str, str]] | None = None) -> Any:
+    async def _get(self, path: str, params: list[tuple[str, str]] | None = None) -> Any:
         url = self._build_url(path, params)
         headers: dict[str, str] = {"Accept": "application/json"}
         if self._api_key:
             headers["Authorization"] = self._api_key
 
-        response = self._client.request("GET", url, headers=headers)
+        response = await self._client.request("GET", url, headers=headers)
 
         try:
             payload = response.json() if response.content else {}

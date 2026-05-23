@@ -87,27 +87,31 @@ class PollingService:
     """Implements PollingService RPCs via PredictIt and Metaculus APIs."""
 
     def __init__(self):
-        self._http = httpx.Client(timeout=30)
+        self._http = httpx.AsyncClient(timeout=30)
+
+    async def aclose(self) -> None:
+        """Close the HTTP client. Idempotent."""
+        await self._client.aclose()
 
     def _get(self, url: str, params: dict | None = None) -> Any:
         resp = self._http.get(url, params=params)
         resp.raise_for_status()
         return resp.json()
 
-    def ListPredictItMarkets(self, request: Any, context: Any = None) -> pb.ListPredictItMarketsResponse:
+    async def ListPredictItMarkets(self, request: Any, context: Any = None) -> pb.ListPredictItMarketsResponse:
         raw = self._get(f"{_PREDICTIT_BASE}/all/")
         resp = pb.ListPredictItMarketsResponse()
         for m in raw.get("markets") or []:
             resp.markets.append(_parse_market(m))
         return resp
 
-    def GetPredictItMarket(self, request: Any, context: Any = None) -> pb.GetPredictItMarketResponse:
+    async def GetPredictItMarket(self, request: Any, context: Any = None) -> pb.GetPredictItMarketResponse:
         ticker = request.ticker
         raw = self._get(f"{_PREDICTIT_BASE}/ticker/{ticker}/")
         market = _parse_market(raw)
         return pb.GetPredictItMarketResponse(market=market)
 
-    def ListMetaculusQuestions(self, request: Any, context: Any = None) -> pb.ListMetaculusQuestionsResponse:
+    async def ListMetaculusQuestions(self, request: Any, context: Any = None) -> pb.ListMetaculusQuestionsResponse:
         limit = request.limit if request.limit else 20
         offset = request.offset if request.offset else 0
         params = {
@@ -121,7 +125,7 @@ class PollingService:
             resp.questions.append(_parse_question(q))
         return resp
 
-    def GetMetaculusQuestion(self, request: Any, context: Any = None) -> pb.GetMetaculusQuestionResponse:
+    async def GetMetaculusQuestion(self, request: Any, context: Any = None) -> pb.GetMetaculusQuestionResponse:
         question_id = request.id
         raw = self._get(f"{_METACULUS_BASE}/{question_id}/")
         question = _parse_question(raw)

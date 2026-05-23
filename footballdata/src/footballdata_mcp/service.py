@@ -27,35 +27,39 @@ class FootballDataService:
         self._base_url = base_url.rstrip("/")
         self._api_key = api_key
         self._timeout = timeout
-        self._client = httpx.Client(timeout=timeout)
+        self._client = httpx.AsyncClient(timeout=timeout)
+
+    async def aclose(self) -> None:
+        """Close the HTTP client. Idempotent."""
+        await self._client.aclose()
 
     # -------------------------
     # RPC handlers
     # -------------------------
 
-    def ListCompetitions(
+    async def ListCompetitions(
         self, request: pb.ListCompetitionsRequest, context: Any = None
     ) -> pb.ListCompetitionsResponse:
-        payload = self._get("/competitions")
+        payload = await self._get("/competitions")
         competitions = payload.get("competitions", [])
         transformed = [self._transform_competition(c) for c in competitions]
         return self._parse_message(
             {"competitions": transformed}, pb.ListCompetitionsResponse
         )
 
-    def GetCompetition(
+    async def GetCompetition(
         self, request: pb.GetCompetitionRequest, context: Any = None
     ) -> pb.GetCompetitionResponse:
-        payload = self._get(f"/competitions/{request.code}")
+        payload = await self._get(f"/competitions/{request.code}")
         transformed = self._transform_competition(payload)
         return self._parse_message(
             {"competition": transformed}, pb.GetCompetitionResponse
         )
 
-    def GetStandings(
+    async def GetStandings(
         self, request: pb.GetStandingsRequest, context: Any = None
     ) -> pb.GetStandingsResponse:
-        payload = self._get(f"/competitions/{request.code}/standings")
+        payload = await self._get(f"/competitions/{request.code}/standings")
         competition = self._transform_competition(payload.get("competition", {}))
         standings = [self._transform_standing(s) for s in payload.get("standings", [])]
         return self._parse_message(
@@ -63,7 +67,7 @@ class FootballDataService:
             pb.GetStandingsResponse,
         )
 
-    def ListMatches(
+    async def ListMatches(
         self, request: pb.ListMatchesRequest, context: Any = None
     ) -> pb.ListMatchesResponse:
         query: dict[str, Any] = {}
@@ -74,41 +78,41 @@ class FootballDataService:
         if self._has_field(request, "status"):
             query["status"] = request.status
 
-        payload = self._get(f"/competitions/{request.code}/matches", query or None)
+        payload = await self._get(f"/competitions/{request.code}/matches", query or None)
         matches = [self._transform_match(m) for m in payload.get("matches", [])]
         return self._parse_message({"matches": matches}, pb.ListMatchesResponse)
 
-    def GetMatch(
+    async def GetMatch(
         self, request: pb.GetMatchRequest, context: Any = None
     ) -> pb.GetMatchResponse:
-        payload = self._get(f"/matches/{request.id}")
+        payload = await self._get(f"/matches/{request.id}")
         transformed = self._transform_match(payload)
         return self._parse_message({"match": transformed}, pb.GetMatchResponse)
 
-    def ListTodayMatches(
+    async def ListTodayMatches(
         self, request: pb.ListTodayMatchesRequest, context: Any = None
     ) -> pb.ListTodayMatchesResponse:
         today = datetime.date.today().isoformat()
         query = {"dateFrom": today, "dateTo": today}
-        payload = self._get("/matches", query)
+        payload = await self._get("/matches", query)
         matches = [self._transform_match(m) for m in payload.get("matches", [])]
         return self._parse_message({"matches": matches}, pb.ListTodayMatchesResponse)
 
-    def GetTeam(
+    async def GetTeam(
         self, request: pb.GetTeamRequest, context: Any = None
     ) -> pb.GetTeamResponse:
-        payload = self._get(f"/teams/{request.id}")
+        payload = await self._get(f"/teams/{request.id}")
         transformed = self._transform_team(payload)
         return self._parse_message(transformed, pb.GetTeamResponse)
 
-    def GetScorers(
+    async def GetScorers(
         self, request: pb.GetScorersRequest, context: Any = None
     ) -> pb.GetScorersResponse:
         query: dict[str, Any] = {}
         if self._has_field(request, "limit"):
             query["limit"] = request.limit
 
-        payload = self._get(
+        payload = await self._get(
             f"/competitions/{request.code}/scorers", query or None
         )
         competition = self._transform_competition(payload.get("competition", {}))
@@ -121,13 +125,13 @@ class FootballDataService:
     # HTTP helpers
     # -------------------------
 
-    def _get(self, path: str, query: dict[str, Any] | None = None) -> Any:
+    async def _get(self, path: str, query: dict[str, Any] | None = None) -> Any:
         url = self._build_url(path, query)
         headers: dict[str, str] = {"Accept": "application/json"}
         if self._api_key:
             headers["X-Auth-Token"] = self._api_key
 
-        response = self._client.request("GET", url, headers=headers)
+        response = await self._client.request("GET", url, headers=headers)
 
         try:
             payload = response.json() if response.content else {}

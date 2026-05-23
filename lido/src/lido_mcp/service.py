@@ -16,14 +16,18 @@ class LidoService:
     """Implements LidoService RPCs via the free Lido APIs."""
 
     def __init__(self):
-        self._http = httpx.Client(timeout=30)
+        self._http = httpx.AsyncClient(timeout=30)
+
+    async def aclose(self) -> None:
+        """Close the HTTP client. Idempotent."""
+        await self._client.aclose()
 
     def _get(self, url: str, params: dict | None = None) -> Any:
         resp = self._http.get(url, params=params)
         resp.raise_for_status()
         return resp.json()
 
-    def GetStETHApr(self, request: Any, context: Any = None) -> pb.GetStETHAprResponse:
+    async def GetStETHApr(self, request: Any, context: Any = None) -> pb.GetStETHAprResponse:
         raw = self._get(f"{_ETH_API_URL}/v1/protocol/steth/apr/last")
         data = raw.get("data", {})
         meta = raw.get("meta", {})
@@ -39,7 +43,7 @@ class LidoService:
             ),
         )
 
-    def GetStETHAprSMA(self, request: Any, context: Any = None) -> pb.GetStETHAprSMAResponse:
+    async def GetStETHAprSMA(self, request: Any, context: Any = None) -> pb.GetStETHAprSMAResponse:
         raw = self._get(f"{_ETH_API_URL}/v1/protocol/steth/apr/sma")
         data = raw.get("data", {})
         meta = raw.get("meta", {})
@@ -59,7 +63,7 @@ class LidoService:
             ),
         )
 
-    def GetWithdrawalTime(self, request: Any, context: Any = None) -> pb.GetWithdrawalTimeResponse:
+    async def GetWithdrawalTime(self, request: Any, context: Any = None) -> pb.GetWithdrawalTimeResponse:
         amount = request.amount if hasattr(request, "amount") and request.amount else 1
         raw = self._get(
             f"{_WQ_API_URL}/v2/request-time/calculate",

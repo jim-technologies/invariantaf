@@ -9,6 +9,7 @@ Both PredictIt and Metaculus are public, unauthenticated APIs.
 from __future__ import annotations
 
 import json
+import asyncio
 import os
 import sys
 from pathlib import Path
@@ -32,18 +33,18 @@ def live_server():
     from polling_mcp.service import PollingService
 
     srv = Server.from_descriptor(
-        DESCRIPTOR_PATH, name="test-polling-live", version="0.0.1"
+        DESCRIPTOR_PATH
     )
     servicer = PollingService()
     srv.register(servicer)
     yield srv
-    srv.stop()
+    asyncio.run(srv.stop())
 
 
 def _cli_or_skip(live_server, args):
     """Call CLI and skip if the API returns an HTTP error."""
     try:
-        return live_server._cli(args)
+        return asyncio.run(live_server._cli(args))
     except Exception as exc:
         msg = str(exc)
         if any(code in msg for code in ("403", "404", "410", "429", "500", "502", "503")):

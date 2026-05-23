@@ -19,7 +19,11 @@ class XKCDService:
     """Implements XKCDService RPCs via the XKCD JSON API."""
 
     def __init__(self):
-        self._http = httpx.Client(timeout=30)
+        self._http = httpx.AsyncClient(timeout=30)
+
+    async def aclose(self) -> None:
+        """Close the HTTP client. Idempotent."""
+        await self._client.aclose()
 
     def _get_comic_json(self, num: int | None = None) -> dict:
         """Fetch a single comic's JSON. None = latest."""
@@ -52,15 +56,15 @@ class XKCDService:
         data = self._get_comic_json()
         return data.get("num", 0)
 
-    def GetLatest(self, request: Any, context: Any = None) -> pb.GetLatestResponse:
+    async def GetLatest(self, request: Any, context: Any = None) -> pb.GetLatestResponse:
         data = self._get_comic_json()
         return pb.GetLatestResponse(comic=self._json_to_comic(data))
 
-    def GetComic(self, request: Any, context: Any = None) -> pb.GetComicResponse:
+    async def GetComic(self, request: Any, context: Any = None) -> pb.GetComicResponse:
         data = self._get_comic_json(request.num)
         return pb.GetComicResponse(comic=self._json_to_comic(data))
 
-    def GetRandom(self, request: Any, context: Any = None) -> pb.GetRandomResponse:
+    async def GetRandom(self, request: Any, context: Any = None) -> pb.GetRandomResponse:
         latest_num = self._get_latest_num()
         num = random.randint(1, latest_num)
         # Skip 404 — it doesn't exist (it's a joke).
@@ -69,7 +73,7 @@ class XKCDService:
         data = self._get_comic_json(num)
         return pb.GetRandomResponse(comic=self._json_to_comic(data))
 
-    def GetRange(self, request: Any, context: Any = None) -> pb.GetRangeResponse:
+    async def GetRange(self, request: Any, context: Any = None) -> pb.GetRangeResponse:
         start = request.start_num
         end = request.end_num
         # Clamp range to max 50.
@@ -86,7 +90,7 @@ class XKCDService:
                 continue
         return resp
 
-    def SearchByTitle(self, request: Any, context: Any = None) -> pb.SearchByTitleResponse:
+    async def SearchByTitle(self, request: Any, context: Any = None) -> pb.SearchByTitleResponse:
         query = request.query.lower()
         search_count = request.search_count or 100
         if search_count > 500:
@@ -107,7 +111,7 @@ class XKCDService:
                 continue
         return resp
 
-    def GetExplanation(self, request: Any, context: Any = None) -> pb.GetExplanationResponse:
+    async def GetExplanation(self, request: Any, context: Any = None) -> pb.GetExplanationResponse:
         num = request.num
         url = _EXPLAIN_BASE
         params = {
@@ -156,11 +160,11 @@ class XKCDService:
         text = re.sub(r"\n{3,}", "\n\n", text)
         return text.strip()
 
-    def GetComicCount(self, request: Any, context: Any = None) -> pb.GetComicCountResponse:
+    async def GetComicCount(self, request: Any, context: Any = None) -> pb.GetComicCountResponse:
         latest_num = self._get_latest_num()
         return pb.GetComicCountResponse(count=latest_num)
 
-    def GetMultiple(self, request: Any, context: Any = None) -> pb.GetMultipleResponse:
+    async def GetMultiple(self, request: Any, context: Any = None) -> pb.GetMultipleResponse:
         nums = list(request.nums)
         if len(nums) > 50:
             nums = nums[:50]
@@ -175,7 +179,7 @@ class XKCDService:
                 continue
         return resp
 
-    def GetRecent(self, request: Any, context: Any = None) -> pb.GetRecentResponse:
+    async def GetRecent(self, request: Any, context: Any = None) -> pb.GetRecentResponse:
         count = request.count or 10
         if count > 50:
             count = 50
@@ -193,7 +197,7 @@ class XKCDService:
                 continue
         return resp
 
-    def GetByDate(self, request: Any, context: Any = None) -> pb.GetByDateResponse:
+    async def GetByDate(self, request: Any, context: Any = None) -> pb.GetByDateResponse:
         year = str(request.year)
         month = str(request.month)
         search_count = request.search_count or 500

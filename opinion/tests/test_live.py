@@ -9,6 +9,7 @@ Optionally set OPINION_API_KEY for authenticated endpoints.
 from __future__ import annotations
 
 import json
+import asyncio
 import os
 import sys
 from pathlib import Path
@@ -35,7 +36,7 @@ def _cli_or_skip(server, service: str, method: str, params: dict | None = None):
     if params:
         args += ["-r", json.dumps(params)]
     try:
-        return server._cli(args)
+        return asyncio.run(server._cli(args))
     except Exception as exc:
         msg = str(exc)
         for code in _SKIP_STATUS_CODES:
@@ -54,7 +55,7 @@ def live_server():
     ).rstrip("/")
 
     srv = Server.from_descriptor(
-        DESCRIPTOR_PATH, name="test-opinion-live", version="0.0.1"
+        DESCRIPTOR_PATH
     )
 
     api_key = (os.getenv("OPINION_API_KEY") or "").strip()
@@ -65,7 +66,7 @@ def live_server():
 
     srv.connect_http(base_url, service_name="opinion.v1.OpinionService")
     yield srv
-    srv.stop()
+    asyncio.run(srv.stop())
 
 
 class TestLiveMarkets:

@@ -15,14 +15,18 @@ class ExchangeRateService:
     """Implements ExchangeRateService RPCs via the free Frankfurter API."""
 
     def __init__(self):
-        self._http = httpx.Client(timeout=30)
+        self._http = httpx.AsyncClient(timeout=30)
+
+    async def aclose(self) -> None:
+        """Close the HTTP client. Idempotent."""
+        await self._client.aclose()
 
     def _get(self, path: str, params: dict | None = None) -> Any:
         resp = self._http.get(f"{_BASE_URL}{path}", params=params)
         resp.raise_for_status()
         return resp.json()
 
-    def GetLatestRates(self, request: Any, context: Any = None) -> pb.GetLatestRatesResponse:
+    async def GetLatestRates(self, request: Any, context: Any = None) -> pb.GetLatestRatesResponse:
         params = {}
         if request.base:
             params["base"] = request.base
@@ -33,7 +37,7 @@ class ExchangeRateService:
             rates=raw.get("rates", {}),
         )
 
-    def GetLatestForCurrencies(self, request: Any, context: Any = None) -> pb.GetLatestForCurrenciesResponse:
+    async def GetLatestForCurrencies(self, request: Any, context: Any = None) -> pb.GetLatestForCurrenciesResponse:
         params = {}
         if request.base:
             params["base"] = request.base
@@ -46,7 +50,7 @@ class ExchangeRateService:
             rates=raw.get("rates", {}),
         )
 
-    def Convert(self, request: Any, context: Any = None) -> pb.ConvertResponse:
+    async def Convert(self, request: Any, context: Any = None) -> pb.ConvertResponse:
         params = {}
         if getattr(request, "from", "") or request.DESCRIPTOR.fields_by_name["from"].number:
             # Proto field "from" is a reserved keyword — access via getattr.
@@ -64,7 +68,7 @@ class ExchangeRateService:
             amount=raw.get("amount", 0),
         )
 
-    def GetHistoricalRates(self, request: Any, context: Any = None) -> pb.GetHistoricalRatesResponse:
+    async def GetHistoricalRates(self, request: Any, context: Any = None) -> pb.GetHistoricalRatesResponse:
         date = request.date or "latest"
         params = {}
         if request.base:
@@ -76,7 +80,7 @@ class ExchangeRateService:
             rates=raw.get("rates", {}),
         )
 
-    def GetTimeSeries(self, request: Any, context: Any = None) -> pb.GetTimeSeriesResponse:
+    async def GetTimeSeries(self, request: Any, context: Any = None) -> pb.GetTimeSeriesResponse:
         path = f"/{request.start_date}..{request.end_date}"
         params = {}
         if request.base:
@@ -97,11 +101,11 @@ class ExchangeRateService:
             daily_rates=daily,
         )
 
-    def ListCurrencies(self, request: Any, context: Any = None) -> pb.ListCurrenciesResponse:
+    async def ListCurrencies(self, request: Any, context: Any = None) -> pb.ListCurrenciesResponse:
         raw = self._get("/currencies")
         return pb.ListCurrenciesResponse(currencies=raw)
 
-    def GetHistoricalForCurrencies(self, request: Any, context: Any = None) -> pb.GetHistoricalForCurrenciesResponse:
+    async def GetHistoricalForCurrencies(self, request: Any, context: Any = None) -> pb.GetHistoricalForCurrenciesResponse:
         date = request.date or "latest"
         params = {}
         if request.base:
@@ -115,7 +119,7 @@ class ExchangeRateService:
             rates=raw.get("rates", {}),
         )
 
-    def ConvertHistorical(self, request: Any, context: Any = None) -> pb.ConvertHistoricalResponse:
+    async def ConvertHistorical(self, request: Any, context: Any = None) -> pb.ConvertHistoricalResponse:
         date = request.date or "latest"
         from_currency = getattr(request, "from", "") or "EUR"
         params = {
@@ -133,7 +137,7 @@ class ExchangeRateService:
             amount=raw.get("amount", 0),
         )
 
-    def GetTimeSeriesForPair(self, request: Any, context: Any = None) -> pb.GetTimeSeriesForPairResponse:
+    async def GetTimeSeriesForPair(self, request: Any, context: Any = None) -> pb.GetTimeSeriesForPairResponse:
         path = f"/{request.start_date}..{request.end_date}"
         from_currency = getattr(request, "from", "") or "EUR"
         params = {"base": from_currency}
@@ -153,7 +157,7 @@ class ExchangeRateService:
             daily_rates=daily,
         )
 
-    def GetLatestAll(self, request: Any, context: Any = None) -> pb.GetLatestAllResponse:
+    async def GetLatestAll(self, request: Any, context: Any = None) -> pb.GetLatestAllResponse:
         raw = self._get("/latest")
         return pb.GetLatestAllResponse(
             base=raw.get("base", ""),

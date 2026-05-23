@@ -15,7 +15,11 @@ class HackerNewsService:
     """Implements HackerNewsService RPCs via the Hacker News Firebase API."""
 
     def __init__(self):
-        self._http = httpx.Client(timeout=30)
+        self._http = httpx.AsyncClient(timeout=30)
+
+    async def aclose(self) -> None:
+        """Close the HTTP client. Idempotent."""
+        await self._client.aclose()
 
     def _get(self, path: str) -> Any:
         resp = self._http.get(f"{_BASE_URL}{path}")
@@ -57,38 +61,38 @@ class HackerNewsService:
                 resp.items.append(self._raw_to_item(raw))
         return resp
 
-    def GetTopStories(self, request: Any, context: Any = None) -> pb.GetStoriesResponse:
+    async def GetTopStories(self, request: Any, context: Any = None) -> pb.GetStoriesResponse:
         limit = request.limit or 10
         return self._fetch_stories("topstories", limit)
 
-    def GetNewStories(self, request: Any, context: Any = None) -> pb.GetStoriesResponse:
+    async def GetNewStories(self, request: Any, context: Any = None) -> pb.GetStoriesResponse:
         limit = request.limit or 10
         return self._fetch_stories("newstories", limit)
 
-    def GetBestStories(self, request: Any, context: Any = None) -> pb.GetStoriesResponse:
+    async def GetBestStories(self, request: Any, context: Any = None) -> pb.GetStoriesResponse:
         limit = request.limit or 10
         return self._fetch_stories("beststories", limit)
 
-    def GetAskStories(self, request: Any, context: Any = None) -> pb.GetStoriesResponse:
+    async def GetAskStories(self, request: Any, context: Any = None) -> pb.GetStoriesResponse:
         limit = request.limit or 10
         return self._fetch_stories("askstories", limit)
 
-    def GetShowStories(self, request: Any, context: Any = None) -> pb.GetStoriesResponse:
+    async def GetShowStories(self, request: Any, context: Any = None) -> pb.GetStoriesResponse:
         limit = request.limit or 10
         return self._fetch_stories("showstories", limit)
 
-    def GetJobStories(self, request: Any, context: Any = None) -> pb.GetStoriesResponse:
+    async def GetJobStories(self, request: Any, context: Any = None) -> pb.GetStoriesResponse:
         limit = request.limit or 10
         return self._fetch_stories("jobstories", limit)
 
-    def GetItem(self, request: Any, context: Any = None) -> pb.GetItemResponse:
+    async def GetItem(self, request: Any, context: Any = None) -> pb.GetItemResponse:
         raw = self._fetch_item(request.id)
         resp = pb.GetItemResponse()
         if raw:
             resp.item.CopyFrom(self._raw_to_item(raw))
         return resp
 
-    def GetUser(self, request: Any, context: Any = None) -> pb.GetUserResponse:
+    async def GetUser(self, request: Any, context: Any = None) -> pb.GetUserResponse:
         raw = self._get(f"/user/{request.id}.json") or {}
         resp = pb.GetUserResponse()
         if raw:
@@ -101,7 +105,7 @@ class HackerNewsService:
             ))
         return resp
 
-    def GetComments(self, request: Any, context: Any = None) -> pb.GetCommentsResponse:
+    async def GetComments(self, request: Any, context: Any = None) -> pb.GetCommentsResponse:
         depth = request.depth or 1
         limit = request.limit or 30
 
@@ -135,6 +139,6 @@ class HackerNewsService:
                 child_kids = raw.get("kids", [])
                 self._fetch_comments_recursive(child_kids, depth - 1, limit, out)
 
-    def GetMaxItem(self, request: Any, context: Any = None) -> pb.GetMaxItemResponse:
+    async def GetMaxItem(self, request: Any, context: Any = None) -> pb.GetMaxItemResponse:
         max_id = self._get("/maxitem.json") or 0
         return pb.GetMaxItemResponse(max_id=max_id)

@@ -10,6 +10,7 @@ No API key or authentication is required.
 from __future__ import annotations
 
 import json
+import asyncio
 import os
 import sys
 from pathlib import Path
@@ -33,12 +34,12 @@ def live_server():
     from hackernews_mcp.service import HackerNewsService
 
     srv = Server.from_descriptor(
-        DESCRIPTOR_PATH, name="test-hackernews-live", version="0.0.1"
+        DESCRIPTOR_PATH
     )
     svc = HackerNewsService()
     srv.register(svc)
     yield srv
-    srv.stop()
+    asyncio.run(srv.stop())
 
 
 # --- Shared fixtures for data discovery ---
@@ -47,9 +48,9 @@ def live_server():
 @pytest.fixture(scope="module")
 def top_story(live_server):
     """Fetch one top story for tests that need a story ID."""
-    result = live_server._cli(
+    result = asyncio.run(live_server._cli(
         ["HackerNewsService", "GetTopStories", "-r", '{"limit": 1}']
-    )
+    ))
     items = result.get("items", [])
     assert items, "expected at least one top story"
     return items[0]
@@ -60,9 +61,9 @@ def top_story(live_server):
 
 class TestLiveStories:
     def test_get_top_stories(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             ["HackerNewsService", "GetTopStories", "-r", '{"limit": 3}']
-        )
+        ))
         assert "items" in result
         items = result["items"]
         assert isinstance(items, list)
@@ -72,45 +73,45 @@ class TestLiveStories:
         assert "title" in item or "type" in item
 
     def test_get_new_stories(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             ["HackerNewsService", "GetNewStories", "-r", '{"limit": 3}']
-        )
+        ))
         assert "items" in result
         items = result["items"]
         assert isinstance(items, list)
         assert len(items) > 0
 
     def test_get_best_stories(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             ["HackerNewsService", "GetBestStories", "-r", '{"limit": 3}']
-        )
+        ))
         assert "items" in result
         items = result["items"]
         assert isinstance(items, list)
         assert len(items) > 0
 
     def test_get_ask_stories(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             ["HackerNewsService", "GetAskStories", "-r", '{"limit": 3}']
-        )
+        ))
         assert "items" in result
         items = result["items"]
         assert isinstance(items, list)
         assert len(items) > 0
 
     def test_get_show_stories(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             ["HackerNewsService", "GetShowStories", "-r", '{"limit": 3}']
-        )
+        ))
         assert "items" in result
         items = result["items"]
         assert isinstance(items, list)
         assert len(items) > 0
 
     def test_get_job_stories(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             ["HackerNewsService", "GetJobStories", "-r", '{"limit": 3}']
-        )
+        ))
         assert "items" in result
         items = result["items"]
         assert isinstance(items, list)
@@ -125,17 +126,17 @@ class TestLiveStories:
 class TestLiveItem:
     def test_get_item_by_id(self, live_server, top_story):
         item_id = top_story["id"]
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             ["HackerNewsService", "GetItem", "-r", json.dumps({"id": item_id})]
-        )
+        ))
         assert "item" in result
         assert result["item"]["id"] == item_id
 
     def test_get_item_has_expected_fields(self, live_server, top_story):
         item_id = top_story["id"]
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             ["HackerNewsService", "GetItem", "-r", json.dumps({"id": item_id})]
-        )
+        ))
         item = result["item"]
         assert "type" in item
         assert "by" in item or item.get("deleted")
@@ -147,9 +148,9 @@ class TestLiveItem:
 class TestLiveUser:
     def test_get_user(self, live_server):
         # pg (Paul Graham) is a well-known stable user on HN
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             ["HackerNewsService", "GetUser", "-r", '{"id": "pg"}']
-        )
+        ))
         assert "user" in result
         user = result["user"]
         assert user["id"] == "pg"
@@ -160,9 +161,9 @@ class TestLiveUser:
         author = top_story.get("by")
         if not author:
             pytest.skip("Top story has no author (deleted?)")
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             ["HackerNewsService", "GetUser", "-r", json.dumps({"id": author})]
-        )
+        ))
         assert "user" in result
         assert result["user"]["id"] == author
 
@@ -176,14 +177,14 @@ class TestLiveComments:
         kids = top_story.get("kids", [])
         if not kids:
             pytest.skip("Top story has no comments")
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "HackerNewsService",
                 "GetComments",
                 "-r",
                 json.dumps({"story_id": item_id, "depth": 1, "limit": 5}),
             ]
-        )
+        ))
         assert "comments" in result
         comments = result["comments"]
         assert isinstance(comments, list)
@@ -198,7 +199,7 @@ class TestLiveComments:
 
 class TestLiveMaxItem:
     def test_get_max_item(self, live_server):
-        result = live_server._cli(["HackerNewsService", "GetMaxItem"])
+        result = asyncio.run(live_server._cli(["HackerNewsService", "GetMaxItem"]))
         val = result.get("maxId") or result.get("max_id")
         assert val is not None
         assert int(val) > 0

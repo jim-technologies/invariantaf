@@ -15,14 +15,18 @@ class OpenLibraryService:
     """Implements OpenLibraryService RPCs via the free Open Library API."""
 
     def __init__(self):
-        self._http = httpx.Client(timeout=30, follow_redirects=True)
+        self._http = httpx.AsyncClient(timeout=30, follow_redirects=True)
+
+    async def aclose(self) -> None:
+        """Close the HTTP client. Idempotent."""
+        await self._client.aclose()
 
     def _get(self, path: str, params: dict | None = None) -> Any:
         resp = self._http.get(f"{_BASE_URL}{path}", params=params)
         resp.raise_for_status()
         return resp.json()
 
-    def SearchBooks(self, request: Any, context: Any = None) -> pb.SearchBooksResponse:
+    async def SearchBooks(self, request: Any, context: Any = None) -> pb.SearchBooksResponse:
         limit = request.limit or 10
         raw = self._get("/search.json", params={"q": request.query, "limit": limit})
 
@@ -40,7 +44,7 @@ class OpenLibraryService:
             ))
         return resp
 
-    def SearchByAuthor(self, request: Any, context: Any = None) -> pb.SearchByAuthorResponse:
+    async def SearchByAuthor(self, request: Any, context: Any = None) -> pb.SearchByAuthorResponse:
         limit = request.limit or 10
         raw = self._get("/search.json", params={"author": request.name, "limit": limit})
 
@@ -58,7 +62,7 @@ class OpenLibraryService:
             ))
         return resp
 
-    def SearchBySubject(self, request: Any, context: Any = None) -> pb.SearchBySubjectResponse:
+    async def SearchBySubject(self, request: Any, context: Any = None) -> pb.SearchBySubjectResponse:
         limit = request.limit or 10
         raw = self._get(f"/subjects/{request.subject}.json", params={"limit": limit})
 
@@ -82,7 +86,7 @@ class OpenLibraryService:
             ))
         return resp
 
-    def GetBook(self, request: Any, context: Any = None) -> pb.GetBookResponse:
+    async def GetBook(self, request: Any, context: Any = None) -> pb.GetBookResponse:
         raw = self._get(f"/works/{request.work_id}.json")
 
         desc = raw.get("description", "")
@@ -104,7 +108,7 @@ class OpenLibraryService:
             key=raw.get("key", ""),
         )
 
-    def GetEdition(self, request: Any, context: Any = None) -> pb.GetEditionResponse:
+    async def GetEdition(self, request: Any, context: Any = None) -> pb.GetEditionResponse:
         raw = self._get(f"/books/{request.edition_id}.json")
 
         covers = raw.get("covers", []) or []
@@ -120,7 +124,7 @@ class OpenLibraryService:
             key=raw.get("key", ""),
         )
 
-    def GetAuthor(self, request: Any, context: Any = None) -> pb.GetAuthorResponse:
+    async def GetAuthor(self, request: Any, context: Any = None) -> pb.GetAuthorResponse:
         raw = self._get(f"/authors/{request.author_id}.json")
 
         bio = raw.get("bio", "")
@@ -147,7 +151,7 @@ class OpenLibraryService:
             key=raw.get("key", ""),
         )
 
-    def GetAuthorWorks(self, request: Any, context: Any = None) -> pb.GetAuthorWorksResponse:
+    async def GetAuthorWorks(self, request: Any, context: Any = None) -> pb.GetAuthorWorksResponse:
         limit = request.limit or 10
         raw = self._get(f"/authors/{request.author_id}/works.json", params={"limit": limit})
 
@@ -162,7 +166,7 @@ class OpenLibraryService:
             ))
         return resp
 
-    def GetBookByISBN(self, request: Any, context: Any = None) -> pb.GetBookByISBNResponse:
+    async def GetBookByISBN(self, request: Any, context: Any = None) -> pb.GetBookByISBNResponse:
         raw = self._get(f"/isbn/{request.isbn}.json")
 
         covers = raw.get("covers", []) or []
@@ -178,7 +182,7 @@ class OpenLibraryService:
             key=raw.get("key", ""),
         )
 
-    def GetRecentChanges(self, request: Any, context: Any = None) -> pb.GetRecentChangesResponse:
+    async def GetRecentChanges(self, request: Any, context: Any = None) -> pb.GetRecentChangesResponse:
         limit = request.limit or 10
         raw = self._get("/recentchanges.json", params={"limit": limit})
 
@@ -196,7 +200,7 @@ class OpenLibraryService:
                 ))
         return resp
 
-    def GetTrendingBooks(self, request: Any, context: Any = None) -> pb.GetTrendingBooksResponse:
+    async def GetTrendingBooks(self, request: Any, context: Any = None) -> pb.GetTrendingBooksResponse:
         limit = request.limit or 10
         raw = self._get("/trending/daily.json", params={"limit": limit})
 

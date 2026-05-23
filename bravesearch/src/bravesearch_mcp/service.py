@@ -27,7 +27,7 @@ class BraveSearchService:
         self._base_url = (base_url or os.getenv("BRAVE_BASE_URL") or DEFAULT_BASE_URL).rstrip("/")
         self._api_key = api_key or os.getenv("BRAVE_API_KEY") or ""
         self._timeout = timeout
-        self._client = httpx.Client(
+        self._client = httpx.AsyncClient(
             timeout=timeout,
             headers={
                 "Accept": "application/json",
@@ -35,11 +35,15 @@ class BraveSearchService:
             },
         )
 
+    async def aclose(self) -> None:
+        """Close the HTTP client. Idempotent."""
+        await self._client.aclose()
+
     # -------------------------
     # RPC handlers
     # -------------------------
 
-    def WebSearch(
+    async def WebSearch(
         self, request: pb.WebSearchRequest, context: Any = None
     ) -> pb.WebSearchResponse:
         query: dict[str, Any] = {"q": request.query}
@@ -54,7 +58,7 @@ class BraveSearchService:
         if request.freshness:
             query["freshness"] = request.freshness
 
-        payload = self._get("/web/search", query)
+        payload = await self._get("/web/search", query)
 
         results = []
         web_data = payload.get("web", {})
@@ -77,7 +81,7 @@ class BraveSearchService:
             pb.WebSearchResponse,
         )
 
-    def NewsSearch(
+    async def NewsSearch(
         self, request: pb.NewsSearchRequest, context: Any = None
     ) -> pb.NewsSearchResponse:
         query: dict[str, Any] = {"q": request.query}
@@ -88,7 +92,7 @@ class BraveSearchService:
         if request.freshness:
             query["freshness"] = request.freshness
 
-        payload = self._get("/news/search", query)
+        payload = await self._get("/news/search", query)
 
         results = []
         news_data = payload.get("results", [])
@@ -107,7 +111,7 @@ class BraveSearchService:
 
         return self._parse_message({"results": results}, pb.NewsSearchResponse)
 
-    def ImageSearch(
+    async def ImageSearch(
         self, request: pb.ImageSearchRequest, context: Any = None
     ) -> pb.ImageSearchResponse:
         query: dict[str, Any] = {"q": request.query}
@@ -116,7 +120,7 @@ class BraveSearchService:
         if request.country:
             query["country"] = request.country
 
-        payload = self._get("/images/search", query)
+        payload = await self._get("/images/search", query)
 
         results = []
         raw_results = payload.get("results", [])
@@ -140,9 +144,9 @@ class BraveSearchService:
     # HTTP helpers
     # -------------------------
 
-    def _get(self, path: str, query: dict[str, Any] | None = None) -> Any:
+    async def _get(self, path: str, query: dict[str, Any] | None = None) -> Any:
         url = self._build_url(path, query)
-        response = self._client.request("GET", url)
+        response = await self._client.request("GET", url)
 
         try:
             payload = response.json() if response.content else {}

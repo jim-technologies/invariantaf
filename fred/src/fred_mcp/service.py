@@ -16,8 +16,12 @@ class FREDService:
     """Implements FREDService RPCs via the FRED API."""
 
     def __init__(self, *, api_key: str | None = None):
-        self._http = httpx.Client(timeout=30)
+        self._http = httpx.AsyncClient(timeout=30)
         self._api_key = api_key or os.environ.get("FRED_API_KEY", "")
+
+    async def aclose(self) -> None:
+        """Close the HTTP client. Idempotent."""
+        await self._client.aclose()
 
     def _get(self, path: str, **params: Any) -> Any:
         params["api_key"] = self._api_key
@@ -41,13 +45,13 @@ class FREDService:
             popularity=s.get("popularity", 0) or 0,
         )
 
-    def GetSeries(self, request: Any, context: Any = None) -> pb.GetSeriesResponse:
+    async def GetSeries(self, request: Any, context: Any = None) -> pb.GetSeriesResponse:
         raw = self._get("series", series_id=request.series_id)
         items = raw.get("seriess", [])
         s = items[0] if items else {}
         return pb.GetSeriesResponse(series=self._parse_series(s))
 
-    def GetSeriesObservations(self, request: Any, context: Any = None) -> pb.GetSeriesObservationsResponse:
+    async def GetSeriesObservations(self, request: Any, context: Any = None) -> pb.GetSeriesObservationsResponse:
         params: dict[str, Any] = {"series_id": request.series_id}
         if request.observation_start:
             params["observation_start"] = request.observation_start
@@ -66,7 +70,7 @@ class FREDService:
             ))
         return pb.GetSeriesObservationsResponse(observations=observations)
 
-    def SearchSeries(self, request: Any, context: Any = None) -> pb.SearchSeriesResponse:
+    async def SearchSeries(self, request: Any, context: Any = None) -> pb.SearchSeriesResponse:
         params: dict[str, Any] = {"search_text": request.search_text}
         if request.limit:
             params["limit"] = request.limit
@@ -83,7 +87,7 @@ class FREDService:
             count=raw.get("count", 0),
         )
 
-    def GetCategory(self, request: Any, context: Any = None) -> pb.GetCategoryResponse:
+    async def GetCategory(self, request: Any, context: Any = None) -> pb.GetCategoryResponse:
         raw = self._get("category", category_id=request.category_id)
         cats = raw.get("categories", [])
         c = cats[0] if cats else {}
@@ -95,7 +99,7 @@ class FREDService:
             )
         )
 
-    def GetCategoryChildren(self, request: Any, context: Any = None) -> pb.GetCategoryChildrenResponse:
+    async def GetCategoryChildren(self, request: Any, context: Any = None) -> pb.GetCategoryChildrenResponse:
         raw = self._get("category/children", category_id=request.category_id)
         categories = []
         for c in raw.get("categories", []):
@@ -106,7 +110,7 @@ class FREDService:
             ))
         return pb.GetCategoryChildrenResponse(categories=categories)
 
-    def GetCategorySeries(self, request: Any, context: Any = None) -> pb.GetCategorySeriesResponse:
+    async def GetCategorySeries(self, request: Any, context: Any = None) -> pb.GetCategorySeriesResponse:
         params: dict[str, Any] = {"category_id": request.category_id}
         if request.limit:
             params["limit"] = request.limit
@@ -120,7 +124,7 @@ class FREDService:
             seriess.append(self._parse_series(s))
         return pb.GetCategorySeriesResponse(seriess=seriess)
 
-    def GetRelease(self, request: Any, context: Any = None) -> pb.GetReleaseResponse:
+    async def GetRelease(self, request: Any, context: Any = None) -> pb.GetReleaseResponse:
         raw = self._get("release", release_id=request.release_id)
         releases = raw.get("releases", [])
         r = releases[0] if releases else {}
@@ -134,7 +138,7 @@ class FREDService:
             )
         )
 
-    def GetReleaseDates(self, request: Any, context: Any = None) -> pb.GetReleaseDatesResponse:
+    async def GetReleaseDates(self, request: Any, context: Any = None) -> pb.GetReleaseDatesResponse:
         params: dict[str, Any] = {"release_id": request.release_id}
         if request.limit:
             params["limit"] = request.limit
@@ -152,7 +156,7 @@ class FREDService:
             ))
         return pb.GetReleaseDatesResponse(release_dates=release_dates)
 
-    def GetReleaseSeries(self, request: Any, context: Any = None) -> pb.GetReleaseSeriesResponse:
+    async def GetReleaseSeries(self, request: Any, context: Any = None) -> pb.GetReleaseSeriesResponse:
         params: dict[str, Any] = {"release_id": request.release_id}
         if request.limit:
             params["limit"] = request.limit
@@ -166,7 +170,7 @@ class FREDService:
             seriess.append(self._parse_series(s))
         return pb.GetReleaseSeriesResponse(seriess=seriess)
 
-    def GetSeriesCategories(self, request: Any, context: Any = None) -> pb.GetSeriesCategoriesResponse:
+    async def GetSeriesCategories(self, request: Any, context: Any = None) -> pb.GetSeriesCategoriesResponse:
         raw = self._get("series/categories", series_id=request.series_id)
         categories = []
         for c in raw.get("categories", []):

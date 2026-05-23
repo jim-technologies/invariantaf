@@ -111,44 +111,48 @@ class ArxivService:
     """Implements ArxivService RPCs via the free arXiv API."""
 
     def __init__(self):
-        self._http = httpx.Client(timeout=30)
+        self._http = httpx.AsyncClient(timeout=30)
+
+    async def aclose(self) -> None:
+        """Close the HTTP client. Idempotent."""
+        await self._client.aclose()
 
     def _get(self, params: dict) -> str:
         resp = self._http.get(_BASE_URL, params=params)
         resp.raise_for_status()
         return resp.text
 
-    def Search(self, request: Any, context: Any = None) -> pb.SearchResponse:
+    async def Search(self, request: Any, context: Any = None) -> pb.SearchResponse:
         limit = request.limit or 10
         xml = self._get({"search_query": f"all:{request.query}", "max_results": limit})
         return pb.SearchResponse(papers=_parse_entries(xml))
 
-    def GetPaper(self, request: Any, context: Any = None) -> pb.GetPaperResponse:
+    async def GetPaper(self, request: Any, context: Any = None) -> pb.GetPaperResponse:
         xml = self._get({"id_list": request.arxiv_id})
         papers = _parse_entries(xml)
         return pb.GetPaperResponse(paper=papers[0] if papers else None)
 
-    def SearchByAuthor(self, request: Any, context: Any = None) -> pb.SearchByAuthorResponse:
+    async def SearchByAuthor(self, request: Any, context: Any = None) -> pb.SearchByAuthorResponse:
         limit = request.limit or 10
         xml = self._get({"search_query": f"au:{request.author}", "max_results": limit})
         return pb.SearchByAuthorResponse(papers=_parse_entries(xml))
 
-    def SearchByTitle(self, request: Any, context: Any = None) -> pb.SearchByTitleResponse:
+    async def SearchByTitle(self, request: Any, context: Any = None) -> pb.SearchByTitleResponse:
         limit = request.limit or 10
         xml = self._get({"search_query": f"ti:{request.title}", "max_results": limit})
         return pb.SearchByTitleResponse(papers=_parse_entries(xml))
 
-    def SearchByCategory(self, request: Any, context: Any = None) -> pb.SearchByCategoryResponse:
+    async def SearchByCategory(self, request: Any, context: Any = None) -> pb.SearchByCategoryResponse:
         limit = request.limit or 10
         xml = self._get({"search_query": f"cat:{request.category}", "max_results": limit})
         return pb.SearchByCategoryResponse(papers=_parse_entries(xml))
 
-    def SearchByAbstract(self, request: Any, context: Any = None) -> pb.SearchByAbstractResponse:
+    async def SearchByAbstract(self, request: Any, context: Any = None) -> pb.SearchByAbstractResponse:
         limit = request.limit or 10
         xml = self._get({"search_query": f"abs:{request.query}", "max_results": limit})
         return pb.SearchByAbstractResponse(papers=_parse_entries(xml))
 
-    def GetRecent(self, request: Any, context: Any = None) -> pb.GetRecentResponse:
+    async def GetRecent(self, request: Any, context: Any = None) -> pb.GetRecentResponse:
         limit = request.limit or 10
         xml = self._get({
             "search_query": f"cat:{request.category}",
@@ -158,12 +162,12 @@ class ArxivService:
         })
         return pb.GetRecentResponse(papers=_parse_entries(xml))
 
-    def GetMultiple(self, request: Any, context: Any = None) -> pb.GetMultipleResponse:
+    async def GetMultiple(self, request: Any, context: Any = None) -> pb.GetMultipleResponse:
         id_list = ",".join(request.arxiv_ids)
         xml = self._get({"id_list": id_list})
         return pb.GetMultipleResponse(papers=_parse_entries(xml))
 
-    def AdvancedSearch(self, request: Any, context: Any = None) -> pb.AdvancedSearchResponse:
+    async def AdvancedSearch(self, request: Any, context: Any = None) -> pb.AdvancedSearchResponse:
         parts = []
         if request.author:
             parts.append(f"au:{request.author}")
@@ -179,7 +183,7 @@ class ArxivService:
         xml = self._get({"search_query": query, "max_results": limit})
         return pb.AdvancedSearchResponse(papers=_parse_entries(xml))
 
-    def GetCategories(self, request: Any, context: Any = None) -> pb.GetCategoriesResponse:
+    async def GetCategories(self, request: Any, context: Any = None) -> pb.GetCategoriesResponse:
         resp = pb.GetCategoriesResponse()
         for code, name, description in _CATEGORIES:
             resp.categories.append(pb.ArxivCategory(

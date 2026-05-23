@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import asyncio
 import sys
 import time
 import urllib.parse
@@ -498,17 +499,31 @@ class _PolymarketClobCompositeService:
         return self._parse_data(posted, out)
 
 
+def _projection_from_argv(argv: list[str]) -> dict:
+    """Parse [--mcp|--cli|--http [port]|--grpc [port]] into serve() kwargs."""
+    if not argv:
+        return {"mcp": True}
+    cmd = argv[0]
+    if cmd in ("--mcp", "mcp", ""):
+        return {"mcp": True}
+    if cmd in ("--cli", "cli"):
+        return {"cli": True}
+    if cmd in ("--http", "http"):
+        port = int(argv[1]) if len(argv) > 1 else 8080
+        return {"http": port}
+    if cmd in ("--grpc", "grpc"):
+        port = int(argv[1]) if len(argv) > 1 else 50051
+        return {"grpc": port}
+    return {"mcp": True}
+
+
 def main() -> None:
     args = sys.argv[1:]
     debug_flag, args = _consume_flag(args, "--debug-http")
     if debug_flag or _env_bool("POLYMARKET_DEBUG"):
         _install_http_debug_hook()
 
-    server = Server.from_descriptor(
-        str(DESCRIPTOR),
-        name="polymarket-mcp",
-        version="0.2.0",
-    )
+    server = Server.from_descriptor(str(DESCRIPTOR))
 
     gamma_base = (_env("POLYMARKET_GAMMA_BASE_URL") or DEFAULT_GAMMA_BASE_URL).rstrip("/")
     clob_base = (_env("POLYMARKET_CLOB_BASE_URL") or DEFAULT_CLOB_BASE_URL).rstrip("/")
@@ -531,7 +546,7 @@ def main() -> None:
         service_name="polymarket.v1.PolymarketClobService",
     )
 
-    server.serve_from_argv()
+    asyncio.run(server.serve(**_projection_from_argv(sys.argv[1:])))
 
 
 if __name__ == "__main__":

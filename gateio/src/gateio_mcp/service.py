@@ -24,35 +24,39 @@ class GateioService:
     ):
         self._base_url = base_url.rstrip("/")
         self._timeout = timeout
-        self._client = httpx.Client(timeout=timeout)
+        self._client = httpx.AsyncClient(timeout=timeout)
+
+    async def aclose(self) -> None:
+        """Close the HTTP client. Idempotent."""
+        await self._client.aclose()
 
     # -------------------------
     # RPC handlers
     # -------------------------
 
-    def ListSpotTickers(
+    async def ListSpotTickers(
         self, request: pb.ListSpotTickersRequest, context: Any = None
     ) -> pb.ListSpotTickersResponse:
         query: dict[str, Any] = {}
         if self._has_field(request, "currency_pair"):
             query["currency_pair"] = request.currency_pair
 
-        payload = self._get("/api/v4/spot/tickers", query)
+        payload = await self._get("/api/v4/spot/tickers", query)
         tickers = self._transform_spot_tickers(payload if isinstance(payload, list) else [])
         return self._parse_message({"tickers": tickers}, pb.ListSpotTickersResponse)
 
-    def GetSpotOrderbook(
+    async def GetSpotOrderbook(
         self, request: pb.GetSpotOrderbookRequest, context: Any = None
     ) -> pb.GetSpotOrderbookResponse:
         query: dict[str, Any] = {"currency_pair": request.currency_pair}
         if self._has_field(request, "limit"):
             query["limit"] = request.limit
 
-        payload = self._get("/api/v4/spot/order_book", query)
+        payload = await self._get("/api/v4/spot/order_book", query)
         result = self._transform_spot_orderbook(payload if isinstance(payload, dict) else {})
         return self._parse_message(result, pb.GetSpotOrderbookResponse)
 
-    def GetSpotCandlesticks(
+    async def GetSpotCandlesticks(
         self, request: pb.GetSpotCandlesticksRequest, context: Any = None
     ) -> pb.GetSpotCandlesticksResponse:
         query: dict[str, Any] = {"currency_pair": request.currency_pair}
@@ -61,36 +65,36 @@ class GateioService:
         if self._has_field(request, "limit"):
             query["limit"] = request.limit
 
-        payload = self._get("/api/v4/spot/candlesticks", query)
+        payload = await self._get("/api/v4/spot/candlesticks", query)
         candlesticks = self._transform_candlesticks(payload if isinstance(payload, list) else [])
         return self._parse_message({"candlesticks": candlesticks}, pb.GetSpotCandlesticksResponse)
 
-    def ListCurrencyPairs(
+    async def ListCurrencyPairs(
         self, request: pb.ListCurrencyPairsRequest, context: Any = None
     ) -> pb.ListCurrencyPairsResponse:
-        payload = self._get("/api/v4/spot/currency_pairs")
+        payload = await self._get("/api/v4/spot/currency_pairs")
         pairs = self._transform_currency_pairs(payload if isinstance(payload, list) else [])
         return self._parse_message({"currency_pairs": pairs}, pb.ListCurrencyPairsResponse)
 
-    def ListFuturesTickers(
+    async def ListFuturesTickers(
         self, request: pb.ListFuturesTickersRequest, context: Any = None
     ) -> pb.ListFuturesTickersResponse:
         query: dict[str, Any] = {}
         if self._has_field(request, "contract"):
             query["contract"] = request.contract
 
-        payload = self._get("/api/v4/futures/usdt/tickers", query)
+        payload = await self._get("/api/v4/futures/usdt/tickers", query)
         tickers = self._transform_futures_tickers(payload if isinstance(payload, list) else [])
         return self._parse_message({"tickers": tickers}, pb.ListFuturesTickersResponse)
 
-    def GetFuturesOrderbook(
+    async def GetFuturesOrderbook(
         self, request: pb.GetFuturesOrderbookRequest, context: Any = None
     ) -> pb.GetFuturesOrderbookResponse:
         query: dict[str, Any] = {"contract": request.contract}
         if self._has_field(request, "limit"):
             query["limit"] = request.limit
 
-        payload = self._get("/api/v4/futures/usdt/order_book", query)
+        payload = await self._get("/api/v4/futures/usdt/order_book", query)
         result = self._transform_futures_orderbook(payload if isinstance(payload, dict) else {})
         return self._parse_message(result, pb.GetFuturesOrderbookResponse)
 
@@ -98,9 +102,9 @@ class GateioService:
     # HTTP helpers
     # -------------------------
 
-    def _get(self, path: str, query: dict[str, Any] | None = None) -> Any:
+    async def _get(self, path: str, query: dict[str, Any] | None = None) -> Any:
         url = self._build_url(path, query)
-        response = self._client.request(
+        response = await self._client.request(
             "GET",
             url,
             headers={"Accept": "application/json"},

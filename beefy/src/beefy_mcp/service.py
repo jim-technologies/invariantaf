@@ -15,14 +15,18 @@ class BeefyService:
     """Implements BeefyService RPCs via the free Beefy Finance API."""
 
     def __init__(self):
-        self._http = httpx.Client(timeout=30)
+        self._http = httpx.AsyncClient(timeout=30)
+
+    async def aclose(self) -> None:
+        """Close the HTTP client. Idempotent."""
+        await self._client.aclose()
 
     def _get(self, url: str, params: dict | None = None) -> Any:
         resp = self._http.get(url, params=params)
         resp.raise_for_status()
         return resp.json()
 
-    def ListVaults(self, request: Any, context: Any = None) -> pb.ListVaultsResponse:
+    async def ListVaults(self, request: Any, context: Any = None) -> pb.ListVaultsResponse:
         raw = self._get(f"{_BASE_URL}/vaults")
         resp = pb.ListVaultsResponse()
         for v in raw:
@@ -60,7 +64,7 @@ class BeefyService:
             ))
         return resp
 
-    def GetApys(self, request: Any, context: Any = None) -> pb.GetApysResponse:
+    async def GetApys(self, request: Any, context: Any = None) -> pb.GetApysResponse:
         raw = self._get(f"{_BASE_URL}/apy")
         resp = pb.GetApysResponse()
         for vault_id, apy in raw.items():
@@ -70,7 +74,7 @@ class BeefyService:
             ))
         return resp
 
-    def GetApyBreakdown(self, request: Any, context: Any = None) -> pb.GetApyBreakdownResponse:
+    async def GetApyBreakdown(self, request: Any, context: Any = None) -> pb.GetApyBreakdownResponse:
         raw = self._get(f"{_BASE_URL}/apy/breakdown")
         resp = pb.GetApyBreakdownResponse()
         for vault_id, bd in raw.items():
@@ -88,7 +92,7 @@ class BeefyService:
             ))
         return resp
 
-    def GetTVL(self, request: Any, context: Any = None) -> pb.GetTVLResponse:
+    async def GetTVL(self, request: Any, context: Any = None) -> pb.GetTVLResponse:
         raw = self._get(f"{_BASE_URL}/tvl")
         resp = pb.GetTVLResponse()
         for chain_id, vaults in raw.items():
@@ -103,7 +107,7 @@ class BeefyService:
             resp.chains.append(chain_tvl)
         return resp
 
-    def GetFees(self, request: Any, context: Any = None) -> pb.GetFeesResponse:
+    async def GetFees(self, request: Any, context: Any = None) -> pb.GetFeesResponse:
         raw = self._get(f"{_BASE_URL}/fees")
         resp = pb.GetFeesResponse()
         for vault_id, fee_data in raw.items():
@@ -126,7 +130,7 @@ class BeefyService:
             ))
         return resp
 
-    def GetLPPrices(self, request: Any, context: Any = None) -> pb.GetLPPricesResponse:
+    async def GetLPPrices(self, request: Any, context: Any = None) -> pb.GetLPPricesResponse:
         raw = self._get(f"{_BASE_URL}/lps")
         resp = pb.GetLPPricesResponse()
         for lp_id, price in raw.items():
@@ -136,7 +140,7 @@ class BeefyService:
             ))
         return resp
 
-    def GetBoosts(self, request: Any, context: Any = None) -> pb.GetBoostsResponse:
+    async def GetBoosts(self, request: Any, context: Any = None) -> pb.GetBoostsResponse:
         raw = self._get(f"{_BASE_URL}/boosts")
         resp = pb.GetBoostsResponse()
         for b in raw:

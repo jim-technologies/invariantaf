@@ -62,91 +62,95 @@ class PandaScoreService:
         headers: dict[str, str] = {"Accept": "application/json"}
         if self._api_key:
             headers["Authorization"] = f"Bearer {self._api_key}"
-        self._client = httpx.Client(timeout=timeout, headers=headers)
+        self._client = httpx.AsyncClient(timeout=timeout, headers=headers)
+
+    async def aclose(self) -> None:
+        """Close the HTTP client. Idempotent."""
+        await self._client.aclose()
 
     # -------------------------
     # RPC handlers
     # -------------------------
 
-    def ListMatches(
+    async def ListMatches(
         self, request: pb.ListMatchesRequest, context: Any = None
     ) -> pb.ListMatchesResponse:
         query = self._pagination_params(request, per_page_default=50)
         query["sort"] = "-scheduled_at"
-        data = self._get("/dota2/matches", query)
+        data = await self._get("/dota2/matches", query)
         matches = self._transform_matches(data)
         return self._parse_message({"matches": matches}, pb.ListMatchesResponse)
 
-    def ListUpcomingMatches(
+    async def ListUpcomingMatches(
         self, request: pb.ListUpcomingMatchesRequest, context: Any = None
     ) -> pb.ListUpcomingMatchesResponse:
         query = self._pagination_params(request, per_page_default=50)
-        data = self._get("/dota2/matches/upcoming", query)
+        data = await self._get("/dota2/matches/upcoming", query)
         matches = self._transform_matches(data)
         return self._parse_message({"matches": matches}, pb.ListUpcomingMatchesResponse)
 
-    def ListRunningMatches(
+    async def ListRunningMatches(
         self, request: pb.ListRunningMatchesRequest, context: Any = None
     ) -> pb.ListRunningMatchesResponse:
         query = self._pagination_params(request, per_page_default=50)
-        data = self._get("/dota2/matches/running", query)
+        data = await self._get("/dota2/matches/running", query)
         matches = self._transform_matches(data)
         return self._parse_message({"matches": matches}, pb.ListRunningMatchesResponse)
 
-    def ListPastMatches(
+    async def ListPastMatches(
         self, request: pb.ListPastMatchesRequest, context: Any = None
     ) -> pb.ListPastMatchesResponse:
         query = self._pagination_params(request, per_page_default=50)
         query["sort"] = "-scheduled_at"
-        data = self._get("/dota2/matches/past", query)
+        data = await self._get("/dota2/matches/past", query)
         matches = self._transform_matches(data)
         return self._parse_message({"matches": matches}, pb.ListPastMatchesResponse)
 
-    def ListTournaments(
+    async def ListTournaments(
         self, request: pb.ListTournamentsRequest, context: Any = None
     ) -> pb.ListTournamentsResponse:
         query = self._pagination_params(request, per_page_default=50)
-        data = self._get("/dota2/tournaments", query)
+        data = await self._get("/dota2/tournaments", query)
         tournaments = self._transform_tournaments(data)
         return self._parse_message({"tournaments": tournaments}, pb.ListTournamentsResponse)
 
-    def ListTeams(
+    async def ListTeams(
         self, request: pb.ListTeamsRequest, context: Any = None
     ) -> pb.ListTeamsResponse:
         query = self._pagination_params(request, per_page_default=50)
-        data = self._get("/dota2/teams", query)
+        data = await self._get("/dota2/teams", query)
         teams = self._transform_teams(data)
         return self._parse_message({"teams": teams}, pb.ListTeamsResponse)
 
-    def ListPlayers(
+    async def ListPlayers(
         self, request: pb.ListPlayersRequest, context: Any = None
     ) -> pb.ListPlayersResponse:
         query = self._pagination_params(request, per_page_default=50)
-        data = self._get("/dota2/players", query)
+        data = await self._get("/dota2/players", query)
         players = self._transform_players(data)
         return self._parse_message({"players": players}, pb.ListPlayersResponse)
 
-    def ListLeagues(
+    async def ListLeagues(
         self, request: pb.ListLeaguesRequest, context: Any = None
     ) -> pb.ListLeaguesResponse:
         query = self._pagination_params(request, per_page_default=50)
-        data = self._get("/dota2/leagues", query)
+        data = await self._get("/dota2/leagues", query)
         leagues = self._transform_leagues(data)
         return self._parse_message({"leagues": leagues}, pb.ListLeaguesResponse)
 
-    def ListSeries(
+    async def ListSeries(
         self, request: pb.ListSeriesRequest, context: Any = None
     ) -> pb.ListSeriesResponse:
         query = self._pagination_params(request, per_page_default=50)
-        data = self._get("/dota2/series/upcoming", query)
+        data = await self._get("/dota2/series/upcoming", query)
         series = self._transform_series(data)
         return self._parse_message({"series": series}, pb.ListSeriesResponse)
 
-    def ListHeroes(
+    async def ListHeroes(
         self, request: pb.ListHeroesRequest, context: Any = None
     ) -> pb.ListHeroesResponse:
         query = self._pagination_params(request, per_page_default=100)
-        data = self._get("/dota2/heroes", query)
+        data = await self._get("/dota2/heroes", query)
         heroes = self._transform_heroes(data)
         return self._parse_message({"heroes": heroes}, pb.ListHeroesResponse)
 
@@ -154,9 +158,9 @@ class PandaScoreService:
     # HTTP helpers
     # -------------------------
 
-    def _get(self, path: str, query: dict[str, Any] | None = None) -> Any:
+    async def _get(self, path: str, query: dict[str, Any] | None = None) -> Any:
         url = self._build_url(path, query)
-        response = self._client.request("GET", url)
+        response = await self._client.request("GET", url)
 
         try:
             payload = response.json() if response.content else []

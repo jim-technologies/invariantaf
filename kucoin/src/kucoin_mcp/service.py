@@ -24,16 +24,20 @@ class KucoinService:
     ):
         self._base_url = base_url.rstrip("/")
         self._timeout = timeout
-        self._client = httpx.Client(timeout=timeout)
+        self._client = httpx.AsyncClient(timeout=timeout)
+
+    async def aclose(self) -> None:
+        """Close the HTTP client. Idempotent."""
+        await self._client.aclose()
 
     # -------------------------
     # RPC handlers
     # -------------------------
 
-    def GetAllTickers(
+    async def GetAllTickers(
         self, request: pb.GetAllTickersRequest, context: Any = None
     ) -> pb.GetAllTickersResponse:
-        payload = self._get("/api/v1/market/allTickers")
+        payload = await self._get("/api/v1/market/allTickers")
         # payload["data"] = {"time": ..., "ticker": [...]}
         time_val = payload.get("time", 0)
         tickers = payload.get("ticker", [])
@@ -42,22 +46,22 @@ class KucoinService:
             pb.GetAllTickersResponse,
         )
 
-    def GetTicker(
+    async def GetTicker(
         self, request: pb.GetTickerRequest, context: Any = None
     ) -> pb.GetTickerResponse:
         query: dict[str, Any] = {"symbol": request.symbol}
-        payload = self._get("/api/v1/market/stats", query)
+        payload = await self._get("/api/v1/market/stats", query)
         return self._parse_message(payload, pb.GetTickerResponse)
 
-    def GetOrderbook(
+    async def GetOrderbook(
         self, request: pb.GetOrderbookRequest, context: Any = None
     ) -> pb.GetOrderbookResponse:
         query: dict[str, Any] = {"symbol": request.symbol}
-        payload = self._get("/api/v1/market/orderbook/level2_20", query)
+        payload = await self._get("/api/v1/market/orderbook/level2_20", query)
         self._transform_orderbook(payload)
         return self._parse_message(payload, pb.GetOrderbookResponse)
 
-    def GetKlines(
+    async def GetKlines(
         self, request: pb.GetKlinesRequest, context: Any = None
     ) -> pb.GetKlinesResponse:
         query: dict[str, Any] = {
@@ -69,7 +73,7 @@ class KucoinService:
         if request.end_at:
             query["endAt"] = request.end_at
 
-        payload = self._get("/api/v1/market/candles", query)
+        payload = await self._get("/api/v1/market/candles", query)
         # payload is a list of lists: [[time, open, close, high, low, volume, turnover], ...]
         klines = []
         if isinstance(payload, list):
@@ -86,18 +90,18 @@ class KucoinService:
                     })
         return self._parse_message({"klines": klines}, pb.GetKlinesResponse)
 
-    def ListSymbols(
+    async def ListSymbols(
         self, request: pb.ListSymbolsRequest, context: Any = None
     ) -> pb.ListSymbolsResponse:
         query: dict[str, Any] = {}
         if self._has_field(request, "market"):
             query["market"] = request.market
 
-        payload = self._get("/api/v2/symbols", query)
+        payload = await self._get("/api/v2/symbols", query)
         symbols = payload if isinstance(payload, list) else []
         return self._parse_message({"symbols": symbols}, pb.ListSymbolsResponse)
 
-    def GetFiat(
+    async def GetFiat(
         self, request: pb.GetFiatRequest, context: Any = None
     ) -> pb.GetFiatResponse:
         query: dict[str, Any] = {}
@@ -106,7 +110,7 @@ class KucoinService:
         if self._has_field(request, "currencies"):
             query["currencies"] = request.currencies
 
-        payload = self._get("/api/v1/prices", query)
+        payload = await self._get("/api/v1/prices", query)
         # payload is a dict like {"BTC": "64500.0", "ETH": "3200.0", ...}
         prices = []
         if isinstance(payload, dict):
@@ -118,9 +122,9 @@ class KucoinService:
     # HTTP helpers
     # -------------------------
 
-    def _get(self, path: str, query: dict[str, Any] | None = None) -> Any:
+    async def _get(self, path: str, query: dict[str, Any] | None = None) -> Any:
         url = self._build_url(path, query)
-        response = self._client.request(
+        response = await self._client.request(
             "GET",
             url,
             headers={"Accept": "application/json"},

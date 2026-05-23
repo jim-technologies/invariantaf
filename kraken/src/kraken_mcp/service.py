@@ -32,21 +32,25 @@ class KrakenService:
         self._spot_base_url = spot_base_url.rstrip("/")
         self._futures_base_url = futures_base_url.rstrip("/")
         self._timeout = timeout
-        self._client = httpx.Client(timeout=timeout)
+        self._client = httpx.AsyncClient(timeout=timeout)
+
+    async def aclose(self) -> None:
+        """Close the HTTP client. Idempotent."""
+        await self._client.aclose()
 
     # -------------------------
     # Spot handlers
     # -------------------------
 
-    def GetServerTime(self, request: Any, context: Any = None) -> pb.GetServerTimeResponse:
-        payload = self._spot_public_get("/public/Time")
+    async def GetServerTime(self, request: Any, context: Any = None) -> pb.GetServerTimeResponse:
+        payload = await self._spot_public_get("/public/Time")
         return self._parse_message(payload, pb.GetServerTimeResponse)
 
-    def GetSystemStatus(self, request: Any, context: Any = None) -> pb.GetSystemStatusResponse:
-        payload = self._spot_public_get("/public/SystemStatus")
+    async def GetSystemStatus(self, request: Any, context: Any = None) -> pb.GetSystemStatusResponse:
+        payload = await self._spot_public_get("/public/SystemStatus")
         return self._parse_message(payload, pb.GetSystemStatusResponse)
 
-    def GetTradableAssetPairs(
+    async def GetTradableAssetPairs(
         self, request: pb.GetTradableAssetPairsRequest, context: Any = None
     ) -> pb.GetTradableAssetPairsResponse:
         query: dict[str, Any] = {}
@@ -56,12 +60,12 @@ class KrakenService:
         self._add_opt(query, "info", request, "info")
         self._add_opt(query, "country_code", request, "country_code")
 
-        payload = self._spot_public_get("/public/AssetPairs", query)
+        payload = await self._spot_public_get("/public/AssetPairs", query)
         self._normalize_spot_errors(payload)
         self._transform_spot_asset_pairs(payload)
         return self._parse_message(payload, pb.GetTradableAssetPairsResponse)
 
-    def GetTickerInformation(
+    async def GetTickerInformation(
         self, request: pb.GetTickerInformationRequest, context: Any = None
     ) -> pb.GetTickerInformationResponse:
         query: dict[str, Any] = {}
@@ -69,33 +73,33 @@ class KrakenService:
             query["pair"] = request.pair
         self._add_opt(query, "asset_class", request, "asset_class")
 
-        payload = self._spot_public_get("/public/Ticker", query)
+        payload = await self._spot_public_get("/public/Ticker", query)
         self._normalize_spot_errors(payload)
         self._transform_spot_ticker(payload)
         return self._parse_message(payload, pb.GetTickerInformationResponse)
 
-    def GetOrderBook(self, request: pb.GetOrderBookRequest, context: Any = None) -> pb.GetOrderBookResponse:
+    async def GetOrderBook(self, request: pb.GetOrderBookRequest, context: Any = None) -> pb.GetOrderBookResponse:
         query: dict[str, Any] = {"pair": request.pair}
         if self._has_field(request, "count"):
             query["count"] = request.count
         self._add_opt(query, "asset_class", request, "asset_class")
 
-        payload = self._spot_public_get("/public/Depth", query)
+        payload = await self._spot_public_get("/public/Depth", query)
         self._normalize_spot_errors(payload)
         self._transform_spot_orderbook(payload)
         return self._parse_message(payload, pb.GetOrderBookResponse)
 
-    def GetAccountBalance(
+    async def GetAccountBalance(
         self, request: pb.GetAccountBalanceRequest, context: Any = None
     ) -> pb.GetAccountBalanceResponse:
         params: dict[str, Any] = {}
         self._add_opt(params, "nonce", request, "nonce")
         self._add_opt(params, "rebase_multiplier", request, "rebase_multiplier")
 
-        payload = self._spot_private_post("/private/Balance", params)
+        payload = await self._spot_private_post("/private/Balance", params)
         return self._parse_message(payload, pb.GetAccountBalanceResponse)
 
-    def _spot_get_open_orders(
+    async def _spot_get_open_orders(
         self, request: pb.GetOpenOrdersRequest, context: Any = None
     ) -> pb.GetOpenOrdersResponse:
         params: dict[str, Any] = {}
@@ -105,11 +109,11 @@ class KrakenService:
         self._add_opt(params, "cl_ord_id", request, "cl_ord_id")
         self._add_opt(params, "rebase_multiplier", request, "rebase_multiplier")
 
-        payload = self._spot_private_post("/private/OpenOrders", params)
+        payload = await self._spot_private_post("/private/OpenOrders", params)
         self._normalize_spot_errors(payload)
         return self._parse_message(payload, pb.GetOpenOrdersResponse)
 
-    def AddOrder(self, request: pb.AddOrderRequest, context: Any = None) -> pb.AddOrderResponse:
+    async def AddOrder(self, request: pb.AddOrderRequest, context: Any = None) -> pb.AddOrderResponse:
         params: dict[str, Any] = {
             "ordertype": request.ordertype,
             "type": request.type,
@@ -138,11 +142,11 @@ class KrakenService:
         self._add_opt(params, "deadline", request, "deadline")
         self._add_opt(params, "validate", request, "validate")
 
-        payload = self._spot_private_post("/private/AddOrder", params)
+        payload = await self._spot_private_post("/private/AddOrder", params)
         self._normalize_spot_errors(payload)
         return self._parse_message(payload, pb.AddOrderResponse)
 
-    def _spot_cancel_order(
+    async def _spot_cancel_order(
         self, request: pb.CancelOrderRequest, context: Any = None
     ) -> pb.CancelOrderResponse:
         params: dict[str, Any] = {}
@@ -153,61 +157,61 @@ class KrakenService:
             params["txid"] = request.txid_int
         self._add_opt(params, "cl_ord_id", request, "cl_ord_id")
 
-        payload = self._spot_private_post("/private/CancelOrder", params)
+        payload = await self._spot_private_post("/private/CancelOrder", params)
         self._normalize_spot_errors(payload)
         return self._parse_message(payload, pb.CancelOrderResponse)
 
-    def CancelAllOrders(
+    async def CancelAllOrders(
         self, request: pb.CancelAllOrdersRequest, context: Any = None
     ) -> pb.CancelAllOrdersResponse:
         params: dict[str, Any] = {}
         self._add_opt(params, "nonce", request, "nonce")
-        payload = self._spot_private_post("/private/CancelAll", params)
+        payload = await self._spot_private_post("/private/CancelAll", params)
         self._normalize_spot_errors(payload)
         return self._parse_message(payload, pb.CancelAllOrdersResponse)
 
-    def CancelAllOrdersAfter(
+    async def CancelAllOrdersAfter(
         self, request: pb.CancelAllOrdersAfterRequest, context: Any = None
     ) -> pb.CancelAllOrdersAfterResponse:
         params: dict[str, Any] = {"timeout": request.timeout}
         self._add_opt(params, "nonce", request, "nonce")
 
-        payload = self._spot_private_post("/private/CancelAllOrdersAfter", params)
+        payload = await self._spot_private_post("/private/CancelAllOrdersAfter", params)
         self._normalize_spot_errors(payload)
         return self._parse_message(payload, pb.CancelAllOrdersAfterResponse)
 
-    def GetOpenOrders(self, request: Any, context: Any = None):
+    async def GetOpenOrders(self, request: Any, context: Any = None):
         if isinstance(request, pb.GetOpenOrdersRequest):
-            return self._spot_get_open_orders(request, context)
+            return await self._spot_get_open_orders(request, context)
         if isinstance(request, pb.GetFuturesOpenOrdersRequest):
-            return self._futures_get_open_orders(request, context)
+            return await self._futures_get_open_orders(request, context)
         raise TypeError(f"unsupported request type for GetOpenOrders: {type(request).__name__}")
 
-    def CancelOrder(self, request: Any, context: Any = None):
+    async def CancelOrder(self, request: Any, context: Any = None):
         if isinstance(request, pb.CancelOrderRequest):
-            return self._spot_cancel_order(request, context)
+            return await self._spot_cancel_order(request, context)
         if isinstance(request, pb.CancelFuturesOrderRequest):
-            return self._futures_cancel_order(request, context)
+            return await self._futures_cancel_order(request, context)
         raise TypeError(f"unsupported request type for CancelOrder: {type(request).__name__}")
 
     # -------------------------
     # Futures handlers
     # -------------------------
 
-    def GetInstruments(self, request: Any, context: Any = None) -> pb.GetInstrumentsResponse:
-        payload = self._futures_request("GET", "/instruments", private=False)
+    async def GetInstruments(self, request: Any, context: Any = None) -> pb.GetInstrumentsResponse:
+        payload = await self._futures_request("GET", "/instruments", private=False)
         return self._parse_message(payload, pb.GetInstrumentsResponse)
 
-    def GetTickers(self, request: pb.GetTickersRequest, context: Any = None) -> pb.GetTickersResponse:
+    async def GetTickers(self, request: pb.GetTickersRequest, context: Any = None) -> pb.GetTickersResponse:
         query: dict[str, Any] = {}
         if request.symbol:
             query["symbol"] = list(request.symbol)
 
-        payload = self._futures_request("GET", "/tickers", query=query, private=False)
+        payload = await self._futures_request("GET", "/tickers", query=query, private=False)
         return self._parse_message(payload, pb.GetTickersResponse)
 
-    def GetOrderbook(self, request: pb.GetOrderbookRequest, context: Any = None) -> pb.GetOrderbookResponse:
-        payload = self._futures_request(
+    async def GetOrderbook(self, request: pb.GetOrderbookRequest, context: Any = None) -> pb.GetOrderbookResponse:
+        payload = await self._futures_request(
             "GET",
             "/orderbook",
             query={"symbol": request.symbol},
@@ -216,7 +220,7 @@ class KrakenService:
         self._transform_futures_orderbook(payload)
         return self._parse_message(payload, pb.GetOrderbookResponse)
 
-    def SendOrder(self, request: pb.SendOrderRequest, context: Any = None) -> pb.SendOrderResponse:
+    async def SendOrder(self, request: pb.SendOrderRequest, context: Any = None) -> pb.SendOrderResponse:
         params: dict[str, Any] = {
             "orderType": request.order_type,
             "symbol": request.symbol,
@@ -235,10 +239,10 @@ class KrakenService:
         self._add_opt(params, "limitPriceOffsetUnit", request, "limit_price_offset_unit")
         self._add_opt(params, "broker", request, "broker")
 
-        payload = self._futures_request("POST", "/sendorder", query=params, private=True)
+        payload = await self._futures_request("POST", "/sendorder", query=params, private=True)
         return self._parse_message(payload, pb.SendOrderResponse)
 
-    def _futures_cancel_order(
+    async def _futures_cancel_order(
         self, request: pb.CancelFuturesOrderRequest, context: Any = None
     ) -> pb.CancelFuturesOrderResponse:
         params: dict[str, Any] = {}
@@ -246,37 +250,37 @@ class KrakenService:
         self._add_opt(params, "order_id", request, "order_id")
         self._add_opt(params, "cliOrdId", request, "cli_ord_id")
 
-        payload = self._futures_request("POST", "/cancelorder", query=params, private=True)
+        payload = await self._futures_request("POST", "/cancelorder", query=params, private=True)
         return self._parse_message(payload, pb.CancelFuturesOrderResponse)
 
-    def _futures_get_open_orders(
+    async def _futures_get_open_orders(
         self, request: pb.GetFuturesOpenOrdersRequest, context: Any = None
     ) -> pb.GetFuturesOpenOrdersResponse:
-        payload = self._futures_request("GET", "/openorders", private=True)
+        payload = await self._futures_request("GET", "/openorders", private=True)
         return self._parse_message(payload, pb.GetFuturesOpenOrdersResponse)
 
-    def GetOpenPositions(
+    async def GetOpenPositions(
         self, request: pb.GetOpenPositionsRequest, context: Any = None
     ) -> pb.GetOpenPositionsResponse:
-        payload = self._futures_request("GET", "/openpositions", private=True)
+        payload = await self._futures_request("GET", "/openpositions", private=True)
         return self._parse_message(payload, pb.GetOpenPositionsResponse)
 
-    def GetFills(self, request: pb.GetFillsRequest, context: Any = None) -> pb.GetFillsResponse:
+    async def GetFills(self, request: pb.GetFillsRequest, context: Any = None) -> pb.GetFillsResponse:
         query: dict[str, Any] = {}
         self._add_opt(query, "lastFillTime", request, "last_fill_time")
 
-        payload = self._futures_request("GET", "/fills", query=query, private=True)
+        payload = await self._futures_request("GET", "/fills", query=query, private=True)
         return self._parse_message(payload, pb.GetFillsResponse)
 
     # -------------------------
     # HTTP + auth helpers
     # -------------------------
 
-    def _spot_public_get(self, path: str, query: dict[str, Any] | None = None) -> dict[str, Any]:
+    async def _spot_public_get(self, path: str, query: dict[str, Any] | None = None) -> dict[str, Any]:
         url = self._build_url(self._spot_base_url, path, query=query)
-        return self._request_json("GET", url, headers={"Accept": "application/json"})
+        return await self._request_json("GET", url, headers={"Accept": "application/json"})
 
-    def _spot_private_post(self, path: str, params: dict[str, Any]) -> dict[str, Any]:
+    async def _spot_private_post(self, path: str, params: dict[str, Any]) -> dict[str, Any]:
         api_key, api_secret = self._spot_credentials()
 
         params = dict(params)
@@ -300,11 +304,11 @@ class KrakenService:
             "API-Key": api_key,
             "API-Sign": signature,
         }
-        payload = self._request_json("POST", url, headers=headers, body=body)
+        payload = await self._request_json("POST", url, headers=headers, body=body)
         self._normalize_spot_errors(payload)
         return payload
 
-    def _futures_request(
+    async def _futures_request(
         self,
         method: str,
         path: str,
@@ -343,9 +347,9 @@ class KrakenService:
             headers["Authent"] = authent
             headers["Nonce"] = nonce
 
-        return self._request_json(method, url, headers=headers, body=body_text)
+        return await self._request_json(method, url, headers=headers, body=body_text)
 
-    def _request_json(
+    async def _request_json(
         self,
         method: str,
         url: str,
@@ -353,7 +357,7 @@ class KrakenService:
         headers: dict[str, str],
         body: str | None = None,
     ) -> dict[str, Any]:
-        response = self._client.request(
+        response = await self._client.request(
             method,
             url,
             headers=headers,

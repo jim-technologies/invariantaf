@@ -24,20 +24,24 @@ class AlternativeMeService:
     ):
         self._base_url = base_url.rstrip("/")
         self._timeout = timeout
-        self._client = httpx.Client(timeout=timeout)
+        self._client = httpx.AsyncClient(timeout=timeout)
+
+    async def aclose(self) -> None:
+        """Close the HTTP client. Idempotent."""
+        await self._client.aclose()
 
     # -------------------------
     # RPC handlers
     # -------------------------
 
-    def GetFearGreedIndex(
+    async def GetFearGreedIndex(
         self, request: pb.GetFearGreedIndexRequest, context: Any = None
     ) -> pb.GetFearGreedIndexResponse:
         query: dict[str, Any] = {"format": "json"}
         if self._has_field(request, "limit"):
             query["limit"] = request.limit
 
-        payload = self._get("/fng/", query)
+        payload = await self._get("/fng/", query)
         raw_data = payload.get("data", []) if isinstance(payload, dict) else []
         entries = []
         for item in raw_data:
@@ -49,24 +53,24 @@ class AlternativeMeService:
             })
         return self._parse_message({"data": entries}, pb.GetFearGreedIndexResponse)
 
-    def GetGlobalMarketData(
+    async def GetGlobalMarketData(
         self, request: pb.GetGlobalMarketDataRequest, context: Any = None
     ) -> pb.GetGlobalMarketDataResponse:
         query: dict[str, Any] = {"convert": "USD"}
         if self._has_field(request, "limit"):
             query["limit"] = request.limit
 
-        payload = self._get("/v2/ticker/", query)
+        payload = await self._get("/v2/ticker/", query)
         raw_data = self._extract_ticker_data(payload)
         tickers = [self._transform_coin_ticker(item) for item in raw_data]
         return self._parse_message({"data": tickers}, pb.GetGlobalMarketDataResponse)
 
-    def GetCoinData(
+    async def GetCoinData(
         self, request: pb.GetCoinDataRequest, context: Any = None
     ) -> pb.GetCoinDataResponse:
         query: dict[str, Any] = {"convert": "USD"}
 
-        payload = self._get(f"/v2/ticker/{request.id}/", query)
+        payload = await self._get(f"/v2/ticker/{request.id}/", query)
         raw_data = payload.get("data", {}) if isinstance(payload, dict) else {}
         if isinstance(raw_data, dict) and not any(
             k in raw_data for k in ("name", "symbol", "id")
@@ -78,14 +82,14 @@ class AlternativeMeService:
         ticker = self._transform_coin_ticker(raw_data)
         return self._parse_message({"data": ticker}, pb.GetCoinDataResponse)
 
-    def GetListings(
+    async def GetListings(
         self, request: pb.GetListingsRequest, context: Any = None
     ) -> pb.GetListingsResponse:
         query: dict[str, Any] = {"convert": "USD"}
         if self._has_field(request, "limit"):
             query["limit"] = request.limit
 
-        payload = self._get("/v2/listings/", query)
+        payload = await self._get("/v2/listings/", query)
         raw_data = payload.get("data", []) if isinstance(payload, dict) else []
         listings = []
         for item in raw_data:
@@ -139,9 +143,9 @@ class AlternativeMeService:
     # HTTP helpers
     # -------------------------
 
-    def _get(self, path: str, query: dict[str, Any] | None = None) -> Any:
+    async def _get(self, path: str, query: dict[str, Any] | None = None) -> Any:
         url = self._build_url(path, query)
-        response = self._client.request(
+        response = await self._client.request(
             "GET",
             url,
             headers={"Accept": "application/json"},

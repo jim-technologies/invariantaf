@@ -10,6 +10,7 @@ Free keys are available at https://portal.1inch.dev/.
 from __future__ import annotations
 
 import json
+import asyncio
 import os
 import sys
 from pathlib import Path
@@ -40,12 +41,12 @@ def live_server():
     from oneinch_mcp.service import OneInchService
 
     srv = Server.from_descriptor(
-        DESCRIPTOR_PATH, name="test-oneinch-live", version="0.0.1"
+        DESCRIPTOR_PATH
     )
     servicer = OneInchService()
     srv.register(servicer)
     yield srv
-    srv.stop()
+    asyncio.run(srv.stop())
 
 
 # --- Quote ---
@@ -53,7 +54,7 @@ def live_server():
 
 class TestLiveGetQuote:
     def test_get_quote_eth_to_usdc(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "OneInchService",
                 "GetQuote",
@@ -67,7 +68,7 @@ class TestLiveGetQuote:
                     }
                 ),
             ]
-        )
+        ))
         dst_amount = result.get("dstAmount") or result.get("dst_amount")
         assert dst_amount, "expected a destination amount in quote"
         assert int(dst_amount) > 0, "quote dst_amount should be positive"
@@ -78,7 +79,7 @@ class TestLiveGetQuote:
 
 class TestLiveGetTokenPrice:
     def test_get_weth_price(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "OneInchService",
                 "GetTokenPrice",
@@ -90,7 +91,7 @@ class TestLiveGetTokenPrice:
                     }
                 ),
             ]
-        )
+        ))
         assert "prices" in result
         prices = result["prices"]
         assert isinstance(prices, list)
@@ -105,14 +106,14 @@ class TestLiveGetTokenPrice:
 
 class TestLiveGetTokenInfo:
     def test_get_weth_info(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "OneInchService",
                 "GetTokenInfo",
                 "-r",
                 json.dumps({"chainId": 1, "address": WETH_ADDRESS}),
             ]
-        )
+        ))
         assert "token" in result
         token = result["token"]
         assert token.get("symbol") == "WETH"
@@ -124,14 +125,14 @@ class TestLiveGetTokenInfo:
 
 class TestLiveSearchTokens:
     def test_search_usdc(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "OneInchService",
                 "SearchTokens",
                 "-r",
                 json.dumps({"chainId": 1, "query": "USDC"}),
             ]
-        )
+        ))
         assert "tokens" in result
         tokens = result["tokens"]
         assert isinstance(tokens, list)
@@ -145,14 +146,14 @@ class TestLiveSearchTokens:
 
 class TestLiveGetBalances:
     def test_get_balances(self, live_server):
-        result = live_server._cli(
+        result = asyncio.run(live_server._cli(
             [
                 "OneInchService",
                 "GetBalances",
                 "-r",
                 json.dumps({"chainId": 1, "address": VITALIK_ADDRESS}),
             ]
-        )
+        ))
         assert "balances" in result
         balances = result["balances"]
         assert isinstance(balances, list)

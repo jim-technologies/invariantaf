@@ -10,6 +10,7 @@ has been deprecated.  Tests skip gracefully when the API is unavailable.
 from __future__ import annotations
 
 import os
+import asyncio
 import sys
 from pathlib import Path
 
@@ -32,18 +33,18 @@ def live_server():
     from compound_mcp.service import CompoundService
 
     srv = Server.from_descriptor(
-        DESCRIPTOR_PATH, name="test-compound-live", version="0.0.1"
+        DESCRIPTOR_PATH
     )
     servicer = CompoundService()
     srv.register(servicer)
     yield srv
-    srv.stop()
+    asyncio.run(srv.stop())
 
 
 def _cli_or_skip(live_server, args):
     """Call CLI and skip if the API returns an HTTP error (410 Gone, etc)."""
     try:
-        return live_server._cli(args)
+        return asyncio.run(live_server._cli(args))
     except Exception as exc:
         msg = str(exc)
         if "410" in msg or "Gone" in msg or "503" in msg or "502" in msg:

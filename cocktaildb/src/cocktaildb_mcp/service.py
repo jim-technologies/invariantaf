@@ -15,7 +15,11 @@ class CocktailDBService:
     """Implements CocktailDBService RPCs via the free TheCocktailDB API."""
 
     def __init__(self):
-        self._http = httpx.Client(timeout=30)
+        self._http = httpx.AsyncClient(timeout=30)
+
+    async def aclose(self) -> None:
+        """Close the HTTP client. Idempotent."""
+        await self._client.aclose()
 
     def _get(self, path: str, params: dict | None = None) -> Any:
         resp = self._http.get(f"{_BASE_URL}{path}", params=params or {})
@@ -52,49 +56,49 @@ class CocktailDBService:
             image=raw.get("strDrinkThumb", "") or "",
         )
 
-    def SearchCocktails(self, request: Any, context: Any = None) -> pb.SearchCocktailsResponse:
+    async def SearchCocktails(self, request: Any, context: Any = None) -> pb.SearchCocktailsResponse:
         raw = self._get("/search.php", params={"s": request.name})
         resp = pb.SearchCocktailsResponse()
         for drink in raw.get("drinks") or []:
             resp.cocktails.append(self._parse_cocktail(drink))
         return resp
 
-    def GetCocktail(self, request: Any, context: Any = None) -> pb.GetCocktailResponse:
+    async def GetCocktail(self, request: Any, context: Any = None) -> pb.GetCocktailResponse:
         raw = self._get("/lookup.php", params={"i": request.id})
         drinks = raw.get("drinks") or []
         if not drinks:
             return pb.GetCocktailResponse()
         return pb.GetCocktailResponse(cocktail=self._parse_cocktail(drinks[0]))
 
-    def GetRandomCocktail(self, request: Any, context: Any = None) -> pb.GetRandomCocktailResponse:
+    async def GetRandomCocktail(self, request: Any, context: Any = None) -> pb.GetRandomCocktailResponse:
         raw = self._get("/random.php")
         drinks = raw.get("drinks") or []
         if not drinks:
             return pb.GetRandomCocktailResponse()
         return pb.GetRandomCocktailResponse(cocktail=self._parse_cocktail(drinks[0]))
 
-    def FilterByIngredient(self, request: Any, context: Any = None) -> pb.FilterByIngredientResponse:
+    async def FilterByIngredient(self, request: Any, context: Any = None) -> pb.FilterByIngredientResponse:
         raw = self._get("/filter.php", params={"i": request.ingredient})
         resp = pb.FilterByIngredientResponse()
         for drink in raw.get("drinks") or []:
             resp.cocktails.append(self._parse_summary(drink))
         return resp
 
-    def FilterByCategory(self, request: Any, context: Any = None) -> pb.FilterByCategoryResponse:
+    async def FilterByCategory(self, request: Any, context: Any = None) -> pb.FilterByCategoryResponse:
         raw = self._get("/filter.php", params={"c": request.category})
         resp = pb.FilterByCategoryResponse()
         for drink in raw.get("drinks") or []:
             resp.cocktails.append(self._parse_summary(drink))
         return resp
 
-    def FilterByGlass(self, request: Any, context: Any = None) -> pb.FilterByGlassResponse:
+    async def FilterByGlass(self, request: Any, context: Any = None) -> pb.FilterByGlassResponse:
         raw = self._get("/filter.php", params={"g": request.glass})
         resp = pb.FilterByGlassResponse()
         for drink in raw.get("drinks") or []:
             resp.cocktails.append(self._parse_summary(drink))
         return resp
 
-    def ListCategories(self, request: Any, context: Any = None) -> pb.ListCategoriesResponse:
+    async def ListCategories(self, request: Any, context: Any = None) -> pb.ListCategoriesResponse:
         raw = self._get("/list.php", params={"c": "list"})
         resp = pb.ListCategoriesResponse()
         for item in raw.get("drinks") or []:
@@ -103,7 +107,7 @@ class CocktailDBService:
                 resp.categories.append(name)
         return resp
 
-    def ListGlasses(self, request: Any, context: Any = None) -> pb.ListGlassesResponse:
+    async def ListGlasses(self, request: Any, context: Any = None) -> pb.ListGlassesResponse:
         raw = self._get("/list.php", params={"g": "list"})
         resp = pb.ListGlassesResponse()
         for item in raw.get("drinks") or []:
@@ -112,7 +116,7 @@ class CocktailDBService:
                 resp.glasses.append(name)
         return resp
 
-    def ListIngredients(self, request: Any, context: Any = None) -> pb.ListIngredientsResponse:
+    async def ListIngredients(self, request: Any, context: Any = None) -> pb.ListIngredientsResponse:
         raw = self._get("/list.php", params={"i": "list"})
         resp = pb.ListIngredientsResponse()
         for item in raw.get("drinks") or []:
@@ -121,7 +125,7 @@ class CocktailDBService:
                 resp.ingredients.append(name)
         return resp
 
-    def SearchIngredient(self, request: Any, context: Any = None) -> pb.SearchIngredientResponse:
+    async def SearchIngredient(self, request: Any, context: Any = None) -> pb.SearchIngredientResponse:
         raw = self._get("/search.php", params={"i": request.name})
         items = raw.get("ingredients") or []
         if not items:

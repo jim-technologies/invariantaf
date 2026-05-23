@@ -9,6 +9,7 @@ Requires a valid Twelve Data API key (free tier: 800 calls/day, 8/min).
 from __future__ import annotations
 
 import json
+import asyncio
 import os
 import sys
 from pathlib import Path
@@ -36,7 +37,7 @@ def _cli_or_skip(live_server, service, method, params=None):
     if params:
         args.extend(["-r", json.dumps(params)])
     try:
-        return live_server._cli(args)
+        return asyncio.run(live_server._cli(args))
     except (httpx.ConnectTimeout, httpx.ConnectError, httpx.TimeoutException) as exc:
         pytest.skip(f"{method}: {type(exc).__name__}: {exc}")
     except Exception as exc:
@@ -56,12 +57,12 @@ def live_server():
     api_key = os.getenv("TWELVEDATA_API_KEY", "").strip()
 
     srv = Server.from_descriptor(
-        DESCRIPTOR_PATH, name="test-twelvedata-live", version="0.0.1"
+        DESCRIPTOR_PATH
     )
     servicer = TwelveDataService(base_url=base_url, api_key=api_key)
     srv.register(servicer, service_name="twelvedata.v1.TwelveDataService")
     yield srv
-    srv.stop()
+    asyncio.run(srv.stop())
 
 
 # --- GetQuote ---

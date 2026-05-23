@@ -23,16 +23,20 @@ class NHLService:
     ):
         self._base_url = base_url.rstrip("/")
         self._timeout = timeout
-        self._client = httpx.Client(timeout=timeout, follow_redirects=True)
+        self._client = httpx.AsyncClient(timeout=timeout, follow_redirects=True)
+
+    async def aclose(self) -> None:
+        """Close the HTTP client. Idempotent."""
+        await self._client.aclose()
 
     # -------------------------
     # RPC handlers
     # -------------------------
 
-    def ListTeams(
+    async def ListTeams(
         self, request: pb.ListTeamsRequest, context: Any = None
     ) -> pb.ListTeamsResponse:
-        payload = self._get("/v1/standings/now")
+        payload = await self._get("/v1/standings/now")
         standings = payload.get("standings", [])
         teams = []
         for entry in standings:
@@ -52,10 +56,10 @@ class NHLService:
                 unique.append(t)
         return self._parse_message({"teams": unique}, pb.ListTeamsResponse)
 
-    def GetStandings(
+    async def GetStandings(
         self, request: pb.GetStandingsRequest, context: Any = None
     ) -> pb.GetStandingsResponse:
-        payload = self._get("/v1/standings/now")
+        payload = await self._get("/v1/standings/now")
         standings = payload.get("standings", [])
         entries = []
         for entry in standings:
@@ -96,7 +100,7 @@ class NHLService:
             })
         return self._parse_message({"standings": entries}, pb.GetStandingsResponse)
 
-    def GetSchedule(
+    async def GetSchedule(
         self, request: pb.GetScheduleRequest, context: Any = None
     ) -> pb.GetScheduleResponse:
         if self._has_field(request, "date") and request.date:
@@ -104,7 +108,7 @@ class NHLService:
         else:
             path = "/v1/schedule/now"
 
-        payload = self._get(path)
+        payload = await self._get(path)
         all_games: list[dict[str, Any]] = []
         game_week = payload.get("gameWeek", [])
         for day in game_week:
@@ -112,36 +116,36 @@ class NHLService:
                 all_games.append(self._transform_schedule_game(g))
         return self._parse_message({"games": all_games}, pb.GetScheduleResponse)
 
-    def GetGameBoxscore(
+    async def GetGameBoxscore(
         self, request: pb.GetGameBoxscoreRequest, context: Any = None
     ) -> pb.GetGameBoxscoreResponse:
         path = f"/v1/gamecenter/{request.game_id}/boxscore"
-        payload = self._get(path)
+        payload = await self._get(path)
         result = self._transform_boxscore(payload)
         return self._parse_message(result, pb.GetGameBoxscoreResponse)
 
-    def GetPlayerStats(
+    async def GetPlayerStats(
         self, request: pb.GetPlayerStatsRequest, context: Any = None
     ) -> pb.GetPlayerStatsResponse:
         path = f"/v1/player/{request.player_id}/landing"
-        payload = self._get(path)
+        payload = await self._get(path)
         result = self._transform_player(payload)
         return self._parse_message(result, pb.GetPlayerStatsResponse)
 
-    def GetTeamSchedule(
+    async def GetTeamSchedule(
         self, request: pb.GetTeamScheduleRequest, context: Any = None
     ) -> pb.GetTeamScheduleResponse:
         path = f"/v1/club-schedule-season/{request.team_abbrev}/now"
-        payload = self._get(path)
+        payload = await self._get(path)
         games_raw = payload.get("games", [])
         games = [self._transform_team_schedule_game(g) for g in games_raw]
         return self._parse_message({"games": games}, pb.GetTeamScheduleResponse)
 
-    def GetTeamRoster(
+    async def GetTeamRoster(
         self, request: pb.GetTeamRosterRequest, context: Any = None
     ) -> pb.GetTeamRosterResponse:
         path = f"/v1/roster/{request.team_abbrev}/current"
-        payload = self._get(path)
+        payload = await self._get(path)
         result = {
             "forwards": [self._transform_roster_player(p) for p in payload.get("forwards", [])],
             "defensemen": [self._transform_roster_player(p) for p in payload.get("defensemen", [])],
@@ -149,10 +153,10 @@ class NHLService:
         }
         return self._parse_message(result, pb.GetTeamRosterResponse)
 
-    def GetScoreboard(
+    async def GetScoreboard(
         self, request: pb.GetScoreboardRequest, context: Any = None
     ) -> pb.GetScoreboardResponse:
-        payload = self._get("/v1/score/now")
+        payload = await self._get("/v1/score/now")
         games_raw = payload.get("games", [])
         games = [self._transform_scoreboard_game(g) for g in games_raw]
         return self._parse_message({"games": games}, pb.GetScoreboardResponse)
@@ -161,9 +165,9 @@ class NHLService:
     # HTTP helpers
     # -------------------------
 
-    def _get(self, path: str) -> Any:
+    async def _get(self, path: str) -> Any:
         url = f"{self._base_url}{path}"
-        response = self._client.request(
+        response = await self._client.request(
             "GET",
             url,
             headers={"Accept": "application/json"},

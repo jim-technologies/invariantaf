@@ -119,24 +119,28 @@ class USGSService:
     """Implements USGSService RPCs via the free USGS public APIs."""
 
     def __init__(self):
-        self._http = httpx.Client(timeout=30, follow_redirects=True)
+        self._http = httpx.AsyncClient(timeout=30, follow_redirects=True)
+
+    async def aclose(self) -> None:
+        """Close the HTTP client. Idempotent."""
+        await self._client.aclose()
 
     def _get(self, url: str, params: dict | None = None) -> Any:
         resp = self._http.get(url, params=params)
         resp.raise_for_status()
         return resp.json()
 
-    def GetRecentEarthquakes(self, request: Any, context: Any = None) -> pb.GetRecentEarthquakesResponse:
+    async def GetRecentEarthquakes(self, request: Any, context: Any = None) -> pb.GetRecentEarthquakesResponse:
         raw = self._get(f"{_EARTHQUAKE_FEED_BASE}/summary/all_hour.geojson")
         collection = _parse_earthquake_collection(raw)
         return pb.GetRecentEarthquakesResponse(collection=collection)
 
-    def GetSignificantEarthquakes(self, request: Any, context: Any = None) -> pb.GetSignificantEarthquakesResponse:
+    async def GetSignificantEarthquakes(self, request: Any, context: Any = None) -> pb.GetSignificantEarthquakesResponse:
         raw = self._get(f"{_EARTHQUAKE_FEED_BASE}/summary/significant_month.geojson")
         collection = _parse_earthquake_collection(raw)
         return pb.GetSignificantEarthquakesResponse(collection=collection)
 
-    def SearchEarthquakes(self, request: Any, context: Any = None) -> pb.SearchEarthquakesResponse:
+    async def SearchEarthquakes(self, request: Any, context: Any = None) -> pb.SearchEarthquakesResponse:
         params = {"format": "geojson"}
         if request.start_time:
             params["starttime"] = request.start_time
@@ -163,13 +167,13 @@ class USGSService:
         collection = _parse_earthquake_collection(raw)
         return pb.SearchEarthquakesResponse(collection=collection)
 
-    def GetEarthquakeDetail(self, request: Any, context: Any = None) -> pb.GetEarthquakeDetailResponse:
+    async def GetEarthquakeDetail(self, request: Any, context: Any = None) -> pb.GetEarthquakeDetailResponse:
         raw = self._get(f"{_EARTHQUAKE_FEED_BASE}/detail/{request.event_id}.geojson")
         # Detail endpoint returns a single Feature, not a FeatureCollection.
         earthquake = _parse_earthquake(raw)
         return pb.GetEarthquakeDetailResponse(earthquake=earthquake)
 
-    def GetWaterLevels(self, request: Any, context: Any = None) -> pb.GetWaterLevelsResponse:
+    async def GetWaterLevels(self, request: Any, context: Any = None) -> pb.GetWaterLevelsResponse:
         params = {
             "format": "json",
             "sites": request.site_number,

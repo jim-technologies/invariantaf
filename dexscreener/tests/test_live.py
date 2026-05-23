@@ -10,6 +10,7 @@ No API keys or credentials needed.
 from __future__ import annotations
 
 import json
+import asyncio
 import os
 import sys
 from pathlib import Path
@@ -36,7 +37,7 @@ def _cli_or_skip(live_server, service, method, params=None):
     if params:
         args.extend(["-r", json.dumps(params)])
     try:
-        return live_server._cli(args)
+        return asyncio.run(live_server._cli(args))
     except (httpx.ConnectTimeout, httpx.ConnectError, httpx.TimeoutException) as exc:
         pytest.skip(f"{method}: {type(exc).__name__}: {exc}")
     except Exception as exc:
@@ -55,12 +56,12 @@ def live_server():
     base_url = (os.getenv("DEXSCREENER_BASE_URL") or DEFAULT_BASE_URL).rstrip("/")
 
     srv = Server.from_descriptor(
-        DESCRIPTOR_PATH, name="test-dexscreener-live", version="0.0.1"
+        DESCRIPTOR_PATH
     )
     servicer = DexScreenerService(base_url=base_url)
     srv.register(servicer, service_name="dexscreener.v1.DexScreenerService")
     yield srv
-    srv.stop()
+    asyncio.run(srv.stop())
 
 
 # --- SearchPairs ---

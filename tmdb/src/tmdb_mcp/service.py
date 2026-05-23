@@ -16,12 +16,16 @@ class TMDBService:
     """Implements TMDBService RPCs via the TMDB API v3."""
 
     def __init__(self, *, api_key: str | None = None):
-        self._http = httpx.Client(timeout=30)
+        self._http = httpx.AsyncClient(timeout=30)
         self._api_key = api_key or os.environ.get("TMDB_API_KEY")
         if not self._api_key:
             raise ValueError(
                 "TMDB API key is required. Set TMDB_API_KEY env var or pass api_key."
             )
+
+    async def aclose(self) -> None:
+        """Close the HTTP client. Idempotent."""
+        await self._client.aclose()
 
     def _get(self, path: str, params: dict | None = None) -> Any:
         p = dict(params or {})
@@ -61,7 +65,7 @@ class TMDBService:
             original_language=t.get("original_language", ""),
         )
 
-    def SearchMovies(self, request: Any, context: Any = None) -> pb.SearchMoviesResponse:
+    async def SearchMovies(self, request: Any, context: Any = None) -> pb.SearchMoviesResponse:
         params: dict[str, Any] = {"query": request.query}
         if request.page:
             params["page"] = request.page
@@ -78,7 +82,7 @@ class TMDBService:
             resp.results.append(self._parse_movie(m))
         return resp
 
-    def SearchTV(self, request: Any, context: Any = None) -> pb.SearchTVResponse:
+    async def SearchTV(self, request: Any, context: Any = None) -> pb.SearchTVResponse:
         params: dict[str, Any] = {"query": request.query}
         if request.page:
             params["page"] = request.page
@@ -95,7 +99,7 @@ class TMDBService:
             resp.results.append(self._parse_tv(t))
         return resp
 
-    def GetMovie(self, request: Any, context: Any = None) -> pb.GetMovieResponse:
+    async def GetMovie(self, request: Any, context: Any = None) -> pb.GetMovieResponse:
         raw = self._get(f"/movie/{request.id}")
         genres = [
             pb.Genre(id=g.get("id", 0), name=g.get("name", ""))
@@ -122,7 +126,7 @@ class TMDBService:
             imdb_id=raw.get("imdb_id", "") or "",
         )
 
-    def GetTVShow(self, request: Any, context: Any = None) -> pb.GetTVShowResponse:
+    async def GetTVShow(self, request: Any, context: Any = None) -> pb.GetTVShowResponse:
         raw = self._get(f"/tv/{request.id}")
         genres = [
             pb.Genre(id=g.get("id", 0), name=g.get("name", ""))
@@ -148,7 +152,7 @@ class TMDBService:
             type=raw.get("type", ""),
         )
 
-    def GetTrending(self, request: Any, context: Any = None) -> pb.GetTrendingResponse:
+    async def GetTrending(self, request: Any, context: Any = None) -> pb.GetTrendingResponse:
         media_type = request.media_type or "all"
         time_window = request.time_window or "day"
         raw = self._get(f"/trending/{media_type}/{time_window}")
@@ -172,7 +176,7 @@ class TMDBService:
             ))
         return resp
 
-    def GetMovieCredits(self, request: Any, context: Any = None) -> pb.GetMovieCreditsResponse:
+    async def GetMovieCredits(self, request: Any, context: Any = None) -> pb.GetMovieCreditsResponse:
         raw = self._get(f"/movie/{request.id}/credits")
         resp = pb.GetMovieCreditsResponse(id=raw.get("id", 0))
         for c in raw.get("cast", []):
@@ -193,7 +197,7 @@ class TMDBService:
             ))
         return resp
 
-    def GetMovieReviews(self, request: Any, context: Any = None) -> pb.GetMovieReviewsResponse:
+    async def GetMovieReviews(self, request: Any, context: Any = None) -> pb.GetMovieReviewsResponse:
         params: dict[str, Any] = {}
         if request.page:
             params["page"] = request.page
@@ -217,7 +221,7 @@ class TMDBService:
             ))
         return resp
 
-    def GetPopularMovies(self, request: Any, context: Any = None) -> pb.GetPopularMoviesResponse:
+    async def GetPopularMovies(self, request: Any, context: Any = None) -> pb.GetPopularMoviesResponse:
         params: dict[str, Any] = {}
         if request.page:
             params["page"] = request.page
@@ -232,7 +236,7 @@ class TMDBService:
             resp.results.append(self._parse_movie(m))
         return resp
 
-    def GetTopRatedMovies(self, request: Any, context: Any = None) -> pb.GetTopRatedMoviesResponse:
+    async def GetTopRatedMovies(self, request: Any, context: Any = None) -> pb.GetTopRatedMoviesResponse:
         params: dict[str, Any] = {}
         if request.page:
             params["page"] = request.page
@@ -247,7 +251,7 @@ class TMDBService:
             resp.results.append(self._parse_movie(m))
         return resp
 
-    def DiscoverMovies(self, request: Any, context: Any = None) -> pb.DiscoverMoviesResponse:
+    async def DiscoverMovies(self, request: Any, context: Any = None) -> pb.DiscoverMoviesResponse:
         params: dict[str, Any] = {
             "sort_by": request.sort_by or "popularity.desc",
         }

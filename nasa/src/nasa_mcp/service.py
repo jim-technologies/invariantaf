@@ -23,7 +23,11 @@ class NASAService:
 
     def __init__(self, *, api_key: str | None = None):
         self._api_key = api_key or os.environ.get("NASA_API_KEY", "DEMO_KEY")
-        self._http = httpx.Client(timeout=30)
+        self._http = httpx.AsyncClient(timeout=30)
+
+    async def aclose(self) -> None:
+        """Close the HTTP client. Idempotent."""
+        await self._client.aclose()
 
     def _get(self, url: str, params: dict | None = None) -> Any:
         p = dict(params or {})
@@ -38,7 +42,7 @@ class NASAService:
         resp.raise_for_status()
         return resp.json()
 
-    def GetAPOD(self, request: Any, context: Any = None) -> pb.GetAPODResponse:
+    async def GetAPOD(self, request: Any, context: Any = None) -> pb.GetAPODResponse:
         params = {}
         if request.date:
             params["date"] = request.date
@@ -53,7 +57,7 @@ class NASAService:
             copyright=raw.get("copyright", ""),
         ))
 
-    def GetAPODRange(self, request: Any, context: Any = None) -> pb.GetAPODRangeResponse:
+    async def GetAPODRange(self, request: Any, context: Any = None) -> pb.GetAPODRangeResponse:
         params = {
             "start_date": request.start_date,
             "end_date": request.end_date,
@@ -72,7 +76,7 @@ class NASAService:
             ))
         return resp
 
-    def GetMarsPhotos(self, request: Any, context: Any = None) -> pb.GetMarsPhotosResponse:
+    async def GetMarsPhotos(self, request: Any, context: Any = None) -> pb.GetMarsPhotosResponse:
         rover = request.rover or "curiosity"
         params = {}
         if request.earth_date:
@@ -97,7 +101,7 @@ class NASAService:
             ))
         return resp
 
-    def GetMarsManifest(self, request: Any, context: Any = None) -> pb.GetMarsManifestResponse:
+    async def GetMarsManifest(self, request: Any, context: Any = None) -> pb.GetMarsManifestResponse:
         rover = request.rover or "curiosity"
         raw = self._get(f"{_MARS_PHOTOS_URL}/manifests/{rover}")
         m = raw.get("photo_manifest", {})
@@ -111,7 +115,7 @@ class NASAService:
             total_photos=m.get("total_photos", 0),
         ))
 
-    def GetNEOs(self, request: Any, context: Any = None) -> pb.GetNEOsResponse:
+    async def GetNEOs(self, request: Any, context: Any = None) -> pb.GetNEOsResponse:
         params = {}
         if request.start_date:
             params["start_date"] = request.start_date
@@ -139,7 +143,7 @@ class NASAService:
                 ))
         return resp
 
-    def GetNEOLookup(self, request: Any, context: Any = None) -> pb.GetNEOLookupResponse:
+    async def GetNEOLookup(self, request: Any, context: Any = None) -> pb.GetNEOLookupResponse:
         raw = self._get(f"{_NEO_URL}/neo/{request.asteroid_id}")
         diameter = raw.get("estimated_diameter", {}).get("kilometers", {})
         approach = raw.get("close_approach_data", [{}])[0] if raw.get("close_approach_data") else {}
@@ -156,7 +160,7 @@ class NASAService:
             orbiting_body=approach.get("orbiting_body", ""),
         ))
 
-    def GetEPIC(self, request: Any, context: Any = None) -> pb.GetEPICResponse:
+    async def GetEPIC(self, request: Any, context: Any = None) -> pb.GetEPICResponse:
         if request.date:
             url = f"{_EPIC_URL}/api/natural/date/{request.date}"
         else:
@@ -175,7 +179,7 @@ class NASAService:
             ))
         return resp
 
-    def SearchNASAImages(self, request: Any, context: Any = None) -> pb.SearchNASAImagesResponse:
+    async def SearchNASAImages(self, request: Any, context: Any = None) -> pb.SearchNASAImagesResponse:
         params = {"q": request.query}
         if request.media_type:
             params["media_type"] = request.media_type
@@ -195,7 +199,7 @@ class NASAService:
             ))
         return resp
 
-    def GetDonki(self, request: Any, context: Any = None) -> pb.GetDonkiResponse:
+    async def GetDonki(self, request: Any, context: Any = None) -> pb.GetDonkiResponse:
         params = {}
         if request.start_date:
             params["startDate"] = request.start_date
@@ -216,7 +220,7 @@ class NASAService:
             ))
         return resp
 
-    def GetTechTransfer(self, request: Any, context: Any = None) -> pb.GetTechTransferResponse:
+    async def GetTechTransfer(self, request: Any, context: Any = None) -> pb.GetTechTransferResponse:
         raw = self._get(f"{_TECHTRANSFER_URL}/patent/", params={"engine": "", "query": request.query})
         resp = pb.GetTechTransferResponse()
         results = raw.get("results", [])

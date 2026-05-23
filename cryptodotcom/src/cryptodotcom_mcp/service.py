@@ -24,16 +24,20 @@ class CryptoDotComService:
     ):
         self._base_url = base_url.rstrip("/")
         self._timeout = timeout
-        self._client = httpx.Client(timeout=timeout)
+        self._client = httpx.AsyncClient(timeout=timeout)
+
+    async def aclose(self) -> None:
+        """Close the HTTP client. Idempotent."""
+        await self._client.aclose()
 
     # -------------------------
     # RPC handlers
     # -------------------------
 
-    def GetInstruments(
+    async def GetInstruments(
         self, request: pb.GetInstrumentsRequest, context: Any = None
     ) -> pb.GetInstrumentsResponse:
-        raw = self._get("/public/get-instruments")
+        raw = await self._get("/public/get-instruments")
         items = raw if isinstance(raw, list) else []
         instruments = []
         for item in items:
@@ -47,14 +51,14 @@ class CryptoDotComService:
             })
         return self._parse_message({"data": instruments}, pb.GetInstrumentsResponse)
 
-    def GetTickers(
+    async def GetTickers(
         self, request: pb.GetTickersRequest, context: Any = None
     ) -> pb.GetTickersResponse:
         query: dict[str, Any] = {}
         if self._has_field(request, "instrument_name"):
             query["instrument_name"] = request.instrument_name
 
-        raw = self._get("/public/get-tickers", query)
+        raw = await self._get("/public/get-tickers", query)
         items = raw if isinstance(raw, list) else []
         tickers = []
         for item in items:
@@ -72,14 +76,14 @@ class CryptoDotComService:
             })
         return self._parse_message({"data": tickers}, pb.GetTickersResponse)
 
-    def GetOrderbook(
+    async def GetOrderbook(
         self, request: pb.GetOrderbookRequest, context: Any = None
     ) -> pb.GetOrderbookResponse:
         query: dict[str, Any] = {"instrument_name": request.instrument_name}
         if self._has_field(request, "depth"):
             query["depth"] = request.depth
 
-        raw = self._get("/public/get-book", query)
+        raw = await self._get("/public/get-book", query)
         items = raw if isinstance(raw, list) else []
         if not items:
             return self._parse_message(
@@ -95,14 +99,14 @@ class CryptoDotComService:
             pb.GetOrderbookResponse,
         )
 
-    def GetCandlestick(
+    async def GetCandlestick(
         self, request: pb.GetCandlestickRequest, context: Any = None
     ) -> pb.GetCandlestickResponse:
         query: dict[str, Any] = {"instrument_name": request.instrument_name}
         if self._has_field(request, "timeframe"):
             query["timeframe"] = request.timeframe
 
-        raw = self._get("/public/get-candlestick", query)
+        raw = await self._get("/public/get-candlestick", query)
         items = raw if isinstance(raw, list) else []
         candles = []
         for item in items:
@@ -116,12 +120,12 @@ class CryptoDotComService:
             })
         return self._parse_message({"data": candles}, pb.GetCandlestickResponse)
 
-    def GetTrades(
+    async def GetTrades(
         self, request: pb.GetTradesRequest, context: Any = None
     ) -> pb.GetTradesResponse:
         query: dict[str, Any] = {"instrument_name": request.instrument_name}
 
-        raw = self._get("/public/get-trades", query)
+        raw = await self._get("/public/get-trades", query)
         items = raw if isinstance(raw, list) else []
         trades = []
         for item in items:
@@ -155,9 +159,9 @@ class CryptoDotComService:
     # HTTP helpers
     # -------------------------
 
-    def _get(self, path: str, query: dict[str, Any] | None = None) -> Any:
+    async def _get(self, path: str, query: dict[str, Any] | None = None) -> Any:
         url = self._build_url(path, query)
-        response = self._client.request(
+        response = await self._client.request(
             "GET",
             url,
             headers={"Accept": "application/json"},
