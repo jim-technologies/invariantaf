@@ -5,3 +5,43 @@ __pycache__/
 
 # codex
 .codex/
+
+# Go build artifacts: `go build .` / `go run .` produces a binary named after
+# the package directory. Each Go adapter's binary lives at `<adapter>/<adapter>`.
+across/across
+aevo/aevo
+alternativeme/alternativeme
+bravesearch/bravesearch
+coinbase/coinbase
+coinpaprika/coinpaprika
+cryptocompare/cryptocompare
+cryptodotcom/cryptodotcom
+cryptosignal/cryptosignal
+discord/discord
+dockerhub/dockerhub
+drift/drift
+geminipredictions/geminipredictions
+giphy/giphy
+gmx/gmx
+googlesheets/googlesheets
+jito/jito
+noaa/noaa
+okx/okx
+opendota/opendota
+openmeteo/openmeteo
+pandascore/pandascore
+pendle/pendle
+polymarket/polymarket
+predictfun/predictfun
+quicknode/quicknode
+raydium/raydium
+slack/slack
+stackexchange/stackexchange
+steam/steam
+telegram/telegram
+temporal/temporal
+theoddsapi/theoddsapi
+uniswap/uniswap
+unsplash/unsplash
+usgovdata/usgovdata
+venus/venus

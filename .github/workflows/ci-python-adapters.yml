@@ -36,6 +36,7 @@ jobs:
           - defillama
           - deribit
           - dexscreener
+          - discord
           - dune
           - dydx
           - etherscan
@@ -72,9 +73,11 @@ jobs:
           - polling
           - reddit
           - secedgar
+          - slack
           - solscan
           - spacex
           - stratz
+          - telegram
           - tmdb
           - twelvedata
           - usgs
@@ -133,6 +136,7 @@ jobs:
           - defillama
           - deribit
           - dexscreener
+          - discord
           - dune
           - dydx
           - etherscan
@@ -171,8 +175,10 @@ jobs:
           - polymarket
           - reddit
           - secedgar
+          - slack
           - solscan
           - spacex
+          - telegram
           - twelvedata
           - usgs
           - wikimedia

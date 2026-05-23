@@ -1,0 +1,484 @@
+syntax = "proto3";
+
+package slack.v1;
+
+import "google/protobuf/struct.proto";
+
+// SlackService proxies the Slack Web API (https://api.slack.com/methods).
+//
+// Authentication uses a bot user OAuth token (xoxb-...) supplied via the
+// SLACK_BOT_TOKEN env var. All responses are returned as google.protobuf.Struct
+// to preserve the upstream JSON shape (Slack response payloads are heavily
+// polymorphic and evolve frequently).
+service SlackService {
+  // auth.test -- verify the configured token and return identity info.
+  rpc AuthTest(AuthTestRequest) returns (google.protobuf.Struct);
+
+  // chat.postMessage -- send a message to a channel, DM, or thread.
+  rpc ChatPostMessage(ChatPostMessageRequest) returns (google.protobuf.Struct);
+
+  // chat.postEphemeral -- send a message visible only to one user.
+  rpc ChatPostEphemeral(ChatPostEphemeralRequest) returns (google.protobuf.Struct);
+
+  // chat.update -- update an existing message.
+  rpc ChatUpdate(ChatUpdateRequest) returns (google.protobuf.Struct);
+
+  // chat.delete -- delete an existing message.
+  rpc ChatDelete(ChatDeleteRequest) returns (google.protobuf.Struct);
+
+  // chat.scheduleMessage -- schedule a message for a future post time.
+  rpc ChatScheduleMessage(ChatScheduleMessageRequest) returns (google.protobuf.Struct);
+
+  // chat.deleteScheduledMessage -- cancel a scheduled message.
+  rpc ChatDeleteScheduledMessage(ChatDeleteScheduledMessageRequest) returns (google.protobuf.Struct);
+
+  // chat.getPermalink -- get a permalink URL for a posted message.
+  rpc ChatGetPermalink(ChatGetPermalinkRequest) returns (google.protobuf.Struct);
+
+  // conversations.list -- list channels available to the bot.
+  rpc ConversationsList(ConversationsListRequest) returns (google.protobuf.Struct);
+
+  // conversations.history -- fetch messages from a channel.
+  rpc ConversationsHistory(ConversationsHistoryRequest) returns (google.protobuf.Struct);
+
+  // conversations.replies -- fetch replies for a thread.
+  rpc ConversationsReplies(ConversationsRepliesRequest) returns (google.protobuf.Struct);
+
+  // conversations.info -- get metadata for a channel.
+  rpc ConversationsInfo(ConversationsInfoRequest) returns (google.protobuf.Struct);
+
+  // conversations.create -- create a public or private channel.
+  rpc ConversationsCreate(ConversationsCreateRequest) returns (google.protobuf.Struct);
+
+  // conversations.join -- have the bot join a channel.
+  rpc ConversationsJoin(ConversationsJoinRequest) returns (google.protobuf.Struct);
+
+  // conversations.leave -- have the bot leave a channel.
+  rpc ConversationsLeave(ConversationsLeaveRequest) returns (google.protobuf.Struct);
+
+  // conversations.invite -- invite users to a channel.
+  rpc ConversationsInvite(ConversationsInviteRequest) returns (google.protobuf.Struct);
+
+  // conversations.kick -- remove a user from a channel.
+  rpc ConversationsKick(ConversationsKickRequest) returns (google.protobuf.Struct);
+
+  // conversations.archive -- archive a channel.
+  rpc ConversationsArchive(ConversationsArchiveRequest) returns (google.protobuf.Struct);
+
+  // conversations.unarchive -- unarchive a channel.
+  rpc ConversationsUnarchive(ConversationsUnarchiveRequest) returns (google.protobuf.Struct);
+
+  // conversations.rename -- rename a channel.
+  rpc ConversationsRename(ConversationsRenameRequest) returns (google.protobuf.Struct);
+
+  // conversations.setTopic -- set the topic on a channel.
+  rpc ConversationsSetTopic(ConversationsSetTopicRequest) returns (google.protobuf.Struct);
+
+  // conversations.setPurpose -- set the purpose on a channel.
+  rpc ConversationsSetPurpose(ConversationsSetPurposeRequest) returns (google.protobuf.Struct);
+
+  // conversations.members -- list members of a channel.
+  rpc ConversationsMembers(ConversationsMembersRequest) returns (google.protobuf.Struct);
+
+  // conversations.open -- open or resume a DM/MPIM.
+  rpc ConversationsOpen(ConversationsOpenRequest) returns (google.protobuf.Struct);
+
+  // users.list -- list all users in the workspace.
+  rpc UsersList(UsersListRequest) returns (google.protobuf.Struct);
+
+  // users.info -- get profile/metadata for a single user.
+  rpc UsersInfo(UsersInfoRequest) returns (google.protobuf.Struct);
+
+  // users.lookupByEmail -- find a user by email address.
+  rpc UsersLookupByEmail(UsersLookupByEmailRequest) returns (google.protobuf.Struct);
+
+  // users.profile.get -- get the profile object for a user.
+  rpc UsersProfileGet(UsersProfileGetRequest) returns (google.protobuf.Struct);
+
+  // users.getPresence -- get the presence (active/away) of a user.
+  rpc UsersGetPresence(UsersGetPresenceRequest) returns (google.protobuf.Struct);
+
+  // reactions.add -- add an emoji reaction to a message.
+  rpc ReactionsAdd(ReactionsAddRequest) returns (google.protobuf.Struct);
+
+  // reactions.remove -- remove an emoji reaction from a message.
+  rpc ReactionsRemove(ReactionsRemoveRequest) returns (google.protobuf.Struct);
+
+  // reactions.get -- list reactions on a specific message.
+  rpc ReactionsGet(ReactionsGetRequest) returns (google.protobuf.Struct);
+
+  // pins.add -- pin a message in a channel.
+  rpc PinsAdd(PinsAddRequest) returns (google.protobuf.Struct);
+
+  // pins.remove -- unpin a message.
+  rpc PinsRemove(PinsRemoveRequest) returns (google.protobuf.Struct);
+
+  // pins.list -- list pinned items in a channel.
+  rpc PinsList(PinsListRequest) returns (google.protobuf.Struct);
+
+  // search.messages -- search messages across the workspace (user token only).
+  rpc SearchMessages(SearchMessagesRequest) returns (google.protobuf.Struct);
+
+  // search.files -- search files across the workspace (user token only).
+  rpc SearchFiles(SearchFilesRequest) returns (google.protobuf.Struct);
+
+  // files.list -- list files in the workspace.
+  rpc FilesList(FilesListRequest) returns (google.protobuf.Struct);
+
+  // files.info -- get info for a file.
+  rpc FilesInfo(FilesInfoRequest) returns (google.protobuf.Struct);
+
+  // files.delete -- delete a file.
+  rpc FilesDelete(FilesDeleteRequest) returns (google.protobuf.Struct);
+
+  // bookmarks.list -- list bookmarks for a channel.
+  rpc BookmarksList(BookmarksListRequest) returns (google.protobuf.Struct);
+
+  // bookmarks.add -- add a bookmark to a channel.
+  rpc BookmarksAdd(BookmarksAddRequest) returns (google.protobuf.Struct);
+
+  // bookmarks.remove -- remove a bookmark from a channel.
+  rpc BookmarksRemove(BookmarksRemoveRequest) returns (google.protobuf.Struct);
+
+  // team.info -- get info about the connected workspace.
+  rpc TeamInfo(TeamInfoRequest) returns (google.protobuf.Struct);
+
+  // emoji.list -- list custom emoji in the workspace.
+  rpc EmojiList(EmojiListRequest) returns (google.protobuf.Struct);
+
+  // views.open -- open a modal view in response to a trigger.
+  rpc ViewsOpen(ViewsOpenRequest) returns (google.protobuf.Struct);
+
+  // views.publish -- publish a Home tab view for a user.
+  rpc ViewsPublish(ViewsPublishRequest) returns (google.protobuf.Struct);
+}
+
+message AuthTestRequest {}
+
+message ChatPostMessageRequest {
+  // Channel ID, DM ID, or channel name (e.g. C12345 or #general).
+  string channel = 1;
+  // Message body in mrkdwn format. Mutually exclusive with blocks/attachments.
+  string text = 2;
+  // Thread ts to reply into a thread.
+  string thread_ts = 3;
+  // Block kit blocks payload, serialized as a JSON Struct.
+  google.protobuf.Struct blocks = 4;
+  // Attachments payload, JSON-encoded as a Struct (use {"items": [...]}).
+  google.protobuf.Struct attachments = 5;
+  // When true, reply in thread is also broadcast to the parent channel.
+  bool reply_broadcast = 6;
+  // Override the bot's displayed username.
+  string username = 7;
+  // Override the bot's icon URL.
+  string icon_url = 8;
+  // Override the bot's icon emoji.
+  string icon_emoji = 9;
+  // Parse mode (none, full).
+  string parse = 10;
+  // Disable Slack markdown processing.
+  bool mrkdwn = 11;
+  // Unfurl links automatically.
+  bool unfurl_links = 12;
+  // Unfurl media attachments automatically.
+  bool unfurl_media = 13;
+  // metadata payload as Struct.
+  google.protobuf.Struct metadata = 14;
+}
+
+message ChatPostEphemeralRequest {
+  string channel = 1;
+  // User ID to whom the ephemeral message is shown.
+  string user = 2;
+  string text = 3;
+  google.protobuf.Struct blocks = 4;
+  google.protobuf.Struct attachments = 5;
+  string thread_ts = 6;
+  string parse = 7;
+}
+
+message ChatUpdateRequest {
+  string channel = 1;
+  // Timestamp of the original message to update.
+  string ts = 2;
+  string text = 3;
+  google.protobuf.Struct blocks = 4;
+  google.protobuf.Struct attachments = 5;
+  string parse = 6;
+}
+
+message ChatDeleteRequest {
+  string channel = 1;
+  string ts = 2;
+  bool as_user = 3;
+}
+
+message ChatScheduleMessageRequest {
+  string channel = 1;
+  // Unix epoch seconds at which the message should post.
+  int64 post_at = 2;
+  string text = 3;
+  google.protobuf.Struct blocks = 4;
+  google.protobuf.Struct attachments = 5;
+  string thread_ts = 6;
+  bool reply_broadcast = 7;
+}
+
+message ChatDeleteScheduledMessageRequest {
+  string channel = 1;
+  // Scheduled message ID returned by chat.scheduleMessage.
+  string scheduled_message_id = 2;
+}
+
+message ChatGetPermalinkRequest {
+  string channel = 1;
+  string message_ts = 2;
+}
+
+message ConversationsListRequest {
+  // Comma-separated channel types: public_channel,private_channel,mpim,im.
+  string types = 1;
+  // Exclude archived channels.
+  bool exclude_archived = 2;
+  // Page size (default 100, max 1000).
+  int32 limit = 3;
+  // Pagination cursor returned by a previous call.
+  string cursor = 4;
+}
+
+message ConversationsHistoryRequest {
+  string channel = 1;
+  // Max messages to return (default 100, max 1000).
+  int32 limit = 2;
+  // Pagination cursor.
+  string cursor = 3;
+  // Start of time range (Slack ts).
+  string oldest = 4;
+  // End of time range (Slack ts).
+  string latest = 5;
+  // Include messages with `oldest` or `latest` timestamps.
+  bool inclusive = 6;
+}
+
+message ConversationsRepliesRequest {
+  string channel = 1;
+  // Thread parent ts.
+  string ts = 2;
+  int32 limit = 3;
+  string cursor = 4;
+  string oldest = 5;
+  string latest = 6;
+  bool inclusive = 7;
+}
+
+message ConversationsInfoRequest {
+  string channel = 1;
+  // Include locale info.
+  bool include_locale = 2;
+  // Include the number of members.
+  bool include_num_members = 3;
+}
+
+message ConversationsCreateRequest {
+  // Channel name without the # prefix.
+  string name = 1;
+  bool is_private = 2;
+  // Org-wide channel (Enterprise Grid).
+  string team_id = 3;
+}
+
+message ConversationsJoinRequest {
+  string channel = 1;
+}
+
+message ConversationsLeaveRequest {
+  string channel = 1;
+}
+
+message ConversationsInviteRequest {
+  string channel = 1;
+  // Comma-separated list of user IDs.
+  string users = 2;
+  bool force = 3;
+}
+
+message ConversationsKickRequest {
+  string channel = 1;
+  string user = 2;
+}
+
+message ConversationsArchiveRequest {
+  string channel = 1;
+}
+
+message ConversationsUnarchiveRequest {
+  string channel = 1;
+}
+
+message ConversationsRenameRequest {
+  string channel = 1;
+  string name = 2;
+}
+
+message ConversationsSetTopicRequest {
+  string channel = 1;
+  string topic = 2;
+}
+
+message ConversationsSetPurposeRequest {
+  string channel = 1;
+  string purpose = 2;
+}
+
+message ConversationsMembersRequest {
+  string channel = 1;
+  int32 limit = 2;
+  string cursor = 3;
+}
+
+message ConversationsOpenRequest {
+  // Comma-separated user IDs (1 for DM, 2+ for MPIM).
+  string users = 1;
+  // Resume an existing channel.
+  string channel = 2;
+  bool return_im = 3;
+}
+
+message UsersListRequest {
+  int32 limit = 1;
+  string cursor = 2;
+  bool include_locale = 3;
+}
+
+message UsersInfoRequest {
+  string user = 1;
+  bool include_locale = 2;
+}
+
+message UsersLookupByEmailRequest {
+  string email = 1;
+}
+
+message UsersProfileGetRequest {
+  string user = 1;
+  bool include_labels = 2;
+}
+
+message UsersGetPresenceRequest {
+  string user = 1;
+}
+
+message ReactionsAddRequest {
+  // Emoji name without colons (e.g. "thumbsup").
+  string name = 1;
+  string channel = 2;
+  string timestamp = 3;
+}
+
+message ReactionsRemoveRequest {
+  string name = 1;
+  string channel = 2;
+  string timestamp = 3;
+}
+
+message ReactionsGetRequest {
+  string channel = 1;
+  string timestamp = 2;
+  bool full = 3;
+}
+
+message PinsAddRequest {
+  string channel = 1;
+  // Message ts to pin.
+  string timestamp = 2;
+}
+
+message PinsRemoveRequest {
+  string channel = 1;
+  string timestamp = 2;
+}
+
+message PinsListRequest {
+  string channel = 1;
+}
+
+message SearchMessagesRequest {
+  string query = 1;
+  // score|timestamp.
+  string sort = 2;
+  // asc|desc.
+  string sort_dir = 3;
+  int32 count = 4;
+  int32 page = 5;
+  bool highlight = 6;
+}
+
+message SearchFilesRequest {
+  string query = 1;
+  string sort = 2;
+  string sort_dir = 3;
+  int32 count = 4;
+  int32 page = 5;
+}
+
+message FilesListRequest {
+  string user = 1;
+  string channel = 2;
+  // Comma-separated types: all,spaces,snippets,images,gdocs,zips,pdfs.
+  string types = 3;
+  // Unix epoch seconds.
+  int64 ts_from = 4;
+  int64 ts_to = 5;
+  int32 count = 6;
+  int32 page = 7;
+}
+
+message FilesInfoRequest {
+  string file = 1;
+  int32 count = 2;
+  int32 page = 3;
+}
+
+message FilesDeleteRequest {
+  string file = 1;
+}
+
+message BookmarksListRequest {
+  string channel_id = 1;
+}
+
+message BookmarksAddRequest {
+  string channel_id = 1;
+  string title = 2;
+  // link|message.
+  string type = 3;
+  string link = 4;
+  string emoji = 5;
+  string entity_id = 6;
+}
+
+message BookmarksRemoveRequest {
+  string channel_id = 1;
+  string bookmark_id = 2;
+}
+
+message TeamInfoRequest {
+  string team = 1;
+}
+
+message EmojiListRequest {
+  bool include_categories = 1;
+}
+
+message ViewsOpenRequest {
+  string trigger_id = 1;
+  // View payload as a JSON Struct.
+  google.protobuf.Struct view = 2;
+}
+
+message ViewsPublishRequest {
+  // User to publish the home tab for.
+  string user_id = 1;
+  google.protobuf.Struct view = 2;
+  string hash = 3;
+}

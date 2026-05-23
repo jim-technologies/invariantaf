@@ -22,6 +22,7 @@ jobs:
           - cryptocompare
           - cryptodotcom
           - cryptosignal
+          - discord
           - dockerhub
           - drift
           - geminipredictions
@@ -39,8 +40,10 @@ jobs:
           - predictfun
           - quicknode
           - raydium
+          - slack
           - stackexchange
           - steam
+          - telegram
           - temporal
           - theoddsapi
           - uniswap

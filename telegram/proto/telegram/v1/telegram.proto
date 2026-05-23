@@ -1,0 +1,626 @@
+syntax = "proto3";
+
+package telegram.v1;
+
+import "google/protobuf/struct.proto";
+
+// TelegramService proxies the Telegram Bot API
+// (https://core.telegram.org/bots/api).
+//
+// Authentication: TELEGRAM_BOT_TOKEN env var. The token is embedded in the
+// path (e.g. https://api.telegram.org/bot<token>/sendMessage). Responses are
+// returned as google.protobuf.Struct since the API surface is large and
+// heavily polymorphic.
+service TelegramService {
+  // getMe -- verify token and return basic info about the bot.
+  rpc GetMe(GetMeRequest) returns (google.protobuf.Struct);
+
+  // logOut -- log out from the cloud Bot API server before launching the bot locally.
+  rpc LogOut(LogOutRequest) returns (google.protobuf.Struct);
+
+  // close -- close the bot instance.
+  rpc Close(CloseRequest) returns (google.protobuf.Struct);
+
+  // sendMessage -- send a text message.
+  rpc SendMessage(SendMessageRequest) returns (google.protobuf.Struct);
+
+  // forwardMessage -- forward messages of any kind.
+  rpc ForwardMessage(ForwardMessageRequest) returns (google.protobuf.Struct);
+
+  // copyMessage -- copy a message without quoting it.
+  rpc CopyMessage(CopyMessageRequest) returns (google.protobuf.Struct);
+
+  // sendPhoto -- send a photo by URL or file_id.
+  rpc SendPhoto(SendPhotoRequest) returns (google.protobuf.Struct);
+
+  // sendAudio -- send audio.
+  rpc SendAudio(SendAudioRequest) returns (google.protobuf.Struct);
+
+  // sendDocument -- send a document.
+  rpc SendDocument(SendDocumentRequest) returns (google.protobuf.Struct);
+
+  // sendVideo -- send a video.
+  rpc SendVideo(SendVideoRequest) returns (google.protobuf.Struct);
+
+  // sendAnimation -- send an animation.
+  rpc SendAnimation(SendAnimationRequest) returns (google.protobuf.Struct);
+
+  // sendVoice -- send a voice note.
+  rpc SendVoice(SendVoiceRequest) returns (google.protobuf.Struct);
+
+  // sendVideoNote -- send a video note.
+  rpc SendVideoNote(SendVideoNoteRequest) returns (google.protobuf.Struct);
+
+  // sendLocation -- send a point on the map.
+  rpc SendLocation(SendLocationRequest) returns (google.protobuf.Struct);
+
+  // sendVenue -- send a venue.
+  rpc SendVenue(SendVenueRequest) returns (google.protobuf.Struct);
+
+  // sendContact -- send a contact.
+  rpc SendContact(SendContactRequest) returns (google.protobuf.Struct);
+
+  // sendPoll -- send a poll.
+  rpc SendPoll(SendPollRequest) returns (google.protobuf.Struct);
+
+  // sendDice -- send a dice with a random value.
+  rpc SendDice(SendDiceRequest) returns (google.protobuf.Struct);
+
+  // sendChatAction -- send a "typing" indicator.
+  rpc SendChatAction(SendChatActionRequest) returns (google.protobuf.Struct);
+
+  // editMessageText -- edit a text or game message.
+  rpc EditMessageText(EditMessageTextRequest) returns (google.protobuf.Struct);
+
+  // editMessageCaption -- edit caption of a message.
+  rpc EditMessageCaption(EditMessageCaptionRequest) returns (google.protobuf.Struct);
+
+  // editMessageReplyMarkup -- edit only the reply markup.
+  rpc EditMessageReplyMarkup(EditMessageReplyMarkupRequest) returns (google.protobuf.Struct);
+
+  // deleteMessage -- delete a single message.
+  rpc DeleteMessage(DeleteMessageRequest) returns (google.protobuf.Struct);
+
+  // deleteMessages -- delete multiple messages.
+  rpc DeleteMessages(DeleteMessagesRequest) returns (google.protobuf.Struct);
+
+  // getChat -- get up-to-date info about the chat.
+  rpc GetChat(GetChatRequest) returns (google.protobuf.Struct);
+
+  // getChatAdministrators -- list admins of a chat.
+  rpc GetChatAdministrators(GetChatAdministratorsRequest) returns (google.protobuf.Struct);
+
+  // getChatMemberCount -- get the number of members in a chat.
+  rpc GetChatMemberCount(GetChatMemberCountRequest) returns (google.protobuf.Struct);
+
+  // getChatMember -- get info about a member of a chat.
+  rpc GetChatMember(GetChatMemberRequest) returns (google.protobuf.Struct);
+
+  // banChatMember -- ban a member from a group / channel.
+  rpc BanChatMember(BanChatMemberRequest) returns (google.protobuf.Struct);
+
+  // unbanChatMember -- unban a previously banned user.
+  rpc UnbanChatMember(UnbanChatMemberRequest) returns (google.protobuf.Struct);
+
+  // restrictChatMember -- restrict a user in a supergroup.
+  rpc RestrictChatMember(RestrictChatMemberRequest) returns (google.protobuf.Struct);
+
+  // promoteChatMember -- promote or demote a chat administrator.
+  rpc PromoteChatMember(PromoteChatMemberRequest) returns (google.protobuf.Struct);
+
+  // setChatTitle -- change the title of a chat.
+  rpc SetChatTitle(SetChatTitleRequest) returns (google.protobuf.Struct);
+
+  // setChatDescription -- change the description of a chat.
+  rpc SetChatDescription(SetChatDescriptionRequest) returns (google.protobuf.Struct);
+
+  // pinChatMessage -- pin a message in a chat.
+  rpc PinChatMessage(PinChatMessageRequest) returns (google.protobuf.Struct);
+
+  // unpinChatMessage -- unpin a message.
+  rpc UnpinChatMessage(UnpinChatMessageRequest) returns (google.protobuf.Struct);
+
+  // unpinAllChatMessages -- unpin all pinned messages in a chat.
+  rpc UnpinAllChatMessages(UnpinAllChatMessagesRequest) returns (google.protobuf.Struct);
+
+  // leaveChat -- have the bot leave a group/channel.
+  rpc LeaveChat(LeaveChatRequest) returns (google.protobuf.Struct);
+
+  // getUpdates -- long-poll for incoming updates.
+  rpc GetUpdates(GetUpdatesRequest) returns (google.protobuf.Struct);
+
+  // setWebhook -- set a webhook URL for incoming updates.
+  rpc SetWebhook(SetWebhookRequest) returns (google.protobuf.Struct);
+
+  // deleteWebhook -- remove the configured webhook.
+  rpc DeleteWebhook(DeleteWebhookRequest) returns (google.protobuf.Struct);
+
+  // getWebhookInfo -- get current webhook status.
+  rpc GetWebhookInfo(GetWebhookInfoRequest) returns (google.protobuf.Struct);
+
+  // getFile -- get file info for downloading.
+  rpc GetFile(GetFileRequest) returns (google.protobuf.Struct);
+
+  // answerCallbackQuery -- answer a callback query from an inline keyboard.
+  rpc AnswerCallbackQuery(AnswerCallbackQueryRequest) returns (google.protobuf.Struct);
+
+  // setMyCommands -- set the list of bot commands.
+  rpc SetMyCommands(SetMyCommandsRequest) returns (google.protobuf.Struct);
+
+  // getMyCommands -- get the list of bot commands.
+  rpc GetMyCommands(GetMyCommandsRequest) returns (google.protobuf.Struct);
+
+  // deleteMyCommands -- delete commands for a scope.
+  rpc DeleteMyCommands(DeleteMyCommandsRequest) returns (google.protobuf.Struct);
+
+  // setMyDescription -- set the bot description.
+  rpc SetMyDescription(SetMyDescriptionRequest) returns (google.protobuf.Struct);
+
+  // setMyShortDescription -- set the bot short description.
+  rpc SetMyShortDescription(SetMyShortDescriptionRequest) returns (google.protobuf.Struct);
+
+  // sendInvoice -- send an invoice (for payments).
+  rpc SendInvoice(SendInvoiceRequest) returns (google.protobuf.Struct);
+
+  // exportChatInviteLink -- generate a new primary invite link.
+  rpc ExportChatInviteLink(ExportChatInviteLinkRequest) returns (google.protobuf.Struct);
+
+  // createChatInviteLink -- create an additional invite link.
+  rpc CreateChatInviteLink(CreateChatInviteLinkRequest) returns (google.protobuf.Struct);
+}
+
+// chat_id can be int or string ("@channelusername"); we accept string and let
+// the caller stringify int IDs.
+
+message GetMeRequest {}
+message LogOutRequest {}
+message CloseRequest {}
+
+message SendMessageRequest {
+  string chat_id = 1;
+  string text = 2;
+  // Optional parse mode: "MarkdownV2", "HTML", or "" for plain.
+  string parse_mode = 3;
+  // entities as a JSON Struct {"items":[...]}.
+  google.protobuf.Struct entities = 4;
+  bool disable_web_page_preview = 5;
+  bool disable_notification = 6;
+  bool protect_content = 7;
+  int64 reply_to_message_id = 8;
+  bool allow_sending_without_reply = 9;
+  // reply_markup as a JSON Struct (inline_keyboard, reply_keyboard, etc.).
+  google.protobuf.Struct reply_markup = 10;
+  // For forum supergroups.
+  int64 message_thread_id = 11;
+  // business connection identifier (Bot Business).
+  string business_connection_id = 12;
+}
+
+message ForwardMessageRequest {
+  string chat_id = 1;
+  string from_chat_id = 2;
+  int64 message_id = 3;
+  bool disable_notification = 4;
+  bool protect_content = 5;
+  int64 message_thread_id = 6;
+}
+
+message CopyMessageRequest {
+  string chat_id = 1;
+  string from_chat_id = 2;
+  int64 message_id = 3;
+  string caption = 4;
+  string parse_mode = 5;
+  bool disable_notification = 6;
+  bool protect_content = 7;
+  int64 reply_to_message_id = 8;
+  google.protobuf.Struct reply_markup = 9;
+}
+
+message SendPhotoRequest {
+  string chat_id = 1;
+  // URL or file_id.
+  string photo = 2;
+  string caption = 3;
+  string parse_mode = 4;
+  bool has_spoiler = 5;
+  bool disable_notification = 6;
+  bool protect_content = 7;
+  int64 reply_to_message_id = 8;
+  google.protobuf.Struct reply_markup = 9;
+}
+
+message SendAudioRequest {
+  string chat_id = 1;
+  string audio = 2;
+  string caption = 3;
+  string parse_mode = 4;
+  int32 duration = 5;
+  string performer = 6;
+  string title = 7;
+  bool disable_notification = 8;
+  bool protect_content = 9;
+  int64 reply_to_message_id = 10;
+  google.protobuf.Struct reply_markup = 11;
+}
+
+message SendDocumentRequest {
+  string chat_id = 1;
+  string document = 2;
+  string caption = 3;
+  string parse_mode = 4;
+  bool disable_content_type_detection = 5;
+  bool disable_notification = 6;
+  bool protect_content = 7;
+  int64 reply_to_message_id = 8;
+  google.protobuf.Struct reply_markup = 9;
+}
+
+message SendVideoRequest {
+  string chat_id = 1;
+  string video = 2;
+  int32 duration = 3;
+  int32 width = 4;
+  int32 height = 5;
+  string caption = 6;
+  string parse_mode = 7;
+  bool has_spoiler = 8;
+  bool supports_streaming = 9;
+  bool disable_notification = 10;
+  bool protect_content = 11;
+  int64 reply_to_message_id = 12;
+  google.protobuf.Struct reply_markup = 13;
+}
+
+message SendAnimationRequest {
+  string chat_id = 1;
+  string animation = 2;
+  int32 duration = 3;
+  int32 width = 4;
+  int32 height = 5;
+  string caption = 6;
+  string parse_mode = 7;
+  bool has_spoiler = 8;
+  bool disable_notification = 9;
+  bool protect_content = 10;
+  int64 reply_to_message_id = 11;
+  google.protobuf.Struct reply_markup = 12;
+}
+
+message SendVoiceRequest {
+  string chat_id = 1;
+  string voice = 2;
+  string caption = 3;
+  string parse_mode = 4;
+  int32 duration = 5;
+  bool disable_notification = 6;
+  bool protect_content = 7;
+  int64 reply_to_message_id = 8;
+  google.protobuf.Struct reply_markup = 9;
+}
+
+message SendVideoNoteRequest {
+  string chat_id = 1;
+  string video_note = 2;
+  int32 duration = 3;
+  int32 length = 4;
+  bool disable_notification = 5;
+  bool protect_content = 6;
+  int64 reply_to_message_id = 7;
+  google.protobuf.Struct reply_markup = 8;
+}
+
+message SendLocationRequest {
+  string chat_id = 1;
+  double latitude = 2;
+  double longitude = 3;
+  double horizontal_accuracy = 4;
+  int32 live_period = 5;
+  int32 heading = 6;
+  int32 proximity_alert_radius = 7;
+  bool disable_notification = 8;
+  bool protect_content = 9;
+  int64 reply_to_message_id = 10;
+  google.protobuf.Struct reply_markup = 11;
+}
+
+message SendVenueRequest {
+  string chat_id = 1;
+  double latitude = 2;
+  double longitude = 3;
+  string title = 4;
+  string address = 5;
+  string foursquare_id = 6;
+  string foursquare_type = 7;
+  string google_place_id = 8;
+  string google_place_type = 9;
+  bool disable_notification = 10;
+  bool protect_content = 11;
+  int64 reply_to_message_id = 12;
+  google.protobuf.Struct reply_markup = 13;
+}
+
+message SendContactRequest {
+  string chat_id = 1;
+  string phone_number = 2;
+  string first_name = 3;
+  string last_name = 4;
+  string vcard = 5;
+  bool disable_notification = 6;
+  bool protect_content = 7;
+  int64 reply_to_message_id = 8;
+  google.protobuf.Struct reply_markup = 9;
+}
+
+message SendPollRequest {
+  string chat_id = 1;
+  string question = 2;
+  // Plain JSON array as Struct: {"items": ["a", "b", ...]}.
+  google.protobuf.Struct options = 3;
+  bool is_anonymous = 4;
+  // "regular" or "quiz".
+  string type = 5;
+  bool allows_multiple_answers = 6;
+  int32 correct_option_id = 7;
+  string explanation = 8;
+  int32 open_period = 9;
+  int64 close_date = 10;
+  bool is_closed = 11;
+  bool disable_notification = 12;
+  bool protect_content = 13;
+  int64 reply_to_message_id = 14;
+  google.protobuf.Struct reply_markup = 15;
+}
+
+message SendDiceRequest {
+  string chat_id = 1;
+  // Emoji: "🎲" "🎯" "🏀" "⚽" "🎳" "🎰". Defaults to 🎲.
+  string emoji = 2;
+  bool disable_notification = 3;
+  bool protect_content = 4;
+  int64 reply_to_message_id = 5;
+  google.protobuf.Struct reply_markup = 6;
+}
+
+message SendChatActionRequest {
+  string chat_id = 1;
+  // typing, upload_photo, record_video, upload_video, record_voice, upload_voice,
+  // upload_document, choose_sticker, find_location, record_video_note, upload_video_note.
+  string action = 2;
+  int64 message_thread_id = 3;
+}
+
+message EditMessageTextRequest {
+  // Either chat_id+message_id or inline_message_id must be provided.
+  string chat_id = 1;
+  int64 message_id = 2;
+  string inline_message_id = 3;
+  string text = 4;
+  string parse_mode = 5;
+  bool disable_web_page_preview = 6;
+  google.protobuf.Struct reply_markup = 7;
+}
+
+message EditMessageCaptionRequest {
+  string chat_id = 1;
+  int64 message_id = 2;
+  string inline_message_id = 3;
+  string caption = 4;
+  string parse_mode = 5;
+  google.protobuf.Struct reply_markup = 6;
+}
+
+message EditMessageReplyMarkupRequest {
+  string chat_id = 1;
+  int64 message_id = 2;
+  string inline_message_id = 3;
+  google.protobuf.Struct reply_markup = 4;
+}
+
+message DeleteMessageRequest {
+  string chat_id = 1;
+  int64 message_id = 2;
+}
+
+message DeleteMessagesRequest {
+  string chat_id = 1;
+  // Array of int64 IDs.
+  repeated int64 message_ids = 2;
+}
+
+message GetChatRequest {
+  string chat_id = 1;
+}
+
+message GetChatAdministratorsRequest {
+  string chat_id = 1;
+}
+
+message GetChatMemberCountRequest {
+  string chat_id = 1;
+}
+
+message GetChatMemberRequest {
+  string chat_id = 1;
+  int64 user_id = 2;
+}
+
+message BanChatMemberRequest {
+  string chat_id = 1;
+  int64 user_id = 2;
+  int64 until_date = 3;
+  bool revoke_messages = 4;
+}
+
+message UnbanChatMemberRequest {
+  string chat_id = 1;
+  int64 user_id = 2;
+  bool only_if_banned = 3;
+}
+
+message RestrictChatMemberRequest {
+  string chat_id = 1;
+  int64 user_id = 2;
+  // ChatPermissions object as JSON Struct.
+  google.protobuf.Struct permissions = 3;
+  bool use_independent_chat_permissions = 4;
+  int64 until_date = 5;
+}
+
+message PromoteChatMemberRequest {
+  string chat_id = 1;
+  int64 user_id = 2;
+  bool is_anonymous = 3;
+  bool can_manage_chat = 4;
+  bool can_post_messages = 5;
+  bool can_edit_messages = 6;
+  bool can_delete_messages = 7;
+  bool can_manage_video_chats = 8;
+  bool can_restrict_members = 9;
+  bool can_promote_members = 10;
+  bool can_change_info = 11;
+  bool can_invite_users = 12;
+  bool can_pin_messages = 13;
+  bool can_manage_topics = 14;
+  bool can_post_stories = 15;
+  bool can_edit_stories = 16;
+  bool can_delete_stories = 17;
+}
+
+message SetChatTitleRequest {
+  string chat_id = 1;
+  string title = 2;
+}
+
+message SetChatDescriptionRequest {
+  string chat_id = 1;
+  string description = 2;
+}
+
+message PinChatMessageRequest {
+  string chat_id = 1;
+  int64 message_id = 2;
+  bool disable_notification = 3;
+  string business_connection_id = 4;
+}
+
+message UnpinChatMessageRequest {
+  string chat_id = 1;
+  int64 message_id = 2;
+  string business_connection_id = 3;
+}
+
+message UnpinAllChatMessagesRequest {
+  string chat_id = 1;
+}
+
+message LeaveChatRequest {
+  string chat_id = 1;
+}
+
+message GetUpdatesRequest {
+  int64 offset = 1;
+  int32 limit = 2;
+  int32 timeout = 3;
+  // Array of update types to filter — as JSON Struct {"items": ["message", ...]}.
+  google.protobuf.Struct allowed_updates = 4;
+}
+
+message SetWebhookRequest {
+  string url = 1;
+  string certificate = 2;
+  string ip_address = 3;
+  int32 max_connections = 4;
+  google.protobuf.Struct allowed_updates = 5;
+  bool drop_pending_updates = 6;
+  string secret_token = 7;
+}
+
+message DeleteWebhookRequest {
+  bool drop_pending_updates = 1;
+}
+
+message GetWebhookInfoRequest {}
+
+message GetFileRequest {
+  string file_id = 1;
+}
+
+message AnswerCallbackQueryRequest {
+  string callback_query_id = 1;
+  string text = 2;
+  bool show_alert = 3;
+  string url = 4;
+  int32 cache_time = 5;
+}
+
+message SetMyCommandsRequest {
+  // commands as JSON Struct: {"items": [{"command":"start","description":"..."}]}.
+  google.protobuf.Struct commands = 1;
+  // BotCommandScope as JSON Struct.
+  google.protobuf.Struct scope = 2;
+  string language_code = 3;
+}
+
+message GetMyCommandsRequest {
+  google.protobuf.Struct scope = 1;
+  string language_code = 2;
+}
+
+message DeleteMyCommandsRequest {
+  google.protobuf.Struct scope = 1;
+  string language_code = 2;
+}
+
+message SetMyDescriptionRequest {
+  string description = 1;
+  string language_code = 2;
+}
+
+message SetMyShortDescriptionRequest {
+  string short_description = 1;
+  string language_code = 2;
+}
+
+message SendInvoiceRequest {
+  string chat_id = 1;
+  string title = 2;
+  string description = 3;
+  // Up to 128 bytes; not sent to user.
+  string payload = 4;
+  string provider_token = 5;
+  string currency = 6;
+  // LabeledPrice array as JSON Struct {"items": [...]}.
+  google.protobuf.Struct prices = 7;
+  int32 max_tip_amount = 8;
+  google.protobuf.Struct suggested_tip_amounts = 9;
+  string start_parameter = 10;
+  string provider_data = 11;
+  string photo_url = 12;
+  int32 photo_size = 13;
+  int32 photo_width = 14;
+  int32 photo_height = 15;
+  bool need_name = 16;
+  bool need_phone_number = 17;
+  bool need_email = 18;
+  bool need_shipping_address = 19;
+  bool send_phone_number_to_provider = 20;
+  bool send_email_to_provider = 21;
+  bool is_flexible = 22;
+  bool disable_notification = 23;
+  bool protect_content = 24;
+  int64 reply_to_message_id = 25;
+  google.protobuf.Struct reply_markup = 26;
+}
+
+message ExportChatInviteLinkRequest {
+  string chat_id = 1;
+}
+
+message CreateChatInviteLinkRequest {
+  string chat_id = 1;
+  string name = 2;
+  int64 expire_date = 3;
+  int32 member_limit = 4;
+  bool creates_join_request = 5;
+}

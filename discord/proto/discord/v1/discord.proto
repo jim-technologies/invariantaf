@@ -1,0 +1,504 @@
+syntax = "proto3";
+
+package discord.v1;
+
+import "google/protobuf/struct.proto";
+
+// DiscordService proxies the Discord HTTP REST API
+// (https://discord.com/developers/docs/reference).
+//
+// Authentication uses a bot token (DISCORD_BOT_TOKEN env var) sent as the
+// Authorization: Bot <token> header. Responses are returned as
+// google.protobuf.Struct so the upstream JSON shape is preserved (Discord
+// payloads are heavily polymorphic and versioned).
+service DiscordService {
+  // GET /users/@me -- get the authenticated bot user.
+  rpc GetCurrentUser(GetCurrentUserRequest) returns (google.protobuf.Struct);
+
+  // GET /users/{user.id} -- get a user by ID.
+  rpc GetUser(GetUserRequest) returns (google.protobuf.Struct);
+
+  // GET /users/@me/guilds -- list the guilds the bot is in.
+  rpc GetCurrentUserGuilds(GetCurrentUserGuildsRequest) returns (google.protobuf.Struct);
+
+  // DELETE /users/@me/guilds/{guild.id} -- leave a guild.
+  rpc LeaveGuild(LeaveGuildRequest) returns (google.protobuf.Struct);
+
+  // POST /users/@me/channels -- create or fetch a DM channel.
+  rpc CreateDM(CreateDMRequest) returns (google.protobuf.Struct);
+
+  // GET /guilds/{guild.id} -- get a guild by ID.
+  rpc GetGuild(GetGuildRequest) returns (google.protobuf.Struct);
+
+  // GET /guilds/{guild.id}/preview -- get a guild preview.
+  rpc GetGuildPreview(GetGuildPreviewRequest) returns (google.protobuf.Struct);
+
+  // PATCH /guilds/{guild.id} -- modify a guild.
+  rpc ModifyGuild(ModifyGuildRequest) returns (google.protobuf.Struct);
+
+  // GET /guilds/{guild.id}/channels -- list guild channels.
+  rpc GetGuildChannels(GetGuildChannelsRequest) returns (google.protobuf.Struct);
+
+  // POST /guilds/{guild.id}/channels -- create a guild channel.
+  rpc CreateGuildChannel(CreateGuildChannelRequest) returns (google.protobuf.Struct);
+
+  // GET /guilds/{guild.id}/members -- list guild members (requires GUILD_MEMBERS intent).
+  rpc ListGuildMembers(ListGuildMembersRequest) returns (google.protobuf.Struct);
+
+  // GET /guilds/{guild.id}/members/search -- search guild members by query.
+  rpc SearchGuildMembers(SearchGuildMembersRequest) returns (google.protobuf.Struct);
+
+  // GET /guilds/{guild.id}/members/{user.id} -- get a guild member.
+  rpc GetGuildMember(GetGuildMemberRequest) returns (google.protobuf.Struct);
+
+  // PATCH /guilds/{guild.id}/members/{user.id} -- modify a guild member.
+  rpc ModifyGuildMember(ModifyGuildMemberRequest) returns (google.protobuf.Struct);
+
+  // DELETE /guilds/{guild.id}/members/{user.id} -- kick a guild member.
+  rpc RemoveGuildMember(RemoveGuildMemberRequest) returns (google.protobuf.Struct);
+
+  // PUT /guilds/{guild.id}/bans/{user.id} -- ban a user.
+  rpc CreateGuildBan(CreateGuildBanRequest) returns (google.protobuf.Struct);
+
+  // DELETE /guilds/{guild.id}/bans/{user.id} -- unban a user.
+  rpc RemoveGuildBan(RemoveGuildBanRequest) returns (google.protobuf.Struct);
+
+  // GET /guilds/{guild.id}/bans -- list bans.
+  rpc GetGuildBans(GetGuildBansRequest) returns (google.protobuf.Struct);
+
+  // GET /guilds/{guild.id}/roles -- list guild roles.
+  rpc GetGuildRoles(GetGuildRolesRequest) returns (google.protobuf.Struct);
+
+  // POST /guilds/{guild.id}/roles -- create a guild role.
+  rpc CreateGuildRole(CreateGuildRoleRequest) returns (google.protobuf.Struct);
+
+  // PATCH /guilds/{guild.id}/roles/{role.id} -- modify a guild role.
+  rpc ModifyGuildRole(ModifyGuildRoleRequest) returns (google.protobuf.Struct);
+
+  // DELETE /guilds/{guild.id}/roles/{role.id} -- delete a guild role.
+  rpc DeleteGuildRole(DeleteGuildRoleRequest) returns (google.protobuf.Struct);
+
+  // PUT /guilds/{guild.id}/members/{user.id}/roles/{role.id} -- add a role to a member.
+  rpc AddGuildMemberRole(AddGuildMemberRoleRequest) returns (google.protobuf.Struct);
+
+  // DELETE /guilds/{guild.id}/members/{user.id}/roles/{role.id} -- remove a role from a member.
+  rpc RemoveGuildMemberRole(RemoveGuildMemberRoleRequest) returns (google.protobuf.Struct);
+
+  // GET /guilds/{guild.id}/invites -- list guild invites.
+  rpc GetGuildInvites(GetGuildInvitesRequest) returns (google.protobuf.Struct);
+
+  // GET /guilds/{guild.id}/emojis -- list guild emojis.
+  rpc ListGuildEmojis(ListGuildEmojisRequest) returns (google.protobuf.Struct);
+
+  // GET /guilds/{guild.id}/audit-logs -- get audit log entries.
+  rpc GetGuildAuditLog(GetGuildAuditLogRequest) returns (google.protobuf.Struct);
+
+  // GET /channels/{channel.id} -- get a channel.
+  rpc GetChannel(GetChannelRequest) returns (google.protobuf.Struct);
+
+  // PATCH /channels/{channel.id} -- modify a channel.
+  rpc ModifyChannel(ModifyChannelRequest) returns (google.protobuf.Struct);
+
+  // DELETE /channels/{channel.id} -- delete or close a channel.
+  rpc DeleteChannel(DeleteChannelRequest) returns (google.protobuf.Struct);
+
+  // GET /channels/{channel.id}/messages -- list messages in a channel.
+  rpc GetChannelMessages(GetChannelMessagesRequest) returns (google.protobuf.Struct);
+
+  // GET /channels/{channel.id}/messages/{message.id} -- get a single message.
+  rpc GetChannelMessage(GetChannelMessageRequest) returns (google.protobuf.Struct);
+
+  // POST /channels/{channel.id}/messages -- post a message.
+  rpc CreateMessage(CreateMessageRequest) returns (google.protobuf.Struct);
+
+  // PATCH /channels/{channel.id}/messages/{message.id} -- edit a message.
+  rpc EditMessage(EditMessageRequest) returns (google.protobuf.Struct);
+
+  // DELETE /channels/{channel.id}/messages/{message.id} -- delete a message.
+  rpc DeleteMessage(DeleteMessageRequest) returns (google.protobuf.Struct);
+
+  // POST /channels/{channel.id}/messages/{message.id}/crosspost -- crosspost a message in an announcement channel.
+  rpc CrosspostMessage(CrosspostMessageRequest) returns (google.protobuf.Struct);
+
+  // POST /channels/{channel.id}/messages/bulk-delete -- bulk delete messages.
+  rpc BulkDeleteMessages(BulkDeleteMessagesRequest) returns (google.protobuf.Struct);
+
+  // PUT /channels/{channel.id}/messages/{message.id}/reactions/{emoji}/@me -- add reaction as bot.
+  rpc CreateReaction(CreateReactionRequest) returns (google.protobuf.Struct);
+
+  // DELETE /channels/{channel.id}/messages/{message.id}/reactions/{emoji}/@me -- remove own reaction.
+  rpc DeleteOwnReaction(DeleteOwnReactionRequest) returns (google.protobuf.Struct);
+
+  // DELETE /channels/{channel.id}/messages/{message.id}/reactions/{emoji}/{user.id} -- remove user's reaction.
+  rpc DeleteUserReaction(DeleteUserReactionRequest) returns (google.protobuf.Struct);
+
+  // GET /channels/{channel.id}/messages/{message.id}/reactions/{emoji} -- list users that reacted.
+  rpc GetReactions(GetReactionsRequest) returns (google.protobuf.Struct);
+
+  // DELETE /channels/{channel.id}/messages/{message.id}/reactions -- delete all reactions.
+  rpc DeleteAllReactions(DeleteAllReactionsRequest) returns (google.protobuf.Struct);
+
+  // POST /channels/{channel.id}/typing -- trigger the typing indicator.
+  rpc TriggerTypingIndicator(TriggerTypingIndicatorRequest) returns (google.protobuf.Struct);
+
+  // GET /channels/{channel.id}/pins -- list pinned messages.
+  rpc GetPinnedMessages(GetPinnedMessagesRequest) returns (google.protobuf.Struct);
+
+  // PUT /channels/{channel.id}/pins/{message.id} -- pin a message.
+  rpc PinMessage(PinMessageRequest) returns (google.protobuf.Struct);
+
+  // DELETE /channels/{channel.id}/pins/{message.id} -- unpin a message.
+  rpc UnpinMessage(UnpinMessageRequest) returns (google.protobuf.Struct);
+
+  // POST /channels/{channel.id}/invites -- create a channel invite.
+  rpc CreateChannelInvite(CreateChannelInviteRequest) returns (google.protobuf.Struct);
+
+  // GET /channels/{channel.id}/invites -- list channel invites.
+  rpc GetChannelInvites(GetChannelInvitesRequest) returns (google.protobuf.Struct);
+
+  // POST /channels/{channel.id}/threads -- start a thread without a message.
+  rpc StartThread(StartThreadRequest) returns (google.protobuf.Struct);
+
+  // PUT /channels/{channel.id}/thread-members/@me -- join a thread.
+  rpc JoinThread(JoinThreadRequest) returns (google.protobuf.Struct);
+
+  // DELETE /channels/{channel.id}/thread-members/@me -- leave a thread.
+  rpc LeaveThread(LeaveThreadRequest) returns (google.protobuf.Struct);
+
+  // GET /channels/{channel.id}/thread-members -- list thread members.
+  rpc ListThreadMembers(ListThreadMembersRequest) returns (google.protobuf.Struct);
+
+  // POST /webhooks/{webhook.id}/{webhook.token} -- execute a webhook (no bot auth required).
+  rpc ExecuteWebhook(ExecuteWebhookRequest) returns (google.protobuf.Struct);
+
+  // DELETE /invites/{invite.code} -- delete an invite.
+  rpc DeleteInvite(DeleteInviteRequest) returns (google.protobuf.Struct);
+
+  // GET /gateway -- get gateway URL (unauthenticated info).
+  rpc GetGateway(GetGatewayRequest) returns (google.protobuf.Struct);
+
+  // GET /gateway/bot -- get gateway URL with shard info (requires bot auth).
+  rpc GetGatewayBot(GetGatewayBotRequest) returns (google.protobuf.Struct);
+}
+
+message GetCurrentUserRequest {}
+
+message GetUserRequest {
+  string user_id = 1;
+}
+
+message GetCurrentUserGuildsRequest {
+  // Pagination filters.
+  string before = 1;
+  string after = 2;
+  int32 limit = 3;
+  bool with_counts = 4;
+}
+
+message LeaveGuildRequest {
+  string guild_id = 1;
+}
+
+message CreateDMRequest {
+  string recipient_id = 1;
+}
+
+message GetGuildRequest {
+  string guild_id = 1;
+  bool with_counts = 2;
+}
+
+message GetGuildPreviewRequest {
+  string guild_id = 1;
+}
+
+message ModifyGuildRequest {
+  string guild_id = 1;
+  // Full JSON body to PATCH.
+  google.protobuf.Struct body = 2;
+  // Audit-log reason header.
+  string reason = 3;
+}
+
+message GetGuildChannelsRequest {
+  string guild_id = 1;
+}
+
+message CreateGuildChannelRequest {
+  string guild_id = 1;
+  google.protobuf.Struct body = 2;
+  string reason = 3;
+}
+
+message ListGuildMembersRequest {
+  string guild_id = 1;
+  // Max members to return (1-1000). Default 1.
+  int32 limit = 2;
+  // The highest user ID in the previous page.
+  string after = 3;
+}
+
+message SearchGuildMembersRequest {
+  string guild_id = 1;
+  // Username/nickname prefix.
+  string query = 2;
+  int32 limit = 3;
+}
+
+message GetGuildMemberRequest {
+  string guild_id = 1;
+  string user_id = 2;
+}
+
+message ModifyGuildMemberRequest {
+  string guild_id = 1;
+  string user_id = 2;
+  google.protobuf.Struct body = 3;
+  string reason = 4;
+}
+
+message RemoveGuildMemberRequest {
+  string guild_id = 1;
+  string user_id = 2;
+  string reason = 3;
+}
+
+message CreateGuildBanRequest {
+  string guild_id = 1;
+  string user_id = 2;
+  // Number of seconds to delete messages for (0-604800).
+  int32 delete_message_seconds = 3;
+  string reason = 4;
+}
+
+message RemoveGuildBanRequest {
+  string guild_id = 1;
+  string user_id = 2;
+  string reason = 3;
+}
+
+message GetGuildBansRequest {
+  string guild_id = 1;
+  int32 limit = 2;
+  string before = 3;
+  string after = 4;
+}
+
+message GetGuildRolesRequest {
+  string guild_id = 1;
+}
+
+message CreateGuildRoleRequest {
+  string guild_id = 1;
+  google.protobuf.Struct body = 2;
+  string reason = 3;
+}
+
+message ModifyGuildRoleRequest {
+  string guild_id = 1;
+  string role_id = 2;
+  google.protobuf.Struct body = 3;
+  string reason = 4;
+}
+
+message DeleteGuildRoleRequest {
+  string guild_id = 1;
+  string role_id = 2;
+  string reason = 3;
+}
+
+message AddGuildMemberRoleRequest {
+  string guild_id = 1;
+  string user_id = 2;
+  string role_id = 3;
+  string reason = 4;
+}
+
+message RemoveGuildMemberRoleRequest {
+  string guild_id = 1;
+  string user_id = 2;
+  string role_id = 3;
+  string reason = 4;
+}
+
+message GetGuildInvitesRequest {
+  string guild_id = 1;
+}
+
+message ListGuildEmojisRequest {
+  string guild_id = 1;
+}
+
+message GetGuildAuditLogRequest {
+  string guild_id = 1;
+  // Filter by user ID.
+  string user_id = 2;
+  // Filter by action type (Discord audit log type integer).
+  int32 action_type = 3;
+  // Pagination.
+  string before = 4;
+  int32 limit = 5;
+}
+
+message GetChannelRequest {
+  string channel_id = 1;
+}
+
+message ModifyChannelRequest {
+  string channel_id = 1;
+  google.protobuf.Struct body = 2;
+  string reason = 3;
+}
+
+message DeleteChannelRequest {
+  string channel_id = 1;
+  string reason = 2;
+}
+
+message GetChannelMessagesRequest {
+  string channel_id = 1;
+  // Pagination: get messages around/before/after this message ID.
+  string around = 2;
+  string before = 3;
+  string after = 4;
+  int32 limit = 5;
+}
+
+message GetChannelMessageRequest {
+  string channel_id = 1;
+  string message_id = 2;
+}
+
+message CreateMessageRequest {
+  string channel_id = 1;
+  // Full message body — Discord accepts content/embeds/components/etc.
+  google.protobuf.Struct body = 2;
+}
+
+message EditMessageRequest {
+  string channel_id = 1;
+  string message_id = 2;
+  google.protobuf.Struct body = 3;
+}
+
+message DeleteMessageRequest {
+  string channel_id = 1;
+  string message_id = 2;
+  string reason = 3;
+}
+
+message CrosspostMessageRequest {
+  string channel_id = 1;
+  string message_id = 2;
+}
+
+message BulkDeleteMessagesRequest {
+  string channel_id = 1;
+  // Array of message IDs (2 to 100).
+  repeated string message_ids = 2;
+  string reason = 3;
+}
+
+message CreateReactionRequest {
+  string channel_id = 1;
+  string message_id = 2;
+  // Emoji as URL component: "🔥" or "name:id" for custom emoji.
+  string emoji = 3;
+}
+
+message DeleteOwnReactionRequest {
+  string channel_id = 1;
+  string message_id = 2;
+  string emoji = 3;
+}
+
+message DeleteUserReactionRequest {
+  string channel_id = 1;
+  string message_id = 2;
+  string emoji = 3;
+  string user_id = 4;
+}
+
+message GetReactionsRequest {
+  string channel_id = 1;
+  string message_id = 2;
+  string emoji = 3;
+  string after = 4;
+  int32 limit = 5;
+}
+
+message DeleteAllReactionsRequest {
+  string channel_id = 1;
+  string message_id = 2;
+  // Optional: limit to a specific emoji.
+  string emoji = 3;
+}
+
+message TriggerTypingIndicatorRequest {
+  string channel_id = 1;
+}
+
+message GetPinnedMessagesRequest {
+  string channel_id = 1;
+}
+
+message PinMessageRequest {
+  string channel_id = 1;
+  string message_id = 2;
+  string reason = 3;
+}
+
+message UnpinMessageRequest {
+  string channel_id = 1;
+  string message_id = 2;
+  string reason = 3;
+}
+
+message CreateChannelInviteRequest {
+  string channel_id = 1;
+  google.protobuf.Struct body = 2;
+  string reason = 3;
+}
+
+message GetChannelInvitesRequest {
+  string channel_id = 1;
+}
+
+message StartThreadRequest {
+  string channel_id = 1;
+  google.protobuf.Struct body = 2;
+  string reason = 3;
+}
+
+message JoinThreadRequest {
+  string channel_id = 1;
+}
+
+message LeaveThreadRequest {
+  string channel_id = 1;
+}
+
+message ListThreadMembersRequest {
+  string channel_id = 1;
+  bool with_member = 2;
+  string after = 3;
+  int32 limit = 4;
+}
+
+message ExecuteWebhookRequest {
+  string webhook_id = 1;
+  string webhook_token = 2;
+  // wait=true to receive a Message object back.
+  bool wait = 3;
+  string thread_id = 4;
+  google.protobuf.Struct body = 5;
+}
+
+message DeleteInviteRequest {
+  string invite_code = 1;
+  string reason = 2;
+}
+
+message GetGatewayRequest {}
+
+message GetGatewayBotRequest {}
