@@ -1,0 +1,32 @@
+# .public-surface-allow - justified exceptions to scripts/public-surface-check.
+#
+#     category | path-glob | reason | pattern
+#
+#   category    a deny category (see `scripts/public-surface-check --help`) or
+#               `*` for every category
+#   path-glob   `*` for the whole repository, a glob over the repository
+#               relative path, or `COMMIT` for commit-message exceptions
+#   reason      required, at least 8 characters: why the text is legitimately
+#               public, not what the pattern does
+#   pattern     POSIX ERE, with %HH hex escapes so a term can be named without
+#               being spelled
+#
+# This repository needs no exceptions today, and that is worth recording,
+# because an earlier audit floated four candidates that turn out not to need a
+# rule. Do not add one for them:
+#
+#   * public contract addresses. A hex address is not a credential shape, and
+#     the credential check already discards 0x-prefixed hex.
+#   * the Docker Hub API's `namespace` field. The cluster-namespace pattern
+#     only fires on a bare `namespace: <value>` line with nothing after it, and
+#     the baseline already excuses a type annotation of that shape.
+#   * the Slack token FORMATS in slack/. `xoxb-` and `xoxp-` are only reported
+#     with at least ten characters of token after the prefix, so documenting
+#     the prefix - which is what these files do - is not a finding.
+#   * the `contact@example.com` User-Agent the SEC requires. RFC 2606 reserved
+#     domains are in the fleet baseline.
+#
+# Each of those stays quiet because the deny pattern is narrow, not because
+# anything excuses it. Widening the allowlist to cover them would switch off a
+# check that is currently doing its job. Add a rule only for text this guard
+# actually reports, and say in the reason why publishing it is intended.

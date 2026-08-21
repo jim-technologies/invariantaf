@@ -178,13 +178,31 @@ Use standardized target names:
 - `make serve-py` — `uv run python main.py`
 - `make lint` — both `go vet` and `ruff check`
 
+### Repo-root gates
+
+`make lint` runs two repo-wide guards before it reaches `go vet` and `ruff`, and
+either one turning red stops the build:
+
+- `make public-surface` — `scripts/public-surface-check` scans the content of
+  every tracked file, every tracked path, and the commit messages a push would
+  publish, and fails on private repository names, internal infrastructure,
+  first-party codenames, cluster shapes, credential shapes, secret stores and
+  private remotes. `scripts/public-surface-check-test` then proves the guard
+  still works. Justified exceptions go in `.public-surface-allow` at the repo
+  root (`category | path-glob | reason | pattern`), one line each with a reason
+  — never by editing the shared script, which is identical in every public repo.
+- `make tracked-artifacts` — `scripts/tracked-artifact-check` fails if a tracked
+  file is a compiled executable image or is larger than 2MB. `.gitignore` alone
+  does not protect us here: it has no effect on a file that is already tracked,
+  which is how two 19MB Go binaries were once committed despite being listed.
+
 ### Pre-push checklist
 
 **Always lint and test before pushing.** Run from the repo root:
 
 ```bash
 make test    # runs all Go + Python tests
-make lint    # runs go vet + ruff check across everything
+make lint    # public-surface + tracked-artifacts, then go vet + ruff check
 ```
 
 Or for a single adapter:

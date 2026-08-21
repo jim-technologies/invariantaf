@@ -1,0 +1,208 @@
+#!/bin/sh
+# tracked-artifact-check - refuse to publish compiled build artifacts.
+#
+# Every Go adapter in this repository builds to `<adapter>/<adapter>`, and
+# .gitignore lists each of those paths. An ignore rule only covers a file that
+# is not already tracked, so `git add -f`, a `git add` that ran before the
+# ignore rule existed, or a rename can put a build artifact in the index and
+# keep it there for good - which is exactly how two 19MB binaries reached this
+# repository's history.
+#
+# So this check does not trust .gitignore. It looks at what is actually tracked
+# and fails on:
+#
+#   1. a file whose leading bytes are an executable image (ELF, Mach-O, PE, or
+#      a JVM class file), whatever its path and whatever its extension
+#   2. a file larger than the size limit below - the backstop for artifacts
+#      this check has no magic number for (archives, vendored toolchains, a
+#      dumped model, a checked-in virtualenv)
+#
+# The limit is deliberately a few times the largest legitimate file here (the
+# generated descriptors, around 850KB) and far below any compiled binary.
+#
+# Exceptions live in .tracked-artifact-allow at the repository root, one per
+# line, `path-glob | reason`, never by editing this file.
+#
+#   TRACKED_ARTIFACT_MAX_BYTES=N   override the size limit for one run
+#
+# Exit codes: 0 clean, 1 findings, 2 the check could not run.
+#
+# Dependencies: POSIX sh, git, od. Nothing else: this repository holds Go and
+# Python adapters and no runtime is common to all of them.
+
+set -eu
+LC_ALL=C
+export LC_ALL
+
+usage() {
+	cat <<'USAGE'
+usage: scripts/tracked-artifact-check [--help]
+
+Fails when a tracked file is a compiled executable image or exceeds the size
+limit, so a build artifact cannot be published even if it slipped past
+.gitignore into the index.
+
+Exceptions live in .tracked-artifact-allow (path-glob | reason). Every rule
+needs a reason of at least 8 characters.
+USAGE
+}
+
+while [ "$#" -gt 0 ]; do
+	case "$1" in
+	-h | --help)
+		usage
+		exit 0
+		;;
+	*)
+		printf 'tracked-artifact-check: unknown argument: %s\n' "$1" >&2
+		usage >&2
+		exit 2
+		;;
+	esac
+done
+
+for tool in git od; do
+	command -v "$tool" >/dev/null 2>&1 || {
+		printf 'tracked-artifact-check: %s is required\n' "$tool" >&2
+		exit 2
+	}
+done
+
+root=$(git rev-parse --show-toplevel 2>/dev/null) || {
+	printf 'tracked-artifact-check: not inside a git repository\n' >&2
+	exit 2
+}
+cd "$root"
+
+max=${TRACKED_ARTIFACT_MAX_BYTES:-2097152}
+case "$max" in
+'' | *[!0-9]*)
+	printf 'tracked-artifact-check: TRACKED_ARTIFACT_MAX_BYTES must be a byte count\n' >&2
+	exit 2
+	;;
+esac
+
+# First four bytes, lower-case hex, no separators.
+magic_of() {
+	od -An -v -tx1 -N 4 "$1" 2>/dev/null | tr -d ' \t\n'
+}
+
+# The name of the executable format these bytes start, or empty.
+image_kind() {
+	case "$1" in
+	7f454c46) printf 'ELF executable' ;;
+	feedface | cefaedfe | feedfacf | cffaedfe) printf 'Mach-O executable' ;;
+	cafebabe | bebafeca) printf 'Mach-O universal or JVM class' ;;
+	4d5a*) printf 'PE/DOS executable' ;;
+	*) return 1 ;;
+	esac
+}
+
+# Fail closed. A check that has stopped recognising a binary would pass this
+# repository silently, so prove the detector still works before trusting it.
+selftest() {
+	probe=$(mktemp) || return 1
+	printf '\177ELF\002\001\001' >"$probe"
+	kind=$(image_kind "$(magic_of "$probe")") || {
+		rm -f "$probe"
+		return 1
+	}
+	rm -f "$probe"
+	[ -n "$kind" ]
+}
+selftest || {
+	printf 'tracked-artifact-check: the binary detector no longer recognises an executable header\n' >&2
+	printf 'The gate stays red until the check can run.\n' >&2
+	exit 2
+}
+
+nallow=0
+allow_file=.tracked-artifact-allow
+if [ -f "$allow_file" ]; then
+	lno=0
+	while IFS= read -r line || [ -n "$line" ]; do
+		lno=$((lno + 1))
+		case "$line" in
+		'' | '#'*) continue ;;
+		esac
+		case "$line" in
+		*'|'*) ;;
+		*)
+			printf 'tracked-artifact-check: %s:%s: expected two fields: path-glob | reason\n' "$allow_file" "$lno" >&2
+			exit 2
+			;;
+		esac
+		glob=${line%%|*}
+		reason=${line#*|}
+		glob=$(printf '%s' "$glob" | tr -d ' \t')
+		reason=$(printf '%s' "$reason" | sed 's/^[ \t]*//; s/[ \t]*$//')
+		if [ -z "$glob" ]; then
+			printf 'tracked-artifact-check: %s:%s: the path-glob field is empty\n' "$allow_file" "$lno" >&2
+			exit 2
+		fi
+		if [ "${#reason}" -lt 8 ]; then
+			printf 'tracked-artifact-check: %s:%s: every rule needs a reason of at least 8 characters\n' "$allow_file" "$lno" >&2
+			exit 2
+		fi
+		nallow=$((nallow + 1))
+		eval "allow_$nallow=\$glob"
+	done <"$allow_file"
+fi
+
+allowed() {
+	i=1
+	while [ "$i" -le "$nallow" ]; do
+		eval "g=\$allow_$i"
+		# shellcheck disable=SC2254
+		case "$1" in
+		$g) return 0 ;;
+		esac
+		i=$((i + 1))
+	done
+	return 1
+}
+
+findings=0
+nfiles=0
+report=$(
+	git ls-files -z | tr '\000' '\n' | while IFS= read -r f; do
+		[ -f "$f" ] || continue
+		allowed "$f" && continue
+		if kind=$(image_kind "$(magic_of "$f")"); then
+			printf '  %-56s %s\n' "$f" "$kind"
+			continue
+		fi
+		size=$(wc -c <"$f")
+		size=$((size))
+		if [ "$size" -gt "$max" ]; then
+			printf '  %-56s %s bytes, over the %s byte limit\n' "$f" "$size" "$max"
+		fi
+	done
+)
+nfiles=$(git ls-files | wc -l)
+
+if [ -n "$report" ]; then
+	findings=$(printf '%s\n' "$report" | wc -l)
+	printf 'tracked-artifact-check: FAIL - %s tracked build artifact(s)\n\n' "$findings"
+	printf '  %-56s %s\n' "path" "why"
+	printf '%s\n' "$report"
+	cat <<'FIX'
+
+what to do
+  A compiled binary or a file this large is a build artifact, not source. It
+  bloats every clone for good, because removing it in a later commit does not
+  remove it from the history a clone downloads.
+
+      git rm --cached <path>          # stop tracking it, keep it on disk
+      git check-ignore -v <path>      # confirm .gitignore already covers it
+
+  Rebuild it from source instead, or publish it as a release asset. If a large
+  file genuinely belongs in the tree, add one line to .tracked-artifact-allow:
+
+      path-glob | reason
+FIX
+	exit 1
+fi
+
+printf 'tracked-artifact-check: clean (%s tracked files, limit %s bytes, %s rules)\n' \
+	"$(printf '%s' "$nfiles" | tr -d ' ')" "$max" "$nallow"

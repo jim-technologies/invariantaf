@@ -1,4 +1,4 @@
-.PHONY: test test-go test-py lint lint-go lint-py
+.PHONY: test test-go test-py lint lint-go lint-py public-surface tracked-artifacts
 
 test: test-go test-py
 
@@ -30,7 +30,17 @@ test-py:
 	done; \
 	if [ $$failed -eq 1 ]; then exit 1; fi
 
-lint: lint-go lint-py
+lint: public-surface tracked-artifacts lint-go lint-py
+
+# Guard the public surface: tracked content, tracked paths, and the commit
+# messages a push would publish. Exceptions live in .public-surface-allow.
+public-surface:
+	scripts/public-surface-check
+	scripts/public-surface-check-test
+
+# Refuse to publish compiled build artifacts, whatever .gitignore says.
+tracked-artifacts:
+	scripts/tracked-artifact-check
 
 lint-go:
 	@for d in $$(find . -maxdepth 2 -name "go.mod" -exec dirname {} \; | sort); do \
