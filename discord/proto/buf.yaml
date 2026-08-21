@@ -3,6 +3,8 @@ modules:
   - path: .
 lint:
   ignore_only:
+    RPC_REQUEST_RESPONSE_UNIQUE:
+      - discord/v1/discord.proto
     RPC_REQUEST_STANDARD_NAME:
       - discord/v1/discord.proto
     RPC_RESPONSE_STANDARD_NAME:
