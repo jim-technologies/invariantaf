@@ -47,19 +47,29 @@ tracked-artifacts:
 	scripts/tracked-artifact-check
 
 lint-go:
-	@for d in $$(find . -maxdepth 2 -name "go.mod" -exec dirname {} \; | sort); do \
+	@failed=0; \
+	for d in $$(find . -maxdepth 2 -name "go.mod" -exec dirname {} \; | sort); do \
 		name=$$(basename $$d); \
 		if (cd $$d && go vet ./... 2>&1); then \
 			echo "PASS: $$name"; \
 		else \
 			echo "FAIL: $$name"; \
+			failed=1; \
 		fi; \
-	done
+	done; \
+	if [ $$failed -eq 1 ]; then exit 1; fi
 
 lint-py:
-	@for d in $$(find . -maxdepth 2 -name "pyproject.toml" -exec dirname {} \; | sort); do \
+	@failed=0; \
+	for d in $$(find . -maxdepth 2 -name "pyproject.toml" -exec dirname {} \; | sort); do \
 		name=$$(basename $$d); \
 		if [ -d "$$d/src" ]; then \
-			(cd $$d && uv run ruff check src/ 2>&1) || echo "FAIL: $$name"; \
+			if (cd $$d && uv run ruff check src/ 2>&1); then \
+				echo "PASS: $$name"; \
+			else \
+				echo "FAIL: $$name"; \
+				failed=1; \
+			fi; \
 		fi; \
-	done
+	done; \
+	if [ $$failed -eq 1 ]; then exit 1; fi
