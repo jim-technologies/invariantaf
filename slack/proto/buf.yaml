@@ -3,6 +3,8 @@ modules:
   - path: .
 lint:
   ignore_only:
+    RPC_REQUEST_RESPONSE_UNIQUE:
+      - slack/v1/slack.proto
     RPC_REQUEST_STANDARD_NAME:
       - slack/v1/slack.proto
     RPC_RESPONSE_STANDARD_NAME:

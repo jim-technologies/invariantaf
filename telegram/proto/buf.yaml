@@ -3,6 +3,8 @@ modules:
   - path: .
 lint:
   ignore_only:
+    RPC_REQUEST_RESPONSE_UNIQUE:
+      - telegram/v1/telegram.proto
     RPC_REQUEST_STANDARD_NAME:
       - telegram/v1/telegram.proto
     RPC_RESPONSE_STANDARD_NAME:
