@@ -1,0 +1,48 @@
+name: CI Root Gate
+
+# The adapter workflows only run `make -C <adapter> lint|test`, so nothing in
+# them reaches the repository-wide checks. This job runs the repo-wide slice of
+# `make validate` - the two guards no other job covers. The per-adapter slices
+# of validate are already the ci-go-adapters and ci-python-adapters matrices,
+# so running the whole verb here would only duplicate them. Holds no secrets.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: root-gate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  root-gate:
+    name: root gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          # public-surface-check scans the commit messages a push would
+          # publish, so it needs origin/main and the commits under review.
+          # Without them it falls back to scanning all of history.
+          fetch-depth: 0
+
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: /nix/store
+          key: nix-${{ runner.os }}-${{ hashFiles('.flox/env/manifest.lock', '.flox/env/manifest.toml') }}
+          restore-keys: nix-${{ runner.os }}-
+
+      - uses: flox/install-flox-action@3b80351ae97bbe063f264dc88fbd505507054963 # v2.5.3
+        with:
+          disable-metrics: "true"
+
+      - name: Run the root gate
+        env:
+          FLOX_DISABLE_METRICS: "true"
+        run: flox activate -- make public-surface tracked-artifacts
