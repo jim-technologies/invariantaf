@@ -182,7 +182,8 @@ Use standardized target names:
 
 `make validate` is the gate — the one gate verb every public repository in this
 organisation shares. Here it routes to `make lint` and `make test`; both still
-work on their own for a narrower run.
+work on their own for a narrower run. The shared verbs and the rules behind them
+are in [`MAKEFILE-CONTRACT.md`](MAKEFILE-CONTRACT.md).
 
 `make lint` runs two repo-wide guards before it reaches `go vet` and `ruff`, and
 either one turning red stops the build:
