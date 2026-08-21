@@ -180,6 +180,10 @@ Use standardized target names:
 
 ### Repo-root gates
 
+`make validate` is the gate — the one gate verb every public repository in this
+organisation shares. Here it routes to `make lint` and `make test`; both still
+work on their own for a narrower run.
+
 `make lint` runs two repo-wide guards before it reaches `go vet` and `ruff`, and
 either one turning red stops the build:
 
@@ -198,7 +202,13 @@ either one turning red stops the build:
 
 ### Pre-push checklist
 
-**Always lint and test before pushing.** Run from the repo root:
+**Always run the gate before pushing.** Run from the repo root:
+
+```bash
+make validate   # the gate: lint + test
+```
+
+Or one slice of it at a time:
 
 ```bash
 make test    # runs all Go + Python tests
@@ -241,5 +251,5 @@ Each adapter README should include:
 3. Silent auth fallbacks that hide missing credentials.
 4. Hand-editing generated artifacts without updating generators.
 5. Writing mock tests that test mocked HTTP responses — they only validate our own mocks.
-6. Pushing without running `make lint` and `make test` first.
+6. Pushing without running `make validate` first.
 7. Adding `buf.build/googleapis` deps to buf.yaml without checking CI compatibility.

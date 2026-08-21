@@ -1,4 +1,4 @@
-.PHONY: test test-go test-py lint lint-go lint-py public-surface tracked-artifacts
+.PHONY: validate test test-go test-py lint lint-go lint-py public-surface tracked-artifacts
 
 test: test-go test-py
 
@@ -29,6 +29,10 @@ test-py:
 		fi; \
 	done; \
 	if [ $$failed -eq 1 ]; then exit 1; fi
+
+# The gate. `make validate` is the one gate verb in every public repository in
+# this organisation; here it routes to `lint` and `test`, this repo's full gate.
+validate: lint test
 
 lint: public-surface tracked-artifacts lint-go lint-py
 

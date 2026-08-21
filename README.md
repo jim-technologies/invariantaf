@@ -45,6 +45,14 @@ flox activate
 
 ## Common workflow
 
+From the repo root, `make validate` is the gate — the one gate verb every public
+repository in this organisation shares. Here it runs `lint` (public-surface and
+tracked-artifact guards, then `go vet` and `ruff check`) and `test`:
+
+```bash
+make validate
+```
+
 From any adapter directory:
 
 ```bash
