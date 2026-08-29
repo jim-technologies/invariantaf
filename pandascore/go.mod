@@ -1,6 +1,6 @@
 module github.com/jim-technologies/invariantaf/pandascore
 
-go 1.25.5
+go 1.26.0
 
 require (
 	github.com/jim-technologies/invariantprotocol/go v0.0.2-0.20260510044321-95ba467345f7
@@ -13,8 +13,8 @@ require (
 	cel.dev/expr v0.25.3 // indirect
 	github.com/antlr4-go/antlr/v4 v4.13.1 // indirect
 	github.com/google/cel-go v0.31.0 // indirect
-	go.yaml.in/yaml/v3 v3.0.4 // indirect
-	golang.org/x/exp v0.0.0-20250813145105-42675adae3e6 // indirect
+	go.yaml.in/yaml/v3 v3.0.5 // indirect
+	golang.org/x/exp v0.0.0-20260824195058-e88cd73687aa // indirect
 	golang.org/x/net v0.58.0 // indirect
 	golang.org/x/sys v0.47.0 // indirect
 	golang.org/x/text v0.41.0 // indirect
