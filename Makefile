@@ -1,7 +1,8 @@
-.PHONY: help help-all validate test test-go test-py lint lint-go lint-py public-surface tracked-artifacts
+.PHONY: help help-all validate test test-go test-py lint lint-go lint-py public-surface tracked-artifacts fmt
 
 help: ## One-screen help (make help-all for every target)
 	@echo "Daily:"
+	@echo "  make fmt        gofmt + ruff format everywhere"
 	@echo "  make test            every adapter's tests (Go + Python)"
 	@echo "  make lint            guards + go vet + ruff, every adapter"
 	@echo "  make validate        the full offline gate: lint + test"
@@ -57,6 +58,14 @@ public-surface: ## Public-surface guard + its self-test
 # Refuse to publish compiled build artifacts, whatever .gitignore says.
 tracked-artifacts: ## Refuse tracked compiled build artifacts
 	scripts/tracked-artifact-check
+
+fmt: ## gofmt + ruff format in every module/package
+	@for d in $$(find . -maxdepth 2 -name "go.mod" -exec dirname {} \; | sort); do \
+		gofmt -w "$$d"; \
+	done
+	@for d in $$(find . -maxdepth 2 -name "pyproject.toml" -exec dirname {} \; | sort); do \
+		(cd "$$d" && ruff format . --exclude "*_pb2.py" --exclude "*_pb2.pyi" --exclude "gen"); \
+	done
 
 lint-go: ## go vet in every Go module
 	@failed=0; \
