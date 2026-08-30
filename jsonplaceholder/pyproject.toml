@@ -2,7 +2,7 @@
 name = "jsonplaceholder-mcp"
 version = "0.1.0"
 description = "JSONPlaceholder as an MCP server — zero-code demo of connect_http()"
-requires-python = ">=3.11"
+requires-python = ">=3.14"
 dependencies = [
     "invariant-protocol @ git+https://github.com/jim-technologies/invariantprotocol.git#subdirectory=python",
     "httpx>=0.24.0",

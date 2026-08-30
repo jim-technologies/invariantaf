@@ -40,6 +40,16 @@ def _projection_from_argv(argv: list[str]) -> dict:
     return {"mcp": True}
 
 
+async def _serve(server: Server, modes: dict) -> None:
+    if "grpc" in modes:
+        native = server.grpc_server()
+        native.add_insecure_port(f"[::]:{modes['grpc']}")
+        await native.start()
+        await native.wait_for_termination()
+        return
+    await server.serve_projections(**modes)
+
+
 def main() -> None:
     server = Server.from_descriptor(str(DESCRIPTOR))
 
@@ -49,7 +59,7 @@ def main() -> None:
     servicer = BallDontLieService(base_url=base_url, api_key=api_key)
     server.register(servicer, service_name="balldontlie.v1.BallDontLieService")
 
-    asyncio.run(server.serve(**_projection_from_argv(sys.argv[1:])))
+    asyncio.run(_serve(server, _projection_from_argv(sys.argv[1:])))
 
 
 if __name__ == "__main__":
