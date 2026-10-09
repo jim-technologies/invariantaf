@@ -24,42 +24,46 @@ class WikipediaService:
 
     async def aclose(self) -> None:
         """Close the HTTP client. Idempotent."""
-        await self._client.aclose()
+        await self._http.aclose()
 
-    def _rest_get(self, path: str) -> Any:
-        resp = self._http.get(f"{_REST_BASE}{path}")
+    async def _rest_get(self, path: str) -> Any:
+        resp = await self._http.get(f"{_REST_BASE}{path}")
         resp.raise_for_status()
         return resp.json()
 
-    def _action_get(self, params: dict) -> Any:
+    async def _action_get(self, params: dict) -> Any:
         params["format"] = "json"
-        resp = self._http.get(_ACTION_BASE, params=params)
+        resp = await self._http.get(_ACTION_BASE, params=params)
         resp.raise_for_status()
         return resp.json()
 
     async def Search(self, request: Any, context: Any = None) -> pb.SearchResponse:
         limit = request.limit or 10
-        raw = self._action_get({
-            "action": "query",
-            "list": "search",
-            "srsearch": request.query,
-            "srlimit": str(limit),
-        })
+        raw = await self._action_get(
+            {
+                "action": "query",
+                "list": "search",
+                "srsearch": request.query,
+                "srlimit": str(limit),
+            }
+        )
         resp = pb.SearchResponse()
         search_data = raw.get("query", {}).get("search", [])
         resp.total_hits = raw.get("query", {}).get("searchinfo", {}).get("totalhits", 0)
         for item in search_data:
-            resp.results.append(pb.SearchResult(
-                page_id=item.get("pageid", 0),
-                title=item.get("title", ""),
-                snippet=item.get("snippet", ""),
-                word_count=item.get("wordcount", 0),
-                timestamp=item.get("timestamp", ""),
-            ))
+            resp.results.append(
+                pb.SearchResult(
+                    page_id=item.get("pageid", 0),
+                    title=item.get("title", ""),
+                    snippet=item.get("snippet", ""),
+                    word_count=item.get("wordcount", 0),
+                    timestamp=item.get("timestamp", ""),
+                )
+            )
         return resp
 
     async def GetPage(self, request: Any, context: Any = None) -> pb.GetPageResponse:
-        raw = self._rest_get(f"/page/summary/{request.title}")
+        raw = await self._rest_get(f"/page/summary/{request.title}")
         thumbnail = raw.get("thumbnail", {}) or {}
         content_urls = raw.get("content_urls", {}) or {}
         desktop = content_urls.get("desktop", {}) or {}
@@ -72,13 +76,17 @@ class WikipediaService:
             content_url=desktop.get("page", ""),
         )
 
-    async def GetFullPage(self, request: Any, context: Any = None) -> pb.GetFullPageResponse:
-        raw = self._action_get({
-            "action": "query",
-            "prop": "extracts",
-            "explaintext": "true",
-            "titles": request.title,
-        })
+    async def GetFullPage(
+        self, request: Any, context: Any = None
+    ) -> pb.GetFullPageResponse:
+        raw = await self._action_get(
+            {
+                "action": "query",
+                "prop": "extracts",
+                "explaintext": "true",
+                "titles": request.title,
+            }
+        )
         pages = raw.get("query", {}).get("pages", {})
         # pages is a dict keyed by page ID
         for page_id, page_data in pages.items():
@@ -89,28 +97,34 @@ class WikipediaService:
             )
         return pb.GetFullPageResponse()
 
-    async def GetRandom(self, request: Any, context: Any = None) -> pb.GetRandomResponse:
+    async def GetRandom(
+        self, request: Any, context: Any = None
+    ) -> pb.GetRandomResponse:
         count = request.count or 1
         resp = pb.GetRandomResponse()
         for _ in range(count):
-            raw = self._rest_get("/page/random/summary")
+            raw = await self._rest_get("/page/random/summary")
             thumbnail = raw.get("thumbnail", {}) or {}
             content_urls = raw.get("content_urls", {}) or {}
             desktop = content_urls.get("desktop", {}) or {}
-            resp.pages.append(pb.PageSummary(
-                title=raw.get("title", ""),
-                extract=raw.get("extract", ""),
-                thumbnail_url=thumbnail.get("source", ""),
-                description=raw.get("description", ""),
-                page_id=raw.get("pageid", 0),
-                content_url=desktop.get("page", ""),
-            ))
+            resp.pages.append(
+                pb.PageSummary(
+                    title=raw.get("title", ""),
+                    extract=raw.get("extract", ""),
+                    thumbnail_url=thumbnail.get("source", ""),
+                    description=raw.get("description", ""),
+                    page_id=raw.get("pageid", 0),
+                    content_url=desktop.get("page", ""),
+                )
+            )
         return resp
 
-    async def GetOnThisDay(self, request: Any, context: Any = None) -> pb.GetOnThisDayResponse:
+    async def GetOnThisDay(
+        self, request: Any, context: Any = None
+    ) -> pb.GetOnThisDayResponse:
         mm = f"{request.month:02d}"
         dd = f"{request.day:02d}"
-        raw = self._rest_get(f"/feed/onthisday/events/{mm}/{dd}")
+        raw = await self._rest_get(f"/feed/onthisday/events/{mm}/{dd}")
         resp = pb.GetOnThisDayResponse()
         for event in raw.get("events", []):
             pages = []
@@ -118,64 +132,82 @@ class WikipediaService:
                 thumbnail = p.get("thumbnail", {}) or {}
                 content_urls = p.get("content_urls", {}) or {}
                 desktop = content_urls.get("desktop", {}) or {}
-                pages.append(pb.PageSummary(
-                    title=p.get("title", ""),
-                    extract=p.get("extract", ""),
-                    thumbnail_url=thumbnail.get("source", ""),
-                    description=p.get("description", ""),
-                    page_id=p.get("pageid", 0),
-                    content_url=desktop.get("page", ""),
-                ))
-            resp.events.append(pb.OnThisDayEvent(
-                year=event.get("year", 0),
-                text=event.get("text", ""),
-                pages=pages,
-            ))
+                pages.append(
+                    pb.PageSummary(
+                        title=p.get("title", ""),
+                        extract=p.get("extract", ""),
+                        thumbnail_url=thumbnail.get("source", ""),
+                        description=p.get("description", ""),
+                        page_id=p.get("pageid", 0),
+                        content_url=desktop.get("page", ""),
+                    )
+                )
+            resp.events.append(
+                pb.OnThisDayEvent(
+                    year=event.get("year", 0),
+                    text=event.get("text", ""),
+                    pages=pages,
+                )
+            )
         return resp
 
-    async def GetMostRead(self, request: Any, context: Any = None) -> pb.GetMostReadResponse:
+    async def GetMostRead(
+        self, request: Any, context: Any = None
+    ) -> pb.GetMostReadResponse:
         yyyy = f"{request.year:04d}"
         mm = f"{request.month:02d}"
         dd = f"{request.day:02d}"
-        raw = self._rest_get(f"/feed/featured/{yyyy}/{mm}/{dd}")
+        raw = await self._rest_get(f"/feed/featured/{yyyy}/{mm}/{dd}")
         most_read = raw.get("mostread", {}) or {}
         resp = pb.GetMostReadResponse()
         resp.date = most_read.get("date", "")
         for article in most_read.get("articles", []):
             thumbnail = article.get("thumbnail", {}) or {}
-            resp.articles.append(pb.MostReadArticle(
-                title=article.get("title", ""),
-                views=article.get("views", 0),
-                extract=article.get("extract", ""),
-                thumbnail_url=thumbnail.get("source", ""),
-                description=article.get("description", ""),
-            ))
+            resp.articles.append(
+                pb.MostReadArticle(
+                    title=article.get("title", ""),
+                    views=article.get("views", 0),
+                    extract=article.get("extract", ""),
+                    thumbnail_url=thumbnail.get("source", ""),
+                    description=article.get("description", ""),
+                )
+            )
         return resp
 
-    async def GetLanguages(self, request: Any, context: Any = None) -> pb.GetLanguagesResponse:
-        raw = self._action_get({
-            "action": "query",
-            "prop": "langlinks",
-            "titles": request.title,
-            "lllimit": "500",
-        })
+    async def GetLanguages(
+        self, request: Any, context: Any = None
+    ) -> pb.GetLanguagesResponse:
+        raw = await self._action_get(
+            {
+                "action": "query",
+                "prop": "langlinks",
+                "titles": request.title,
+                "lllimit": "500",
+            }
+        )
         pages = raw.get("query", {}).get("pages", {})
         resp = pb.GetLanguagesResponse()
         for page_data in pages.values():
             for ll in page_data.get("langlinks", []):
-                resp.languages.append(pb.LanguageLink(
-                    lang=ll.get("lang", ""),
-                    title=ll.get("*", ""),
-                ))
+                resp.languages.append(
+                    pb.LanguageLink(
+                        lang=ll.get("lang", ""),
+                        title=ll.get("*", ""),
+                    )
+                )
         return resp
 
-    async def GetCategories(self, request: Any, context: Any = None) -> pb.GetCategoriesResponse:
-        raw = self._action_get({
-            "action": "query",
-            "prop": "categories",
-            "titles": request.title,
-            "cllimit": "500",
-        })
+    async def GetCategories(
+        self, request: Any, context: Any = None
+    ) -> pb.GetCategoriesResponse:
+        raw = await self._action_get(
+            {
+                "action": "query",
+                "prop": "categories",
+                "titles": request.title,
+                "cllimit": "500",
+            }
+        )
         pages = raw.get("query", {}).get("pages", {})
         resp = pb.GetCategoriesResponse()
         for page_data in pages.values():
@@ -184,12 +216,14 @@ class WikipediaService:
         return resp
 
     async def GetLinks(self, request: Any, context: Any = None) -> pb.GetLinksResponse:
-        raw = self._action_get({
-            "action": "query",
-            "prop": "links",
-            "titles": request.title,
-            "pllimit": "500",
-        })
+        raw = await self._action_get(
+            {
+                "action": "query",
+                "prop": "links",
+                "titles": request.title,
+                "pllimit": "500",
+            }
+        )
         pages = raw.get("query", {}).get("pages", {})
         resp = pb.GetLinksResponse()
         for page_data in pages.values():
@@ -197,13 +231,17 @@ class WikipediaService:
                 resp.links.append(link.get("title", ""))
         return resp
 
-    async def GetImages(self, request: Any, context: Any = None) -> pb.GetImagesResponse:
-        raw = self._action_get({
-            "action": "query",
-            "prop": "images",
-            "titles": request.title,
-            "imlimit": "500",
-        })
+    async def GetImages(
+        self, request: Any, context: Any = None
+    ) -> pb.GetImagesResponse:
+        raw = await self._action_get(
+            {
+                "action": "query",
+                "prop": "images",
+                "titles": request.title,
+                "imlimit": "500",
+            }
+        )
         pages = raw.get("query", {}).get("pages", {})
         resp = pb.GetImagesResponse()
         for page_data in pages.values():

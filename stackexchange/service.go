@@ -85,7 +85,7 @@ func getString(fields map[string]*structpb.Value, key, def string) string {
 // helper: get an int field from structpb (numbers come as float64).
 func getInt(fields map[string]*structpb.Value, key string) int64 {
 	if v, ok := fields[key]; ok {
-		return int64(v.GetNumberValue())
+		return requestInteger(v)
 	}
 	return 0
 }
@@ -108,16 +108,12 @@ func addFilter(params url.Values, fields map[string]*structpb.Value) {
 }
 
 // helper: convert API response to structpb.Struct.
-func toStruct(data map[string]any) (*structpb.Struct, error) {
-	result, err := structpb.NewStruct(data)
-	if err != nil {
-		return nil, fmt.Errorf("convert to struct: %w", err)
-	}
-	return result, nil
+func responseJSON(data map[string]any) (json.RawMessage, error) {
+	return json.Marshal(data)
 }
 
 // SearchQuestions searches for questions matching a query string.
-func (s *StackExchangeService) SearchQuestions(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *StackExchangeService) SearchQuestions(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	params := url.Values{}
 	params.Set("site", getString(fields, "site", "stackoverflow"))
@@ -139,11 +135,11 @@ func (s *StackExchangeService) SearchQuestions(_ context.Context, req *structpb.
 	if err != nil {
 		return nil, err
 	}
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetQuestion gets a single question by its numeric ID.
-func (s *StackExchangeService) GetQuestion(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *StackExchangeService) GetQuestion(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	id := getInt(fields, "id")
 	if id == 0 {
@@ -165,11 +161,11 @@ func (s *StackExchangeService) GetQuestion(_ context.Context, req *structpb.Stru
 	if items, ok := data["items"].([]any); ok && len(items) > 0 {
 		result["question"] = items[0]
 	}
-	return toStruct(result)
+	return responseJSON(result)
 }
 
 // GetAnswers gets the answers posted to a specific question.
-func (s *StackExchangeService) GetAnswers(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *StackExchangeService) GetAnswers(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	questionID := getInt(fields, "question_id")
 	if questionID == 0 {
@@ -190,11 +186,11 @@ func (s *StackExchangeService) GetAnswers(_ context.Context, req *structpb.Struc
 	if err != nil {
 		return nil, err
 	}
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetUser gets a user's profile by their numeric user ID.
-func (s *StackExchangeService) GetUser(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *StackExchangeService) GetUser(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	id := getInt(fields, "id")
 	if id == 0 {
@@ -215,11 +211,11 @@ func (s *StackExchangeService) GetUser(_ context.Context, req *structpb.Struct) 
 	if items, ok := data["items"].([]any); ok && len(items) > 0 {
 		result["user"] = items[0]
 	}
-	return toStruct(result)
+	return responseJSON(result)
 }
 
 // GetTags gets popular tags on a Stack Exchange site.
-func (s *StackExchangeService) GetTags(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *StackExchangeService) GetTags(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	params := url.Values{}
 	params.Set("site", getString(fields, "site", "stackoverflow"))
@@ -237,11 +233,11 @@ func (s *StackExchangeService) GetTags(_ context.Context, req *structpb.Struct) 
 	if err != nil {
 		return nil, err
 	}
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetTopQuestions gets top questions, optionally filtered by tag.
-func (s *StackExchangeService) GetTopQuestions(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *StackExchangeService) GetTopQuestions(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	params := url.Values{}
 	params.Set("site", getString(fields, "site", "stackoverflow"))
@@ -260,11 +256,11 @@ func (s *StackExchangeService) GetTopQuestions(_ context.Context, req *structpb.
 	if err != nil {
 		return nil, err
 	}
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // SearchAdvanced performs an advanced search with multiple filters.
-func (s *StackExchangeService) SearchAdvanced(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *StackExchangeService) SearchAdvanced(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	params := url.Values{}
 	params.Set("site", getString(fields, "site", "stackoverflow"))
@@ -301,11 +297,11 @@ func (s *StackExchangeService) SearchAdvanced(_ context.Context, req *structpb.S
 	if err != nil {
 		return nil, err
 	}
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetUserReputation gets a user's reputation change history.
-func (s *StackExchangeService) GetUserReputation(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *StackExchangeService) GetUserReputation(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	id := getInt(fields, "id")
 	if id == 0 {
@@ -321,11 +317,11 @@ func (s *StackExchangeService) GetUserReputation(_ context.Context, req *structp
 	if err != nil {
 		return nil, err
 	}
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetSimilar finds questions similar to a given title.
-func (s *StackExchangeService) GetSimilar(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *StackExchangeService) GetSimilar(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	title := getString(fields, "title", "")
 	if title == "" {
@@ -353,11 +349,11 @@ func (s *StackExchangeService) GetSimilar(_ context.Context, req *structpb.Struc
 	if err != nil {
 		return nil, err
 	}
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetUnanswered gets unanswered questions, optionally filtered by tag.
-func (s *StackExchangeService) GetUnanswered(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *StackExchangeService) GetUnanswered(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	params := url.Values{}
 	params.Set("site", getString(fields, "site", "stackoverflow"))
@@ -376,5 +372,5 @@ func (s *StackExchangeService) GetUnanswered(_ context.Context, req *structpb.St
 	if err != nil {
 		return nil, err
 	}
-	return toStruct(data)
+	return responseJSON(data)
 }

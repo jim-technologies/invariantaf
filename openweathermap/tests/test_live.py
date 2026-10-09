@@ -35,20 +35,29 @@ def live_server():
 
     from openweathermap_mcp.service import OpenWeatherMapService
 
-    srv = Server.from_descriptor(
-        DESCRIPTOR_PATH
-    )
+    srv = Server.from_descriptor(DESCRIPTOR_PATH)
     servicer = OpenWeatherMapService()
-    srv.register(servicer)
+    from openweathermap_mcp.gen.openweathermap.v1 import (
+        openweathermap_pb2_grpc as _native_rpc,
+    )
+
+    _native_rpc.add_OpenWeatherMapServiceServicer_to_server(servicer, srv)
     yield srv
     asyncio.run(srv.stop())
 
 
 class TestLiveCurrentWeather:
     def test_get_by_city(self, live_server):
-        result = asyncio.run(live_server._cli(
-            ["OpenWeatherMapService", "GetCurrentWeather", "-r", json.dumps({"city": "London"})]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "openweathermap.v1.OpenWeatherMapService",
+                    "GetCurrentWeather",
+                    "-r",
+                    json.dumps({"city": "London"}),
+                ]
+            )
+        )
         assert "weather" in result
         w = result["weather"]
         assert "temp" in w
@@ -56,20 +65,37 @@ class TestLiveCurrentWeather:
         assert w.get("city_name") == "London"
 
     def test_get_by_coords(self, live_server):
-        result = asyncio.run(live_server._cli(
-            ["OpenWeatherMapService", "GetCurrentWeatherByCoords", "-r", json.dumps({
-                "lat": 40.7128, "lon": -74.006,
-            })]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "openweathermap.v1.OpenWeatherMapService",
+                    "GetCurrentWeatherByCoords",
+                    "-r",
+                    json.dumps(
+                        {
+                            "lat": 40.7128,
+                            "lon": -74.006,
+                        }
+                    ),
+                ]
+            )
+        )
         assert "weather" in result
         assert "temp" in result["weather"]
 
 
 class TestLiveForecast:
     def test_get_forecast(self, live_server):
-        result = asyncio.run(live_server._cli(
-            ["OpenWeatherMapService", "GetForecast", "-r", json.dumps({"city": "Tokyo"})]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "openweathermap.v1.OpenWeatherMapService",
+                    "GetForecast",
+                    "-r",
+                    json.dumps({"city": "Tokyo"}),
+                ]
+            )
+        )
         assert "items" in result
         assert len(result["items"]) > 0
         item = result["items"][0]
@@ -79,11 +105,21 @@ class TestLiveForecast:
 
 class TestLiveAirQuality:
     def test_get_air_quality(self, live_server):
-        result = asyncio.run(live_server._cli(
-            ["OpenWeatherMapService", "GetAirQuality", "-r", json.dumps({
-                "lat": 51.5074, "lon": -0.1278,
-            })]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "openweathermap.v1.OpenWeatherMapService",
+                    "GetAirQuality",
+                    "-r",
+                    json.dumps(
+                        {
+                            "lat": 51.5074,
+                            "lon": -0.1278,
+                        }
+                    ),
+                ]
+            )
+        )
         assert "data" in result
         d = result["data"]
         assert "aqi" in d
@@ -91,9 +127,16 @@ class TestLiveAirQuality:
 
 class TestLiveGeocode:
     def test_geocode(self, live_server):
-        result = asyncio.run(live_server._cli(
-            ["OpenWeatherMapService", "GetGeocode", "-r", json.dumps({"city": "Paris"})]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "openweathermap.v1.OpenWeatherMapService",
+                    "GetGeocode",
+                    "-r",
+                    json.dumps({"city": "Paris"}),
+                ]
+            )
+        )
         assert "locations" in result
         assert len(result["locations"]) > 0
         loc = result["locations"][0]

@@ -11,7 +11,9 @@ import (
 func mustStruct(t *testing.T, m map[string]any) *structpb.Struct {
 	t.Helper()
 	s, err := structpb.NewStruct(m)
-	if err != nil { t.Fatalf("failed to create struct: %v", err) }
+	if err != nil {
+		t.Fatalf("failed to create struct: %v", err)
+	}
 	return s
 }
 
@@ -28,9 +30,13 @@ func TestLiveGetGlobal(t *testing.T) {
 	skipUnlessLive(t)
 	svc := liveService()
 	resp, err := svc.GetGlobal(context.Background(), mustStruct(t, map[string]any{}))
-	if err != nil { t.Fatalf("GetGlobal: %v", err) }
-	fields := resp.GetFields()
-	if len(fields) == 0 { t.Fatal("empty response from GetGlobal") }
+	if err != nil {
+		t.Fatalf("GetGlobal: %v", err)
+	}
+	fields := replyFields(t, resp)
+	if len(fields) == 0 {
+		t.Fatal("empty response from GetGlobal")
+	}
 	t.Logf("GetGlobal response keys: %v", keysOf(fields))
 }
 
@@ -38,10 +44,14 @@ func TestLiveListCoins(t *testing.T) {
 	skipUnlessLive(t)
 	svc := liveService()
 	resp, err := svc.ListCoins(context.Background(), mustStruct(t, map[string]any{}))
-	if err != nil { t.Fatalf("ListCoins: %v", err) }
-	fields := resp.GetFields()
+	if err != nil {
+		t.Fatalf("ListCoins: %v", err)
+	}
+	fields := replyFields(t, resp)
 	coins := fields["coins"].GetListValue().GetValues()
-	if len(coins) == 0 { t.Fatal("expected at least 1 coin") }
+	if len(coins) == 0 {
+		t.Fatal("expected at least 1 coin")
+	}
 	t.Logf("ListCoins returned %d coins", len(coins))
 }
 
@@ -49,9 +59,13 @@ func TestLiveGetCoinById(t *testing.T) {
 	skipUnlessLive(t)
 	svc := liveService()
 	resp, err := svc.GetCoinById(context.Background(), mustStruct(t, map[string]any{"coin_id": "btc-bitcoin"}))
-	if err != nil { t.Fatalf("GetCoinById: %v", err) }
-	fields := resp.GetFields()
-	if len(fields) == 0 { t.Fatal("empty response from GetCoinById") }
+	if err != nil {
+		t.Fatalf("GetCoinById: %v", err)
+	}
+	fields := replyFields(t, resp)
+	if len(fields) == 0 {
+		t.Fatal("empty response from GetCoinById")
+	}
 	t.Logf("GetCoinById response keys: %v", keysOf(fields))
 }
 
@@ -59,9 +73,13 @@ func TestLiveGetTickerById(t *testing.T) {
 	skipUnlessLive(t)
 	svc := liveService()
 	resp, err := svc.GetTickerById(context.Background(), mustStruct(t, map[string]any{"coin_id": "btc-bitcoin"}))
-	if err != nil { t.Fatalf("GetTickerById: %v", err) }
-	fields := resp.GetFields()
-	if len(fields) == 0 { t.Fatal("empty response from GetTickerById") }
+	if err != nil {
+		t.Fatalf("GetTickerById: %v", err)
+	}
+	fields := replyFields(t, resp)
+	if len(fields) == 0 {
+		t.Fatal("empty response from GetTickerById")
+	}
 	t.Logf("GetTickerById response keys: %v", keysOf(fields))
 }
 
@@ -69,15 +87,30 @@ func TestLiveSearchCoins(t *testing.T) {
 	skipUnlessLive(t)
 	svc := liveService()
 	resp, err := svc.SearchCoins(context.Background(), mustStruct(t, map[string]any{"query": "bitcoin"}))
-	if err != nil { t.Fatalf("SearchCoins: %v", err) }
-	fields := resp.GetFields()
+	if err != nil {
+		t.Fatalf("SearchCoins: %v", err)
+	}
+	fields := replyFields(t, resp)
 	currencies := fields["currencies"].GetListValue().GetValues()
-	if len(currencies) == 0 { t.Fatal("expected at least 1 search result") }
+	if len(currencies) == 0 {
+		t.Fatal("expected at least 1 search result")
+	}
 	t.Logf("SearchCoins returned %d results", len(currencies))
 }
 
 func keysOf(fields map[string]*structpb.Value) []string {
 	keys := make([]string, 0, len(fields))
-	for k := range fields { keys = append(keys, k) }
+	for k := range fields {
+		keys = append(keys, k)
+	}
 	return keys
+}
+
+func replyFields(t *testing.T, body []byte) map[string]*structpb.Value {
+	t.Helper()
+	result := new(structpb.Struct)
+	if err := result.UnmarshalJSON(body); err != nil {
+		t.Fatal(err)
+	}
+	return result.GetFields()
 }

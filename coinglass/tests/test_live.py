@@ -33,11 +33,11 @@ def live_server():
 
     from coinglass_mcp.service import CoinGlassService
 
-    srv = Server.from_descriptor(
-        DESCRIPTOR_PATH
-    )
+    srv = Server.from_descriptor(DESCRIPTOR_PATH)
     servicer = CoinGlassService()
-    srv.register(servicer)
+    from coinglass_mcp.gen.coinglass.v1 import coinglass_pb2_grpc as _native_rpc
+
+    _native_rpc.add_CoinGlassServiceServicer_to_server(servicer, srv)
     yield srv
     asyncio.run(srv.stop())
 
@@ -47,15 +47,24 @@ def live_server():
 
 class TestLiveGetFundingRate:
     def test_returns_data(self, live_server):
-        result = asyncio.run(live_server._cli(["CoinGlassService", "GetFundingRate"]))
+        result = asyncio.run(
+            live_server._cli(["coinglass.v1.CoinGlassService", "GetFundingRate"])
+        )
         assert "data" in result
         data = result["data"]
         assert isinstance(data, list)
 
     def test_btc_funding_rate(self, live_server):
-        result = asyncio.run(live_server._cli(
-            ["CoinGlassService", "GetFundingRate", "-r", json.dumps({"symbol": "BTC"})]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "coinglass.v1.CoinGlassService",
+                    "GetFundingRate",
+                    "-r",
+                    json.dumps({"symbol": "BTC"}),
+                ]
+            )
+        )
         assert "data" in result
         data = result["data"]
         assert isinstance(data, list)
@@ -66,9 +75,16 @@ class TestLiveGetFundingRate:
 
 class TestLiveGetOpenInterest:
     def test_btc_open_interest(self, live_server):
-        result = asyncio.run(live_server._cli(
-            ["CoinGlassService", "GetOpenInterest", "-r", json.dumps({"symbol": "BTC"})]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "coinglass.v1.CoinGlassService",
+                    "GetOpenInterest",
+                    "-r",
+                    json.dumps({"symbol": "BTC"}),
+                ]
+            )
+        )
         assert "data" in result
         data = result["data"]
         assert isinstance(data, dict)
@@ -79,9 +95,16 @@ class TestLiveGetOpenInterest:
 
 class TestLiveGetLiquidation:
     def test_btc_liquidation(self, live_server):
-        result = asyncio.run(live_server._cli(
-            ["CoinGlassService", "GetLiquidation", "-r", json.dumps({"symbol": "BTC", "timeType": "all"})]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "coinglass.v1.CoinGlassService",
+                    "GetLiquidation",
+                    "-r",
+                    json.dumps({"symbol": "BTC", "timeType": "all"}),
+                ]
+            )
+        )
         assert "records" in result
         records = result["records"]
         assert isinstance(records, list)
@@ -92,9 +115,16 @@ class TestLiveGetLiquidation:
 
 class TestLiveGetLongShortRatio:
     def test_btc_long_short(self, live_server):
-        result = asyncio.run(live_server._cli(
-            ["CoinGlassService", "GetLongShortRatio", "-r", json.dumps({"symbol": "BTC", "timeType": "all"})]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "coinglass.v1.CoinGlassService",
+                    "GetLongShortRatio",
+                    "-r",
+                    json.dumps({"symbol": "BTC", "timeType": "all"}),
+                ]
+            )
+        )
         assert "records" in result
         records = result["records"]
         assert isinstance(records, list)
@@ -105,9 +135,16 @@ class TestLiveGetLongShortRatio:
 
 class TestLiveGetOIHistory:
     def test_btc_oi_history(self, live_server):
-        result = asyncio.run(live_server._cli(
-            ["CoinGlassService", "GetOIHistory", "-r", json.dumps({"symbol": "BTC", "timeType": "all"})]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "coinglass.v1.CoinGlassService",
+                    "GetOIHistory",
+                    "-r",
+                    json.dumps({"symbol": "BTC", "timeType": "all"}),
+                ]
+            )
+        )
         assert "records" in result
         records = result["records"]
         assert isinstance(records, list)

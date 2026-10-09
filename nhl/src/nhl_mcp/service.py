@@ -40,13 +40,15 @@ class NHLService:
         standings = payload.get("standings", [])
         teams = []
         for entry in standings:
-            teams.append({
-                "team_abbrev": self._default_str(entry.get("teamAbbrev")),
-                "team_name": self._default_str(entry.get("teamName")),
-                "conference_name": entry.get("conferenceName", ""),
-                "division_name": entry.get("divisionName", ""),
-                "team_logo": entry.get("teamLogo", ""),
-            })
+            teams.append(
+                {
+                    "team_abbrev": self._default_str(entry.get("teamAbbrev")),
+                    "team_name": self._default_str(entry.get("teamName")),
+                    "conference_name": entry.get("conferenceName", ""),
+                    "division_name": entry.get("divisionName", ""),
+                    "team_logo": entry.get("teamLogo", ""),
+                }
+            )
         # Deduplicate by abbreviation, preserving order
         seen: set[str] = set()
         unique: list[dict[str, Any]] = []
@@ -63,41 +65,43 @@ class NHLService:
         standings = payload.get("standings", [])
         entries = []
         for entry in standings:
-            entries.append({
-                "team_abbrev": self._default_str(entry.get("teamAbbrev")),
-                "team_name": self._default_str(entry.get("teamName")),
-                "conference_name": entry.get("conferenceName", ""),
-                "division_name": entry.get("divisionName", ""),
-                "games_played": entry.get("gamesPlayed", 0),
-                "wins": entry.get("wins", 0),
-                "losses": entry.get("losses", 0),
-                "ot_losses": entry.get("otLosses", 0),
-                "points": entry.get("points", 0),
-                "regulation_wins": entry.get("regulationWins", 0),
-                "goal_for": entry.get("goalFor", 0),
-                "goal_against": entry.get("goalAgainst", 0),
-                "goal_differential": entry.get("goalDifferential", 0),
-                "point_pctg": entry.get("pointPctg", 0.0),
-                "streak_code": entry.get("streakCode", ""),
-                "streak_count": entry.get("streakCount", 0),
-                "league_sequence": entry.get("leagueSequence", 0),
-                "conference_sequence": entry.get("conferenceSequence", 0),
-                "division_sequence": entry.get("divisionSequence", 0),
-                "wildcard_sequence": entry.get("wildcardSequence", 0),
-                "team_logo": entry.get("teamLogo", ""),
-                "win_pctg": entry.get("winPctg", 0.0),
-                "home_wins": entry.get("homeWins", 0),
-                "home_losses": entry.get("homeLosses", 0),
-                "home_ot_losses": entry.get("homeOtLosses", 0),
-                "road_wins": entry.get("roadWins", 0),
-                "road_losses": entry.get("roadLosses", 0),
-                "road_ot_losses": entry.get("roadOtLosses", 0),
-                "shootout_wins": entry.get("shootoutWins", 0),
-                "shootout_losses": entry.get("shootoutLosses", 0),
-                "l10_wins": entry.get("l10Wins", 0),
-                "l10_losses": entry.get("l10Losses", 0),
-                "l10_ot_losses": entry.get("l10OtLosses", 0),
-            })
+            entries.append(
+                {
+                    "team_abbrev": self._default_str(entry.get("teamAbbrev")),
+                    "team_name": self._default_str(entry.get("teamName")),
+                    "conference_name": entry.get("conferenceName", ""),
+                    "division_name": entry.get("divisionName", ""),
+                    "games_played": entry.get("gamesPlayed", 0),
+                    "wins": entry.get("wins", 0),
+                    "losses": entry.get("losses", 0),
+                    "ot_losses": entry.get("otLosses", 0),
+                    "points": entry.get("points", 0),
+                    "regulation_wins": entry.get("regulationWins", 0),
+                    "goal_for": entry.get("goalFor", 0),
+                    "goal_against": entry.get("goalAgainst", 0),
+                    "goal_differential": entry.get("goalDifferential", 0),
+                    "point_pctg": entry.get("pointPctg", 0.0),
+                    "streak_code": entry.get("streakCode", ""),
+                    "streak_count": entry.get("streakCount", 0),
+                    "league_sequence": entry.get("leagueSequence", 0),
+                    "conference_sequence": entry.get("conferenceSequence", 0),
+                    "division_sequence": entry.get("divisionSequence", 0),
+                    "wildcard_sequence": entry.get("wildcardSequence", 0),
+                    "team_logo": entry.get("teamLogo", ""),
+                    "win_pctg": entry.get("winPctg", 0.0),
+                    "home_wins": entry.get("homeWins", 0),
+                    "home_losses": entry.get("homeLosses", 0),
+                    "home_ot_losses": entry.get("homeOtLosses", 0),
+                    "road_wins": entry.get("roadWins", 0),
+                    "road_losses": entry.get("roadLosses", 0),
+                    "road_ot_losses": entry.get("roadOtLosses", 0),
+                    "shootout_wins": entry.get("shootoutWins", 0),
+                    "shootout_losses": entry.get("shootoutLosses", 0),
+                    "l10_wins": entry.get("l10Wins", 0),
+                    "l10_losses": entry.get("l10Losses", 0),
+                    "l10_ot_losses": entry.get("l10OtLosses", 0),
+                }
+            )
         return self._parse_message({"standings": entries}, pb.GetStandingsResponse)
 
     async def GetSchedule(
@@ -147,9 +151,15 @@ class NHLService:
         path = f"/v1/roster/{request.team_abbrev}/current"
         payload = await self._get(path)
         result = {
-            "forwards": [self._transform_roster_player(p) for p in payload.get("forwards", [])],
-            "defensemen": [self._transform_roster_player(p) for p in payload.get("defensemen", [])],
-            "goalies": [self._transform_roster_player(p) for p in payload.get("goalies", [])],
+            "forwards": [
+                self._transform_roster_player(p) for p in payload.get("forwards", [])
+            ],
+            "defensemen": [
+                self._transform_roster_player(p) for p in payload.get("defensemen", [])
+            ],
+            "goalies": [
+                self._transform_roster_player(p) for p in payload.get("goalies", [])
+            ],
         }
         return self._parse_message(result, pb.GetTeamRosterResponse)
 

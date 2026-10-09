@@ -32,11 +32,11 @@ def live_server():
 
     from aave_mcp.service import AaveService
 
-    srv = Server.from_descriptor(
-        DESCRIPTOR_PATH
-    )
+    srv = Server.from_descriptor(DESCRIPTOR_PATH)
     servicer = AaveService()
-    srv.register(servicer)
+    from aave_mcp.gen.aave.v1 import aave_pb2_grpc as _native_rpc
+
+    _native_rpc.add_AaveServiceServicer_to_server(servicer, srv)
     yield srv
     asyncio.run(srv.stop())
 
@@ -55,7 +55,7 @@ class TestLiveGetMarkets:
     def test_ethereum_markets(self, live_server):
         result = _cli_or_skip(
             live_server,
-            ["AaveService", "GetMarkets", "-r", json.dumps({"chain_ids": [1]})],
+            ["aave.v1.AaveService", "GetMarkets", "-r", json.dumps({"chain_ids": [1]})],
         )
         assert "markets" in result
         markets = result["markets"]
@@ -68,7 +68,7 @@ class TestLiveGetMarkets:
     def test_reserve_has_apy(self, live_server):
         result = _cli_or_skip(
             live_server,
-            ["AaveService", "GetMarkets", "-r", json.dumps({"chain_ids": [1]})],
+            ["aave.v1.AaveService", "GetMarkets", "-r", json.dumps({"chain_ids": [1]})],
         )
         r = result["markets"][0]["reserves"][0]
         assert "symbol" in r
@@ -78,7 +78,12 @@ class TestLiveGetMarkets:
     def test_multi_chain(self, live_server):
         result = _cli_or_skip(
             live_server,
-            ["AaveService", "GetMarkets", "-r", json.dumps({"chain_ids": [1, 42161]})],
+            [
+                "aave.v1.AaveService",
+                "GetMarkets",
+                "-r",
+                json.dumps({"chain_ids": [1, 42161]}),
+            ],
         )
         markets = result["markets"]
         assert len(markets) >= 2

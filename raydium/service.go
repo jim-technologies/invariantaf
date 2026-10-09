@@ -58,10 +58,10 @@ func (s *RaydiumService) get(path string, params url.Values) (map[string]any, er
 	}
 
 	var result map[string]any
-	if err := json.Unmarshal(body, &result); err != nil {
+	if err := decodeProviderJSON(body, &result); err != nil {
 		// The response may be an array. Try wrapping in a map.
 		var arr []any
-		if err2 := json.Unmarshal(body, &arr); err2 == nil {
+		if err2 := decodeProviderJSON(body, &arr); err2 == nil {
 			result = map[string]any{"items": arr}
 		} else {
 			return nil, fmt.Errorf("decode response: %w (body: %s)", err, string(body))
@@ -82,22 +82,18 @@ func getString(fields map[string]*structpb.Value, key, def string) string {
 // helper: get an int field from structpb (numbers come as float64).
 func getInt(fields map[string]*structpb.Value, key string) int64 {
 	if v, ok := fields[key]; ok {
-		return int64(v.GetNumberValue())
+		return requestInteger(v)
 	}
 	return 0
 }
 
 // helper: convert API response to structpb.Struct.
-func toStruct(data map[string]any) (*structpb.Struct, error) {
-	result, err := structpb.NewStruct(data)
-	if err != nil {
-		return nil, fmt.Errorf("convert to struct: %w", err)
-	}
-	return result, nil
+func responseJSON(data map[string]any) (json.RawMessage, error) {
+	return json.Marshal(data)
 }
 
 // GetPoolInfo gets pool information by pool ID.
-func (s *RaydiumService) GetPoolInfo(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *RaydiumService) GetPoolInfo(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	poolID := getString(fields, "pool_id", "")
 	if poolID == "" {
@@ -112,11 +108,11 @@ func (s *RaydiumService) GetPoolInfo(_ context.Context, req *structpb.Struct) (*
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // ListPools lists pools with sorting and pagination.
-func (s *RaydiumService) ListPools(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *RaydiumService) ListPools(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	params := url.Values{}
 
@@ -143,11 +139,11 @@ func (s *RaydiumService) ListPools(_ context.Context, req *structpb.Struct) (*st
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetPoolByMints finds pools by token mint address.
-func (s *RaydiumService) GetPoolByMints(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *RaydiumService) GetPoolByMints(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	mint1 := getString(fields, "mint1", "")
 	if mint1 == "" {
@@ -184,11 +180,11 @@ func (s *RaydiumService) GetPoolByMints(_ context.Context, req *structpb.Struct)
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetFarmInfo gets farm information by farm ID.
-func (s *RaydiumService) GetFarmInfo(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *RaydiumService) GetFarmInfo(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	farmID := getString(fields, "farm_id", "")
 	if farmID == "" {
@@ -203,11 +199,11 @@ func (s *RaydiumService) GetFarmInfo(_ context.Context, req *structpb.Struct) (*
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // ListFarms lists farms with pagination.
-func (s *RaydiumService) ListFarms(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *RaydiumService) ListFarms(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	params := url.Values{}
 
@@ -230,11 +226,11 @@ func (s *RaydiumService) ListFarms(_ context.Context, req *structpb.Struct) (*st
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetTokenPrice gets token prices by mint address.
-func (s *RaydiumService) GetTokenPrice(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *RaydiumService) GetTokenPrice(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	mints := getString(fields, "mints", "")
 	if mints == "" {
@@ -253,10 +249,10 @@ func (s *RaydiumService) GetTokenPrice(_ context.Context, req *structpb.Struct) 
 	// Extract the "data" map and wrap as "prices" for consistency.
 	if dataField, ok := data["data"]; ok {
 		if priceMap, ok := dataField.(map[string]any); ok {
-			return toStruct(map[string]any{"prices": priceMap})
+			return responseJSON(map[string]any{"prices": priceMap})
 		}
 	}
 
 	// Fallback: return the raw response.
-	return toStruct(data)
+	return responseJSON(data)
 }

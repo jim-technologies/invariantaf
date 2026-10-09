@@ -10,6 +10,9 @@ from invariant import Server
 
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
+from bitget_mcp.gen.bitget.v1 import bitget_pb2_grpc as pb_grpc
+
+
 from bitget_mcp.gen.bitget.v1 import bitget_pb2 as _bitget_pb2  # noqa: F401
 from bitget_mcp.service import BitgetService
 
@@ -47,7 +50,7 @@ async def _serve(server: Server, modes: dict) -> None:
 def main() -> None:
     server = Server.from_descriptor(str(DESCRIPTOR))
     servicer = BitgetService()
-    server.register(servicer, service_name="bitget.v1.BitgetService")
+    pb_grpc.add_BitgetServiceServicer_to_server(servicer, server)
     asyncio.run(_serve(server, _projection_from_argv(sys.argv[1:])))
 
 

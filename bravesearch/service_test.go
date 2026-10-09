@@ -48,7 +48,7 @@ func TestLiveWebSearch(t *testing.T) {
 	if err != nil {
 		t.Fatalf("WebSearch: %v", err)
 	}
-	fields := resp.GetFields()
+	fields := replyFields(t, resp)
 	if len(fields) == 0 {
 		t.Fatal("empty response from WebSearch")
 	}
@@ -62,7 +62,7 @@ func TestLiveNewsSearch(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewsSearch: %v", err)
 	}
-	fields := resp.GetFields()
+	fields := replyFields(t, resp)
 	if len(fields) == 0 {
 		t.Fatal("empty response from NewsSearch")
 	}
@@ -76,7 +76,7 @@ func TestLiveImageSearch(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ImageSearch: %v", err)
 	}
-	fields := resp.GetFields()
+	fields := replyFields(t, resp)
 	if len(fields) == 0 {
 		t.Fatal("empty response from ImageSearch")
 	}
@@ -89,4 +89,13 @@ func keysOf(fields map[string]*structpb.Value) []string {
 		keys = append(keys, k)
 	}
 	return keys
+}
+
+func replyFields(t *testing.T, body []byte) map[string]*structpb.Value {
+	t.Helper()
+	result := new(structpb.Struct)
+	if err := result.UnmarshalJSON(body); err != nil {
+		t.Fatal(err)
+	}
+	return result.GetFields()
 }

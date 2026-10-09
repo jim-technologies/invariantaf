@@ -38,13 +38,13 @@ func TestWorkflowServiceToolsPresent(t *testing.T) {
 	tools := srv.Tools()
 
 	expected := []string{
-		"WorkflowService.StartWorkflowExecution",
-		"WorkflowService.DescribeWorkflowExecution",
-		"WorkflowService.ListWorkflowExecutions",
-		"WorkflowService.GetWorkflowExecutionHistory",
-		"WorkflowService.TerminateWorkflowExecution",
-		"WorkflowService.SignalWorkflowExecution",
-		"WorkflowService.RequestCancelWorkflowExecution",
+		"temporal.api.workflowservice.v1.WorkflowService.StartWorkflowExecution",
+		"temporal.api.workflowservice.v1.WorkflowService.DescribeWorkflowExecution",
+		"temporal.api.workflowservice.v1.WorkflowService.ListWorkflowExecutions",
+		"temporal.api.workflowservice.v1.WorkflowService.GetWorkflowExecutionHistory",
+		"temporal.api.workflowservice.v1.WorkflowService.TerminateWorkflowExecution",
+		"temporal.api.workflowservice.v1.WorkflowService.SignalWorkflowExecution",
+		"temporal.api.workflowservice.v1.WorkflowService.RequestCancelWorkflowExecution",
 	}
 	for _, name := range expected {
 		assert.Contains(t, tools, name, "missing tool: %s", name)
@@ -58,9 +58,9 @@ func TestOperatorServiceToolsPresent(t *testing.T) {
 	tools := srv.Tools()
 
 	expected := []string{
-		"OperatorService.AddSearchAttributes",
-		"OperatorService.ListSearchAttributes",
-		"OperatorService.DeleteNamespace",
+		"temporal.api.operatorservice.v1.OperatorService.AddSearchAttributes",
+		"temporal.api.operatorservice.v1.OperatorService.ListSearchAttributes",
+		"temporal.api.operatorservice.v1.OperatorService.DeleteNamespace",
 	}
 	for _, name := range expected {
 		assert.Contains(t, tools, name, "missing tool: %s", name)

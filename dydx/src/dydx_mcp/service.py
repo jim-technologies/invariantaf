@@ -37,14 +37,16 @@ class DydxService:
 
     async def aclose(self) -> None:
         """Close the HTTP client. Idempotent."""
-        await self._client.aclose()
+        await self._http.aclose()
 
-    def _get(self, path: str, params: dict | None = None) -> Any:
-        resp = self._http.get(f"{self._base_url}{path}", params=params)
+    async def _get(self, path: str, params: dict | None = None) -> Any:
+        resp = await self._http.get(f"{self._base_url}{path}", params=params)
         resp.raise_for_status()
         return resp.json()
 
-    async def ListMarkets(self, request: Any, context: Any = None) -> pb.ListMarketsResponse:
+    async def ListMarkets(
+        self, request: Any, context: Any = None
+    ) -> pb.ListMarketsResponse:
         params = {}
         ticker = getattr(request, "ticker", "") or ""
         limit = getattr(request, "limit", 0) or 0
@@ -53,71 +55,87 @@ class DydxService:
         if limit > 0:
             params["limit"] = limit
 
-        raw = self._get("/perpetualMarkets", params=params or None)
+        raw = await self._get("/perpetualMarkets", params=params or None)
         markets_data = raw.get("markets", {})
 
         markets = []
         for _key, m in markets_data.items():
-            markets.append(pb.PerpetualMarket(
-                ticker=m.get("ticker", ""),
-                status=m.get("status", ""),
-                oracle_price=m.get("oraclePrice", ""),
-                price_change_24h=m.get("priceChange24H", ""),
-                volume_24h=m.get("volume24H", ""),
-                open_interest=m.get("openInterest", ""),
-                next_funding_rate=m.get("nextFundingRate", ""),
-                step_size=m.get("stepSize", ""),
-                tick_size=m.get("tickSize", ""),
-                initial_margin_fraction=m.get("initialMarginFraction", ""),
-                maintenance_margin_fraction=m.get("maintenanceMarginFraction", ""),
-                open_interest_usd=m.get("openInterestUSDC", ""),
-            ))
+            markets.append(
+                pb.PerpetualMarket(
+                    ticker=m.get("ticker", ""),
+                    status=m.get("status", ""),
+                    oracle_price=m.get("oraclePrice", ""),
+                    price_change_24h=m.get("priceChange24H", ""),
+                    volume_24h=m.get("volume24H", ""),
+                    open_interest=m.get("openInterest", ""),
+                    next_funding_rate=m.get("nextFundingRate", ""),
+                    step_size=m.get("stepSize", ""),
+                    tick_size=m.get("tickSize", ""),
+                    initial_margin_fraction=m.get("initialMarginFraction", ""),
+                    maintenance_margin_fraction=m.get("maintenanceMarginFraction", ""),
+                    open_interest_usd=m.get("openInterestUSDC", ""),
+                )
+            )
 
         return pb.ListMarketsResponse(markets=markets)
 
-    async def GetOrderbook(self, request: Any, context: Any = None) -> pb.GetOrderbookResponse:
+    async def GetOrderbook(
+        self, request: Any, context: Any = None
+    ) -> pb.GetOrderbookResponse:
         ticker = request.ticker if hasattr(request, "ticker") else "BTC-USD"
-        raw = self._get(f"/orderbooks/perpetualMarket/{ticker}")
+        raw = await self._get(f"/orderbooks/perpetualMarket/{ticker}")
 
         bids = []
         for bid in raw.get("bids", []):
-            bids.append(pb.OrderbookLevel(
-                price=bid.get("price", ""),
-                size=bid.get("size", ""),
-            ))
+            bids.append(
+                pb.OrderbookLevel(
+                    price=bid.get("price", ""),
+                    size=bid.get("size", ""),
+                )
+            )
 
         asks = []
         for ask in raw.get("asks", []):
-            asks.append(pb.OrderbookLevel(
-                price=ask.get("price", ""),
-                size=ask.get("size", ""),
-            ))
+            asks.append(
+                pb.OrderbookLevel(
+                    price=ask.get("price", ""),
+                    size=ask.get("size", ""),
+                )
+            )
 
         return pb.GetOrderbookResponse(bids=bids, asks=asks)
 
-    async def GetTrades(self, request: Any, context: Any = None) -> pb.GetTradesResponse:
+    async def GetTrades(
+        self, request: Any, context: Any = None
+    ) -> pb.GetTradesResponse:
         ticker = request.ticker if hasattr(request, "ticker") else "BTC-USD"
         params = {}
         limit = getattr(request, "limit", 0) or 0
         if limit > 0:
             params["limit"] = limit
 
-        raw = self._get(f"/trades/perpetualMarket/{ticker}", params=params or None)
+        raw = await self._get(
+            f"/trades/perpetualMarket/{ticker}", params=params or None
+        )
 
         trades = []
         for t in raw.get("trades", []):
             side = _SIDE_MAP.get(t.get("side", ""), pb.TRADE_SIDE_UNSPECIFIED)
-            trades.append(pb.Trade(
-                id=t.get("id", ""),
-                side=side,
-                price=t.get("price", ""),
-                size=t.get("size", ""),
-                created_at=t.get("createdAt", ""),
-            ))
+            trades.append(
+                pb.Trade(
+                    id=t.get("id", ""),
+                    side=side,
+                    price=t.get("price", ""),
+                    size=t.get("size", ""),
+                    created_at=t.get("createdAt", ""),
+                )
+            )
 
         return pb.GetTradesResponse(trades=trades)
 
-    async def GetCandles(self, request: Any, context: Any = None) -> pb.GetCandlesResponse:
+    async def GetCandles(
+        self, request: Any, context: Any = None
+    ) -> pb.GetCandlesResponse:
         ticker = request.ticker if hasattr(request, "ticker") else "BTC-USD"
         resolution = _RESOLUTION_MAP.get(
             getattr(request, "resolution", pb.CANDLE_RESOLUTION_UNSPECIFIED),
@@ -128,40 +146,46 @@ class DydxService:
         if limit > 0:
             params["limit"] = limit
 
-        raw = self._get(f"/candles/perpetualMarkets/{ticker}", params=params)
+        raw = await self._get(f"/candles/perpetualMarkets/{ticker}", params=params)
 
         candles = []
         for c in raw.get("candles", []):
-            candles.append(pb.Candle(
-                started_at=c.get("startedAt", ""),
-                open=c.get("open", ""),
-                high=c.get("high", ""),
-                low=c.get("low", ""),
-                close=c.get("close", ""),
-                base_token_volume=c.get("baseTokenVolume", ""),
-                usd_volume=c.get("usdVolume", ""),
-                trades=int(c.get("trades", 0)),
-                resolution=c.get("resolution", ""),
-            ))
+            candles.append(
+                pb.Candle(
+                    started_at=c.get("startedAt", ""),
+                    open=c.get("open", ""),
+                    high=c.get("high", ""),
+                    low=c.get("low", ""),
+                    close=c.get("close", ""),
+                    base_token_volume=c.get("baseTokenVolume", ""),
+                    usd_volume=c.get("usdVolume", ""),
+                    trades=int(c.get("trades", 0)),
+                    resolution=c.get("resolution", ""),
+                )
+            )
 
         return pb.GetCandlesResponse(candles=candles)
 
-    async def GetFundingRates(self, request: Any, context: Any = None) -> pb.GetFundingRatesResponse:
+    async def GetFundingRates(
+        self, request: Any, context: Any = None
+    ) -> pb.GetFundingRatesResponse:
         ticker = request.ticker if hasattr(request, "ticker") else "BTC-USD"
         params = {}
         limit = getattr(request, "limit", 0) or 0
         if limit > 0:
             params["limit"] = limit
 
-        raw = self._get(f"/historicalFunding/{ticker}", params=params or None)
+        raw = await self._get(f"/historicalFunding/{ticker}", params=params or None)
 
         funding_rates = []
         for fr in raw.get("historicalFunding", []):
-            funding_rates.append(pb.FundingRate(
-                ticker=fr.get("ticker", ""),
-                rate=fr.get("rate", ""),
-                price=fr.get("price", ""),
-                effective_at=fr.get("effectiveAt", ""),
-            ))
+            funding_rates.append(
+                pb.FundingRate(
+                    ticker=fr.get("ticker", ""),
+                    rate=fr.get("rate", ""),
+                    price=fr.get("price", ""),
+                    effective_at=fr.get("effectiveAt", ""),
+                )
+            )
 
         return pb.GetFundingRatesResponse(funding_rates=funding_rates)

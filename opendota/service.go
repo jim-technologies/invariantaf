@@ -63,9 +63,9 @@ func (s *OpenDotaService) get(path string, params url.Values) (map[string]any, e
 	}
 
 	var result map[string]any
-	if err := json.Unmarshal(body, &result); err != nil {
+	if err := decodeProviderJSON(body, &result); err != nil {
 		var arr []any
-		if err2 := json.Unmarshal(body, &arr); err2 == nil {
+		if err2 := decodeProviderJSON(body, &arr); err2 == nil {
 			result = map[string]any{"items": arr}
 		} else {
 			return nil, fmt.Errorf("decode response: %w (body: %s)", err, string(body))
@@ -116,9 +116,9 @@ func (s *OpenDotaService) post(path string, params url.Values, payload map[strin
 	}
 
 	var result map[string]any
-	if err := json.Unmarshal(body, &result); err != nil {
+	if err := decodeProviderJSON(body, &result); err != nil {
 		var arr []any
-		if err2 := json.Unmarshal(body, &arr); err2 == nil {
+		if err2 := decodeProviderJSON(body, &arr); err2 == nil {
 			result = map[string]any{"items": arr}
 		} else {
 			return nil, fmt.Errorf("decode response: %w (body: %s)", err, string(body))
@@ -139,18 +139,14 @@ func getString(fields map[string]*structpb.Value, key, def string) string {
 // helper: get an int field from structpb (numbers come as float64).
 func getInt(fields map[string]*structpb.Value, key string) int64 {
 	if v, ok := fields[key]; ok {
-		return int64(v.GetNumberValue())
+		return requestInteger(v)
 	}
 	return 0
 }
 
 // helper: convert API response to structpb.Struct.
-func toStruct(data map[string]any) (*structpb.Struct, error) {
-	result, err := structpb.NewStruct(data)
-	if err != nil {
-		return nil, fmt.Errorf("convert to struct: %w", err)
-	}
-	return result, nil
+func responseJSON(data map[string]any) (json.RawMessage, error) {
+	return json.Marshal(data)
 }
 
 // queryParams extracts the optional "query" struct field as url.Values.
@@ -173,18 +169,18 @@ func bodyPayload(fields map[string]*structpb.Value) map[string]any {
 }
 
 // GetBenchmarks returns benchmarks of average stat values for a hero.
-func (s *OpenDotaService) GetBenchmarks(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *OpenDotaService) GetBenchmarks(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	params := queryParams(fields)
 	data, err := s.get("/benchmarks", params)
 	if err != nil {
 		return nil, err
 	}
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetConstantsResource returns static game data mirrored from the dotaconstants repository.
-func (s *OpenDotaService) GetConstantsResource(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *OpenDotaService) GetConstantsResource(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	resource := getString(fields, "resource", "")
 	if resource == "" {
@@ -195,77 +191,77 @@ func (s *OpenDotaService) GetConstantsResource(_ context.Context, req *structpb.
 	if err != nil {
 		return nil, err
 	}
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetDistributions returns distributions of MMR data by bracket and country.
-func (s *OpenDotaService) GetDistributions(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *OpenDotaService) GetDistributions(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	params := queryParams(fields)
 	data, err := s.get("/distributions", params)
 	if err != nil {
 		return nil, err
 	}
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetExplorer submits arbitrary SQL queries to the database.
-func (s *OpenDotaService) GetExplorer(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *OpenDotaService) GetExplorer(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	params := queryParams(fields)
 	data, err := s.get("/explorer", params)
 	if err != nil {
 		return nil, err
 	}
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetFindMatches finds recent matches by heroes played.
-func (s *OpenDotaService) GetFindMatches(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *OpenDotaService) GetFindMatches(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	params := queryParams(fields)
 	data, err := s.get("/findMatches", params)
 	if err != nil {
 		return nil, err
 	}
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetHealth returns service health data.
-func (s *OpenDotaService) GetHealth(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *OpenDotaService) GetHealth(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	params := queryParams(fields)
 	data, err := s.get("/health", params)
 	if err != nil {
 		return nil, err
 	}
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetHeroStats returns stats about hero performance in recent matches.
-func (s *OpenDotaService) GetHeroStats(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *OpenDotaService) GetHeroStats(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	params := queryParams(fields)
 	data, err := s.get("/heroStats", params)
 	if err != nil {
 		return nil, err
 	}
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetHeroes returns hero data.
-func (s *OpenDotaService) GetHeroes(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *OpenDotaService) GetHeroes(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	params := queryParams(fields)
 	data, err := s.get("/heroes", params)
 	if err != nil {
 		return nil, err
 	}
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetHeroDurations returns hero performance over a range of match durations.
-func (s *OpenDotaService) GetHeroDurations(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *OpenDotaService) GetHeroDurations(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	heroID := getInt(fields, "hero_id")
 	if heroID == 0 {
@@ -276,11 +272,11 @@ func (s *OpenDotaService) GetHeroDurations(_ context.Context, req *structpb.Stru
 	if err != nil {
 		return nil, err
 	}
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetHeroItemPopularity returns item popularity of a hero.
-func (s *OpenDotaService) GetHeroItemPopularity(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *OpenDotaService) GetHeroItemPopularity(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	heroID := getInt(fields, "hero_id")
 	if heroID == 0 {
@@ -291,11 +287,11 @@ func (s *OpenDotaService) GetHeroItemPopularity(_ context.Context, req *structpb
 	if err != nil {
 		return nil, err
 	}
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetHeroMatches returns recent matches with a hero.
-func (s *OpenDotaService) GetHeroMatches(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *OpenDotaService) GetHeroMatches(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	heroID := getInt(fields, "hero_id")
 	if heroID == 0 {
@@ -306,11 +302,11 @@ func (s *OpenDotaService) GetHeroMatches(_ context.Context, req *structpb.Struct
 	if err != nil {
 		return nil, err
 	}
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetHeroMatchups returns results against other heroes for a hero.
-func (s *OpenDotaService) GetHeroMatchups(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *OpenDotaService) GetHeroMatchups(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	heroID := getInt(fields, "hero_id")
 	if heroID == 0 {
@@ -321,11 +317,11 @@ func (s *OpenDotaService) GetHeroMatchups(_ context.Context, req *structpb.Struc
 	if err != nil {
 		return nil, err
 	}
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetHeroPlayers returns players who have played this hero.
-func (s *OpenDotaService) GetHeroPlayers(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *OpenDotaService) GetHeroPlayers(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	heroID := getInt(fields, "hero_id")
 	if heroID == 0 {
@@ -336,22 +332,22 @@ func (s *OpenDotaService) GetHeroPlayers(_ context.Context, req *structpb.Struct
 	if err != nil {
 		return nil, err
 	}
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetLeagues returns league data.
-func (s *OpenDotaService) GetLeagues(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *OpenDotaService) GetLeagues(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	params := queryParams(fields)
 	data, err := s.get("/leagues", params)
 	if err != nil {
 		return nil, err
 	}
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetLeague returns data for a league.
-func (s *OpenDotaService) GetLeague(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *OpenDotaService) GetLeague(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	leagueID := getInt(fields, "league_id")
 	if leagueID == 0 {
@@ -362,11 +358,11 @@ func (s *OpenDotaService) GetLeague(_ context.Context, req *structpb.Struct) (*s
 	if err != nil {
 		return nil, err
 	}
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetLeagueMatchIds returns match IDs for a league.
-func (s *OpenDotaService) GetLeagueMatchIds(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *OpenDotaService) GetLeagueMatchIds(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	leagueID := getInt(fields, "league_id")
 	if leagueID == 0 {
@@ -377,11 +373,11 @@ func (s *OpenDotaService) GetLeagueMatchIds(_ context.Context, req *structpb.Str
 	if err != nil {
 		return nil, err
 	}
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetLeagueMatches returns matches for a league.
-func (s *OpenDotaService) GetLeagueMatches(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *OpenDotaService) GetLeagueMatches(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	leagueID := getInt(fields, "league_id")
 	if leagueID == 0 {
@@ -392,11 +388,11 @@ func (s *OpenDotaService) GetLeagueMatches(_ context.Context, req *structpb.Stru
 	if err != nil {
 		return nil, err
 	}
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetLeagueTeams returns teams for a league.
-func (s *OpenDotaService) GetLeagueTeams(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *OpenDotaService) GetLeagueTeams(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	leagueID := getInt(fields, "league_id")
 	if leagueID == 0 {
@@ -407,22 +403,22 @@ func (s *OpenDotaService) GetLeagueTeams(_ context.Context, req *structpb.Struct
 	if err != nil {
 		return nil, err
 	}
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetLive returns top currently ongoing live games.
-func (s *OpenDotaService) GetLive(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *OpenDotaService) GetLive(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	params := queryParams(fields)
 	data, err := s.get("/live", params)
 	if err != nil {
 		return nil, err
 	}
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetMatch returns match data.
-func (s *OpenDotaService) GetMatch(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *OpenDotaService) GetMatch(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	matchID := getInt(fields, "match_id")
 	if matchID == 0 {
@@ -433,33 +429,33 @@ func (s *OpenDotaService) GetMatch(_ context.Context, req *structpb.Struct) (*st
 	if err != nil {
 		return nil, err
 	}
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetMetadata returns site metadata.
-func (s *OpenDotaService) GetMetadata(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *OpenDotaService) GetMetadata(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	params := queryParams(fields)
 	data, err := s.get("/metadata", params)
 	if err != nil {
 		return nil, err
 	}
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetParsedMatches returns list of parsed match IDs.
-func (s *OpenDotaService) GetParsedMatches(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *OpenDotaService) GetParsedMatches(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	params := queryParams(fields)
 	data, err := s.get("/parsedMatches", params)
 	if err != nil {
 		return nil, err
 	}
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetPlayer returns player data.
-func (s *OpenDotaService) GetPlayer(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *OpenDotaService) GetPlayer(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	accountID := getInt(fields, "account_id")
 	if accountID == 0 {
@@ -470,11 +466,11 @@ func (s *OpenDotaService) GetPlayer(_ context.Context, req *structpb.Struct) (*s
 	if err != nil {
 		return nil, err
 	}
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetPlayerCounts returns counts in categories.
-func (s *OpenDotaService) GetPlayerCounts(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *OpenDotaService) GetPlayerCounts(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	accountID := getInt(fields, "account_id")
 	if accountID == 0 {
@@ -485,11 +481,11 @@ func (s *OpenDotaService) GetPlayerCounts(_ context.Context, req *structpb.Struc
 	if err != nil {
 		return nil, err
 	}
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetPlayerHeroes returns heroes played.
-func (s *OpenDotaService) GetPlayerHeroes(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *OpenDotaService) GetPlayerHeroes(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	accountID := getInt(fields, "account_id")
 	if accountID == 0 {
@@ -500,11 +496,11 @@ func (s *OpenDotaService) GetPlayerHeroes(_ context.Context, req *structpb.Struc
 	if err != nil {
 		return nil, err
 	}
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetPlayerHistogramsField returns distribution of matches in a single stat.
-func (s *OpenDotaService) GetPlayerHistogramsField(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *OpenDotaService) GetPlayerHistogramsField(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	accountID := getInt(fields, "account_id")
 	if accountID == 0 {
@@ -519,11 +515,11 @@ func (s *OpenDotaService) GetPlayerHistogramsField(_ context.Context, req *struc
 	if err != nil {
 		return nil, err
 	}
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetPlayerMatches returns matches played.
-func (s *OpenDotaService) GetPlayerMatches(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *OpenDotaService) GetPlayerMatches(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	accountID := getInt(fields, "account_id")
 	if accountID == 0 {
@@ -534,11 +530,11 @@ func (s *OpenDotaService) GetPlayerMatches(_ context.Context, req *structpb.Stru
 	if err != nil {
 		return nil, err
 	}
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetPlayerPeers returns players played with.
-func (s *OpenDotaService) GetPlayerPeers(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *OpenDotaService) GetPlayerPeers(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	accountID := getInt(fields, "account_id")
 	if accountID == 0 {
@@ -549,11 +545,11 @@ func (s *OpenDotaService) GetPlayerPeers(_ context.Context, req *structpb.Struct
 	if err != nil {
 		return nil, err
 	}
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetPlayerPros returns pro players played with.
-func (s *OpenDotaService) GetPlayerPros(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *OpenDotaService) GetPlayerPros(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	accountID := getInt(fields, "account_id")
 	if accountID == 0 {
@@ -564,11 +560,11 @@ func (s *OpenDotaService) GetPlayerPros(_ context.Context, req *structpb.Struct)
 	if err != nil {
 		return nil, err
 	}
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetPlayerRankings returns player hero rankings.
-func (s *OpenDotaService) GetPlayerRankings(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *OpenDotaService) GetPlayerRankings(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	accountID := getInt(fields, "account_id")
 	if accountID == 0 {
@@ -579,11 +575,11 @@ func (s *OpenDotaService) GetPlayerRankings(_ context.Context, req *structpb.Str
 	if err != nil {
 		return nil, err
 	}
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetPlayerRatings returns history of the player rank tier/medal changes.
-func (s *OpenDotaService) GetPlayerRatings(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *OpenDotaService) GetPlayerRatings(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	accountID := getInt(fields, "account_id")
 	if accountID == 0 {
@@ -594,11 +590,11 @@ func (s *OpenDotaService) GetPlayerRatings(_ context.Context, req *structpb.Stru
 	if err != nil {
 		return nil, err
 	}
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetPlayerRecentMatches returns recent matches played.
-func (s *OpenDotaService) GetPlayerRecentMatches(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *OpenDotaService) GetPlayerRecentMatches(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	accountID := getInt(fields, "account_id")
 	if accountID == 0 {
@@ -609,11 +605,11 @@ func (s *OpenDotaService) GetPlayerRecentMatches(_ context.Context, req *structp
 	if err != nil {
 		return nil, err
 	}
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // PostPlayerRefresh refreshes player match history.
-func (s *OpenDotaService) PostPlayerRefresh(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *OpenDotaService) PostPlayerRefresh(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	accountID := getInt(fields, "account_id")
 	if accountID == 0 {
@@ -625,11 +621,11 @@ func (s *OpenDotaService) PostPlayerRefresh(_ context.Context, req *structpb.Str
 	if err != nil {
 		return nil, err
 	}
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetPlayerTotals returns totals in stats.
-func (s *OpenDotaService) GetPlayerTotals(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *OpenDotaService) GetPlayerTotals(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	accountID := getInt(fields, "account_id")
 	if accountID == 0 {
@@ -640,11 +636,11 @@ func (s *OpenDotaService) GetPlayerTotals(_ context.Context, req *structpb.Struc
 	if err != nil {
 		return nil, err
 	}
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetPlayerWardmap returns wards placed in matches played.
-func (s *OpenDotaService) GetPlayerWardmap(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *OpenDotaService) GetPlayerWardmap(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	accountID := getInt(fields, "account_id")
 	if accountID == 0 {
@@ -655,11 +651,11 @@ func (s *OpenDotaService) GetPlayerWardmap(_ context.Context, req *structpb.Stru
 	if err != nil {
 		return nil, err
 	}
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetPlayerWinLoss returns win/loss count.
-func (s *OpenDotaService) GetPlayerWinLoss(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *OpenDotaService) GetPlayerWinLoss(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	accountID := getInt(fields, "account_id")
 	if accountID == 0 {
@@ -670,11 +666,11 @@ func (s *OpenDotaService) GetPlayerWinLoss(_ context.Context, req *structpb.Stru
 	if err != nil {
 		return nil, err
 	}
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetPlayerWordcloud returns words said/read in matches played.
-func (s *OpenDotaService) GetPlayerWordcloud(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *OpenDotaService) GetPlayerWordcloud(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	accountID := getInt(fields, "account_id")
 	if accountID == 0 {
@@ -685,55 +681,55 @@ func (s *OpenDotaService) GetPlayerWordcloud(_ context.Context, req *structpb.St
 	if err != nil {
 		return nil, err
 	}
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetProMatches returns list of pro matches.
-func (s *OpenDotaService) GetProMatches(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *OpenDotaService) GetProMatches(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	params := queryParams(fields)
 	data, err := s.get("/proMatches", params)
 	if err != nil {
 		return nil, err
 	}
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetProPlayers returns list of pro players.
-func (s *OpenDotaService) GetProPlayers(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *OpenDotaService) GetProPlayers(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	params := queryParams(fields)
 	data, err := s.get("/proPlayers", params)
 	if err != nil {
 		return nil, err
 	}
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetPublicMatches returns list of randomly sampled public matches.
-func (s *OpenDotaService) GetPublicMatches(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *OpenDotaService) GetPublicMatches(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	params := queryParams(fields)
 	data, err := s.get("/publicMatches", params)
 	if err != nil {
 		return nil, err
 	}
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetRankings returns top players by hero.
-func (s *OpenDotaService) GetRankings(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *OpenDotaService) GetRankings(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	params := queryParams(fields)
 	data, err := s.get("/rankings", params)
 	if err != nil {
 		return nil, err
 	}
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetRecordsField returns top performances in a stat.
-func (s *OpenDotaService) GetRecordsField(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *OpenDotaService) GetRecordsField(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	field := getString(fields, "field", "")
 	if field == "" {
@@ -744,11 +740,11 @@ func (s *OpenDotaService) GetRecordsField(_ context.Context, req *structpb.Struc
 	if err != nil {
 		return nil, err
 	}
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetRequestJobId returns parse request state.
-func (s *OpenDotaService) GetRequestJobId(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *OpenDotaService) GetRequestJobId(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	jobID := getString(fields, "job_id", "")
 	if jobID == "" {
@@ -759,11 +755,11 @@ func (s *OpenDotaService) GetRequestJobId(_ context.Context, req *structpb.Struc
 	if err != nil {
 		return nil, err
 	}
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // PostRequestMatchId submits a new parse request.
-func (s *OpenDotaService) PostRequestMatchId(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *OpenDotaService) PostRequestMatchId(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	matchID := getInt(fields, "match_id")
 	if matchID == 0 {
@@ -775,77 +771,77 @@ func (s *OpenDotaService) PostRequestMatchId(_ context.Context, req *structpb.St
 	if err != nil {
 		return nil, err
 	}
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetScenariosItemTimings returns win rates for certain item timings on a hero.
-func (s *OpenDotaService) GetScenariosItemTimings(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *OpenDotaService) GetScenariosItemTimings(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	params := queryParams(fields)
 	data, err := s.get("/scenarios/itemTimings", params)
 	if err != nil {
 		return nil, err
 	}
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetScenariosLaneRoles returns win rates for heroes in certain lane roles.
-func (s *OpenDotaService) GetScenariosLaneRoles(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *OpenDotaService) GetScenariosLaneRoles(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	params := queryParams(fields)
 	data, err := s.get("/scenarios/laneRoles", params)
 	if err != nil {
 		return nil, err
 	}
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetScenariosMisc returns miscellaneous team scenarios.
-func (s *OpenDotaService) GetScenariosMisc(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *OpenDotaService) GetScenariosMisc(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	params := queryParams(fields)
 	data, err := s.get("/scenarios/misc", params)
 	if err != nil {
 		return nil, err
 	}
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetSchema returns database schema.
-func (s *OpenDotaService) GetSchema(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *OpenDotaService) GetSchema(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	params := queryParams(fields)
 	data, err := s.get("/schema", params)
 	if err != nil {
 		return nil, err
 	}
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // SearchPlayers searches players by personaname.
-func (s *OpenDotaService) SearchPlayers(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *OpenDotaService) SearchPlayers(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	params := queryParams(fields)
 	data, err := s.get("/search", params)
 	if err != nil {
 		return nil, err
 	}
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetTeams returns team data.
-func (s *OpenDotaService) GetTeams(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *OpenDotaService) GetTeams(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	params := queryParams(fields)
 	data, err := s.get("/teams", params)
 	if err != nil {
 		return nil, err
 	}
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetTeam returns data for a team.
-func (s *OpenDotaService) GetTeam(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *OpenDotaService) GetTeam(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	teamID := getInt(fields, "team_id")
 	if teamID == 0 {
@@ -856,11 +852,11 @@ func (s *OpenDotaService) GetTeam(_ context.Context, req *structpb.Struct) (*str
 	if err != nil {
 		return nil, err
 	}
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetTeamHeroes returns heroes for a team.
-func (s *OpenDotaService) GetTeamHeroes(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *OpenDotaService) GetTeamHeroes(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	teamID := getInt(fields, "team_id")
 	if teamID == 0 {
@@ -871,11 +867,11 @@ func (s *OpenDotaService) GetTeamHeroes(_ context.Context, req *structpb.Struct)
 	if err != nil {
 		return nil, err
 	}
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetTeamMatches returns matches for a team.
-func (s *OpenDotaService) GetTeamMatches(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *OpenDotaService) GetTeamMatches(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	teamID := getInt(fields, "team_id")
 	if teamID == 0 {
@@ -886,11 +882,11 @@ func (s *OpenDotaService) GetTeamMatches(_ context.Context, req *structpb.Struct
 	if err != nil {
 		return nil, err
 	}
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetTeamPlayers returns players who have played for a team.
-func (s *OpenDotaService) GetTeamPlayers(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *OpenDotaService) GetTeamPlayers(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	teamID := getInt(fields, "team_id")
 	if teamID == 0 {
@@ -901,16 +897,16 @@ func (s *OpenDotaService) GetTeamPlayers(_ context.Context, req *structpb.Struct
 	if err != nil {
 		return nil, err
 	}
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetTopPlayers returns list of highly ranked players.
-func (s *OpenDotaService) GetTopPlayers(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *OpenDotaService) GetTopPlayers(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	params := queryParams(fields)
 	data, err := s.get("/topPlayers", params)
 	if err != nil {
 		return nil, err
 	}
-	return toStruct(data)
+	return responseJSON(data)
 }

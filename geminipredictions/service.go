@@ -69,9 +69,9 @@ func (s *GeminiPredictionsService) get(path string, params url.Values) (map[stri
 	}
 
 	var result map[string]any
-	if err := json.Unmarshal(body, &result); err != nil {
+	if err := decodeProviderJSON(body, &result); err != nil {
 		var arr []any
-		if err2 := json.Unmarshal(body, &arr); err2 == nil {
+		if err2 := decodeProviderJSON(body, &arr); err2 == nil {
 			result = map[string]any{"items": arr}
 		} else {
 			return nil, fmt.Errorf("decode response: %w (body: %s)", err, string(body))
@@ -90,12 +90,8 @@ func getString(fields map[string]*structpb.Value, key, def string) string {
 }
 
 // helper: convert API response to structpb.Struct.
-func toStruct(data map[string]any) (*structpb.Struct, error) {
-	result, err := structpb.NewStruct(data)
-	if err != nil {
-		return nil, fmt.Errorf("convert to struct: %w", err)
-	}
-	return result, nil
+func responseJSON(data map[string]any) (json.RawMessage, error) {
+	return json.Marshal(data)
 }
 
 // transformContract normalizes a contract object from the API.
@@ -210,7 +206,7 @@ func extractEvents(payload map[string]any) []map[string]any {
 }
 
 // ListEvents returns prediction market events with optional filters.
-func (s *GeminiPredictionsService) ListEvents(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *GeminiPredictionsService) ListEvents(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	params := url.Values{}
 
@@ -232,11 +228,11 @@ func (s *GeminiPredictionsService) ListEvents(_ context.Context, req *structpb.S
 		events = append(events, transformEvent(e))
 	}
 
-	return toStruct(map[string]any{"events": events})
+	return responseJSON(map[string]any{"events": events})
 }
 
 // GetEvent returns a single prediction market event by ticker.
-func (s *GeminiPredictionsService) GetEvent(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *GeminiPredictionsService) GetEvent(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	ticker := getString(fields, "event_ticker", "")
 	if ticker == "" {
@@ -262,11 +258,11 @@ func (s *GeminiPredictionsService) GetEvent(_ context.Context, req *structpb.Str
 	}
 
 	event := transformEvent(eventData)
-	return toStruct(map[string]any{"event": event})
+	return responseJSON(map[string]any{"event": event})
 }
 
 // ListNewlyListedEvents returns newly listed prediction market events.
-func (s *GeminiPredictionsService) ListNewlyListedEvents(_ context.Context, _ *structpb.Struct) (*structpb.Struct, error) {
+func (s *GeminiPredictionsService) ListNewlyListedEvents(_ context.Context, _ *structpb.Struct) (json.RawMessage, error) {
 	payload, err := s.get("/v1/prediction-markets/events/newly-listed", nil)
 	if err != nil {
 		return nil, err
@@ -278,11 +274,11 @@ func (s *GeminiPredictionsService) ListNewlyListedEvents(_ context.Context, _ *s
 		events = append(events, transformEvent(e))
 	}
 
-	return toStruct(map[string]any{"events": events})
+	return responseJSON(map[string]any{"events": events})
 }
 
 // ListRecentlySettledEvents returns recently settled prediction market events.
-func (s *GeminiPredictionsService) ListRecentlySettledEvents(_ context.Context, _ *structpb.Struct) (*structpb.Struct, error) {
+func (s *GeminiPredictionsService) ListRecentlySettledEvents(_ context.Context, _ *structpb.Struct) (json.RawMessage, error) {
 	payload, err := s.get("/v1/prediction-markets/events/recently-settled", nil)
 	if err != nil {
 		return nil, err
@@ -294,11 +290,11 @@ func (s *GeminiPredictionsService) ListRecentlySettledEvents(_ context.Context, 
 		events = append(events, transformEvent(e))
 	}
 
-	return toStruct(map[string]any{"events": events})
+	return responseJSON(map[string]any{"events": events})
 }
 
 // ListUpcomingEvents returns upcoming prediction market events.
-func (s *GeminiPredictionsService) ListUpcomingEvents(_ context.Context, _ *structpb.Struct) (*structpb.Struct, error) {
+func (s *GeminiPredictionsService) ListUpcomingEvents(_ context.Context, _ *structpb.Struct) (json.RawMessage, error) {
 	payload, err := s.get("/v1/prediction-markets/events/upcoming", nil)
 	if err != nil {
 		return nil, err
@@ -310,11 +306,11 @@ func (s *GeminiPredictionsService) ListUpcomingEvents(_ context.Context, _ *stru
 		events = append(events, transformEvent(e))
 	}
 
-	return toStruct(map[string]any{"events": events})
+	return responseJSON(map[string]any{"events": events})
 }
 
 // ListCategories returns available prediction market categories.
-func (s *GeminiPredictionsService) ListCategories(_ context.Context, _ *structpb.Struct) (*structpb.Struct, error) {
+func (s *GeminiPredictionsService) ListCategories(_ context.Context, _ *structpb.Struct) (json.RawMessage, error) {
 	payload, err := s.get("/v1/prediction-markets/categories", nil)
 	if err != nil {
 		return nil, err
@@ -329,7 +325,7 @@ func (s *GeminiPredictionsService) ListCategories(_ context.Context, _ *structpb
 		}
 	}
 
-	return toStruct(map[string]any{"categories": categories})
+	return responseJSON(map[string]any{"categories": categories})
 }
 
 // stringVal returns a string value from a map, defaulting to "".
@@ -349,8 +345,10 @@ func stringVal(m map[string]any, key string) string {
 func intVal(m map[string]any, key string) int64 {
 	if v, ok := m[key]; ok {
 		switch n := v.(type) {
+		case json.Number:
+			return providerInteger(n)
 		case float64:
-			return int64(n)
+			return providerInteger(n)
 		case int:
 			return int64(n)
 		case int64:

@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-import os
 import asyncio
+import os
 import sys
 from pathlib import Path
 
@@ -12,7 +12,6 @@ from invariant import Server
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
 # Ensure generated protobuf descriptors are loaded into the default descriptor pool.
-from jsonplaceholder_mcp.gen.jsonplaceholder.v1 import jsonplaceholder_pb2 as _jsonplaceholder_pb2  # noqa: F401
 
 DESCRIPTOR = Path(__file__).parent / "descriptor.binpb"
 DEFAULT_BASE_URL = "https://jsonplaceholder.typicode.com"
@@ -54,7 +53,9 @@ def main() -> None:
     server = Server.from_descriptor(str(DESCRIPTOR))
 
     base_url = (_env("JSONPLACEHOLDER_BASE_URL") or DEFAULT_BASE_URL).rstrip("/")
-    server.connect_http(base_url, service_name="jsonplaceholder.v1.JsonPlaceholderService")
+    server.connect_http(
+        base_url, service_name="jsonplaceholder.v1.JsonPlaceholderService"
+    )
 
     asyncio.run(_serve(server, _projection_from_argv(sys.argv[1:])))
 

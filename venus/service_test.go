@@ -12,7 +12,9 @@ import (
 func mustStruct(t *testing.T, m map[string]any) *structpb.Struct {
 	t.Helper()
 	s, err := structpb.NewStruct(m)
-	if err != nil { t.Fatalf("failed to create struct: %v", err) }
+	if err != nil {
+		t.Fatalf("failed to create struct: %v", err)
+	}
 	return s
 }
 
@@ -29,9 +31,13 @@ func TestLiveListMarkets(t *testing.T) {
 	skipUnlessLive(t)
 	svc := liveService()
 	resp, err := svc.ListMarkets(context.Background(), mustStruct(t, map[string]any{}))
-	if err != nil { t.Fatalf("ListMarkets: %v", err) }
-	fields := resp.GetFields()
-	if len(fields) == 0 { t.Fatal("empty response from ListMarkets") }
+	if err != nil {
+		t.Fatalf("ListMarkets: %v", err)
+	}
+	fields := replyFields(t, resp)
+	if len(fields) == 0 {
+		t.Fatal("empty response from ListMarkets")
+	}
 	t.Logf("ListMarkets response keys: %v", keysOf(fields))
 }
 
@@ -39,9 +45,13 @@ func TestLiveGetMarket(t *testing.T) {
 	skipUnlessLive(t)
 	svc := liveService()
 	resp, err := svc.GetMarket(context.Background(), mustStruct(t, map[string]any{"underlying_address": "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c"}))
-	if err != nil { t.Fatalf("GetMarket: %v", err) }
-	fields := resp.GetFields()
-	if len(fields) == 0 { t.Fatal("empty response from GetMarket") }
+	if err != nil {
+		t.Fatalf("GetMarket: %v", err)
+	}
+	fields := replyFields(t, resp)
+	if len(fields) == 0 {
+		t.Fatal("empty response from GetMarket")
+	}
 	t.Logf("GetMarket response keys: %v", keysOf(fields))
 }
 
@@ -55,8 +65,10 @@ func TestLiveListPools(t *testing.T) {
 		}
 		t.Fatalf("ListPools: %v", err)
 	}
-	fields := resp.GetFields()
-	if len(fields) == 0 { t.Fatal("empty response from ListPools") }
+	fields := replyFields(t, resp)
+	if len(fields) == 0 {
+		t.Fatal("empty response from ListPools")
+	}
 	t.Logf("ListPools response keys: %v", keysOf(fields))
 }
 
@@ -70,13 +82,26 @@ func TestLiveGetPoolLiquidity(t *testing.T) {
 		}
 		t.Fatalf("GetPoolLiquidity: %v", err)
 	}
-	fields := resp.GetFields()
-	if len(fields) == 0 { t.Fatal("empty response from GetPoolLiquidity") }
+	fields := replyFields(t, resp)
+	if len(fields) == 0 {
+		t.Fatal("empty response from GetPoolLiquidity")
+	}
 	t.Logf("GetPoolLiquidity response keys: %v", keysOf(fields))
 }
 
 func keysOf(fields map[string]*structpb.Value) []string {
 	keys := make([]string, 0, len(fields))
-	for k := range fields { keys = append(keys, k) }
+	for k := range fields {
+		keys = append(keys, k)
+	}
 	return keys
+}
+
+func replyFields(t *testing.T, body []byte) map[string]*structpb.Value {
+	t.Helper()
+	result := new(structpb.Struct)
+	if err := result.UnmarshalJSON(body); err != nil {
+		t.Fatal(err)
+	}
+	return result.GetFields()
 }

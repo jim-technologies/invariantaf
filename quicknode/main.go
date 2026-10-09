@@ -3,83 +3,26 @@ package main
 import (
 	"context"
 	_ "embed"
+	"errors"
 	"fmt"
 	"os"
-	"strconv"
-
-	invariant "github.com/jim-technologies/invariantprotocol/go"
+	"os/signal"
+	"syscall"
 )
 
 //go:embed descriptor.binpb
 var descriptorBytes []byte
 
 func main() {
-	server, err := invariant.ServerFromBytes(descriptorBytes)
+	client := newQuickNodeClient()
+	server, err := providerServer(&QuickNodeConsoleService{client}, &QuickNodeStreamsService{client}, &QuickNodeWebhooksService{client}, &QuickNodeKeyValueService{client}, &QuickNodeIPFSService{client}, &QuickNodeTokenNFTService{client}, &QuickNodeSolanaDASService{client})
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
-
-	client := newQuickNodeClient()
-
-	services := []any{
-		&QuickNodeConsoleService{client},
-		&QuickNodeStreamsService{client},
-		&QuickNodeWebhooksService{client},
-		&QuickNodeKeyValueService{client},
-		&QuickNodeIPFSService{client},
-		&QuickNodeTokenNFTService{client},
-		&QuickNodeSolanaDASService{client},
-	}
-
-	for _, svc := range services {
-		if err := server.Register(svc); err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			os.Exit(1)
-		}
-	}
-
-	ctx := context.Background()
-
-	args := os.Args[1:]
-	if len(args) > 0 && args[0] == "--cli" {
-		os.Args = append([]string{os.Args[0]}, args[1:]...)
-		if err := server.Serve(ctx, invariant.CLI()); err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			os.Exit(1)
-		}
-		return
-	}
-
-	if len(args) > 0 && args[0] == "--http" {
-		port := 8080
-		if len(args) > 1 {
-			if p, err := strconv.Atoi(args[1]); err == nil {
-				port = p
-			}
-		}
-		if err := server.Serve(ctx, invariant.HTTP(port)); err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			os.Exit(1)
-		}
-		return
-	}
-
-	if len(args) > 0 && args[0] == "--grpc" {
-		port := 50051
-		if len(args) > 1 {
-			if p, err := strconv.Atoi(args[1]); err == nil {
-				port = p
-			}
-		}
-		if err := server.Serve(ctx, invariant.GRPC(port)); err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			os.Exit(1)
-		}
-		return
-	}
-
-	if err := server.Serve(ctx, invariant.MCP()); err != nil {
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer cancel()
+	if err := serveAdapter(ctx, server, os.Args[1:]); err != nil && !errors.Is(err, context.Canceled) {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}

@@ -30,6 +30,7 @@ pytestmark = pytest.mark.skipif(
 
 def _cli_or_skip(live_server, service, method, params=None):
     import httpx
+
     args = [service, method]
     if params:
         args.extend(["-r", json.dumps(params)])
@@ -39,7 +40,9 @@ def _cli_or_skip(live_server, service, method, params=None):
         pytest.skip(f"{method}: {type(exc).__name__}: {exc}")
     except Exception as exc:
         msg = str(exc)
-        if any(code in msg for code in ("429", "500", "502", "503", "Timeout", "timed out")):
+        if any(
+            code in msg for code in ("429", "500", "502", "503", "Timeout", "timed out")
+        ):
             pytest.skip(f"{method}: {msg[:120]}")
         raise
 
@@ -53,11 +56,11 @@ def live_server():
     base_url = (os.getenv("BRAVE_BASE_URL") or DEFAULT_BASE_URL).rstrip("/")
     api_key = os.getenv("BRAVE_API_KEY") or ""
 
-    srv = Server.from_descriptor(
-        DESCRIPTOR_PATH
-    )
+    srv = Server.from_descriptor(DESCRIPTOR_PATH)
     servicer = BraveSearchService(base_url=base_url, api_key=api_key)
-    srv.register(servicer, service_name="bravesearch.v1.BraveSearchService")
+    from bravesearch_mcp.gen.bravesearch.v1 import bravesearch_pb2_grpc as _native_rpc
+
+    _native_rpc.add_BraveSearchServiceServicer_to_server(servicer, srv)
     yield srv
     asyncio.run(srv.stop())
 
@@ -68,7 +71,9 @@ def live_server():
 class TestLiveWebSearch:
     def test_basic_search(self, live_server):
         result = _cli_or_skip(
-            live_server, "BraveSearchService", "WebSearch",
+            live_server,
+            "bravesearch.v1.BraveSearchService",
+            "WebSearch",
             {"query": "python programming"},
         )
         assert "results" in result
@@ -81,7 +86,9 @@ class TestLiveWebSearch:
 
     def test_search_with_count(self, live_server):
         result = _cli_or_skip(
-            live_server, "BraveSearchService", "WebSearch",
+            live_server,
+            "bravesearch.v1.BraveSearchService",
+            "WebSearch",
             {"query": "rust programming language", "count": 3},
         )
         assert "results" in result
@@ -96,7 +103,9 @@ class TestLiveWebSearch:
 class TestLiveNewsSearch:
     def test_basic_news(self, live_server):
         result = _cli_or_skip(
-            live_server, "BraveSearchService", "NewsSearch",
+            live_server,
+            "bravesearch.v1.BraveSearchService",
+            "NewsSearch",
             {"query": "technology"},
         )
         assert "results" in result
@@ -114,7 +123,9 @@ class TestLiveNewsSearch:
 class TestLiveImageSearch:
     def test_basic_images(self, live_server):
         result = _cli_or_skip(
-            live_server, "BraveSearchService", "ImageSearch",
+            live_server,
+            "bravesearch.v1.BraveSearchService",
+            "ImageSearch",
             {"query": "golden gate bridge"},
         )
         assert "results" in result

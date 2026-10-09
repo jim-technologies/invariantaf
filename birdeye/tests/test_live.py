@@ -35,6 +35,7 @@ pytestmark = pytest.mark.skipif(
 
 def _cli_or_skip(live_server, service, method, params=None):
     import httpx
+
     args = [service, method]
     if params:
         args.extend(["-r", json.dumps(params)])
@@ -44,7 +45,19 @@ def _cli_or_skip(live_server, service, method, params=None):
         pytest.skip(f"{method}: {type(exc).__name__}: {exc}")
     except Exception as exc:
         msg = str(exc)
-        if any(code in msg for code in ("401", "403", "429", "500", "502", "503", "Timeout", "timed out")):
+        if any(
+            code in msg
+            for code in (
+                "401",
+                "403",
+                "429",
+                "500",
+                "502",
+                "503",
+                "Timeout",
+                "timed out",
+            )
+        ):
             pytest.skip(f"{method}: {msg[:120]}")
         raise
 
@@ -58,11 +71,11 @@ def live_server():
     base_url = (os.getenv("BIRDEYE_BASE_URL") or DEFAULT_BASE_URL).rstrip("/")
     api_key = os.getenv("BIRDEYE_API_KEY", "")
 
-    srv = Server.from_descriptor(
-        DESCRIPTOR_PATH
-    )
+    srv = Server.from_descriptor(DESCRIPTOR_PATH)
     servicer = BirdeyeService(base_url=base_url, api_key=api_key)
-    srv.register(servicer, service_name="birdeye.v1.BirdeyeService")
+    from birdeye_mcp.gen.birdeye.v1 import birdeye_pb2_grpc as _native_rpc
+
+    _native_rpc.add_BirdeyeServiceServicer_to_server(servicer, srv)
     yield srv
     asyncio.run(srv.stop())
 
@@ -73,14 +86,18 @@ def live_server():
 class TestLiveGetTokenPrice:
     def test_sol_price(self, live_server):
         result = _cli_or_skip(
-            live_server, "BirdeyeService", "GetTokenPrice",
+            live_server,
+            "birdeye.v1.BirdeyeService",
+            "GetTokenPrice",
             {"address": SOL_ADDRESS},
         )
         assert result["value"] > 0
 
     def test_usdc_price(self, live_server):
         result = _cli_or_skip(
-            live_server, "BirdeyeService", "GetTokenPrice",
+            live_server,
+            "birdeye.v1.BirdeyeService",
+            "GetTokenPrice",
             {"address": USDC_ADDRESS},
         )
         assert 0.99 < result["value"] < 1.01
@@ -92,7 +109,9 @@ class TestLiveGetTokenPrice:
 class TestLiveGetMultiPrice:
     def test_multi_price(self, live_server):
         result = _cli_or_skip(
-            live_server, "BirdeyeService", "GetMultiPrice",
+            live_server,
+            "birdeye.v1.BirdeyeService",
+            "GetMultiPrice",
             {"list_address": f"{SOL_ADDRESS},{USDC_ADDRESS}"},
         )
         assert "prices" in result
@@ -106,7 +125,9 @@ class TestLiveGetMultiPrice:
 class TestLiveGetTokenOverview:
     def test_sol_overview(self, live_server):
         result = _cli_or_skip(
-            live_server, "BirdeyeService", "GetTokenOverview",
+            live_server,
+            "birdeye.v1.BirdeyeService",
+            "GetTokenOverview",
             {"address": SOL_ADDRESS},
         )
         assert result["symbol"] == "SOL"
@@ -120,7 +141,9 @@ class TestLiveGetTokenOverview:
 class TestLiveListTokens:
     def test_top_tokens_by_volume(self, live_server):
         result = _cli_or_skip(
-            live_server, "BirdeyeService", "ListTokens",
+            live_server,
+            "birdeye.v1.BirdeyeService",
+            "ListTokens",
             {"sort_by": "v24hUSD", "sort_type": "desc", "limit": 10},
         )
         assert "tokens" in result
@@ -138,7 +161,9 @@ class TestLiveGetOHLCV:
         now = int(time.time())
         one_day_ago = now - (24 * 60 * 60)
         result = _cli_or_skip(
-            live_server, "BirdeyeService", "GetOHLCV",
+            live_server,
+            "birdeye.v1.BirdeyeService",
+            "GetOHLCV",
             {
                 "address": SOL_ADDRESS,
                 "type": "1H",
@@ -160,7 +185,9 @@ class TestLiveGetOHLCV:
 class TestLiveGetTradesToken:
     def test_sol_trades(self, live_server):
         result = _cli_or_skip(
-            live_server, "BirdeyeService", "GetTradesToken",
+            live_server,
+            "birdeye.v1.BirdeyeService",
+            "GetTradesToken",
             {"address": SOL_ADDRESS, "limit": 10},
         )
         assert "items" in result
@@ -175,7 +202,9 @@ class TestLiveGetTradesToken:
 class TestLiveSearchToken:
     def test_search_sol(self, live_server):
         result = _cli_or_skip(
-            live_server, "BirdeyeService", "SearchToken",
+            live_server,
+            "birdeye.v1.BirdeyeService",
+            "SearchToken",
             {"keyword": "SOL"},
         )
         assert "tokens" in result

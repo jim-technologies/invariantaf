@@ -11,6 +11,9 @@ from invariant import Server
 
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
+from bravesearch_mcp.gen.bravesearch.v1 import bravesearch_pb2_grpc as pb_grpc
+
+
 # Ensure generated protobuf descriptors are loaded in the default descriptor pool.
 from bravesearch_mcp.gen.bravesearch.v1 import bravesearch_pb2 as _bravesearch_pb2  # noqa: F401
 from bravesearch_mcp.service import DEFAULT_BASE_URL, BraveSearchService
@@ -57,7 +60,7 @@ def main() -> None:
     api_key = _env("BRAVE_API_KEY")
 
     servicer = BraveSearchService(base_url=base_url, api_key=api_key)
-    server.register(servicer, service_name="bravesearch.v1.BraveSearchService")
+    pb_grpc.add_BraveSearchServiceServicer_to_server(servicer, server)
 
     asyncio.run(_serve(server, _projection_from_argv(sys.argv[1:])))
 

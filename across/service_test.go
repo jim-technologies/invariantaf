@@ -44,7 +44,7 @@ func TestLiveGetSuggestedFees(t *testing.T) {
 		t.Fatalf("GetSuggestedFees: %v", err)
 	}
 
-	fields := resp.GetFields()
+	fields := replyFields(t, resp)
 	if len(fields) == 0 {
 		t.Fatal("empty response from GetSuggestedFees")
 	}
@@ -63,7 +63,7 @@ func TestLiveGetAvailableRoutes(t *testing.T) {
 		t.Fatalf("GetAvailableRoutes: %v", err)
 	}
 
-	fields := resp.GetFields()
+	fields := replyFields(t, resp)
 	if len(fields) == 0 {
 		t.Fatal("empty response from GetAvailableRoutes")
 	}
@@ -83,7 +83,7 @@ func TestLiveGetLimits(t *testing.T) {
 		t.Fatalf("GetLimits: %v", err)
 	}
 
-	fields := resp.GetFields()
+	fields := replyFields(t, resp)
 	if len(fields) == 0 {
 		t.Fatal("empty response from GetLimits")
 	}
@@ -101,7 +101,7 @@ func TestLiveGetPoolState(t *testing.T) {
 		t.Fatalf("GetPoolState: %v", err)
 	}
 
-	fields := resp.GetFields()
+	fields := replyFields(t, resp)
 	if len(fields) == 0 {
 		t.Fatal("empty response from GetPoolState")
 	}
@@ -116,4 +116,13 @@ func keysOf(fields map[string]*structpb.Value) []string {
 		keys = append(keys, k)
 	}
 	return keys
+}
+
+func replyFields(t *testing.T, body []byte) map[string]*structpb.Value {
+	t.Helper()
+	result := new(structpb.Struct)
+	if err := result.UnmarshalJSON(body); err != nil {
+		t.Fatal(err)
+	}
+	return result.GetFields()
 }

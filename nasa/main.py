@@ -8,6 +8,9 @@ from invariant import Server
 
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
+from nasa_mcp.gen.nasa.v1 import nasa_pb2_grpc as pb_grpc
+
+
 from nasa_mcp.service import NASAService
 
 DESCRIPTOR = Path(__file__).parent / "descriptor.binpb"
@@ -44,7 +47,7 @@ async def _serve(server: Server, modes: dict) -> None:
 def main():
     server = Server.from_descriptor(str(DESCRIPTOR))
     servicer = NASAService()
-    server.register(servicer)
+    pb_grpc.add_NASAServiceServicer_to_server(servicer, server)
 
     asyncio.run(_serve(server, _projection_from_argv(sys.argv[1:])))
 

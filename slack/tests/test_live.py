@@ -35,13 +35,15 @@ def live_server():
     from invariant import Server
 
     srv = Server.from_descriptor(DESCRIPTOR_PATH)
-    srv.register(SlackService(), service_name="slack.v1.SlackService")
+    from slack_mcp.gen.slack.v1 import slack_pb2_grpc as _native_rpc
+
+    _native_rpc.add_SlackServiceServicer_to_server(SlackService(), srv)
     yield srv
     asyncio.run(srv.stop())
 
 
 def test_auth_test_returns_ok(live_server):
-    result = asyncio.run(live_server._cli(["SlackService", "AuthTest"]))
+    result = asyncio.run(live_server._cli(["slack.v1.SlackService", "AuthTest"]))
     assert isinstance(result, dict)
     assert result.get("ok") is True, result
 
@@ -49,7 +51,12 @@ def test_auth_test_returns_ok(live_server):
 def test_conversations_list(live_server):
     result = asyncio.run(
         live_server._cli(
-            ["SlackService", "ConversationsList", "-r", '{"limit": 5, "types": "public_channel"}']
+            [
+                "slack.v1.SlackService",
+                "ConversationsList",
+                "-r",
+                '{"limit": 5, "types": "public_channel"}',
+            ]
         )
     )
     assert isinstance(result, dict)
@@ -57,12 +64,16 @@ def test_conversations_list(live_server):
 
 
 def test_users_list(live_server):
-    result = asyncio.run(live_server._cli(["SlackService", "UsersList", "-r", '{"limit": 5}']))
+    result = asyncio.run(
+        live_server._cli(["slack.v1.SlackService", "UsersList", "-r", '{"limit": 5}'])
+    )
     assert isinstance(result, dict)
     assert "members" in result
 
 
-@pytest.mark.skipif(not os.getenv("SLACK_LIVE_CHANNEL_ID"), reason="set SLACK_LIVE_CHANNEL_ID")
+@pytest.mark.skipif(
+    not os.getenv("SLACK_LIVE_CHANNEL_ID"), reason="set SLACK_LIVE_CHANNEL_ID"
+)
 def test_post_and_delete_message(live_server):
     import json
 
@@ -70,7 +81,7 @@ def test_post_and_delete_message(live_server):
     posted = asyncio.run(
         live_server._cli(
             [
-                "SlackService",
+                "slack.v1.SlackService",
                 "ChatPostMessage",
                 "-r",
                 json.dumps({"channel": channel, "text": "invariantaf live test ping"}),
@@ -81,7 +92,12 @@ def test_post_and_delete_message(live_server):
     ts = posted["ts"]
     deleted = asyncio.run(
         live_server._cli(
-            ["SlackService", "ChatDelete", "-r", json.dumps({"channel": channel, "ts": ts})]
+            [
+                "slack.v1.SlackService",
+                "ChatDelete",
+                "-r",
+                json.dumps({"channel": channel, "ts": ts}),
+            ]
         )
     )
     assert deleted.get("ok") is True, deleted

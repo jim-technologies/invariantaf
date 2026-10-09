@@ -11,6 +11,9 @@ from invariant import Server
 
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
+from balldontlie_mcp.gen.balldontlie.v1 import balldontlie_pb2_grpc as pb_grpc
+
+
 # Ensure generated protobuf descriptors are loaded in the default descriptor pool.
 from balldontlie_mcp.gen.balldontlie.v1 import balldontlie_pb2 as _balldontlie_pb2  # noqa: F401
 from balldontlie_mcp.service import DEFAULT_BASE_URL, BallDontLieService
@@ -57,7 +60,7 @@ def main() -> None:
     api_key = _env("BALLDONTLIE_API_KEY")
 
     servicer = BallDontLieService(base_url=base_url, api_key=api_key)
-    server.register(servicer, service_name="balldontlie.v1.BallDontLieService")
+    pb_grpc.add_BallDontLieServiceServicer_to_server(servicer, server)
 
     asyncio.run(_serve(server, _projection_from_argv(sys.argv[1:])))
 

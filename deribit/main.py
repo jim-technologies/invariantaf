@@ -11,6 +11,9 @@ from invariant import Server
 
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
+from deribit_mcp.gen.deribit.v1 import deribit_pb2_grpc as pb_grpc
+
+
 # Ensure generated protobuf descriptors are loaded in the default descriptor pool.
 from deribit_mcp.gen.deribit.v1 import deribit_pb2 as _deribit_pb2  # noqa: F401
 from deribit_mcp.service import DEFAULT_BASE_URL, DeribitService
@@ -56,7 +59,7 @@ def main() -> None:
     base_url = (_env("DERIBIT_BASE_URL") or DEFAULT_BASE_URL).rstrip("/")
 
     servicer = DeribitService(base_url=base_url)
-    server.register(servicer, service_name="deribit.v1.DeribitService")
+    pb_grpc.add_DeribitServiceServicer_to_server(servicer, server)
 
     asyncio.run(_serve(server, _projection_from_argv(sys.argv[1:])))
 

@@ -23,15 +23,15 @@ class XKCDService:
 
     async def aclose(self) -> None:
         """Close the HTTP client. Idempotent."""
-        await self._client.aclose()
+        await self._http.aclose()
 
-    def _get_comic_json(self, num: int | None = None) -> dict:
+    async def _get_comic_json(self, num: int | None = None) -> dict:
         """Fetch a single comic's JSON. None = latest."""
         if num is None:
             url = f"{_XKCD_BASE}/info.0.json"
         else:
             url = f"{_XKCD_BASE}/{num}/info.0.json"
-        resp = self._http.get(url)
+        resp = await self._http.get(url)
         resp.raise_for_status()
         return resp.json()
 
@@ -51,26 +51,30 @@ class XKCDService:
             transcript=data.get("transcript", ""),
         )
 
-    def _get_latest_num(self) -> int:
+    async def _get_latest_num(self) -> int:
         """Get the number of the latest comic."""
-        data = self._get_comic_json()
+        data = await self._get_comic_json()
         return data.get("num", 0)
 
-    async def GetLatest(self, request: Any, context: Any = None) -> pb.GetLatestResponse:
-        data = self._get_comic_json()
+    async def GetLatest(
+        self, request: Any, context: Any = None
+    ) -> pb.GetLatestResponse:
+        data = await self._get_comic_json()
         return pb.GetLatestResponse(comic=self._json_to_comic(data))
 
     async def GetComic(self, request: Any, context: Any = None) -> pb.GetComicResponse:
-        data = self._get_comic_json(request.num)
+        data = await self._get_comic_json(request.num)
         return pb.GetComicResponse(comic=self._json_to_comic(data))
 
-    async def GetRandom(self, request: Any, context: Any = None) -> pb.GetRandomResponse:
-        latest_num = self._get_latest_num()
+    async def GetRandom(
+        self, request: Any, context: Any = None
+    ) -> pb.GetRandomResponse:
+        latest_num = await self._get_latest_num()
         num = random.randint(1, latest_num)
         # Skip 404 — it doesn't exist (it's a joke).
         if num == 404:
             num = 405
-        data = self._get_comic_json(num)
+        data = await self._get_comic_json(num)
         return pb.GetRandomResponse(comic=self._json_to_comic(data))
 
     async def GetRange(self, request: Any, context: Any = None) -> pb.GetRangeResponse:
@@ -84,26 +88,28 @@ class XKCDService:
             if num == 404:
                 continue
             try:
-                data = self._get_comic_json(num)
+                data = await self._get_comic_json(num)
                 resp.comics.append(self._json_to_comic(data))
             except Exception:
                 continue
         return resp
 
-    async def SearchByTitle(self, request: Any, context: Any = None) -> pb.SearchByTitleResponse:
+    async def SearchByTitle(
+        self, request: Any, context: Any = None
+    ) -> pb.SearchByTitleResponse:
         query = request.query.lower()
         search_count = request.search_count or 100
         if search_count > 500:
             search_count = 500
 
-        latest_num = self._get_latest_num()
+        latest_num = await self._get_latest_num()
         resp = pb.SearchByTitleResponse()
 
         for num in range(latest_num, max(latest_num - search_count, 0), -1):
             if num == 404:
                 continue
             try:
-                data = self._get_comic_json(num)
+                data = await self._get_comic_json(num)
                 title = data.get("title", "")
                 if query in title.lower():
                     resp.comics.append(self._json_to_comic(data))
@@ -111,7 +117,9 @@ class XKCDService:
                 continue
         return resp
 
-    async def GetExplanation(self, request: Any, context: Any = None) -> pb.GetExplanationResponse:
+    async def GetExplanation(
+        self, request: Any, context: Any = None
+    ) -> pb.GetExplanationResponse:
         num = request.num
         url = _EXPLAIN_BASE
         params = {
@@ -120,7 +128,7 @@ class XKCDService:
             "format": "json",
             "prop": "wikitext",
         }
-        resp = self._http.get(url, params=params)
+        resp = await self._http.get(url, params=params)
         resp.raise_for_status()
         raw = resp.json()
 
@@ -160,11 +168,15 @@ class XKCDService:
         text = re.sub(r"\n{3,}", "\n\n", text)
         return text.strip()
 
-    async def GetComicCount(self, request: Any, context: Any = None) -> pb.GetComicCountResponse:
-        latest_num = self._get_latest_num()
+    async def GetComicCount(
+        self, request: Any, context: Any = None
+    ) -> pb.GetComicCountResponse:
+        latest_num = await self._get_latest_num()
         return pb.GetComicCountResponse(count=latest_num)
 
-    async def GetMultiple(self, request: Any, context: Any = None) -> pb.GetMultipleResponse:
+    async def GetMultiple(
+        self, request: Any, context: Any = None
+    ) -> pb.GetMultipleResponse:
         nums = list(request.nums)
         if len(nums) > 50:
             nums = nums[:50]
@@ -173,44 +185,50 @@ class XKCDService:
             if num == 404:
                 continue
             try:
-                data = self._get_comic_json(num)
+                data = await self._get_comic_json(num)
                 resp.comics.append(self._json_to_comic(data))
             except Exception:
                 continue
         return resp
 
-    async def GetRecent(self, request: Any, context: Any = None) -> pb.GetRecentResponse:
+    async def GetRecent(
+        self, request: Any, context: Any = None
+    ) -> pb.GetRecentResponse:
         count = request.count or 10
         if count > 50:
             count = 50
 
-        latest_num = self._get_latest_num()
+        latest_num = await self._get_latest_num()
         resp = pb.GetRecentResponse()
 
         for num in range(latest_num, max(latest_num - count, 0), -1):
             if num == 404:
                 continue
             try:
-                data = self._get_comic_json(num)
+                data = await self._get_comic_json(num)
                 resp.comics.append(self._json_to_comic(data))
             except Exception:
                 continue
         return resp
 
-    async def GetByDate(self, request: Any, context: Any = None) -> pb.GetByDateResponse:
+    async def GetByDate(
+        self, request: Any, context: Any = None
+    ) -> pb.GetByDateResponse:
         year = str(request.year)
         month = str(request.month)
         search_count = request.search_count or 500
 
-        latest_num = self._get_latest_num()
+        latest_num = await self._get_latest_num()
         resp = pb.GetByDateResponse()
 
         for num in range(latest_num, max(latest_num - search_count, 0), -1):
             if num == 404:
                 continue
             try:
-                data = self._get_comic_json(num)
-                if str(data.get("year", "")) == year and str(data.get("month", "")).lstrip("0") == month.lstrip("0"):
+                data = await self._get_comic_json(num)
+                if str(data.get("year", "")) == year and str(
+                    data.get("month", "")
+                ).lstrip("0") == month.lstrip("0"):
                     resp.comics.append(self._json_to_comic(data))
             except Exception:
                 continue

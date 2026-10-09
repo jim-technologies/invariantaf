@@ -21,16 +21,16 @@ class FinnhubService:
 
     async def aclose(self) -> None:
         """Close the HTTP client. Idempotent."""
-        await self._client.aclose()
+        await self._http.aclose()
 
-    def _get(self, path: str, **params: Any) -> Any:
+    async def _get(self, path: str, **params: Any) -> Any:
         params["token"] = self._api_key
-        resp = self._http.get(f"{_BASE_URL}/{path}", params=params)
+        resp = await self._http.get(f"{_BASE_URL}/{path}", params=params)
         resp.raise_for_status()
         return resp.json()
 
     async def GetQuote(self, request: Any, context: Any = None) -> pb.GetQuoteResponse:
-        raw = self._get("quote", symbol=request.symbol)
+        raw = await self._get("quote", symbol=request.symbol)
         return pb.GetQuoteResponse(
             current_price=raw.get("c", 0),
             change=raw.get("d", 0),
@@ -42,20 +42,26 @@ class FinnhubService:
             timestamp=raw.get("t", 0),
         )
 
-    async def SearchSymbol(self, request: Any, context: Any = None) -> pb.SearchSymbolResponse:
-        raw = self._get("search", q=request.query)
+    async def SearchSymbol(
+        self, request: Any, context: Any = None
+    ) -> pb.SearchSymbolResponse:
+        raw = await self._get("search", q=request.query)
         resp = pb.SearchSymbolResponse(count=raw.get("count", 0))
         for r in raw.get("result", []):
-            resp.results.append(pb.SymbolMatch(
-                symbol=r.get("symbol", ""),
-                description=r.get("description", ""),
-                display_symbol=r.get("displaySymbol", ""),
-                type=r.get("type", ""),
-            ))
+            resp.results.append(
+                pb.SymbolMatch(
+                    symbol=r.get("symbol", ""),
+                    description=r.get("description", ""),
+                    display_symbol=r.get("displaySymbol", ""),
+                    type=r.get("type", ""),
+                )
+            )
         return resp
 
-    async def GetCompanyProfile(self, request: Any, context: Any = None) -> pb.GetCompanyProfileResponse:
-        raw = self._get("stock/profile2", symbol=request.symbol)
+    async def GetCompanyProfile(
+        self, request: Any, context: Any = None
+    ) -> pb.GetCompanyProfileResponse:
+        raw = await self._get("stock/profile2", symbol=request.symbol)
         return pb.GetCompanyProfileResponse(
             ticker=raw.get("ticker", ""),
             name=raw.get("name", ""),
@@ -71,105 +77,129 @@ class FinnhubService:
             phone=raw.get("phone", ""),
         )
 
-    async def GetCompanyNews(self, request: Any, context: Any = None) -> pb.GetCompanyNewsResponse:
+    async def GetCompanyNews(
+        self, request: Any, context: Any = None
+    ) -> pb.GetCompanyNewsResponse:
         params = {"symbol": request.symbol}
         if request.from_date:
             params["from"] = request.from_date
         if request.to_date:
             params["to"] = request.to_date
-        raw = self._get("company-news", **params)
+        raw = await self._get("company-news", **params)
         resp = pb.GetCompanyNewsResponse()
         for a in raw:
-            resp.articles.append(pb.NewsArticle(
-                headline=a.get("headline", ""),
-                summary=a.get("summary", ""),
-                source=a.get("source", ""),
-                url=a.get("url", ""),
-                datetime=a.get("datetime", 0),
-                related=a.get("related", ""),
-                category=a.get("category", ""),
-                image=a.get("image", ""),
-                id=a.get("id", 0),
-            ))
+            resp.articles.append(
+                pb.NewsArticle(
+                    headline=a.get("headline", ""),
+                    summary=a.get("summary", ""),
+                    source=a.get("source", ""),
+                    url=a.get("url", ""),
+                    datetime=a.get("datetime", 0),
+                    related=a.get("related", ""),
+                    category=a.get("category", ""),
+                    image=a.get("image", ""),
+                    id=a.get("id", 0),
+                )
+            )
         return resp
 
-    async def GetEarningsCalendar(self, request: Any, context: Any = None) -> pb.GetEarningsCalendarResponse:
+    async def GetEarningsCalendar(
+        self, request: Any, context: Any = None
+    ) -> pb.GetEarningsCalendarResponse:
         params = {}
         if request.from_date:
             params["from"] = request.from_date
         if request.to_date:
             params["to"] = request.to_date
-        raw = self._get("calendar/earnings", **params)
+        raw = await self._get("calendar/earnings", **params)
         resp = pb.GetEarningsCalendarResponse()
         for e in raw.get("earningsCalendar", []):
-            resp.earnings.append(pb.EarningsEntry(
-                symbol=e.get("symbol", ""),
-                date=e.get("date", ""),
-                hour=e.get("hour", ""),
-                quarter=e.get("quarter", 0),
-                year=e.get("year", 0),
-                eps_estimate=e.get("epsEstimate") or 0,
-                eps_actual=e.get("epsActual") or 0,
-                revenue_estimate=e.get("revenueEstimate") or 0,
-                revenue_actual=e.get("revenueActual") or 0,
-            ))
+            resp.earnings.append(
+                pb.EarningsEntry(
+                    symbol=e.get("symbol", ""),
+                    date=e.get("date", ""),
+                    hour=e.get("hour", ""),
+                    quarter=e.get("quarter", 0),
+                    year=e.get("year", 0),
+                    eps_estimate=e.get("epsEstimate") or 0,
+                    eps_actual=e.get("epsActual") or 0,
+                    revenue_estimate=e.get("revenueEstimate") or 0,
+                    revenue_actual=e.get("revenueActual") or 0,
+                )
+            )
         return resp
 
-    async def GetRecommendationTrends(self, request: Any, context: Any = None) -> pb.GetRecommendationTrendsResponse:
-        raw = self._get("stock/recommendation", symbol=request.symbol)
+    async def GetRecommendationTrends(
+        self, request: Any, context: Any = None
+    ) -> pb.GetRecommendationTrendsResponse:
+        raw = await self._get("stock/recommendation", symbol=request.symbol)
         resp = pb.GetRecommendationTrendsResponse()
         for r in raw:
-            resp.trends.append(pb.RecommendationTrend(
-                period=r.get("period", ""),
-                strong_buy=r.get("strongBuy", 0),
-                buy=r.get("buy", 0),
-                hold=r.get("hold", 0),
-                sell=r.get("sell", 0),
-                strong_sell=r.get("strongSell", 0),
-            ))
+            resp.trends.append(
+                pb.RecommendationTrend(
+                    period=r.get("period", ""),
+                    strong_buy=r.get("strongBuy", 0),
+                    buy=r.get("buy", 0),
+                    hold=r.get("hold", 0),
+                    sell=r.get("sell", 0),
+                    strong_sell=r.get("strongSell", 0),
+                )
+            )
         return resp
 
-    async def GetInsiderTransactions(self, request: Any, context: Any = None) -> pb.GetInsiderTransactionsResponse:
-        raw = self._get("stock/insider-transactions", symbol=request.symbol)
+    async def GetInsiderTransactions(
+        self, request: Any, context: Any = None
+    ) -> pb.GetInsiderTransactionsResponse:
+        raw = await self._get("stock/insider-transactions", symbol=request.symbol)
         resp = pb.GetInsiderTransactionsResponse()
         for t in raw.get("data", []):
-            resp.transactions.append(pb.InsiderTransaction(
-                name=t.get("name", ""),
-                share=t.get("share", 0),
-                change=t.get("change", 0),
-                filing_date=t.get("filingDate", ""),
-                transaction_date=t.get("transactionDate", ""),
-                transaction_code=t.get("transactionCode", ""),
-                transaction_price=t.get("transactionPrice") or 0,
-            ))
+            resp.transactions.append(
+                pb.InsiderTransaction(
+                    name=t.get("name", ""),
+                    share=t.get("share", 0),
+                    change=t.get("change", 0),
+                    filing_date=t.get("filingDate", ""),
+                    transaction_date=t.get("transactionDate", ""),
+                    transaction_code=t.get("transactionCode", ""),
+                    transaction_price=t.get("transactionPrice") or 0,
+                )
+            )
         return resp
 
-    async def GetMarketNews(self, request: Any, context: Any = None) -> pb.GetMarketNewsResponse:
+    async def GetMarketNews(
+        self, request: Any, context: Any = None
+    ) -> pb.GetMarketNewsResponse:
         params = {"category": request.category or "general"}
         if request.min_id:
             params["minId"] = request.min_id
-        raw = self._get("news", **params)
+        raw = await self._get("news", **params)
         resp = pb.GetMarketNewsResponse()
         for a in raw:
-            resp.articles.append(pb.NewsArticle(
-                headline=a.get("headline", ""),
-                summary=a.get("summary", ""),
-                source=a.get("source", ""),
-                url=a.get("url", ""),
-                datetime=a.get("datetime", 0),
-                related=a.get("related", ""),
-                category=a.get("category", ""),
-                image=a.get("image", ""),
-                id=a.get("id", 0),
-            ))
+            resp.articles.append(
+                pb.NewsArticle(
+                    headline=a.get("headline", ""),
+                    summary=a.get("summary", ""),
+                    source=a.get("source", ""),
+                    url=a.get("url", ""),
+                    datetime=a.get("datetime", 0),
+                    related=a.get("related", ""),
+                    category=a.get("category", ""),
+                    image=a.get("image", ""),
+                    id=a.get("id", 0),
+                )
+            )
         return resp
 
     async def GetPeers(self, request: Any, context: Any = None) -> pb.GetPeersResponse:
-        raw = self._get("stock/peers", symbol=request.symbol)
+        raw = await self._get("stock/peers", symbol=request.symbol)
         return pb.GetPeersResponse(peers=raw if isinstance(raw, list) else [])
 
-    async def GetBasicFinancials(self, request: Any, context: Any = None) -> pb.GetBasicFinancialsResponse:
-        raw = self._get("stock/metric", symbol=request.symbol, metric=request.metric or "all")
+    async def GetBasicFinancials(
+        self, request: Any, context: Any = None
+    ) -> pb.GetBasicFinancialsResponse:
+        raw = await self._get(
+            "stock/metric", symbol=request.symbol, metric=request.metric or "all"
+        )
         m = raw.get("metric", {})
         return pb.GetBasicFinancialsResponse(
             pe_trailing=m.get("peTTM") or 0,

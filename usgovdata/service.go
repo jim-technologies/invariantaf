@@ -58,11 +58,11 @@ func (s *USGovDataService) get(path string, params url.Values) (map[string]any, 
 	}
 
 	var result map[string]any
-	if err := json.Unmarshal(body, &result); err != nil {
+	if err := decodeProviderJSON(body, &result); err != nil {
 		// The response may be an array.
 		// Try wrapping in a map.
 		var arr []any
-		if err2 := json.Unmarshal(body, &arr); err2 == nil {
+		if err2 := decodeProviderJSON(body, &arr); err2 == nil {
 			result = map[string]any{"items": arr}
 		} else {
 			return nil, fmt.Errorf("decode response: %w (body: %s)", err, string(body))
@@ -83,22 +83,18 @@ func getString(fields map[string]*structpb.Value, key, def string) string {
 // helper: get an int field from structpb (numbers come as float64).
 func getInt(fields map[string]*structpb.Value, key string) int64 {
 	if v, ok := fields[key]; ok {
-		return int64(v.GetNumberValue())
+		return requestInteger(v)
 	}
 	return 0
 }
 
 // helper: convert API response to structpb.Struct.
-func toStruct(data map[string]any) (*structpb.Struct, error) {
-	result, err := structpb.NewStruct(data)
-	if err != nil {
-		return nil, fmt.Errorf("convert to struct: %w", err)
-	}
-	return result, nil
+func responseJSON(data map[string]any) (json.RawMessage, error) {
+	return json.Marshal(data)
 }
 
 // GetDebtToThePenny returns the most recent US national debt records.
-func (s *USGovDataService) GetDebtToThePenny(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *USGovDataService) GetDebtToThePenny(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	params := url.Values{}
 	params.Set("sort", "-record_date")
@@ -115,11 +111,11 @@ func (s *USGovDataService) GetDebtToThePenny(_ context.Context, req *structpb.St
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetTreasuryYields returns average interest rates on Treasury securities.
-func (s *USGovDataService) GetTreasuryYields(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *USGovDataService) GetTreasuryYields(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	params := url.Values{}
 	params.Set("sort", "-record_date")
@@ -136,11 +132,11 @@ func (s *USGovDataService) GetTreasuryYields(_ context.Context, req *structpb.St
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetTreasuryAuctions returns recent Treasury securities auction data.
-func (s *USGovDataService) GetTreasuryAuctions(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *USGovDataService) GetTreasuryAuctions(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	params := url.Values{}
 	params.Set("sort", "-record_date")
@@ -157,11 +153,11 @@ func (s *USGovDataService) GetTreasuryAuctions(_ context.Context, req *structpb.
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetExchangeRates returns Treasury exchange rates for foreign currencies.
-func (s *USGovDataService) GetExchangeRates(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *USGovDataService) GetExchangeRates(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	params := url.Values{}
 	params.Set("sort", "-record_date")
@@ -178,11 +174,11 @@ func (s *USGovDataService) GetExchangeRates(_ context.Context, req *structpb.Str
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetFederalSpending returns monthly federal spending data from the MTS.
-func (s *USGovDataService) GetFederalSpending(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *USGovDataService) GetFederalSpending(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	params := url.Values{}
 	params.Set("sort", "-record_date")
@@ -199,5 +195,5 @@ func (s *USGovDataService) GetFederalSpending(_ context.Context, req *structpb.S
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }

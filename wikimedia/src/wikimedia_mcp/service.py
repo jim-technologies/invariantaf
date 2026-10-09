@@ -107,11 +107,13 @@ class WikimediaService:
         articles_raw = first.get("articles", [])
         result = []
         for a in articles_raw:
-            result.append({
-                "article": a.get("article", ""),
-                "views": a.get("views", 0),
-                "rank": a.get("rank", 0),
-            })
+            result.append(
+                {
+                    "article": a.get("article", ""),
+                    "views": a.get("views", 0),
+                    "rank": a.get("rank", 0),
+                }
+            )
         return result
 
     # -------------------------

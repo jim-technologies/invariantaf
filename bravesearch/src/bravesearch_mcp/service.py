@@ -24,7 +24,9 @@ class BraveSearchService:
         api_key: str | None = None,
         timeout: float = 15.0,
     ):
-        self._base_url = (base_url or os.getenv("BRAVE_BASE_URL") or DEFAULT_BASE_URL).rstrip("/")
+        self._base_url = (
+            base_url or os.getenv("BRAVE_BASE_URL") or DEFAULT_BASE_URL
+        ).rstrip("/")
         self._api_key = api_key or os.getenv("BRAVE_API_KEY") or ""
         self._timeout = timeout
         self._client = httpx.AsyncClient(
@@ -64,13 +66,15 @@ class BraveSearchService:
         web_data = payload.get("web", {})
         raw_results = web_data.get("results", []) if isinstance(web_data, dict) else []
         for item in raw_results:
-            results.append({
-                "title": item.get("title", ""),
-                "url": item.get("url", ""),
-                "description": item.get("description", ""),
-                "page_age": item.get("page_age", ""),
-                "language": item.get("language", ""),
-            })
+            results.append(
+                {
+                    "title": item.get("title", ""),
+                    "url": item.get("url", ""),
+                    "description": item.get("description", ""),
+                    "page_age": item.get("page_age", ""),
+                    "language": item.get("language", ""),
+                }
+            )
 
         total_count = 0
         if isinstance(web_data, dict):
@@ -101,13 +105,15 @@ class BraveSearchService:
         for item in news_data:
             source = item.get("meta_url", {})
             source_name = source.get("hostname", "") if isinstance(source, dict) else ""
-            results.append({
-                "title": item.get("title", ""),
-                "url": item.get("url", ""),
-                "description": item.get("description", ""),
-                "age": item.get("age", ""),
-                "source": source_name,
-            })
+            results.append(
+                {
+                    "title": item.get("title", ""),
+                    "url": item.get("url", ""),
+                    "description": item.get("description", ""),
+                    "age": item.get("age", ""),
+                    "source": source_name,
+                }
+            )
 
         return self._parse_message({"results": results}, pb.NewsSearchResponse)
 
@@ -129,14 +135,22 @@ class BraveSearchService:
         for item in raw_results:
             props = item.get("properties", {})
             thumb = item.get("thumbnail", {})
-            results.append({
-                "title": item.get("title", ""),
-                "url": props.get("url", "") if isinstance(props, dict) else "",
-                "source_url": item.get("url", ""),
-                "width": int(props.get("width", 0)) if isinstance(props, dict) else 0,
-                "height": int(props.get("height", 0)) if isinstance(props, dict) else 0,
-                "thumbnail_url": thumb.get("src", "") if isinstance(thumb, dict) else "",
-            })
+            results.append(
+                {
+                    "title": item.get("title", ""),
+                    "url": props.get("url", "") if isinstance(props, dict) else "",
+                    "source_url": item.get("url", ""),
+                    "width": int(props.get("width", 0))
+                    if isinstance(props, dict)
+                    else 0,
+                    "height": int(props.get("height", 0))
+                    if isinstance(props, dict)
+                    else 0,
+                    "thumbnail_url": thumb.get("src", "")
+                    if isinstance(thumb, dict)
+                    else "",
+                }
+            )
 
         return self._parse_message({"results": results}, pb.ImageSearchResponse)
 

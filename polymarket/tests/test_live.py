@@ -43,16 +43,14 @@ def live_server():
     gamma_base = (
         os.getenv("POLYMARKET_GAMMA_BASE_URL") or DEFAULT_GAMMA_BASE_URL
     ).rstrip("/")
-    clob_base = (
-        os.getenv("POLYMARKET_CLOB_BASE_URL") or DEFAULT_CLOB_BASE_URL
-    ).rstrip("/")
-    data_base = (
-        os.getenv("POLYMARKET_DATA_BASE_URL") or DEFAULT_DATA_BASE_URL
-    ).rstrip("/")
-
-    srv = Server.from_descriptor(
-        DESCRIPTOR_PATH
+    clob_base = (os.getenv("POLYMARKET_CLOB_BASE_URL") or DEFAULT_CLOB_BASE_URL).rstrip(
+        "/"
     )
+    data_base = (os.getenv("POLYMARKET_DATA_BASE_URL") or DEFAULT_DATA_BASE_URL).rstrip(
+        "/"
+    )
+
+    srv = Server.from_descriptor(DESCRIPTOR_PATH)
     srv.connect_http(gamma_base, service_name="polymarket.v1.PolymarketGammaService")
     srv.connect_http(clob_base, service_name="polymarket.v1.PolymarketClobService")
     srv.connect_http(data_base, service_name="polymarket.v1.PolymarketDataService")
@@ -67,41 +65,47 @@ class TestLiveGamma:
     @pytest.fixture(scope="class")
     def first_event(self, live_server):
         """Fetch a single event once for all Gamma detail tests."""
-        result = asyncio.run(live_server._cli(
-            [
-                "PolymarketGammaService",
-                "ListEvents",
-                "-r",
-                json.dumps({"limit": 1}),
-            ]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "PolymarketGammaService",
+                    "ListEvents",
+                    "-r",
+                    json.dumps({"limit": 1}),
+                ]
+            )
+        )
         events = result["data"]
         assert events, "expected at least one event"
         return events[0]
 
     def test_search(self, live_server):
-        result = asyncio.run(live_server._cli(
-            [
-                "PolymarketGammaService",
-                "Search",
-                "-r",
-                json.dumps({"q": "bitcoin", "limit": 3}),
-            ]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "PolymarketGammaService",
+                    "Search",
+                    "-r",
+                    json.dumps({"q": "bitcoin", "limit": 3}),
+                ]
+            )
+        )
         assert "data" in result
         data = result["data"]
         # Search returns events, markets, and profiles
         assert "events" in data or "markets" in data
 
     def test_list_events(self, live_server):
-        result = asyncio.run(live_server._cli(
-            [
-                "PolymarketGammaService",
-                "ListEvents",
-                "-r",
-                json.dumps({"limit": 3}),
-            ]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "PolymarketGammaService",
+                    "ListEvents",
+                    "-r",
+                    json.dumps({"limit": 3}),
+                ]
+            )
+        )
         assert "data" in result
         events = result["data"]
         assert isinstance(events, list)
@@ -111,14 +115,16 @@ class TestLiveGamma:
         assert "slug" in e or "title" in e
 
     def test_list_events_with_filter(self, live_server):
-        result = asyncio.run(live_server._cli(
-            [
-                "PolymarketGammaService",
-                "ListEvents",
-                "-r",
-                json.dumps({"limit": 2, "active": True}),
-            ]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "PolymarketGammaService",
+                    "ListEvents",
+                    "-r",
+                    json.dumps({"limit": 2, "active": True}),
+                ]
+            )
+        )
         events = result["data"]
         assert isinstance(events, list)
         for e in events:
@@ -126,27 +132,31 @@ class TestLiveGamma:
 
     def test_get_event_by_slug(self, live_server, first_event):
         slug = first_event["slug"]
-        result = asyncio.run(live_server._cli(
-            [
-                "PolymarketGammaService",
-                "GetEvent",
-                "-r",
-                json.dumps({"slug": slug}),
-            ]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "PolymarketGammaService",
+                    "GetEvent",
+                    "-r",
+                    json.dumps({"slug": slug}),
+                ]
+            )
+        )
         assert "data" in result
         assert result["data"]["slug"] == slug
 
     def test_get_event_by_id(self, live_server, first_event):
         event_id = first_event["id"]
-        result = asyncio.run(live_server._cli(
-            [
-                "PolymarketGammaService",
-                "GetEventById",
-                "-r",
-                json.dumps({"id": event_id}),
-            ]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "PolymarketGammaService",
+                    "GetEventById",
+                    "-r",
+                    json.dumps({"id": event_id}),
+                ]
+            )
+        )
         assert "data" in result
         assert result["data"]["id"] == event_id
 
@@ -156,14 +166,16 @@ class TestLiveGamma:
             pytest.skip("no markets in first event")
         slug = markets[0].get("slug") or markets[0].get("condition_id", "")
 
-        result = asyncio.run(live_server._cli(
-            [
-                "PolymarketGammaService",
-                "GetMarket",
-                "-r",
-                json.dumps({"slug": slug}),
-            ]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "PolymarketGammaService",
+                    "GetMarket",
+                    "-r",
+                    json.dumps({"slug": slug}),
+                ]
+            )
+        )
         assert "data" in result
 
     def test_get_market_by_id(self, live_server, first_event):
@@ -172,14 +184,16 @@ class TestLiveGamma:
             pytest.skip("no markets in first event")
         market_id = markets[0]["id"]
 
-        result = asyncio.run(live_server._cli(
-            [
-                "PolymarketGammaService",
-                "GetMarketById",
-                "-r",
-                json.dumps({"id": market_id}),
-            ]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "PolymarketGammaService",
+                    "GetMarketById",
+                    "-r",
+                    json.dumps({"id": market_id}),
+                ]
+            )
+        )
         assert "data" in result
         assert result["data"]["id"] == market_id
 
@@ -198,7 +212,7 @@ def _extract_token_id(market):
             ids = json.loads(clob_ids_raw)
             if ids:
                 return ids[0]
-        except (json.JSONDecodeError, TypeError):
+        except json.JSONDecodeError, TypeError:
             pass
     return None
 
@@ -207,8 +221,10 @@ def _market_has_token(market, token_id):
     """Check whether a market contains a given token_id."""
     clob_ids_raw = market.get("clob_token_ids") or market.get("clobTokenIds") or "[]"
     try:
-        clob_ids = json.loads(clob_ids_raw) if isinstance(clob_ids_raw, str) else clob_ids_raw
-    except (json.JSONDecodeError, TypeError):
+        clob_ids = (
+            json.loads(clob_ids_raw) if isinstance(clob_ids_raw, str) else clob_ids_raw
+        )
+    except json.JSONDecodeError, TypeError:
         clob_ids = []
     if token_id in clob_ids:
         return True
@@ -223,21 +239,26 @@ class TestLiveClob:
     @pytest.fixture(scope="class")
     def active_market_info(self, live_server):
         """Find an active token_id and its condition_id for CLOB tests."""
-        result = asyncio.run(live_server._cli(
-            [
-                "PolymarketGammaService",
-                "ListEvents",
-                "-r",
-                json.dumps({"limit": 10, "active": True}),
-            ]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "PolymarketGammaService",
+                    "ListEvents",
+                    "-r",
+                    json.dumps({"limit": 10, "active": True}),
+                ]
+            )
+        )
         events = result["data"]
         fallback = None
         for event in events:
             for market in event.get("markets", []):
                 token_id = _extract_token_id(market)
                 if token_id:
-                    info = {"token_id": token_id, "condition_id": market.get("condition_id")}
+                    info = {
+                        "token_id": token_id,
+                        "condition_id": market.get("condition_id"),
+                    }
                     if not market.get("closed"):
                         return info
                     if fallback is None:
@@ -251,9 +272,11 @@ class TestLiveClob:
     def _clob_call(self, live_server, method, params):
         """Call a CLOB endpoint; skip on 404 (market may be closed/delisted)."""
         try:
-            return asyncio.run(live_server._cli(
-                ["PolymarketClobService", method, "-r", json.dumps(params)]
-            ))
+            return asyncio.run(
+                live_server._cli(
+                    ["PolymarketClobService", method, "-r", json.dumps(params)]
+                )
+            )
         except Exception as exc:
             if "404" in str(exc):
                 pytest.skip(f"CLOB {method} returned 404 (market may be closed)")
@@ -270,7 +293,9 @@ class TestLiveClob:
 
     def test_get_price(self, live_server, active_market_info):
         result = self._clob_call(
-            live_server, "GetPrice", {"token_id": active_market_info["token_id"], "side": "BUY"}
+            live_server,
+            "GetPrice",
+            {"token_id": active_market_info["token_id"], "side": "BUY"},
         )
         assert "data" in result
         assert "price" in result["data"]
@@ -310,17 +335,21 @@ class TestLiveClob:
 
 class TestLiveData:
     def test_get_leaderboard(self, live_server):
-        result = asyncio.run(live_server._cli(
-            [
-                "PolymarketDataService",
-                "GetLeaderboard",
-                "-r",
-                json.dumps({"interval": "max", "limit": 3, "offset": 0}),
-            ]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "PolymarketDataService",
+                    "GetLeaderboard",
+                    "-r",
+                    json.dumps({"interval": "max", "limit": 3, "offset": 0}),
+                ]
+            )
+        )
         assert "data" in result
         leaders = result["data"]
         assert isinstance(leaders, list)
         assert len(leaders) > 0
         leader = leaders[0]
-        assert "pseudonym" in leader or "proxyWallet" in leader or "proxy_wallet" in leader
+        assert (
+            "pseudonym" in leader or "proxyWallet" in leader or "proxy_wallet" in leader
+        )

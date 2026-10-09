@@ -7,20 +7,20 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"sync/atomic"
 
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
 // JitoService implements the JitoService RPCs defined in the proto descriptor.
-// Each method takes a structpb.Struct request and returns a structpb.Struct
-// response, allowing the invariant protocol SDK to handle serialization and
-// deserialization transparently.
+// Generated typed RPC adapters pass canonical requests to the provider boundary.
+// Raw response JSON preserves integer precision until typed protobuf decoding.
 type JitoService struct {
-	bundleURL  string // POST endpoint for JSON-RPC (sendBundle, getBundleStatuses)
+	bundleURL   string // POST endpoint for JSON-RPC (sendBundle, getBundleStatuses)
 	tipFloorURL string // GET endpoint for tip floor
-	client     *http.Client
-	rpcID      atomic.Int64
+	client      *http.Client
+	rpcID       atomic.Int64
 }
 
 // NewJitoService creates a new service with default production URLs.
@@ -92,7 +92,7 @@ func (s *JitoService) rpcCall(method string, params []any) (json.RawMessage, err
 	}
 
 	var rpcResp jsonRPCResponse
-	if err := json.Unmarshal(body, &rpcResp); err != nil {
+	if err := decodeProviderJSON(body, &rpcResp); err != nil {
 		return nil, fmt.Errorf("decode rpc response: %w (body: %s)", err, string(body))
 	}
 
@@ -157,16 +157,12 @@ func getStringList(fields map[string]*structpb.Value, key string) []string {
 }
 
 // helper: convert map to structpb.Struct.
-func toStruct(data map[string]any) (*structpb.Struct, error) {
-	result, err := structpb.NewStruct(data)
-	if err != nil {
-		return nil, fmt.Errorf("convert to struct: %w", err)
-	}
-	return result, nil
+func responseJSON(data map[string]any) (json.RawMessage, error) {
+	return json.Marshal(data)
 }
 
 // SendBundle submits a bundle of base58-encoded signed transactions.
-func (s *JitoService) SendBundle(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *JitoService) SendBundle(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	transactions := getStringList(fields, "transactions")
 	if len(transactions) == 0 {
@@ -181,17 +177,17 @@ func (s *JitoService) SendBundle(_ context.Context, req *structpb.Struct) (*stru
 
 	// Result is a string (the bundle ID).
 	var bundleID string
-	if err := json.Unmarshal(result, &bundleID); err != nil {
+	if err := decodeProviderJSON(result, &bundleID); err != nil {
 		return nil, fmt.Errorf("decode bundle id: %w (raw: %s)", err, string(result))
 	}
 
-	return toStruct(map[string]any{
+	return responseJSON(map[string]any{
 		"bundle_id": bundleID,
 	})
 }
 
 // GetBundleStatuses retrieves the processing status of submitted bundles.
-func (s *JitoService) GetBundleStatuses(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *JitoService) GetBundleStatuses(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	bundleIDs := getStringList(fields, "bundle_ids")
 	if len(bundleIDs) == 0 {
@@ -206,25 +202,93 @@ func (s *JitoService) GetBundleStatuses(_ context.Context, req *structpb.Struct)
 
 	// Result is an object with a "value" key containing an array of statuses.
 	var parsed map[string]any
-	if err := json.Unmarshal(result, &parsed); err != nil {
+	if err := decodeProviderJSON(result, &parsed); err != nil {
 		return nil, fmt.Errorf("decode statuses: %w (raw: %s)", err, string(result))
 	}
 
 	// Normalize: extract the "value" array into "statuses".
-	var statuses []any
-	if value, ok := parsed["value"]; ok {
-		if arr, ok := value.([]any); ok {
-			statuses = arr
+	for key := range parsed {
+		if key != "value" && key != "context" {
+			return nil, fmt.Errorf("unknown bundle status envelope field: %s", key)
 		}
 	}
+	if rawContext, exists := parsed["context"]; exists {
+		context, ok := rawContext.(map[string]any)
+		if !ok || len(context) != 1 {
+			return nil, fmt.Errorf("bundle status context must contain only slot")
+		}
+		slot, ok := context["slot"].(json.Number)
+		if !ok {
+			return nil, fmt.Errorf("bundle status context slot must be an unsigned integer")
+		}
+		if _, err := strconv.ParseUint(slot.String(), 10, 64); err != nil {
+			return nil, fmt.Errorf("bundle status context slot must be an unsigned integer")
+		}
+	}
+	arr, ok := parsed["value"].([]any)
+	if !ok {
+		return nil, fmt.Errorf("bundle status value must be an array")
+	}
+	statuses := make([]any, 0, len(arr))
+	for _, entry := range arr {
+		row, ok := entry.(map[string]any)
+		if !ok {
+			return nil, fmt.Errorf("bundle status must be an object")
+		}
+		for key, value := range row {
+			switch key {
+			case "bundle_id", "status", "confirmation_status", "confirmationStatus", "landed_slot", "slot", "error", "err":
+			case "transactions":
+				transactions, ok := value.([]any)
+				if !ok {
+					return nil, fmt.Errorf("bundle status transactions must be an array")
+				}
+				for _, transaction := range transactions {
+					if _, ok := transaction.(string); !ok {
+						return nil, fmt.Errorf("bundle status transaction must be a string")
+					}
+				}
+			default:
+				return nil, fmt.Errorf("unknown bundle status field: %s", key)
+			}
+		}
+		status := row["status"]
+		if status == nil {
+			status = row["confirmation_status"]
+		}
+		if status == nil {
+			status = row["confirmationStatus"]
+		}
+		slot := row["landed_slot"]
+		if slot == nil {
+			slot = row["slot"]
+		}
+		errorInfo := row["error"]
+		if errorInfo == nil {
+			errorInfo = row["err"]
+		}
+		if errorInfo != nil {
+			if _, ok := errorInfo.(string); !ok {
+				body, err := json.Marshal(errorInfo)
+				if err != nil {
+					return nil, err
+				}
+				errorInfo = string(body)
+			}
+		}
+		statuses = append(statuses, map[string]any{
+			"bundle_id": row["bundle_id"], "status": status,
+			"landed_slot": slot, "error": errorInfo,
+		})
+	}
 
-	return toStruct(map[string]any{
+	return responseJSON(map[string]any{
 		"statuses": statuses,
 	})
 }
 
 // GetTipFloor retrieves the current minimum tip amounts for bundle inclusion.
-func (s *JitoService) GetTipFloor(_ context.Context, _ *structpb.Struct) (*structpb.Struct, error) {
+func (s *JitoService) GetTipFloor(_ context.Context, _ *structpb.Struct) (json.RawMessage, error) {
 	body, err := s.getTipFloorRaw()
 	if err != nil {
 		return nil, err
@@ -232,11 +296,11 @@ func (s *JitoService) GetTipFloor(_ context.Context, _ *structpb.Struct) (*struc
 
 	// The tip floor endpoint returns an array of entries.
 	var entries []any
-	if err := json.Unmarshal(body, &entries); err != nil {
+	if err := decodeProviderJSON(body, &entries); err != nil {
 		return nil, fmt.Errorf("decode tip floor: %w (body: %s)", err, string(body))
 	}
 
-	return toStruct(map[string]any{
+	return responseJSON(map[string]any{
 		"entries": entries,
 	})
 }

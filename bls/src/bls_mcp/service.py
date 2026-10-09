@@ -48,9 +48,11 @@ def _parse_observation(raw: dict) -> pb.Observation:
             footnotes.append(text)
 
     latest = raw.get("latest", "") == "true"
-    preliminary = "P" in (raw.get("footnotes") and "".join(
-        fn.get("code", "") for fn in raw["footnotes"]
-    ) or "")
+    preliminary = "P" in (
+        raw.get("footnotes")
+        and "".join(fn.get("code", "") for fn in raw["footnotes"])
+        or ""
+    )
 
     return pb.Observation(
         year=raw.get("year", ""),
@@ -101,10 +103,10 @@ class BLSService:
 
     async def aclose(self) -> None:
         """Close the HTTP client. Idempotent."""
-        await self._client.aclose()
+        await self._http.aclose()
 
-    def _post(self, body: dict) -> Any:
-        resp = self._http.post(
+    async def _post(self, body: dict) -> Any:
+        resp = await self._http.post(
             _BASE_URL,
             json=body,
             headers={"Content-Type": "application/json"},
@@ -112,7 +114,7 @@ class BLSService:
         resp.raise_for_status()
         return resp.json()
 
-    def _fetch_series(
+    async def _fetch_series(
         self,
         series_ids: list[str],
         start_year: str = "",
@@ -121,10 +123,12 @@ class BLSService:
     ) -> dict:
         """Fetch data from the BLS API and return the parsed JSON response."""
         body = _build_body(series_ids, start_year, end_year, catalog)
-        return self._post(body)
+        return await self._post(body)
 
-    async def GetSeriesData(self, request: Any, context: Any = None) -> pb.GetSeriesDataResponse:
-        raw = self._fetch_series(
+    async def GetSeriesData(
+        self, request: Any, context: Any = None
+    ) -> pb.GetSeriesDataResponse:
+        raw = await self._fetch_series(
             [request.series_id],
             request.start_year,
             request.end_year,
@@ -136,8 +140,10 @@ class BLSService:
             series = pb.SeriesData(series_id=request.series_id)
         return pb.GetSeriesDataResponse(series=series)
 
-    async def GetMultipleSeries(self, request: Any, context: Any = None) -> pb.GetMultipleSeriesResponse:
-        raw = self._fetch_series(
+    async def GetMultipleSeries(
+        self, request: Any, context: Any = None
+    ) -> pb.GetMultipleSeriesResponse:
+        raw = await self._fetch_series(
             list(request.series_ids),
             request.start_year,
             request.end_year,
@@ -147,8 +153,10 @@ class BLSService:
             series_list.append(_parse_series(s))
         return pb.GetMultipleSeriesResponse(series=series_list)
 
-    async def GetLatestCPI(self, request: Any, context: Any = None) -> pb.GetLatestCPIResponse:
-        raw = self._fetch_series([_SERIES_CPI_U])
+    async def GetLatestCPI(
+        self, request: Any, context: Any = None
+    ) -> pb.GetLatestCPIResponse:
+        raw = await self._fetch_series([_SERIES_CPI_U])
         results = raw.get("Results", {}).get("series", [])
         observation = None
         if results:
@@ -159,8 +167,10 @@ class BLSService:
             observation=observation,
         )
 
-    async def GetLatestUnemployment(self, request: Any, context: Any = None) -> pb.GetLatestUnemploymentResponse:
-        raw = self._fetch_series([_SERIES_UNEMPLOYMENT])
+    async def GetLatestUnemployment(
+        self, request: Any, context: Any = None
+    ) -> pb.GetLatestUnemploymentResponse:
+        raw = await self._fetch_series([_SERIES_UNEMPLOYMENT])
         results = raw.get("Results", {}).get("series", [])
         observation = None
         if results:
@@ -171,8 +181,10 @@ class BLSService:
             observation=observation,
         )
 
-    async def GetLatestNonfarmPayrolls(self, request: Any, context: Any = None) -> pb.GetLatestNonfarmPayrollsResponse:
-        raw = self._fetch_series([_SERIES_NONFARM_PAYROLLS])
+    async def GetLatestNonfarmPayrolls(
+        self, request: Any, context: Any = None
+    ) -> pb.GetLatestNonfarmPayrollsResponse:
+        raw = await self._fetch_series([_SERIES_NONFARM_PAYROLLS])
         results = raw.get("Results", {}).get("series", [])
         observation = None
         if results:
@@ -183,8 +195,10 @@ class BLSService:
             observation=observation,
         )
 
-    async def SearchSeries(self, request: Any, context: Any = None) -> pb.SearchSeriesResponse:
-        raw = self._fetch_series(list(request.series_ids), catalog=True)
+    async def SearchSeries(
+        self, request: Any, context: Any = None
+    ) -> pb.SearchSeriesResponse:
+        raw = await self._fetch_series(list(request.series_ids), catalog=True)
         results_list = []
         for s in raw.get("Results", {}).get("series", []):
             results_list.append(_parse_catalog(s))

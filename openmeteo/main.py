@@ -11,6 +11,9 @@ from invariant import Server
 
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
+from openmeteo_mcp.gen.openmeteo.v1 import openmeteo_pb2_grpc as pb_grpc
+
+
 # Ensure generated protobuf descriptors are loaded in the default descriptor pool.
 from openmeteo_mcp.gen.openmeteo.v1 import openmeteo_pb2 as _openmeteo_pb2  # noqa: F401
 from openmeteo_mcp.service import (
@@ -60,11 +63,15 @@ def main() -> None:
     server = Server.from_descriptor(str(DESCRIPTOR))
 
     base_url = (_env("OPENMETEO_BASE_URL") or DEFAULT_BASE_URL).rstrip("/")
-    archive_base_url = (_env("OPENMETEO_ARCHIVE_BASE_URL") or DEFAULT_ARCHIVE_BASE_URL).rstrip("/")
+    archive_base_url = (
+        _env("OPENMETEO_ARCHIVE_BASE_URL") or DEFAULT_ARCHIVE_BASE_URL
+    ).rstrip("/")
     air_quality_base_url = (
         _env("OPENMETEO_AIR_QUALITY_BASE_URL") or DEFAULT_AIR_QUALITY_BASE_URL
     ).rstrip("/")
-    marine_base_url = (_env("OPENMETEO_MARINE_BASE_URL") or DEFAULT_MARINE_BASE_URL).rstrip("/")
+    marine_base_url = (
+        _env("OPENMETEO_MARINE_BASE_URL") or DEFAULT_MARINE_BASE_URL
+    ).rstrip("/")
 
     servicer = OpenMeteoService(
         base_url=base_url,
@@ -72,7 +79,7 @@ def main() -> None:
         air_quality_base_url=air_quality_base_url,
         marine_base_url=marine_base_url,
     )
-    server.register(servicer, service_name="openmeteo.v1.OpenMeteoService")
+    pb_grpc.add_OpenMeteoServiceServicer_to_server(servicer, server)
 
     asyncio.run(_serve(server, _projection_from_argv(sys.argv[1:])))
 

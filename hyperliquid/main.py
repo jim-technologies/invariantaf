@@ -9,6 +9,9 @@ from invariant import Server
 # Add src/ to path so hyperliquid_mcp package is importable.
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
+from hyperliquid_mcp.gen.hyperliquid.v1 import hyperliquid_pb2_grpc as pb_grpc
+
+
 from hyperliquid_mcp.service import HyperliquidService
 
 DESCRIPTOR = Path(__file__).parent / "descriptor.binpb"
@@ -45,7 +48,7 @@ async def _serve(server: Server, modes: dict) -> None:
 def main():
     server = Server.from_descriptor(str(DESCRIPTOR))
     servicer = HyperliquidService()
-    server.register(servicer)
+    pb_grpc.add_HyperliquidServiceServicer_to_server(servicer, server)
 
     asyncio.run(_serve(server, _projection_from_argv(sys.argv[1:])))
 

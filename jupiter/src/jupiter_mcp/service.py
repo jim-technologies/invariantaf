@@ -30,22 +30,22 @@ class JupiterService:
 
     async def aclose(self) -> None:
         """Close the HTTP client. Idempotent."""
-        await self._client.aclose()
+        await self._http.aclose()
 
-    def _get(self, url: str, params: dict | None = None) -> Any:
-        resp = self._http.get(url, params=params)
+    async def _get(self, url: str, params: dict | None = None) -> Any:
+        resp = await self._http.get(url, params=params)
         resp.raise_for_status()
         return resp.json()
 
-    def _post(self, url: str, json_body: dict) -> Any:
-        resp = self._http.post(url, json=json_body)
+    async def _post(self, url: str, json_body: dict) -> Any:
+        resp = await self._http.post(url, json=json_body)
         resp.raise_for_status()
         return resp.json()
 
     # --- Price ---
 
     async def GetPrice(self, request: Any, context: Any = None) -> pb.GetPriceResponse:
-        raw = self._get(f"{_BASE_URL}/price/v3", params={"ids": request.ids})
+        raw = await self._get(f"{_BASE_URL}/price/v3", params={"ids": request.ids})
         resp = pb.GetPriceResponse()
         for mint, info in raw.items():
             if not isinstance(info, dict):
@@ -54,14 +54,16 @@ class JupiterService:
             if info.get("usdPrice") is not None:
                 try:
                     price = float(info["usdPrice"])
-                except (ValueError, TypeError):
+                except ValueError, TypeError:
                     price = 0.0
-            resp.prices.append(pb.TokenPrice(
-                mint=mint,
-                price=price,
-                liquidity=info.get("liquidity") or 0,
-                price_change_24h=info.get("priceChange24h") or 0,
-            ))
+            resp.prices.append(
+                pb.TokenPrice(
+                    mint=mint,
+                    price=price,
+                    liquidity=info.get("liquidity") or 0,
+                    price_change_24h=info.get("priceChange24h") or 0,
+                )
+            )
         return resp
 
     # --- Quote ---
@@ -73,7 +75,7 @@ class JupiterService:
             "amount": request.amount,
             "slippageBps": request.slippage_bps,
         }
-        raw = self._get(f"{_BASE_URL}/swap/v1/quote", params=params)
+        raw = await self._get(f"{_BASE_URL}/swap/v1/quote", params=params)
         resp = pb.GetQuoteResponse(
             input_mint=raw.get("inputMint", ""),
             output_mint=raw.get("outputMint", ""),
@@ -86,15 +88,17 @@ class JupiterService:
         )
         for step in raw.get("routePlan", []):
             swap_info = step.get("swapInfo", {})
-            resp.route_plan.append(pb.RoutePlanStep(
-                amm_key=swap_info.get("ammKey", ""),
-                label=swap_info.get("label", "") or "",
-                input_mint=swap_info.get("inputMint", ""),
-                output_mint=swap_info.get("outputMint", ""),
-                fee_amount=swap_info.get("feeAmount", ""),
-                fee_mint=swap_info.get("feeMint", ""),
-                percent=step.get("percent", 0),
-            ))
+            resp.route_plan.append(
+                pb.RoutePlanStep(
+                    amm_key=swap_info.get("ammKey", ""),
+                    label=swap_info.get("label", "") or "",
+                    input_mint=swap_info.get("inputMint", ""),
+                    output_mint=swap_info.get("outputMint", ""),
+                    fee_amount=swap_info.get("feeAmount", ""),
+                    fee_mint=swap_info.get("feeMint", ""),
+                    percent=step.get("percent", 0),
+                )
+            )
         return resp
 
     # --- Swap ---
@@ -106,7 +110,7 @@ class JupiterService:
             "userPublicKey": request.user_public_key,
             "wrapAndUnwrapSol": request.wrap_and_unwrap_sol,
         }
-        raw = self._post(f"{_BASE_URL}/swap/v1/swap", json_body=body)
+        raw = await self._post(f"{_BASE_URL}/swap/v1/swap", json_body=body)
         return pb.SwapResponse(
             swap_transaction=raw.get("swapTransaction", ""),
             last_valid_block_height=raw.get("lastValidBlockHeight", 0),
@@ -114,8 +118,10 @@ class JupiterService:
 
     # --- Token Lists ---
 
-    async def ListTokens(self, request: Any, context: Any = None) -> pb.ListTokensResponse:
-        raw = self._get(
+    async def ListTokens(
+        self, request: Any, context: Any = None
+    ) -> pb.ListTokensResponse:
+        raw = await self._get(
             f"{_BASE_URL}/tokens/v2/search",
             params={"query": request.query},
         )
@@ -124,8 +130,10 @@ class JupiterService:
             resp.tokens.append(self._parse_token(t))
         return resp
 
-    async def ListVerifiedTokens(self, request: Any, context: Any = None) -> pb.ListVerifiedTokensResponse:
-        raw = self._get(
+    async def ListVerifiedTokens(
+        self, request: Any, context: Any = None
+    ) -> pb.ListVerifiedTokensResponse:
+        raw = await self._get(
             f"{_BASE_URL}/tokens/v2/tag",
             params={"query": "verified"},
         )
@@ -136,18 +144,22 @@ class JupiterService:
 
     # --- Markets ---
 
-    async def ListMarkets(self, request: Any, context: Any = None) -> pb.ListMarketsResponse:
-        raw = self._get(f"{_BASE_URL}/swap/v1/markets")
+    async def ListMarkets(
+        self, request: Any, context: Any = None
+    ) -> pb.ListMarketsResponse:
+        raw = await self._get(f"{_BASE_URL}/swap/v1/markets")
         resp = pb.ListMarketsResponse()
         if isinstance(raw, list):
             for m in raw:
-                resp.markets.append(pb.Market(
-                    id=m.get("id", "") or "",
-                    base_mint=m.get("baseMint", "") or "",
-                    quote_mint=m.get("quoteMint", "") or "",
-                    label=m.get("label", "") or "",
-                    liquidity=m.get("liquidity") or 0,
-                ))
+                resp.markets.append(
+                    pb.Market(
+                        id=m.get("id", "") or "",
+                        base_mint=m.get("baseMint", "") or "",
+                        quote_mint=m.get("quoteMint", "") or "",
+                        label=m.get("label", "") or "",
+                        liquidity=m.get("liquidity") or 0,
+                    )
+                )
         return resp
 
     # --- Helpers ---

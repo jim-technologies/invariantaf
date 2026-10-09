@@ -52,9 +52,7 @@ def live_server():
 
     base_url = (os.getenv("MANIFOLD_BASE_URL") or DEFAULT_BASE_URL).rstrip("/")
 
-    srv = Server.from_descriptor(
-        DESCRIPTOR_PATH
-    )
+    srv = Server.from_descriptor(DESCRIPTOR_PATH)
     srv.connect_http(base_url, service_name="manifold.v1.ManifoldService")
     yield srv
     asyncio.run(srv.stop())

@@ -11,6 +11,9 @@ from invariant import Server
 
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
+from footballdata_mcp.gen.footballdata.v1 import footballdata_pb2_grpc as pb_grpc
+
+
 # Ensure generated protobuf descriptors are loaded in the default descriptor pool.
 from footballdata_mcp.gen.footballdata.v1 import footballdata_pb2 as _footballdata_pb2  # noqa: F401
 from footballdata_mcp.service import DEFAULT_BASE_URL, FootballDataService
@@ -57,7 +60,7 @@ def main() -> None:
     api_key = _env("FOOTBALLDATA_API_KEY")
 
     servicer = FootballDataService(base_url=base_url, api_key=api_key)
-    server.register(servicer, service_name="footballdata.v1.FootballDataService")
+    pb_grpc.add_FootballDataServiceServicer_to_server(servicer, server)
 
     asyncio.run(_serve(server, _projection_from_argv(sys.argv[1:])))
 

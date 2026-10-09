@@ -41,7 +41,19 @@ def _cli_or_skip(live_server, service, method, params=None):
         pytest.skip(f"{method}: {type(exc).__name__}: {exc}")
     except Exception as exc:
         msg = str(exc)
-        if any(code in msg for code in ("401", "403", "429", "500", "502", "503", "Timeout", "timed out")):
+        if any(
+            code in msg
+            for code in (
+                "401",
+                "403",
+                "429",
+                "500",
+                "502",
+                "503",
+                "Timeout",
+                "timed out",
+            )
+        ):
             pytest.skip(f"{method}: {msg[:120]}")
         raise
 
@@ -55,11 +67,11 @@ def live_server():
     base_url = (os.getenv("PANDASCORE_BASE_URL") or DEFAULT_BASE_URL).rstrip("/")
     api_key = os.getenv("PANDASCORE_API_KEY", "")
 
-    srv = Server.from_descriptor(
-        DESCRIPTOR_PATH
-    )
+    srv = Server.from_descriptor(DESCRIPTOR_PATH)
     servicer = PandaScoreService(base_url=base_url, api_key=api_key)
-    srv.register(servicer, service_name="pandascore.v1.PandaScoreService")
+    from pandascore_mcp.gen.pandascore.v1 import pandascore_pb2_grpc as _native_rpc
+
+    _native_rpc.add_PandaScoreServiceServicer_to_server(servicer, srv)
     yield srv
     asyncio.run(srv.stop())
 
@@ -70,7 +82,7 @@ def live_server():
 class TestLiveListMatches:
     def test_list_matches(self, live_server):
         result = _cli_or_skip(
-            live_server, "PandaScoreService", "ListMatches", {}
+            live_server, "pandascore.v1.PandaScoreService", "ListMatches", {}
         )
         assert "matches" in result
         matches = result["matches"]
@@ -88,7 +100,7 @@ class TestLiveListMatches:
 class TestLiveListUpcomingMatches:
     def test_list_upcoming(self, live_server):
         result = _cli_or_skip(
-            live_server, "PandaScoreService", "ListUpcomingMatches", {}
+            live_server, "pandascore.v1.PandaScoreService", "ListUpcomingMatches", {}
         )
         assert "matches" in result
         matches = result["matches"]
@@ -104,7 +116,7 @@ class TestLiveListUpcomingMatches:
 class TestLiveListRunningMatches:
     def test_list_running(self, live_server):
         result = _cli_or_skip(
-            live_server, "PandaScoreService", "ListRunningMatches", {}
+            live_server, "pandascore.v1.PandaScoreService", "ListRunningMatches", {}
         )
         assert "matches" in result
         matches = result["matches"]
@@ -120,7 +132,7 @@ class TestLiveListRunningMatches:
 class TestLiveListPastMatches:
     def test_list_past(self, live_server):
         result = _cli_or_skip(
-            live_server, "PandaScoreService", "ListPastMatches", {}
+            live_server, "pandascore.v1.PandaScoreService", "ListPastMatches", {}
         )
         assert "matches" in result
         matches = result["matches"]
@@ -135,7 +147,7 @@ class TestLiveListPastMatches:
 class TestLiveListTournaments:
     def test_list_tournaments(self, live_server):
         result = _cli_or_skip(
-            live_server, "PandaScoreService", "ListTournaments", {}
+            live_server, "pandascore.v1.PandaScoreService", "ListTournaments", {}
         )
         assert "tournaments" in result
         tournaments = result["tournaments"]
@@ -152,7 +164,7 @@ class TestLiveListTournaments:
 class TestLiveListTeams:
     def test_list_teams(self, live_server):
         result = _cli_or_skip(
-            live_server, "PandaScoreService", "ListTeams", {}
+            live_server, "pandascore.v1.PandaScoreService", "ListTeams", {}
         )
         assert "teams" in result
         teams = result["teams"]
@@ -169,7 +181,7 @@ class TestLiveListTeams:
 class TestLiveListPlayers:
     def test_list_players(self, live_server):
         result = _cli_or_skip(
-            live_server, "PandaScoreService", "ListPlayers", {}
+            live_server, "pandascore.v1.PandaScoreService", "ListPlayers", {}
         )
         assert "players" in result
         players = result["players"]
@@ -186,7 +198,7 @@ class TestLiveListPlayers:
 class TestLiveListLeagues:
     def test_list_leagues(self, live_server):
         result = _cli_or_skip(
-            live_server, "PandaScoreService", "ListLeagues", {}
+            live_server, "pandascore.v1.PandaScoreService", "ListLeagues", {}
         )
         assert "leagues" in result
         leagues = result["leagues"]
@@ -203,7 +215,7 @@ class TestLiveListLeagues:
 class TestLiveListSeries:
     def test_list_series(self, live_server):
         result = _cli_or_skip(
-            live_server, "PandaScoreService", "ListSeries", {}
+            live_server, "pandascore.v1.PandaScoreService", "ListSeries", {}
         )
         assert "series" in result
         series = result["series"]
@@ -221,7 +233,7 @@ class TestLiveListSeries:
 class TestLiveListHeroes:
     def test_list_heroes(self, live_server):
         result = _cli_or_skip(
-            live_server, "PandaScoreService", "ListHeroes", {}
+            live_server, "pandascore.v1.PandaScoreService", "ListHeroes", {}
         )
         assert "heroes" in result
         heroes = result["heroes"]

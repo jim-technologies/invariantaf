@@ -157,14 +157,14 @@ func getBool(fields map[string]*structpb.Value, key string) bool {
 
 func getInt(fields map[string]*structpb.Value, key string) int64 {
 	if v, ok := fields[key]; ok {
-		return int64(v.GetNumberValue())
+		return requestInteger(v)
 	}
 	return 0
 }
 
 func getFloat(fields map[string]*structpb.Value, key string) float64 {
 	if v, ok := fields[key]; ok {
-		return v.GetNumberValue()
+		return requestNumber(v)
 	}
 	return 0
 }
@@ -193,7 +193,7 @@ func intsField(fields map[string]*structpb.Value, key string) []any {
 		if l := v.GetListValue(); l != nil {
 			out := make([]any, 0, len(l.Values))
 			for _, val := range l.Values {
-				out = append(out, int64(val.GetNumberValue()))
+				out = append(out, requestInteger(val))
 			}
 			return out
 		}

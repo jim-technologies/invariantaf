@@ -42,7 +42,9 @@ def _cli_or_skip(live_server, service, method, params=None):
         pytest.skip(f"{method}: {type(exc).__name__}: {exc}")
     except Exception as exc:
         msg = str(exc)
-        if any(code in msg for code in ("429", "500", "502", "503", "Timeout", "timed out")):
+        if any(
+            code in msg for code in ("429", "500", "502", "503", "Timeout", "timed out")
+        ):
             pytest.skip(f"{method}: {msg[:120]}")
         raise
 
@@ -55,11 +57,11 @@ def live_server():
 
     base_url = (os.getenv("NWS_BASE_URL") or DEFAULT_BASE_URL).rstrip("/")
 
-    srv = Server.from_descriptor(
-        DESCRIPTOR_PATH
-    )
+    srv = Server.from_descriptor(DESCRIPTOR_PATH)
     servicer = NwsService(base_url=base_url)
-    srv.register(servicer, service_name="nws.v1.NwsService")
+    from nws_mcp.gen.nws.v1 import nws_pb2_grpc as _native_rpc
+
+    _native_rpc.add_NwsServiceServicer_to_server(servicer, srv)
     yield srv
     asyncio.run(srv.stop())
 
@@ -70,7 +72,9 @@ def live_server():
 class TestLiveGetPointMetadata:
     def test_nyc(self, live_server):
         result = _cli_or_skip(
-            live_server, "NwsService", "GetPointMetadata",
+            live_server,
+            "nws.v1.NwsService",
+            "GetPointMetadata",
             {"latitude": 40.7128, "longitude": -74.006},
         )
         assert result["office"] != ""
@@ -81,7 +85,9 @@ class TestLiveGetPointMetadata:
 
     def test_dallas(self, live_server):
         result = _cli_or_skip(
-            live_server, "NwsService", "GetPointMetadata",
+            live_server,
+            "nws.v1.NwsService",
+            "GetPointMetadata",
             {"latitude": 32.7767, "longitude": -96.797},
         )
         assert result["office"] != ""
@@ -94,7 +100,9 @@ class TestLiveGetPointMetadata:
 class TestLiveGetForecast:
     def test_nyc_forecast(self, live_server):
         result = _cli_or_skip(
-            live_server, "NwsService", "GetForecast",
+            live_server,
+            "nws.v1.NwsService",
+            "GetForecast",
             {"latitude": 40.7128, "longitude": -74.006},
         )
         assert "periods" in result
@@ -109,7 +117,9 @@ class TestLiveGetForecast:
 
     def test_chicago_forecast(self, live_server):
         result = _cli_or_skip(
-            live_server, "NwsService", "GetForecast",
+            live_server,
+            "nws.v1.NwsService",
+            "GetForecast",
             {"latitude": 41.8781, "longitude": -87.6298},
         )
         assert "periods" in result
@@ -122,7 +132,9 @@ class TestLiveGetForecast:
 class TestLiveGetHourlyForecast:
     def test_nyc_hourly(self, live_server):
         result = _cli_or_skip(
-            live_server, "NwsService", "GetHourlyForecast",
+            live_server,
+            "nws.v1.NwsService",
+            "GetHourlyForecast",
             {"latitude": 40.7128, "longitude": -74.006},
         )
         assert "periods" in result
@@ -140,7 +152,9 @@ class TestLiveGetHourlyForecast:
 class TestLiveGetAlerts:
     def test_alerts_by_point(self, live_server):
         result = _cli_or_skip(
-            live_server, "NwsService", "GetAlerts",
+            live_server,
+            "nws.v1.NwsService",
+            "GetAlerts",
             {"latitude": 40.7128, "longitude": -74.006},
         )
         # There may or may not be active alerts; proto3 omits empty repeated fields.
@@ -149,7 +163,9 @@ class TestLiveGetAlerts:
 
     def test_alerts_by_area(self, live_server):
         result = _cli_or_skip(
-            live_server, "NwsService", "GetAlerts",
+            live_server,
+            "nws.v1.NwsService",
+            "GetAlerts",
             {"area": "TX"},
         )
         # There may or may not be active alerts; proto3 omits empty repeated fields.
@@ -163,7 +179,9 @@ class TestLiveGetAlerts:
 class TestLiveGetStations:
     def test_nyc_stations(self, live_server):
         result = _cli_or_skip(
-            live_server, "NwsService", "GetStations",
+            live_server,
+            "nws.v1.NwsService",
+            "GetStations",
             {"latitude": 40.7128, "longitude": -74.006},
         )
         assert "stations" in result
@@ -178,7 +196,9 @@ class TestLiveGetStations:
 
     def test_dallas_stations(self, live_server):
         result = _cli_or_skip(
-            live_server, "NwsService", "GetStations",
+            live_server,
+            "nws.v1.NwsService",
+            "GetStations",
             {"latitude": 32.7767, "longitude": -96.797},
         )
         assert "stations" in result
@@ -192,7 +212,9 @@ class TestLiveGetLatestObservation:
     def test_observation_from_nyc_station(self, live_server):
         # First find a station near NYC
         stations_result = _cli_or_skip(
-            live_server, "NwsService", "GetStations",
+            live_server,
+            "nws.v1.NwsService",
+            "GetStations",
             {"latitude": 40.7128, "longitude": -74.006},
         )
         stations = stations_result.get("stations", [])
@@ -201,7 +223,9 @@ class TestLiveGetLatestObservation:
         station_id = stations[0]["station_id"]
 
         result = _cli_or_skip(
-            live_server, "NwsService", "GetLatestObservation",
+            live_server,
+            "nws.v1.NwsService",
+            "GetLatestObservation",
             {"station_id": station_id},
         )
         assert result["station_id"] == station_id
@@ -212,7 +236,9 @@ class TestLiveGetLatestObservation:
     def test_observation_kord(self, live_server):
         # Chicago O'Hare -- well-known station
         result = _cli_or_skip(
-            live_server, "NwsService", "GetLatestObservation",
+            live_server,
+            "nws.v1.NwsService",
+            "GetLatestObservation",
             {"station_id": "KORD"},
         )
         assert result["station_id"] == "KORD"

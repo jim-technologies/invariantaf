@@ -8,6 +8,9 @@ from invariant import Server
 
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
+from fun_mcp.gen.fun.v1 import fun_pb2_grpc as pb_grpc
+
+
 from fun_mcp.service import FunService
 
 DESCRIPTOR = Path(__file__).parent / "descriptor.binpb"
@@ -44,7 +47,7 @@ async def _serve(server: Server, modes: dict) -> None:
 def main():
     server = Server.from_descriptor(str(DESCRIPTOR))
     servicer = FunService()
-    server.register(servicer)
+    pb_grpc.add_FunServiceServicer_to_server(servicer, server)
 
     asyncio.run(_serve(server, _projection_from_argv(sys.argv[1:])))
 

@@ -34,7 +34,9 @@ class BinanceService:
     # RPC handlers
     # -------------------------
 
-    async def GetPrice(self, request: pb.GetPriceRequest, context: Any = None) -> pb.GetPriceResponse:
+    async def GetPrice(
+        self, request: pb.GetPriceRequest, context: Any = None
+    ) -> pb.GetPriceResponse:
         query: dict[str, Any] = {}
         if self._has_field(request, "symbol"):
             query["symbol"] = request.symbol
@@ -47,7 +49,9 @@ class BinanceService:
 
         return self._parse_message({"prices": payload}, pb.GetPriceResponse)
 
-    async def Get24hrStats(self, request: pb.Get24hrStatsRequest, context: Any = None) -> pb.Get24hrStatsResponse:
+    async def Get24hrStats(
+        self, request: pb.Get24hrStatsRequest, context: Any = None
+    ) -> pb.Get24hrStatsResponse:
         query: dict[str, Any] = {}
         if self._has_field(request, "symbol"):
             query["symbol"] = request.symbol
@@ -64,7 +68,9 @@ class BinanceService:
 
         return self._parse_message({"tickers": tickers}, pb.Get24hrStatsResponse)
 
-    async def GetOrderbook(self, request: pb.GetOrderbookRequest, context: Any = None) -> pb.GetOrderbookResponse:
+    async def GetOrderbook(
+        self, request: pb.GetOrderbookRequest, context: Any = None
+    ) -> pb.GetOrderbookResponse:
         query: dict[str, Any] = {"symbol": request.symbol}
         if self._has_field(request, "limit"):
             query["limit"] = request.limit
@@ -73,7 +79,9 @@ class BinanceService:
         self._transform_orderbook(payload)
         return self._parse_message(payload, pb.GetOrderbookResponse)
 
-    async def GetKlines(self, request: pb.GetKlinesRequest, context: Any = None) -> pb.GetKlinesResponse:
+    async def GetKlines(
+        self, request: pb.GetKlinesRequest, context: Any = None
+    ) -> pb.GetKlinesResponse:
         query: dict[str, Any] = {
             "symbol": request.symbol,
             "interval": request.interval,
@@ -93,7 +101,9 @@ class BinanceService:
 
         return self._parse_message({"klines": klines}, pb.GetKlinesResponse)
 
-    async def GetTrades(self, request: pb.GetTradesRequest, context: Any = None) -> pb.GetTradesResponse:
+    async def GetTrades(
+        self, request: pb.GetTradesRequest, context: Any = None
+    ) -> pb.GetTradesResponse:
         query: dict[str, Any] = {"symbol": request.symbol}
         if self._has_field(request, "limit"):
             query["limit"] = request.limit
@@ -117,12 +127,16 @@ class BinanceService:
         self._transform_exchange_info(payload)
         return self._parse_message(payload, pb.GetExchangeInfoResponse)
 
-    async def GetAvgPrice(self, request: pb.GetAvgPriceRequest, context: Any = None) -> pb.GetAvgPriceResponse:
+    async def GetAvgPrice(
+        self, request: pb.GetAvgPriceRequest, context: Any = None
+    ) -> pb.GetAvgPriceResponse:
         query: dict[str, Any] = {"symbol": request.symbol}
         payload = await self._get("/api/v3/avgPrice", query)
         return self._parse_message(payload, pb.GetAvgPriceResponse)
 
-    async def GetBookTicker(self, request: pb.GetBookTickerRequest, context: Any = None) -> pb.GetBookTickerResponse:
+    async def GetBookTicker(
+        self, request: pb.GetBookTickerRequest, context: Any = None
+    ) -> pb.GetBookTickerResponse:
         query: dict[str, Any] = {}
         if self._has_field(request, "symbol"):
             query["symbol"] = request.symbol
@@ -255,12 +269,14 @@ class BinanceService:
         raw_limits = payload.pop("rateLimits", [])
         rate_limits = []
         for rl in raw_limits:
-            rate_limits.append({
-                "rate_limit_type": rl.get("rateLimitType", ""),
-                "interval": rl.get("interval", ""),
-                "interval_num": rl.get("intervalNum", 0),
-                "limit": rl.get("limit", 0),
-            })
+            rate_limits.append(
+                {
+                    "rate_limit_type": rl.get("rateLimitType", ""),
+                    "interval": rl.get("interval", ""),
+                    "interval_num": rl.get("intervalNum", 0),
+                    "limit": rl.get("limit", 0),
+                }
+            )
         payload["rate_limits"] = rate_limits
 
         # Transform symbols
@@ -286,21 +302,25 @@ class BinanceService:
                     filt["min_notional"] = f["minNotional"]
                 filters.append(filt)
 
-            symbols.append({
-                "symbol": sym.get("symbol", ""),
-                "status": sym.get("status", ""),
-                "base_asset": sym.get("baseAsset", ""),
-                "base_asset_precision": sym.get("baseAssetPrecision", 0),
-                "quote_asset": sym.get("quoteAsset", ""),
-                "quote_precision": sym.get("quotePrecision", 0),
-                "order_types": sym.get("orderTypes", []),
-                "iceberg_allowed": sym.get("icebergAllowed", False),
-                "oco_allowed": sym.get("ocoAllowed", False),
-                "is_spot_trading_allowed": sym.get("isSpotTradingAllowed", False),
-                "is_margin_trading_allowed": sym.get("isMarginTradingAllowed", False),
-                "filters": filters,
-                "permissions": sym.get("permissions", []),
-            })
+            symbols.append(
+                {
+                    "symbol": sym.get("symbol", ""),
+                    "status": sym.get("status", ""),
+                    "base_asset": sym.get("baseAsset", ""),
+                    "base_asset_precision": sym.get("baseAssetPrecision", 0),
+                    "quote_asset": sym.get("quoteAsset", ""),
+                    "quote_precision": sym.get("quotePrecision", 0),
+                    "order_types": sym.get("orderTypes", []),
+                    "iceberg_allowed": sym.get("icebergAllowed", False),
+                    "oco_allowed": sym.get("ocoAllowed", False),
+                    "is_spot_trading_allowed": sym.get("isSpotTradingAllowed", False),
+                    "is_margin_trading_allowed": sym.get(
+                        "isMarginTradingAllowed", False
+                    ),
+                    "filters": filters,
+                    "permissions": sym.get("permissions", []),
+                }
+            )
         payload["symbols"] = symbols
 
         # Remove extra keys not in our proto

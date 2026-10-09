@@ -6,7 +6,11 @@ from aave_mcp.gen.aave.v1 import aave_pb2
 
 
 def test_proto_no_struct_or_value_fields():
-    disallowed = {"google.protobuf.Struct", "google.protobuf.Value", "google.protobuf.Any"}
+    disallowed = {
+        "google.protobuf.Struct",
+        "google.protobuf.Value",
+        "google.protobuf.Any",
+    }
 
     file_desc = aave_pb2.DESCRIPTOR
     for message in file_desc.message_types_by_name.values():

@@ -39,7 +39,7 @@ func TestLiveGetFearGreedIndex(t *testing.T) {
 		t.Fatalf("GetFearGreedIndex: %v", err)
 	}
 
-	fields := resp.GetFields()
+	fields := replyFields(t, resp)
 	data := fields["data"].GetListValue().GetValues()
 	if len(data) == 0 {
 		t.Fatal("empty response from GetFearGreedIndex")
@@ -61,7 +61,7 @@ func TestLiveGetGlobalMarketData(t *testing.T) {
 		t.Fatalf("GetGlobalMarketData: %v", err)
 	}
 
-	fields := resp.GetFields()
+	fields := replyFields(t, resp)
 	data := fields["data"].GetListValue().GetValues()
 	if len(data) == 0 {
 		t.Fatal("empty response from GetGlobalMarketData")
@@ -80,7 +80,7 @@ func TestLiveGetCoinData(t *testing.T) {
 		t.Fatalf("GetCoinData: %v", err)
 	}
 
-	fields := resp.GetFields()
+	fields := replyFields(t, resp)
 	data := fields["data"].GetStructValue().GetFields()
 	if len(data) == 0 {
 		t.Fatal("empty response from GetCoinData")
@@ -102,7 +102,7 @@ func TestLiveGetListings(t *testing.T) {
 		t.Fatalf("GetListings: %v", err)
 	}
 
-	fields := resp.GetFields()
+	fields := replyFields(t, resp)
 	data := fields["data"].GetListValue().GetValues()
 	if len(data) == 0 {
 		t.Fatal("empty response from GetListings")
@@ -110,4 +110,11 @@ func TestLiveGetListings(t *testing.T) {
 	t.Logf("GetListings returned %d listings", len(data))
 }
 
-
+func replyFields(t *testing.T, body []byte) map[string]*structpb.Value {
+	t.Helper()
+	result := new(structpb.Struct)
+	if err := result.UnmarshalJSON(body); err != nil {
+		t.Fatal(err)
+	}
+	return result.GetFields()
+}

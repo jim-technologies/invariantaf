@@ -35,36 +35,51 @@ def live_server():
     from invariant import Server
 
     srv = Server.from_descriptor(DESCRIPTOR_PATH)
-    srv.register(DiscordService(), service_name="discord.v1.DiscordService")
+    from discord_mcp.gen.discord.v1 import discord_pb2_grpc as _native_rpc
+
+    _native_rpc.add_DiscordServiceServicer_to_server(DiscordService(), srv)
     yield srv
     asyncio.run(srv.stop())
 
 
 def test_get_current_user(live_server):
-    result = asyncio.run(live_server._cli(["DiscordService", "GetCurrentUser"]))
+    result = asyncio.run(
+        live_server._cli(["discord.v1.DiscordService", "GetCurrentUser"])
+    )
     assert isinstance(result, dict)
     assert result.get("id"), result
 
 
 def test_get_gateway(live_server):
-    result = asyncio.run(live_server._cli(["DiscordService", "GetGateway"]))
+    result = asyncio.run(live_server._cli(["discord.v1.DiscordService", "GetGateway"]))
     assert isinstance(result, dict)
     assert "url" in result, result
 
 
-@pytest.mark.skipif(not os.getenv("DISCORD_LIVE_GUILD_ID"), reason="set DISCORD_LIVE_GUILD_ID")
+@pytest.mark.skipif(
+    not os.getenv("DISCORD_LIVE_GUILD_ID"), reason="set DISCORD_LIVE_GUILD_ID"
+)
 def test_get_guild(live_server):
     import json
 
     guild_id = os.environ["DISCORD_LIVE_GUILD_ID"]
     result = asyncio.run(
-        live_server._cli(["DiscordService", "GetGuild", "-r", json.dumps({"guild_id": guild_id})])
+        live_server._cli(
+            [
+                "discord.v1.DiscordService",
+                "GetGuild",
+                "-r",
+                json.dumps({"guild_id": guild_id}),
+            ]
+        )
     )
     assert isinstance(result, dict)
     assert result.get("id") == guild_id
 
 
-@pytest.mark.skipif(not os.getenv("DISCORD_LIVE_CHANNEL_ID"), reason="set DISCORD_LIVE_CHANNEL_ID")
+@pytest.mark.skipif(
+    not os.getenv("DISCORD_LIVE_CHANNEL_ID"), reason="set DISCORD_LIVE_CHANNEL_ID"
+)
 def test_post_and_delete_message(live_server):
     import json
 
@@ -72,10 +87,15 @@ def test_post_and_delete_message(live_server):
     posted = asyncio.run(
         live_server._cli(
             [
-                "DiscordService",
+                "discord.v1.DiscordService",
                 "CreateMessage",
                 "-r",
-                json.dumps({"channel_id": channel_id, "body": {"content": "invariantaf live test"}}),
+                json.dumps(
+                    {
+                        "channel_id": channel_id,
+                        "body": {"content": "invariantaf live test"},
+                    }
+                ),
             ]
         )
     )
@@ -84,7 +104,7 @@ def test_post_and_delete_message(live_server):
     deleted = asyncio.run(
         live_server._cli(
             [
-                "DiscordService",
+                "discord.v1.DiscordService",
                 "DeleteMessage",
                 "-r",
                 json.dumps({"channel_id": channel_id, "message_id": msg_id}),

@@ -33,11 +33,11 @@ def live_server():
 
     from marinade_mcp.service import MarinadeService
 
-    srv = Server.from_descriptor(
-        DESCRIPTOR_PATH
-    )
+    srv = Server.from_descriptor(DESCRIPTOR_PATH)
     servicer = MarinadeService()
-    srv.register(servicer)
+    from marinade_mcp.gen.marinade.v1 import marinade_pb2_grpc as _native_rpc
+
+    _native_rpc.add_MarinadeServiceServicer_to_server(servicer, srv)
     yield srv
     asyncio.run(srv.stop())
 
@@ -47,20 +47,26 @@ def live_server():
 
 class TestLiveStakeStats:
     def test_get_stake_stats(self, live_server):
-        result = asyncio.run(live_server._cli(["MarinadeService", "GetStakeStats"]))
+        result = asyncio.run(
+            live_server._cli(["marinade.v1.MarinadeService", "GetStakeStats"])
+        )
         assert "apy" in result
         assert isinstance(result["apy"], (int, float))
         assert result["apy"] > 0, "APY should be positive"
 
     def test_get_stake_stats_has_times(self, live_server):
-        result = asyncio.run(live_server._cli(["MarinadeService", "GetStakeStats"]))
+        result = asyncio.run(
+            live_server._cli(["marinade.v1.MarinadeService", "GetStakeStats"])
+        )
         start_key = "startTime" if "startTime" in result else "start_time"
         end_key = "endTime" if "endTime" in result else "end_time"
         assert start_key in result
         assert end_key in result
 
     def test_get_stake_stats_has_prices(self, live_server):
-        result = asyncio.run(live_server._cli(["MarinadeService", "GetStakeStats"]))
+        result = asyncio.run(
+            live_server._cli(["marinade.v1.MarinadeService", "GetStakeStats"])
+        )
         start_key = "startPrice" if "startPrice" in result else "start_price"
         end_key = "endPrice" if "endPrice" in result else "end_price"
         assert start_key in result
@@ -74,42 +80,48 @@ class TestLiveStakeStats:
 
 class TestLiveListValidators:
     def test_list_validators(self, live_server):
-        result = asyncio.run(live_server._cli(
-            [
-                "MarinadeService",
-                "ListValidators",
-                "-r",
-                json.dumps({"limit": 5, "offset": 0}),
-            ]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "marinade.v1.MarinadeService",
+                    "ListValidators",
+                    "-r",
+                    json.dumps({"limit": 5, "offset": 0}),
+                ]
+            )
+        )
         assert "validators" in result
         validators = result["validators"]
         assert isinstance(validators, list)
         assert len(validators) > 0, "expected at least one validator"
 
     def test_validator_has_name(self, live_server):
-        result = asyncio.run(live_server._cli(
-            [
-                "MarinadeService",
-                "ListValidators",
-                "-r",
-                json.dumps({"limit": 1}),
-            ]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "marinade.v1.MarinadeService",
+                    "ListValidators",
+                    "-r",
+                    json.dumps({"limit": 1}),
+                ]
+            )
+        )
         v = result["validators"][0]
         name_key = "infoName" if "infoName" in v else "info_name"
         assert name_key in v
         assert v[name_key], "expected non-empty validator name"
 
     def test_validator_has_vote_account(self, live_server):
-        result = asyncio.run(live_server._cli(
-            [
-                "MarinadeService",
-                "ListValidators",
-                "-r",
-                json.dumps({"limit": 1}),
-            ]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "marinade.v1.MarinadeService",
+                    "ListValidators",
+                    "-r",
+                    json.dumps({"limit": 1}),
+                ]
+            )
+        )
         v = result["validators"][0]
         key = "voteAccount" if "voteAccount" in v else "vote_account"
         assert key in v
@@ -122,26 +134,30 @@ class TestLiveListValidators:
 class TestLiveGetValidatorInfo:
     def test_get_validator_info(self, live_server):
         # First get a valid vote account
-        list_result = asyncio.run(live_server._cli(
-            [
-                "MarinadeService",
-                "ListValidators",
-                "-r",
-                json.dumps({"limit": 1}),
-            ]
-        ))
+        list_result = asyncio.run(
+            live_server._cli(
+                [
+                    "marinade.v1.MarinadeService",
+                    "ListValidators",
+                    "-r",
+                    json.dumps({"limit": 1}),
+                ]
+            )
+        )
         v = list_result["validators"][0]
         key = "voteAccount" if "voteAccount" in v else "vote_account"
         vote_account = v[key]
 
-        result = asyncio.run(live_server._cli(
-            [
-                "MarinadeService",
-                "GetValidatorInfo",
-                "-r",
-                json.dumps({"vote_account": vote_account}),
-            ]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "marinade.v1.MarinadeService",
+                    "GetValidatorInfo",
+                    "-r",
+                    json.dumps({"vote_account": vote_account}),
+                ]
+            )
+        )
         assert "validator" in result
         validator = result["validator"]
         va_key = "voteAccount" if "voteAccount" in validator else "vote_account"
@@ -153,14 +169,18 @@ class TestLiveGetValidatorInfo:
 
 class TestLiveGetMSOLPrice:
     def test_get_msol_price(self, live_server):
-        result = asyncio.run(live_server._cli(["MarinadeService", "GetMSOLPrice"]))
+        result = asyncio.run(
+            live_server._cli(["marinade.v1.MarinadeService", "GetMSOLPrice"])
+        )
         key = "priceSol" if "priceSol" in result else "price_sol"
         assert key in result
         assert isinstance(result[key], (int, float))
         assert result[key] > 1.0, "mSOL should be worth more than 1 SOL"
 
     def test_msol_price_reasonable(self, live_server):
-        result = asyncio.run(live_server._cli(["MarinadeService", "GetMSOLPrice"]))
+        result = asyncio.run(
+            live_server._cli(["marinade.v1.MarinadeService", "GetMSOLPrice"])
+        )
         key = "priceSol" if "priceSol" in result else "price_sol"
         price = result[key]
         assert 1.0 < price < 5.0, f"mSOL price {price} seems unreasonable"

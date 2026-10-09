@@ -8,6 +8,9 @@ from invariant import Server
 
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
+from pokeapi_mcp.gen.pokeapi.v1 import pokeapi_pb2_grpc as pb_grpc
+
+
 from pokeapi_mcp.service import PokeAPIService
 
 DESCRIPTOR = Path(__file__).parent / "descriptor.binpb"
@@ -44,7 +47,7 @@ async def _serve(server: Server, modes: dict) -> None:
 def main():
     server = Server.from_descriptor(str(DESCRIPTOR))
     servicer = PokeAPIService()
-    server.register(servicer)
+    pb_grpc.add_PokeAPIServiceServicer_to_server(servicer, server)
 
     asyncio.run(_serve(server, _projection_from_argv(sys.argv[1:])))
 

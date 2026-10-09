@@ -46,8 +46,12 @@ def _parse_pool_reward(raw: dict) -> pb.PoolReward:
         mint=raw.get("mint", ""),
         vault=raw.get("vault", ""),
         authority=raw.get("authority", ""),
-        emissions_per_second_x64=_str(raw.get("emissions_per_second_x64", raw.get("emissionsPerSecondX64"))),
-        growth_global_x64=_str(raw.get("growth_global_x64", raw.get("growthGlobalX64"))),
+        emissions_per_second_x64=_str(
+            raw.get("emissions_per_second_x64", raw.get("emissionsPerSecondX64"))
+        ),
+        growth_global_x64=_str(
+            raw.get("growth_global_x64", raw.get("growthGlobalX64"))
+        ),
         active=bool(raw.get("active", False)),
         emissions_per_second=_str(raw.get("emissionsPerSecond")),
     )
@@ -56,7 +60,9 @@ def _parse_pool_reward(raw: dict) -> pb.PoolReward:
 def _parse_locked_liquidity(raw: dict) -> pb.LockedLiquidity:
     return pb.LockedLiquidity(
         name=raw.get("name", ""),
-        locked_percentage=_str(raw.get("locked_percentage", raw.get("lockedPercentage"))),
+        locked_percentage=_str(
+            raw.get("locked_percentage", raw.get("lockedPercentage"))
+        ),
     )
 
 
@@ -85,7 +91,8 @@ def _parse_pool(raw: dict) -> pb.Pool:
         stats_30d=_parse_pool_stats(stats.get("30d")),
         rewards=[_parse_pool_reward(r) for r in (raw.get("rewards") or [])],
         locked_liquidity_percent=[
-            _parse_locked_liquidity(ll) for ll in (raw.get("lockedLiquidityPercent") or [])
+            _parse_locked_liquidity(ll)
+            for ll in (raw.get("lockedLiquidityPercent") or [])
         ],
         has_warning=bool(raw.get("hasWarning", False)),
         pool_type=raw.get("poolType", "") or "",
@@ -126,57 +133,71 @@ class OrcaService:
 
     async def aclose(self) -> None:
         """Close the HTTP client. Idempotent."""
-        await self._client.aclose()
+        await self._http.aclose()
 
-    def _get(self, url: str, params: dict | None = None) -> Any:
-        resp = self._http.get(url, params=params)
+    async def _get(self, url: str, params: dict | None = None) -> Any:
+        resp = await self._http.get(url, params=params)
         resp.raise_for_status()
         return resp.json()
 
-    async def ListPools(self, request: Any, context: Any = None) -> pb.ListPoolsResponse:
+    async def ListPools(
+        self, request: Any, context: Any = None
+    ) -> pb.ListPoolsResponse:
         limit = request.limit if request.limit else 100
-        raw = self._get(f"{_BASE_URL}/pools", params={"limit": limit})
+        raw = await self._get(f"{_BASE_URL}/pools", params={"limit": limit})
         resp = pb.ListPoolsResponse()
         for p in raw.get("data", []):
             resp.pools.append(_parse_pool(p))
         return resp
 
     async def GetPool(self, request: Any, context: Any = None) -> pb.GetPoolResponse:
-        raw = self._get(f"{_BASE_URL}/pools/{request.address}")
+        raw = await self._get(f"{_BASE_URL}/pools/{request.address}")
         data = raw.get("data", raw)
         return pb.GetPoolResponse(pool=_parse_pool(data))
 
-    async def SearchPools(self, request: Any, context: Any = None) -> pb.SearchPoolsResponse:
+    async def SearchPools(
+        self, request: Any, context: Any = None
+    ) -> pb.SearchPoolsResponse:
         limit = request.limit if request.limit else 10
-        raw = self._get(f"{_BASE_URL}/pools/search", params={"q": request.query, "limit": limit})
+        raw = await self._get(
+            f"{_BASE_URL}/pools/search", params={"q": request.query, "limit": limit}
+        )
         resp = pb.SearchPoolsResponse()
         for p in raw.get("data", []):
             resp.pools.append(_parse_pool(p))
         return resp
 
-    async def ListTokens(self, request: Any, context: Any = None) -> pb.ListTokensResponse:
+    async def ListTokens(
+        self, request: Any, context: Any = None
+    ) -> pb.ListTokensResponse:
         limit = request.limit if request.limit else 100
-        raw = self._get(f"{_BASE_URL}/tokens", params={"limit": limit})
+        raw = await self._get(f"{_BASE_URL}/tokens", params={"limit": limit})
         resp = pb.ListTokensResponse()
         for t in raw.get("data", []):
             resp.tokens.append(_parse_token(t))
         return resp
 
     async def GetToken(self, request: Any, context: Any = None) -> pb.GetTokenResponse:
-        raw = self._get(f"{_BASE_URL}/tokens/{request.mint_address}")
+        raw = await self._get(f"{_BASE_URL}/tokens/{request.mint_address}")
         data = raw.get("data", raw)
         return pb.GetTokenResponse(token=_parse_token(data))
 
-    async def SearchTokens(self, request: Any, context: Any = None) -> pb.SearchTokensResponse:
+    async def SearchTokens(
+        self, request: Any, context: Any = None
+    ) -> pb.SearchTokensResponse:
         limit = request.limit if request.limit else 10
-        raw = self._get(f"{_BASE_URL}/tokens/search", params={"q": request.query, "limit": limit})
+        raw = await self._get(
+            f"{_BASE_URL}/tokens/search", params={"q": request.query, "limit": limit}
+        )
         resp = pb.SearchTokensResponse()
         for t in raw.get("data", []):
             resp.tokens.append(_parse_token(t))
         return resp
 
-    async def GetProtocolStats(self, request: Any, context: Any = None) -> pb.GetProtocolStatsResponse:
-        raw = self._get(f"{_BASE_URL}/protocol")
+    async def GetProtocolStats(
+        self, request: Any, context: Any = None
+    ) -> pb.GetProtocolStatsResponse:
+        raw = await self._get(f"{_BASE_URL}/protocol")
         return pb.GetProtocolStatsResponse(
             tvl=_str(raw.get("tvl")),
             volume_24h_usdc=_str(raw.get("volume24hUsdc")),
@@ -184,8 +205,10 @@ class OrcaService:
             revenue_24h_usdc=_str(raw.get("revenue24hUsdc")),
         )
 
-    async def GetProtocolToken(self, request: Any, context: Any = None) -> pb.GetProtocolTokenResponse:
-        raw = self._get(f"{_BASE_URL}/protocol/token")
+    async def GetProtocolToken(
+        self, request: Any, context: Any = None
+    ) -> pb.GetProtocolTokenResponse:
+        raw = await self._get(f"{_BASE_URL}/protocol/token")
         stats = raw.get("stats") or {}
         stats_24h = stats.get("24h") or {}
         return pb.GetProtocolTokenResponse(
@@ -199,8 +222,10 @@ class OrcaService:
             volume_24h=_str(stats_24h.get("volume")),
         )
 
-    async def GetLockedLiquidity(self, request: Any, context: Any = None) -> pb.GetLockedLiquidityResponse:
-        raw = self._get(f"{_BASE_URL}/pools/{request.address}")
+    async def GetLockedLiquidity(
+        self, request: Any, context: Any = None
+    ) -> pb.GetLockedLiquidityResponse:
+        raw = await self._get(f"{_BASE_URL}/pools/{request.address}")
         data = raw.get("data", raw)
         entries = data.get("lockedLiquidityPercent") or []
         resp = pb.GetLockedLiquidityResponse()

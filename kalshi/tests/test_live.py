@@ -33,12 +33,9 @@ def live_server():
     from gen.kalshi.v1 import kalshi_pb2 as _kalshi_pb2  # noqa: F401
 
     base_url = (
-        os.getenv("KALSHI_BASE_URL")
-        or "https://api.elections.kalshi.com/trade-api/v2"
+        os.getenv("KALSHI_BASE_URL") or "https://api.elections.kalshi.com/trade-api/v2"
     ).rstrip("/")
-    srv = Server.from_descriptor(
-        DESCRIPTOR_PATH
-    )
+    srv = Server.from_descriptor(DESCRIPTOR_PATH)
     srv.connect_http(base_url, service_name="kalshi.v1.KalshiService")
     yield srv
     asyncio.run(srv.stop())
@@ -61,7 +58,9 @@ class TestLiveExchange:
         assert "schedule" in data or isinstance(data, dict)
 
     def test_get_exchange_announcements(self, live_server):
-        result = asyncio.run(live_server._cli(["KalshiService", "GetExchangeAnnouncements"]))
+        result = asyncio.run(
+            live_server._cli(["KalshiService", "GetExchangeAnnouncements"])
+        )
         assert "data" in result
 
 
@@ -71,9 +70,9 @@ class TestLiveExchange:
 @pytest.fixture(scope="module")
 def market_ticker(live_server):
     """Discover a valid market ticker once for all tests that need one."""
-    result = asyncio.run(live_server._cli(
-        ["KalshiService", "GetMarkets", "-r", '{"limit": 1}']
-    ))
+    result = asyncio.run(
+        live_server._cli(["KalshiService", "GetMarkets", "-r", '{"limit": 1}'])
+    )
     markets = result["data"]["markets"]
     assert markets, "expected at least one market"
     return markets[0]["ticker"]
@@ -82,9 +81,9 @@ def market_ticker(live_server):
 @pytest.fixture(scope="module")
 def event_info(live_server):
     """Discover event info (event_ticker, series_ticker, market ticker) once."""
-    result = asyncio.run(live_server._cli(
-        ["KalshiService", "GetEvents", "-r", '{"limit": 5}']
-    ))
+    result = asyncio.run(
+        live_server._cli(["KalshiService", "GetEvents", "-r", '{"limit": 5}'])
+    )
     events = result["data"]["events"]
     assert events, "expected at least one event"
     return events
@@ -95,9 +94,9 @@ def event_info(live_server):
 
 class TestLiveMarkets:
     def test_get_markets(self, live_server):
-        result = asyncio.run(live_server._cli(
-            ["KalshiService", "GetMarkets", "-r", '{"limit": 3}']
-        ))
+        result = asyncio.run(
+            live_server._cli(["KalshiService", "GetMarkets", "-r", '{"limit": 3}'])
+        )
         assert "data" in result
         markets = result["data"].get("markets")
         assert isinstance(markets, list)
@@ -109,29 +108,38 @@ class TestLiveMarkets:
 
     def test_get_markets_pagination(self, live_server):
         # Fetch page 1
-        result1 = asyncio.run(live_server._cli(
-            ["KalshiService", "GetMarkets", "-r", '{"limit": 2}']
-        ))
+        result1 = asyncio.run(
+            live_server._cli(["KalshiService", "GetMarkets", "-r", '{"limit": 2}'])
+        )
         cursor = result1["data"].get("cursor", "")
         if not cursor:
             pytest.skip("No second page available")
 
         # Fetch page 2 with cursor
-        result2 = asyncio.run(live_server._cli(
-            [
-                "KalshiService",
-                "GetMarkets",
-                "-r",
-                json.dumps({"limit": 2, "cursor": cursor}),
-            ]
-        ))
+        result2 = asyncio.run(
+            live_server._cli(
+                [
+                    "KalshiService",
+                    "GetMarkets",
+                    "-r",
+                    json.dumps({"limit": 2, "cursor": cursor}),
+                ]
+            )
+        )
         markets2 = result2["data"]["markets"]
         assert len(markets2) > 0
 
     def test_get_market_by_ticker(self, live_server, market_ticker):
-        result = asyncio.run(live_server._cli(
-            ["KalshiService", "GetMarket", "-r", json.dumps({"ticker": market_ticker})]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "KalshiService",
+                    "GetMarket",
+                    "-r",
+                    json.dumps({"ticker": market_ticker}),
+                ]
+            )
+        )
         assert "data" in result
         assert result["data"]["market"]["ticker"] == market_ticker
 
@@ -141,9 +149,9 @@ class TestLiveMarkets:
 
 class TestLiveEvents:
     def test_get_events(self, live_server):
-        result = asyncio.run(live_server._cli(
-            ["KalshiService", "GetEvents", "-r", '{"limit": 3}']
-        ))
+        result = asyncio.run(
+            live_server._cli(["KalshiService", "GetEvents", "-r", '{"limit": 3}'])
+        )
         assert "data" in result
         events = result["data"].get("events")
         assert isinstance(events, list)
@@ -154,14 +162,16 @@ class TestLiveEvents:
 
     def test_get_event(self, live_server, event_info):
         event_ticker = event_info[0]["event_ticker"]
-        result = asyncio.run(live_server._cli(
-            [
-                "KalshiService",
-                "GetEvent",
-                "-r",
-                json.dumps({"event_ticker": event_ticker}),
-            ]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "KalshiService",
+                    "GetEvent",
+                    "-r",
+                    json.dumps({"event_ticker": event_ticker}),
+                ]
+            )
+        )
         assert "data" in result
         assert result["data"]["event"]["event_ticker"] == event_ticker
 
@@ -180,28 +190,32 @@ class TestLiveSeries:
 
 class TestLiveMarketData:
     def test_get_market_orderbook(self, live_server, market_ticker):
-        result = asyncio.run(live_server._cli(
-            [
-                "KalshiService",
-                "GetMarketOrderbook",
-                "-r",
-                json.dumps({"ticker": market_ticker}),
-            ]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "KalshiService",
+                    "GetMarketOrderbook",
+                    "-r",
+                    json.dumps({"ticker": market_ticker}),
+                ]
+            )
+        )
         assert "data" in result
         ob = result["data"]
         # Response may contain "orderbook" or "orderbook_fp" depending on the market
         assert "orderbook" in ob or "orderbook_fp" in ob or "yes" in ob or "no" in ob
 
     def test_get_trades(self, live_server, market_ticker):
-        result = asyncio.run(live_server._cli(
-            [
-                "KalshiService",
-                "GetTrades",
-                "-r",
-                json.dumps({"ticker": market_ticker, "limit": 5}),
-            ]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "KalshiService",
+                    "GetTrades",
+                    "-r",
+                    json.dumps({"ticker": market_ticker, "limit": 5}),
+                ]
+            )
+        )
         assert "data" in result
 
     def test_get_market_candlesticks(self, live_server, event_info):
@@ -218,18 +232,24 @@ class TestLiveMarketData:
                     break
 
         if not series_ticker or not ticker:
-            pytest.skip("cannot find series_ticker + market ticker for candlestick test")
+            pytest.skip(
+                "cannot find series_ticker + market ticker for candlestick test"
+            )
 
-        result = asyncio.run(live_server._cli(
-            [
-                "KalshiService",
-                "GetMarketCandlesticks",
-                "-r",
-                json.dumps({
-                    "series_ticker": series_ticker,
-                    "ticker": ticker,
-                    "period_interval": 60,
-                }),
-            ]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "KalshiService",
+                    "GetMarketCandlesticks",
+                    "-r",
+                    json.dumps(
+                        {
+                            "series_ticker": series_ticker,
+                            "ticker": ticker,
+                            "period_interval": 60,
+                        }
+                    ),
+                ]
+            )
+        )
         assert "data" in result

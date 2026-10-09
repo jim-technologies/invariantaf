@@ -1,0 +1,15 @@
+version: v2
+plugins:
+  - protoc_builtin: go
+    out: ..
+    opt:
+      - paths=import
+      - module=github.com/jim-technologies/invariantaf/cryptocompare
+      - Mcryptocompare/v1/cryptocompare.proto=github.com/jim-technologies/invariantaf/cryptocompare/proto/cryptocompare/v1;cryptocomparev1
+  - local: protoc-gen-go-grpc
+    out: ..
+    opt:
+      - paths=import
+      - module=github.com/jim-technologies/invariantaf/cryptocompare
+      - Mcryptocompare/v1/cryptocompare.proto=github.com/jim-technologies/invariantaf/cryptocompare/proto/cryptocompare/v1;cryptocomparev1
+      - require_unimplemented_servers=false

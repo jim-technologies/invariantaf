@@ -11,6 +11,9 @@ from invariant import Server
 
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
+from dexscreener_mcp.gen.dexscreener.v1 import dexscreener_pb2_grpc as pb_grpc
+
+
 # Ensure generated protobuf descriptors are loaded in the default descriptor pool.
 from dexscreener_mcp.gen.dexscreener.v1 import dexscreener_pb2 as _dexscreener_pb2  # noqa: F401
 from dexscreener_mcp.service import DEFAULT_BASE_URL, DexScreenerService
@@ -56,7 +59,7 @@ def main() -> None:
     base_url = (_env("DEXSCREENER_BASE_URL") or DEFAULT_BASE_URL).rstrip("/")
 
     servicer = DexScreenerService(base_url=base_url)
-    server.register(servicer, service_name="dexscreener.v1.DexScreenerService")
+    pb_grpc.add_DexScreenerServiceServicer_to_server(servicer, server)
 
     asyncio.run(_serve(server, _projection_from_argv(sys.argv[1:])))
 

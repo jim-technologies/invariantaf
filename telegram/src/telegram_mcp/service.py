@@ -30,7 +30,9 @@ class TelegramService:
     ):
         env_base = os.getenv("TELEGRAM_BASE_URL") or DEFAULT_BASE_URL
         self._base_url = (base_url or env_base).rstrip("/")
-        self._token = token if token is not None else os.getenv("TELEGRAM_BOT_TOKEN", "")
+        self._token = (
+            token if token is not None else os.getenv("TELEGRAM_BOT_TOKEN", "")
+        )
         self._client = httpx.AsyncClient(timeout=timeout)
 
     async def aclose(self) -> None:
@@ -110,7 +112,9 @@ class TelegramService:
             body["reply_markup"] = v
         return self._wrap(await self._call("sendMessage", body))
 
-    async def ForwardMessage(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def ForwardMessage(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         body = {
             "chat_id": request.chat_id,
             "from_chat_id": request.from_chat_id,
@@ -162,15 +166,19 @@ class TelegramService:
 
     async def SendPhoto(self, request: Any, context: Any = None) -> struct_pb2.Struct:
         return await self._send_media(
-            "sendPhoto", request,
-            primary_field="photo", primary_value=request.photo,
+            "sendPhoto",
+            request,
+            primary_field="photo",
+            primary_value=request.photo,
             extra={"has_spoiler": request.has_spoiler},
         )
 
     async def SendAudio(self, request: Any, context: Any = None) -> struct_pb2.Struct:
         return await self._send_media(
-            "sendAudio", request,
-            primary_field="audio", primary_value=request.audio,
+            "sendAudio",
+            request,
+            primary_field="audio",
+            primary_value=request.audio,
             extra={
                 "duration": request.duration,
                 "performer": request.performer,
@@ -178,17 +186,25 @@ class TelegramService:
             },
         )
 
-    async def SendDocument(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def SendDocument(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         return await self._send_media(
-            "sendDocument", request,
-            primary_field="document", primary_value=request.document,
-            extra={"disable_content_type_detection": request.disable_content_type_detection},
+            "sendDocument",
+            request,
+            primary_field="document",
+            primary_value=request.document,
+            extra={
+                "disable_content_type_detection": request.disable_content_type_detection
+            },
         )
 
     async def SendVideo(self, request: Any, context: Any = None) -> struct_pb2.Struct:
         return await self._send_media(
-            "sendVideo", request,
-            primary_field="video", primary_value=request.video,
+            "sendVideo",
+            request,
+            primary_field="video",
+            primary_value=request.video,
             extra={
                 "duration": request.duration,
                 "width": request.width,
@@ -198,10 +214,14 @@ class TelegramService:
             },
         )
 
-    async def SendAnimation(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def SendAnimation(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         return await self._send_media(
-            "sendAnimation", request,
-            primary_field="animation", primary_value=request.animation,
+            "sendAnimation",
+            request,
+            primary_field="animation",
+            primary_value=request.animation,
             extra={
                 "duration": request.duration,
                 "width": request.width,
@@ -212,19 +232,27 @@ class TelegramService:
 
     async def SendVoice(self, request: Any, context: Any = None) -> struct_pb2.Struct:
         return await self._send_media(
-            "sendVoice", request,
-            primary_field="voice", primary_value=request.voice,
+            "sendVoice",
+            request,
+            primary_field="voice",
+            primary_value=request.voice,
             extra={"duration": request.duration},
         )
 
-    async def SendVideoNote(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def SendVideoNote(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         return await self._send_media(
-            "sendVideoNote", request,
-            primary_field="video_note", primary_value=request.video_note,
+            "sendVideoNote",
+            request,
+            primary_field="video_note",
+            primary_value=request.video_note,
             extra={"duration": request.duration, "length": request.length},
         )
 
-    async def SendLocation(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def SendLocation(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         body: dict[str, Any] = {
             "chat_id": request.chat_id,
             "latitude": request.latitude,
@@ -309,7 +337,9 @@ class TelegramService:
             body["reply_markup"] = v
         return self._wrap(await self._call("sendDice", body))
 
-    async def SendChatAction(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def SendChatAction(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         body = {
             "chat_id": request.chat_id,
             "action": request.action,
@@ -317,7 +347,9 @@ class TelegramService:
         }
         return self._wrap(await self._call("sendChatAction", body))
 
-    async def EditMessageText(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def EditMessageText(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         body: dict[str, Any] = {
             "chat_id": request.chat_id,
             "message_id": request.message_id,
@@ -330,7 +362,9 @@ class TelegramService:
             body["reply_markup"] = v
         return self._wrap(await self._call("editMessageText", body))
 
-    async def EditMessageCaption(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def EditMessageCaption(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         body: dict[str, Any] = {
             "chat_id": request.chat_id,
             "message_id": request.message_id,
@@ -342,7 +376,9 @@ class TelegramService:
             body["reply_markup"] = v
         return self._wrap(await self._call("editMessageCaption", body))
 
-    async def EditMessageReplyMarkup(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def EditMessageReplyMarkup(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         body: dict[str, Any] = {
             "chat_id": request.chat_id,
             "message_id": request.message_id,
@@ -352,11 +388,15 @@ class TelegramService:
             body["reply_markup"] = v
         return self._wrap(await self._call("editMessageReplyMarkup", body))
 
-    async def DeleteMessage(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def DeleteMessage(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         body = {"chat_id": request.chat_id, "message_id": request.message_id}
         return self._wrap(await self._call("deleteMessage", body))
 
-    async def DeleteMessages(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def DeleteMessages(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         body = {
             "chat_id": request.chat_id,
             "message_ids": list(request.message_ids),
@@ -366,17 +406,29 @@ class TelegramService:
     async def GetChat(self, request: Any, context: Any = None) -> struct_pb2.Struct:
         return self._wrap(await self._call("getChat", {"chat_id": request.chat_id}))
 
-    async def GetChatAdministrators(self, request: Any, context: Any = None) -> struct_pb2.Struct:
-        return self._wrap(await self._call("getChatAdministrators", {"chat_id": request.chat_id}))
+    async def GetChatAdministrators(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
+        return self._wrap(
+            await self._call("getChatAdministrators", {"chat_id": request.chat_id})
+        )
 
-    async def GetChatMemberCount(self, request: Any, context: Any = None) -> struct_pb2.Struct:
-        return self._wrap(await self._call("getChatMemberCount", {"chat_id": request.chat_id}))
+    async def GetChatMemberCount(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
+        return self._wrap(
+            await self._call("getChatMemberCount", {"chat_id": request.chat_id})
+        )
 
-    async def GetChatMember(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def GetChatMember(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         body = {"chat_id": request.chat_id, "user_id": request.user_id}
         return self._wrap(await self._call("getChatMember", body))
 
-    async def BanChatMember(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def BanChatMember(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         body = {
             "chat_id": request.chat_id,
             "user_id": request.user_id,
@@ -385,7 +437,9 @@ class TelegramService:
         }
         return self._wrap(await self._call("banChatMember", body))
 
-    async def UnbanChatMember(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def UnbanChatMember(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         body = {
             "chat_id": request.chat_id,
             "user_id": request.user_id,
@@ -393,7 +447,9 @@ class TelegramService:
         }
         return self._wrap(await self._call("unbanChatMember", body))
 
-    async def RestrictChatMember(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def RestrictChatMember(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         body: dict[str, Any] = {
             "chat_id": request.chat_id,
             "user_id": request.user_id,
@@ -404,30 +460,48 @@ class TelegramService:
             body["permissions"] = v
         return self._wrap(await self._call("restrictChatMember", body))
 
-    async def PromoteChatMember(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def PromoteChatMember(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         body: dict[str, Any] = {
             "chat_id": request.chat_id,
             "user_id": request.user_id,
         }
         for k in (
-            "is_anonymous", "can_manage_chat", "can_post_messages", "can_edit_messages",
-            "can_delete_messages", "can_manage_video_chats", "can_restrict_members",
-            "can_promote_members", "can_change_info", "can_invite_users",
-            "can_pin_messages", "can_manage_topics", "can_post_stories",
-            "can_edit_stories", "can_delete_stories",
+            "is_anonymous",
+            "can_manage_chat",
+            "can_post_messages",
+            "can_edit_messages",
+            "can_delete_messages",
+            "can_manage_video_chats",
+            "can_restrict_members",
+            "can_promote_members",
+            "can_change_info",
+            "can_invite_users",
+            "can_pin_messages",
+            "can_manage_topics",
+            "can_post_stories",
+            "can_edit_stories",
+            "can_delete_stories",
         ):
             body[k] = getattr(request, k)
         return self._wrap(await self._call("promoteChatMember", body))
 
-    async def SetChatTitle(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def SetChatTitle(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         body = {"chat_id": request.chat_id, "title": request.title}
         return self._wrap(await self._call("setChatTitle", body))
 
-    async def SetChatDescription(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def SetChatDescription(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         body = {"chat_id": request.chat_id, "description": request.description}
         return self._wrap(await self._call("setChatDescription", body))
 
-    async def PinChatMessage(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def PinChatMessage(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         body = {
             "chat_id": request.chat_id,
             "message_id": request.message_id,
@@ -436,7 +510,9 @@ class TelegramService:
         }
         return self._wrap(await self._call("pinChatMessage", body))
 
-    async def UnpinChatMessage(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def UnpinChatMessage(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         body = {
             "chat_id": request.chat_id,
             "message_id": request.message_id,
@@ -444,8 +520,12 @@ class TelegramService:
         }
         return self._wrap(await self._call("unpinChatMessage", body))
 
-    async def UnpinAllChatMessages(self, request: Any, context: Any = None) -> struct_pb2.Struct:
-        return self._wrap(await self._call("unpinAllChatMessages", {"chat_id": request.chat_id}))
+    async def UnpinAllChatMessages(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
+        return self._wrap(
+            await self._call("unpinAllChatMessages", {"chat_id": request.chat_id})
+        )
 
     async def LeaveChat(self, request: Any, context: Any = None) -> struct_pb2.Struct:
         return self._wrap(await self._call("leaveChat", {"chat_id": request.chat_id}))
@@ -473,17 +553,23 @@ class TelegramService:
             body["allowed_updates"] = v
         return self._wrap(await self._call("setWebhook", body))
 
-    async def DeleteWebhook(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def DeleteWebhook(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         body = {"drop_pending_updates": request.drop_pending_updates}
         return self._wrap(await self._call("deleteWebhook", body))
 
-    async def GetWebhookInfo(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def GetWebhookInfo(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         return self._wrap(await self._call("getWebhookInfo"))
 
     async def GetFile(self, request: Any, context: Any = None) -> struct_pb2.Struct:
         return self._wrap(await self._call("getFile", {"file_id": request.file_id}))
 
-    async def AnswerCallbackQuery(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def AnswerCallbackQuery(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         body = {
             "callback_query_id": request.callback_query_id,
             "text": request.text,
@@ -493,7 +579,9 @@ class TelegramService:
         }
         return self._wrap(await self._call("answerCallbackQuery", body))
 
-    async def SetMyCommands(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def SetMyCommands(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         body: dict[str, Any] = {"language_code": request.language_code}
         if (v := self._struct(request.commands)) is not None:
             body["commands"] = v
@@ -501,26 +589,34 @@ class TelegramService:
             body["scope"] = v
         return self._wrap(await self._call("setMyCommands", body))
 
-    async def GetMyCommands(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def GetMyCommands(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         body: dict[str, Any] = {"language_code": request.language_code}
         if (v := self._struct(request.scope)) is not None:
             body["scope"] = v
         return self._wrap(await self._call("getMyCommands", body))
 
-    async def DeleteMyCommands(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def DeleteMyCommands(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         body: dict[str, Any] = {"language_code": request.language_code}
         if (v := self._struct(request.scope)) is not None:
             body["scope"] = v
         return self._wrap(await self._call("deleteMyCommands", body))
 
-    async def SetMyDescription(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def SetMyDescription(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         body = {
             "description": request.description,
             "language_code": request.language_code,
         }
         return self._wrap(await self._call("setMyDescription", body))
 
-    async def SetMyShortDescription(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def SetMyShortDescription(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         body = {
             "short_description": request.short_description,
             "language_code": request.language_code,
@@ -561,10 +657,16 @@ class TelegramService:
             body["reply_markup"] = v
         return self._wrap(await self._call("sendInvoice", body))
 
-    async def ExportChatInviteLink(self, request: Any, context: Any = None) -> struct_pb2.Struct:
-        return self._wrap(await self._call("exportChatInviteLink", {"chat_id": request.chat_id}))
+    async def ExportChatInviteLink(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
+        return self._wrap(
+            await self._call("exportChatInviteLink", {"chat_id": request.chat_id})
+        )
 
-    async def CreateChatInviteLink(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def CreateChatInviteLink(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         body = {
             "chat_id": request.chat_id,
             "name": request.name,

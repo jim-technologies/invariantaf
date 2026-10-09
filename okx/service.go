@@ -60,11 +60,11 @@ func (s *OKXService) get(path string, params url.Values) (map[string]any, error)
 	}
 
 	var envelope struct {
-		Code string `json:"code"`
-		Msg  string `json:"msg"`
+		Code string          `json:"code"`
+		Msg  string          `json:"msg"`
 		Data json.RawMessage `json:"data"`
 	}
-	if err := json.Unmarshal(body, &envelope); err != nil {
+	if err := decodeProviderJSON(body, &envelope); err != nil {
 		return nil, fmt.Errorf("decode response: %w (body: %s)", err, string(body))
 	}
 
@@ -74,10 +74,10 @@ func (s *OKXService) get(path string, params url.Values) (map[string]any, error)
 
 	// Data is typically an array. Parse it and wrap in a map.
 	var items []any
-	if err := json.Unmarshal(envelope.Data, &items); err != nil {
+	if err := decodeProviderJSON(envelope.Data, &items); err != nil {
 		// Try as a single object.
 		var obj map[string]any
-		if err2 := json.Unmarshal(envelope.Data, &obj); err2 != nil {
+		if err2 := decodeProviderJSON(envelope.Data, &obj); err2 != nil {
 			return nil, fmt.Errorf("decode data: %w (raw: %s)", err, string(envelope.Data))
 		}
 		return obj, nil
@@ -97,22 +97,18 @@ func getString(fields map[string]*structpb.Value, key, def string) string {
 // helper: get an int field from structpb (numbers come as float64).
 func getInt(fields map[string]*structpb.Value, key string) int64 {
 	if v, ok := fields[key]; ok {
-		return int64(v.GetNumberValue())
+		return requestInteger(v)
 	}
 	return 0
 }
 
 // helper: convert API response to structpb.Struct.
-func toStruct(data map[string]any) (*structpb.Struct, error) {
-	result, err := structpb.NewStruct(data)
-	if err != nil {
-		return nil, fmt.Errorf("convert to struct: %w", err)
-	}
-	return result, nil
+func responseJSON(data map[string]any) (json.RawMessage, error) {
+	return json.Marshal(data)
 }
 
 // GetTickers returns all tickers for the given instrument type.
-func (s *OKXService) GetTickers(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *OKXService) GetTickers(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	params := url.Values{}
 
@@ -124,11 +120,11 @@ func (s *OKXService) GetTickers(_ context.Context, req *structpb.Struct) (*struc
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetTicker returns a single ticker by instrument ID.
-func (s *OKXService) GetTicker(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *OKXService) GetTicker(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	instID := getString(fields, "inst_id", "")
 	if instID == "" {
@@ -148,16 +144,16 @@ func (s *OKXService) GetTicker(_ context.Context, req *structpb.Struct) (*struct
 	if items, ok := data["items"]; ok {
 		if arr, ok := items.([]any); ok && len(arr) > 0 {
 			if obj, ok := arr[0].(map[string]any); ok {
-				return toStruct(obj)
+				return responseJSON(obj)
 			}
 		}
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetOrderbook returns the orderbook for a specific instrument.
-func (s *OKXService) GetOrderbook(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *OKXService) GetOrderbook(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	instID := getString(fields, "inst_id", "")
 	if instID == "" {
@@ -183,16 +179,16 @@ func (s *OKXService) GetOrderbook(_ context.Context, req *structpb.Struct) (*str
 		if arr, ok := items.([]any); ok && len(arr) > 0 {
 			if obj, ok := arr[0].(map[string]any); ok {
 				obj["instId"] = instID
-				return toStruct(obj)
+				return responseJSON(obj)
 			}
 		}
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetCandles returns OHLCV candlestick data for a specific instrument.
-func (s *OKXService) GetCandles(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *OKXService) GetCandles(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	instID := getString(fields, "inst_id", "")
 	if instID == "" {
@@ -235,15 +231,15 @@ func (s *OKXService) GetCandles(_ context.Context, req *structpb.Struct) (*struc
 					candles = append(candles, candle)
 				}
 			}
-			return toStruct(map[string]any{"items": candles})
+			return responseJSON(map[string]any{"items": candles})
 		}
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetTrades returns recent trades for a specific instrument.
-func (s *OKXService) GetTrades(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *OKXService) GetTrades(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	instID := getString(fields, "inst_id", "")
 	if instID == "" {
@@ -264,11 +260,11 @@ func (s *OKXService) GetTrades(_ context.Context, req *structpb.Struct) (*struct
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetFundingRate returns the current funding rate for a perpetual swap.
-func (s *OKXService) GetFundingRate(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *OKXService) GetFundingRate(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	instID := getString(fields, "inst_id", "")
 	if instID == "" {
@@ -287,16 +283,16 @@ func (s *OKXService) GetFundingRate(_ context.Context, req *structpb.Struct) (*s
 	if items, ok := data["items"]; ok {
 		if arr, ok := items.([]any); ok && len(arr) > 0 {
 			if obj, ok := arr[0].(map[string]any); ok {
-				return toStruct(obj)
+				return responseJSON(obj)
 			}
 		}
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetInstruments returns all instruments of the given type.
-func (s *OKXService) GetInstruments(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *OKXService) GetInstruments(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	instType := getString(fields, "inst_type", "")
 	if instType == "" {
@@ -311,5 +307,5 @@ func (s *OKXService) GetInstruments(_ context.Context, req *structpb.Struct) (*s
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }

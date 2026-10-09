@@ -41,7 +41,19 @@ def _cli_or_skip(live_server, service, method, params=None):
         pytest.skip(f"{method}: {type(exc).__name__}: {exc}")
     except Exception as exc:
         msg = str(exc)
-        if any(code in msg for code in ("401", "403", "429", "500", "502", "503", "Timeout", "timed out")):
+        if any(
+            code in msg
+            for code in (
+                "401",
+                "403",
+                "429",
+                "500",
+                "502",
+                "503",
+                "Timeout",
+                "timed out",
+            )
+        ):
             pytest.skip(f"{method}: {msg[:120]}")
         raise
 
@@ -49,17 +61,18 @@ def _cli_or_skip(live_server, service, method, params=None):
 @pytest.fixture(scope="module")
 def live_server():
     from invariant import Server
-    from coinmarketcal_mcp.gen.coinmarketcal.v1 import coinmarketcal_pb2 as _coinmarketcal_pb2  # noqa: F401
     from coinmarketcal_mcp.service import CoinMarketCalService
 
     api_key = (os.getenv("COINMARKETCAL_API_KEY") or "").strip()
     base_url = (os.getenv("COINMARKETCAL_BASE_URL") or DEFAULT_BASE_URL).rstrip("/")
 
-    srv = Server.from_descriptor(
-        DESCRIPTOR_PATH
-    )
+    srv = Server.from_descriptor(DESCRIPTOR_PATH)
     servicer = CoinMarketCalService(api_key=api_key, base_url=base_url)
-    srv.register(servicer, service_name="coinmarketcal.v1.CoinMarketCalService")
+    from coinmarketcal_mcp.gen.coinmarketcal.v1 import (
+        coinmarketcal_pb2_grpc as _native_rpc,
+    )
+
+    _native_rpc.add_CoinMarketCalServiceServicer_to_server(servicer, srv)
     yield srv
     asyncio.run(srv.stop())
 
@@ -70,7 +83,9 @@ def live_server():
 class TestLiveListEvents:
     def test_list_events_default(self, live_server):
         result = _cli_or_skip(
-            live_server, "CoinMarketCalService", "ListEvents",
+            live_server,
+            "coinmarketcal.v1.CoinMarketCalService",
+            "ListEvents",
         )
         assert "events" in result
         events = result["events"]
@@ -82,7 +97,9 @@ class TestLiveListEvents:
 
     def test_list_events_with_page(self, live_server):
         result = _cli_or_skip(
-            live_server, "CoinMarketCalService", "ListEvents",
+            live_server,
+            "coinmarketcal.v1.CoinMarketCalService",
+            "ListEvents",
             {"max": 5, "page": 1},
         )
         assert "events" in result
@@ -97,7 +114,9 @@ class TestLiveListEvents:
 class TestLiveListCategories:
     def test_list_categories(self, live_server):
         result = _cli_or_skip(
-            live_server, "CoinMarketCalService", "ListCategories",
+            live_server,
+            "coinmarketcal.v1.CoinMarketCalService",
+            "ListCategories",
         )
         assert "categories" in result
         categories = result["categories"]
@@ -114,7 +133,9 @@ class TestLiveListCategories:
 class TestLiveListCoins:
     def test_list_coins(self, live_server):
         result = _cli_or_skip(
-            live_server, "CoinMarketCalService", "ListCoins",
+            live_server,
+            "coinmarketcal.v1.CoinMarketCalService",
+            "ListCoins",
         )
         assert "coins" in result
         coins = result["coins"]

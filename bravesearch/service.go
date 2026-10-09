@@ -66,7 +66,7 @@ func (s *BraveSearchService) get(path string, params url.Values) (map[string]any
 	}
 
 	var result map[string]any
-	if err := json.Unmarshal(body, &result); err != nil {
+	if err := decodeProviderJSON(body, &result); err != nil {
 		return nil, fmt.Errorf("decode response: %w (body: %s)", err, string(body))
 	}
 
@@ -74,7 +74,7 @@ func (s *BraveSearchService) get(path string, params url.Values) (map[string]any
 }
 
 // WebSearch searches the web using Brave Search.
-func (s *BraveSearchService) WebSearch(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *BraveSearchService) WebSearch(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	query := getString(fields, "query", "")
 	if query == "" {
@@ -105,11 +105,11 @@ func (s *BraveSearchService) WebSearch(_ context.Context, req *structpb.Struct) 
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // NewsSearch searches news articles using Brave Search.
-func (s *BraveSearchService) NewsSearch(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *BraveSearchService) NewsSearch(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	query := getString(fields, "query", "")
 	if query == "" {
@@ -134,11 +134,11 @@ func (s *BraveSearchService) NewsSearch(_ context.Context, req *structpb.Struct)
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // ImageSearch searches images using Brave Search.
-func (s *BraveSearchService) ImageSearch(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *BraveSearchService) ImageSearch(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	query := getString(fields, "query", "")
 	if query == "" {
@@ -160,7 +160,7 @@ func (s *BraveSearchService) ImageSearch(_ context.Context, req *structpb.Struct
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // helper: get a string field from structpb, with a default.
@@ -174,16 +174,12 @@ func getString(fields map[string]*structpb.Value, key, def string) string {
 // helper: get an int field from structpb (numbers come as float64).
 func getInt(fields map[string]*structpb.Value, key string) int64 {
 	if v, ok := fields[key]; ok {
-		return int64(v.GetNumberValue())
+		return requestInteger(v)
 	}
 	return 0
 }
 
 // helper: convert API response to structpb.Struct.
-func toStruct(data map[string]any) (*structpb.Struct, error) {
-	result, err := structpb.NewStruct(data)
-	if err != nil {
-		return nil, fmt.Errorf("convert to struct: %w", err)
-	}
-	return result, nil
+func responseJSON(data map[string]any) (json.RawMessage, error) {
+	return json.Marshal(data)
 }

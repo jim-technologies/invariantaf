@@ -41,7 +41,9 @@ def _cli_or_skip(live_server, service, method, params=None):
         pytest.skip(f"{method}: {type(exc).__name__}: {exc}")
     except Exception as exc:
         msg = str(exc)
-        if any(code in msg for code in ("429", "500", "502", "503", "Timeout", "timed out")):
+        if any(
+            code in msg for code in ("429", "500", "502", "503", "Timeout", "timed out")
+        ):
             pytest.skip(f"{method}: {msg[:120]}")
         raise
 
@@ -54,11 +56,13 @@ def live_server():
 
     base_url = (os.getenv("GECKOTERMINAL_BASE_URL") or DEFAULT_BASE_URL).rstrip("/")
 
-    srv = Server.from_descriptor(
-        DESCRIPTOR_PATH
-    )
+    srv = Server.from_descriptor(DESCRIPTOR_PATH)
     servicer = GeckoTerminalService(base_url=base_url)
-    srv.register(servicer, service_name="geckoterminal.v1.GeckoTerminalService")
+    from geckoterminal_mcp.gen.geckoterminal.v1 import (
+        geckoterminal_pb2_grpc as _native_rpc,
+    )
+
+    _native_rpc.add_GeckoTerminalServiceServicer_to_server(servicer, srv)
     yield srv
     asyncio.run(srv.stop())
 
@@ -69,7 +73,9 @@ def live_server():
 class TestLiveListNetworks:
     def test_list_networks(self, live_server):
         result = _cli_or_skip(
-            live_server, "GeckoTerminalService", "ListNetworks",
+            live_server,
+            "geckoterminal.v1.GeckoTerminalService",
+            "ListNetworks",
         )
         assert "networks" in result
         networks = result["networks"]
@@ -86,7 +92,9 @@ class TestLiveListNetworks:
 class TestLiveGetTrendingPools:
     def test_trending_all_networks(self, live_server):
         result = _cli_or_skip(
-            live_server, "GeckoTerminalService", "GetTrendingPools",
+            live_server,
+            "geckoterminal.v1.GeckoTerminalService",
+            "GetTrendingPools",
         )
         assert "pools" in result
         pools = result["pools"]
@@ -98,7 +106,9 @@ class TestLiveGetTrendingPools:
 
     def test_trending_specific_network(self, live_server):
         result = _cli_or_skip(
-            live_server, "GeckoTerminalService", "GetTrendingPools",
+            live_server,
+            "geckoterminal.v1.GeckoTerminalService",
+            "GetTrendingPools",
             {"network": "eth"},
         )
         assert "pools" in result
@@ -112,7 +122,9 @@ class TestLiveGetPool:
     def test_get_eth_pool(self, live_server):
         # First get trending to find a valid pool address
         trending = _cli_or_skip(
-            live_server, "GeckoTerminalService", "GetTrendingPools",
+            live_server,
+            "geckoterminal.v1.GeckoTerminalService",
+            "GetTrendingPools",
             {"network": "eth"},
         )
         if not trending.get("pools"):
@@ -120,7 +132,9 @@ class TestLiveGetPool:
         pool_address = trending["pools"][0]["address"]
 
         result = _cli_or_skip(
-            live_server, "GeckoTerminalService", "GetPool",
+            live_server,
+            "geckoterminal.v1.GeckoTerminalService",
+            "GetPool",
             {"network": "eth", "address": pool_address},
         )
         assert "pool" in result
@@ -135,7 +149,9 @@ class TestLiveGetPool:
 class TestLiveSearchPools:
     def test_search_weth(self, live_server):
         result = _cli_or_skip(
-            live_server, "GeckoTerminalService", "SearchPools",
+            live_server,
+            "geckoterminal.v1.GeckoTerminalService",
+            "SearchPools",
             {"query": "WETH"},
         )
         assert "pools" in result
@@ -146,7 +162,9 @@ class TestLiveSearchPools:
 
     def test_search_with_network(self, live_server):
         result = _cli_or_skip(
-            live_server, "GeckoTerminalService", "SearchPools",
+            live_server,
+            "geckoterminal.v1.GeckoTerminalService",
+            "SearchPools",
             {"query": "USDC", "network": "eth"},
         )
         assert "pools" in result
@@ -160,7 +178,9 @@ class TestLiveGetPoolOHLCV:
     def test_ohlcv_hour(self, live_server):
         # Get a trending pool to use for OHLCV
         trending = _cli_or_skip(
-            live_server, "GeckoTerminalService", "GetTrendingPools",
+            live_server,
+            "geckoterminal.v1.GeckoTerminalService",
+            "GetTrendingPools",
             {"network": "eth"},
         )
         if not trending.get("pools"):
@@ -168,7 +188,9 @@ class TestLiveGetPoolOHLCV:
         pool_address = trending["pools"][0]["address"]
 
         result = _cli_or_skip(
-            live_server, "GeckoTerminalService", "GetPoolOHLCV",
+            live_server,
+            "geckoterminal.v1.GeckoTerminalService",
+            "GetPoolOHLCV",
             {
                 "network": "eth",
                 "pool_address": pool_address,
@@ -194,7 +216,9 @@ class TestLiveGetPoolOHLCV:
 class TestLiveGetNewPools:
     def test_new_pools_eth(self, live_server):
         result = _cli_or_skip(
-            live_server, "GeckoTerminalService", "GetNewPools",
+            live_server,
+            "geckoterminal.v1.GeckoTerminalService",
+            "GetNewPools",
             {"network": "eth"},
         )
         assert "pools" in result
@@ -210,7 +234,9 @@ class TestLiveGetNewPools:
 class TestLiveGetTopPools:
     def test_top_pools_uniswap(self, live_server):
         result = _cli_or_skip(
-            live_server, "GeckoTerminalService", "GetTopPools",
+            live_server,
+            "geckoterminal.v1.GeckoTerminalService",
+            "GetTopPools",
             {"network": "eth", "dex": "uniswap_v3"},
         )
         assert "pools" in result

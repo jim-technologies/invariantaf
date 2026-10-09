@@ -11,6 +11,9 @@ from invariant import Server
 
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
+from twelvedata_mcp.gen.twelvedata.v1 import twelvedata_pb2_grpc as pb_grpc
+
+
 # Ensure generated protobuf descriptors are loaded in the default descriptor pool.
 from twelvedata_mcp.gen.twelvedata.v1 import twelvedata_pb2 as _twelvedata_pb2  # noqa: F401
 from twelvedata_mcp.service import DEFAULT_BASE_URL, TwelveDataService
@@ -57,7 +60,7 @@ def main() -> None:
     api_key = _env("TWELVEDATA_API_KEY")
 
     servicer = TwelveDataService(base_url=base_url, api_key=api_key)
-    server.register(servicer, service_name="twelvedata.v1.TwelveDataService")
+    pb_grpc.add_TwelveDataServiceServicer_to_server(servicer, server)
 
     asyncio.run(_serve(server, _projection_from_argv(sys.argv[1:])))
 

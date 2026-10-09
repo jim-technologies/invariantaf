@@ -99,10 +99,12 @@ def _parse_water_level_site(data: dict) -> pb.WaterLevelSite:
     if values_list:
         raw_values = values_list[0].get("value") or []
         for rv in raw_values:
-            readings.append(pb.WaterLevelReading(
-                datetime=rv.get("dateTime", "") or "",
-                value=rv.get("value", "") or "",
-            ))
+            readings.append(
+                pb.WaterLevelReading(
+                    datetime=rv.get("dateTime", "") or "",
+                    value=rv.get("value", "") or "",
+                )
+            )
 
     return pb.WaterLevelSite(
         site_number=site_number,
@@ -123,24 +125,32 @@ class USGSService:
 
     async def aclose(self) -> None:
         """Close the HTTP client. Idempotent."""
-        await self._client.aclose()
+        await self._http.aclose()
 
-    def _get(self, url: str, params: dict | None = None) -> Any:
-        resp = self._http.get(url, params=params)
+    async def _get(self, url: str, params: dict | None = None) -> Any:
+        resp = await self._http.get(url, params=params)
         resp.raise_for_status()
         return resp.json()
 
-    async def GetRecentEarthquakes(self, request: Any, context: Any = None) -> pb.GetRecentEarthquakesResponse:
-        raw = self._get(f"{_EARTHQUAKE_FEED_BASE}/summary/all_hour.geojson")
+    async def GetRecentEarthquakes(
+        self, request: Any, context: Any = None
+    ) -> pb.GetRecentEarthquakesResponse:
+        raw = await self._get(f"{_EARTHQUAKE_FEED_BASE}/summary/all_hour.geojson")
         collection = _parse_earthquake_collection(raw)
         return pb.GetRecentEarthquakesResponse(collection=collection)
 
-    async def GetSignificantEarthquakes(self, request: Any, context: Any = None) -> pb.GetSignificantEarthquakesResponse:
-        raw = self._get(f"{_EARTHQUAKE_FEED_BASE}/summary/significant_month.geojson")
+    async def GetSignificantEarthquakes(
+        self, request: Any, context: Any = None
+    ) -> pb.GetSignificantEarthquakesResponse:
+        raw = await self._get(
+            f"{_EARTHQUAKE_FEED_BASE}/summary/significant_month.geojson"
+        )
         collection = _parse_earthquake_collection(raw)
         return pb.GetSignificantEarthquakesResponse(collection=collection)
 
-    async def SearchEarthquakes(self, request: Any, context: Any = None) -> pb.SearchEarthquakesResponse:
+    async def SearchEarthquakes(
+        self, request: Any, context: Any = None
+    ) -> pb.SearchEarthquakesResponse:
         params = {"format": "geojson"}
         if request.start_time:
             params["starttime"] = request.start_time
@@ -163,23 +173,29 @@ class USGSService:
         if request.order_by:
             params["orderby"] = request.order_by
 
-        raw = self._get(_EARTHQUAKE_SEARCH_URL, params=params)
+        raw = await self._get(_EARTHQUAKE_SEARCH_URL, params=params)
         collection = _parse_earthquake_collection(raw)
         return pb.SearchEarthquakesResponse(collection=collection)
 
-    async def GetEarthquakeDetail(self, request: Any, context: Any = None) -> pb.GetEarthquakeDetailResponse:
-        raw = self._get(f"{_EARTHQUAKE_FEED_BASE}/detail/{request.event_id}.geojson")
+    async def GetEarthquakeDetail(
+        self, request: Any, context: Any = None
+    ) -> pb.GetEarthquakeDetailResponse:
+        raw = await self._get(
+            f"{_EARTHQUAKE_FEED_BASE}/detail/{request.event_id}.geojson"
+        )
         # Detail endpoint returns a single Feature, not a FeatureCollection.
         earthquake = _parse_earthquake(raw)
         return pb.GetEarthquakeDetailResponse(earthquake=earthquake)
 
-    async def GetWaterLevels(self, request: Any, context: Any = None) -> pb.GetWaterLevelsResponse:
+    async def GetWaterLevels(
+        self, request: Any, context: Any = None
+    ) -> pb.GetWaterLevelsResponse:
         params = {
             "format": "json",
             "sites": request.site_number,
             "parameterCd": "00065",
             "period": "P1D",
         }
-        raw = self._get(_WATER_SERVICES_URL, params=params)
+        raw = await self._get(_WATER_SERVICES_URL, params=params)
         site = _parse_water_level_site(raw)
         return pb.GetWaterLevelsResponse(site=site)

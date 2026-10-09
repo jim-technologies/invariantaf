@@ -9,8 +9,8 @@ Powered by jsonplaceholder.typicode.com.
 
 from __future__ import annotations
 
-import json
 import asyncio
+import json
 import os
 import sys
 from pathlib import Path
@@ -29,16 +29,12 @@ pytestmark = pytest.mark.skipif(
 
 @pytest.fixture(scope="module")
 def live_server():
-    from jsonplaceholder_mcp.gen.jsonplaceholder.v1 import jsonplaceholder_pb2 as _jsonplaceholder_pb2  # noqa: F401
     from invariant import Server
 
     base_url = (
-        os.getenv("JSONPLACEHOLDER_BASE_URL")
-        or "https://jsonplaceholder.typicode.com"
+        os.getenv("JSONPLACEHOLDER_BASE_URL") or "https://jsonplaceholder.typicode.com"
     ).rstrip("/")
-    srv = Server.from_descriptor(
-        DESCRIPTOR_PATH
-    )
+    srv = Server.from_descriptor(DESCRIPTOR_PATH)
     srv.connect_http(base_url, service_name="jsonplaceholder.v1.JsonPlaceholderService")
     yield srv
     asyncio.run(srv.stop())
@@ -49,18 +45,22 @@ def live_server():
 
 class TestLivePosts:
     def test_get_post(self, live_server):
-        result = asyncio.run(live_server._cli(
-            ["JsonPlaceholderService", "GetPost", "-r", json.dumps({"id": 1})]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                ["JsonPlaceholderService", "GetPost", "-r", json.dumps({"id": 1})]
+            )
+        )
         assert result.get("id") == 1
         assert "title" in result
         assert "body" in result
         assert result.get("userId") or result.get("user_id")
 
     def test_get_post_different_id(self, live_server):
-        result = asyncio.run(live_server._cli(
-            ["JsonPlaceholderService", "GetPost", "-r", json.dumps({"id": 42})]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                ["JsonPlaceholderService", "GetPost", "-r", json.dumps({"id": 42})]
+            )
+        )
         assert result.get("id") == 42
         assert "title" in result
 
@@ -70,18 +70,22 @@ class TestLivePosts:
 
 class TestLiveUsers:
     def test_get_user(self, live_server):
-        result = asyncio.run(live_server._cli(
-            ["JsonPlaceholderService", "GetUser", "-r", json.dumps({"id": 1})]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                ["JsonPlaceholderService", "GetUser", "-r", json.dumps({"id": 1})]
+            )
+        )
         assert result.get("id") == 1
         assert "name" in result
         assert "username" in result
         assert "email" in result
 
     def test_get_user_different_id(self, live_server):
-        result = asyncio.run(live_server._cli(
-            ["JsonPlaceholderService", "GetUser", "-r", json.dumps({"id": 5})]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                ["JsonPlaceholderService", "GetUser", "-r", json.dumps({"id": 5})]
+            )
+        )
         assert result.get("id") == 5
         assert "name" in result
 
@@ -91,9 +95,11 @@ class TestLiveUsers:
 
 class TestLiveTodos:
     def test_get_todo(self, live_server):
-        result = asyncio.run(live_server._cli(
-            ["JsonPlaceholderService", "GetTodo", "-r", json.dumps({"id": 1})]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                ["JsonPlaceholderService", "GetTodo", "-r", json.dumps({"id": 1})]
+            )
+        )
         assert result.get("id") == 1
         assert "title" in result
         # completed may be omitted if false in proto3 JSON
@@ -102,9 +108,11 @@ class TestLiveTodos:
 
     def test_get_todo_completed(self, live_server):
         # Todo #10 is known to be completed in the fixture data
-        result = asyncio.run(live_server._cli(
-            ["JsonPlaceholderService", "GetTodo", "-r", json.dumps({"id": 10})]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                ["JsonPlaceholderService", "GetTodo", "-r", json.dumps({"id": 10})]
+            )
+        )
         assert result.get("id") == 10
         assert "title" in result
 
@@ -114,9 +122,11 @@ class TestLiveTodos:
 
 class TestLiveComments:
     def test_get_comment(self, live_server):
-        result = asyncio.run(live_server._cli(
-            ["JsonPlaceholderService", "GetComment", "-r", json.dumps({"id": 1})]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                ["JsonPlaceholderService", "GetComment", "-r", json.dumps({"id": 1})]
+            )
+        )
         assert result.get("id") == 1
         assert "name" in result
         assert "email" in result
@@ -124,8 +134,10 @@ class TestLiveComments:
         assert result.get("postId") or result.get("post_id")
 
     def test_get_comment_different_id(self, live_server):
-        result = asyncio.run(live_server._cli(
-            ["JsonPlaceholderService", "GetComment", "-r", json.dumps({"id": 100})]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                ["JsonPlaceholderService", "GetComment", "-r", json.dumps({"id": 100})]
+            )
+        )
         assert result.get("id") == 100
         assert "body" in result

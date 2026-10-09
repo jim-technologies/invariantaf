@@ -42,7 +42,19 @@ def _cli_or_skip(live_server, service, method, params=None):
         pytest.skip(f"{method}: {type(exc).__name__}: {exc}")
     except Exception as exc:
         msg = str(exc)
-        if any(code in msg for code in ("401", "403", "429", "500", "502", "503", "Timeout", "timed out")):
+        if any(
+            code in msg
+            for code in (
+                "401",
+                "403",
+                "429",
+                "500",
+                "502",
+                "503",
+                "Timeout",
+                "timed out",
+            )
+        ):
             pytest.skip(f"{method}: {msg[:120]}")
         raise
 
@@ -56,11 +68,11 @@ def live_server():
     base_url = (os.getenv("TWELVEDATA_BASE_URL") or DEFAULT_BASE_URL).rstrip("/")
     api_key = os.getenv("TWELVEDATA_API_KEY", "").strip()
 
-    srv = Server.from_descriptor(
-        DESCRIPTOR_PATH
-    )
+    srv = Server.from_descriptor(DESCRIPTOR_PATH)
     servicer = TwelveDataService(base_url=base_url, api_key=api_key)
-    srv.register(servicer, service_name="twelvedata.v1.TwelveDataService")
+    from twelvedata_mcp.gen.twelvedata.v1 import twelvedata_pb2_grpc as _native_rpc
+
+    _native_rpc.add_TwelveDataServiceServicer_to_server(servicer, srv)
     yield srv
     asyncio.run(srv.stop())
 
@@ -71,7 +83,9 @@ def live_server():
 class TestLiveGetQuote:
     def test_get_aapl_quote(self, live_server):
         result = _cli_or_skip(
-            live_server, "TwelveDataService", "GetQuote",
+            live_server,
+            "twelvedata.v1.TwelveDataService",
+            "GetQuote",
             {"symbol": "AAPL"},
         )
         assert result["symbol"] == "AAPL"
@@ -80,7 +94,9 @@ class TestLiveGetQuote:
 
     def test_get_btc_usd_quote(self, live_server):
         result = _cli_or_skip(
-            live_server, "TwelveDataService", "GetQuote",
+            live_server,
+            "twelvedata.v1.TwelveDataService",
+            "GetQuote",
             {"symbol": "BTC/USD"},
         )
         assert result["symbol"] == "BTC/USD"
@@ -93,7 +109,9 @@ class TestLiveGetQuote:
 class TestLiveGetTimeSeries:
     def test_aapl_daily(self, live_server):
         result = _cli_or_skip(
-            live_server, "TwelveDataService", "GetTimeSeries",
+            live_server,
+            "twelvedata.v1.TwelveDataService",
+            "GetTimeSeries",
             {"symbol": "AAPL", "interval": "1day", "outputsize": 5},
         )
         assert result["symbol"] == "AAPL"
@@ -105,7 +123,9 @@ class TestLiveGetTimeSeries:
 
     def test_btc_usd_1h(self, live_server):
         result = _cli_or_skip(
-            live_server, "TwelveDataService", "GetTimeSeries",
+            live_server,
+            "twelvedata.v1.TwelveDataService",
+            "GetTimeSeries",
             {"symbol": "BTC/USD", "interval": "1h", "outputsize": 5},
         )
         assert result["symbol"] == "BTC/USD"
@@ -118,14 +138,18 @@ class TestLiveGetTimeSeries:
 class TestLiveGetPrice:
     def test_aapl_price(self, live_server):
         result = _cli_or_skip(
-            live_server, "TwelveDataService", "GetPrice",
+            live_server,
+            "twelvedata.v1.TwelveDataService",
+            "GetPrice",
             {"symbol": "AAPL"},
         )
         assert result["price"] > 0
 
     def test_eur_usd_price(self, live_server):
         result = _cli_or_skip(
-            live_server, "TwelveDataService", "GetPrice",
+            live_server,
+            "twelvedata.v1.TwelveDataService",
+            "GetPrice",
             {"symbol": "EUR/USD"},
         )
         assert result["price"] > 0
@@ -137,7 +161,9 @@ class TestLiveGetPrice:
 class TestLiveListStocks:
     def test_list_nasdaq_stocks(self, live_server):
         result = _cli_or_skip(
-            live_server, "TwelveDataService", "ListStocks",
+            live_server,
+            "twelvedata.v1.TwelveDataService",
+            "ListStocks",
             {"exchange": "NASDAQ"},
         )
         assert "stocks" in result
@@ -154,7 +180,9 @@ class TestLiveListStocks:
 class TestLiveListForexPairs:
     def test_list_forex(self, live_server):
         result = _cli_or_skip(
-            live_server, "TwelveDataService", "ListForexPairs",
+            live_server,
+            "twelvedata.v1.TwelveDataService",
+            "ListForexPairs",
         )
         assert "pairs" in result
         pairs = result["pairs"]
@@ -169,7 +197,9 @@ class TestLiveListForexPairs:
 class TestLiveListCryptoPairs:
     def test_list_crypto(self, live_server):
         result = _cli_or_skip(
-            live_server, "TwelveDataService", "ListCryptoPairs",
+            live_server,
+            "twelvedata.v1.TwelveDataService",
+            "ListCryptoPairs",
         )
         assert "pairs" in result
         pairs = result["pairs"]
@@ -184,7 +214,9 @@ class TestLiveListCryptoPairs:
 class TestLiveGetExchangeRate:
     def test_usd_eur(self, live_server):
         result = _cli_or_skip(
-            live_server, "TwelveDataService", "GetExchangeRate",
+            live_server,
+            "twelvedata.v1.TwelveDataService",
+            "GetExchangeRate",
             {"symbol": "USD/EUR"},
         )
         assert result["symbol"] == "USD/EUR"
@@ -192,7 +224,9 @@ class TestLiveGetExchangeRate:
 
     def test_btc_usd(self, live_server):
         result = _cli_or_skip(
-            live_server, "TwelveDataService", "GetExchangeRate",
+            live_server,
+            "twelvedata.v1.TwelveDataService",
+            "GetExchangeRate",
             {"symbol": "BTC/USD"},
         )
         assert result["symbol"] == "BTC/USD"
@@ -205,7 +239,9 @@ class TestLiveGetExchangeRate:
 class TestLiveGetEarningsCalendar:
     def test_earnings_upcoming(self, live_server):
         result = _cli_or_skip(
-            live_server, "TwelveDataService", "GetEarningsCalendar",
+            live_server,
+            "twelvedata.v1.TwelveDataService",
+            "GetEarningsCalendar",
         )
         assert "earnings" in result
         earnings = result["earnings"]

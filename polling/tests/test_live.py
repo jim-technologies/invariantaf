@@ -32,11 +32,11 @@ def live_server():
 
     from polling_mcp.service import PollingService
 
-    srv = Server.from_descriptor(
-        DESCRIPTOR_PATH
-    )
+    srv = Server.from_descriptor(DESCRIPTOR_PATH)
     servicer = PollingService()
-    srv.register(servicer)
+    from polling_mcp.gen.polling.v1 import polling_pb2_grpc as _native_rpc
+
+    _native_rpc.add_PollingServiceServicer_to_server(servicer, srv)
     yield srv
     asyncio.run(srv.stop())
 
@@ -47,14 +47,18 @@ def _cli_or_skip(live_server, args):
         return asyncio.run(live_server._cli(args))
     except Exception as exc:
         msg = str(exc)
-        if any(code in msg for code in ("403", "404", "410", "429", "500", "502", "503")):
+        if any(
+            code in msg for code in ("403", "404", "410", "429", "500", "502", "503")
+        ):
             pytest.skip(f"API unavailable: {msg[:120]}")
         raise
 
 
 class TestLivePredictIt:
     def test_list_markets(self, live_server):
-        result = _cli_or_skip(live_server, ["PollingService", "ListPredictItMarkets"])
+        result = _cli_or_skip(
+            live_server, ["polling.v1.PollingService", "ListPredictItMarkets"]
+        )
         assert "markets" in result
         markets = result["markets"]
         assert isinstance(markets, list)
@@ -65,7 +69,9 @@ class TestLivePredictIt:
             assert "name" in m
 
     def test_market_has_contracts(self, live_server):
-        result = _cli_or_skip(live_server, ["PollingService", "ListPredictItMarkets"])
+        result = _cli_or_skip(
+            live_server, ["polling.v1.PollingService", "ListPredictItMarkets"]
+        )
         markets = result.get("markets", [])
         if len(markets) == 0:
             pytest.skip("No PredictIt markets available")
@@ -81,7 +87,12 @@ class TestLiveMetaculus:
     def test_list_questions(self, live_server):
         result = _cli_or_skip(
             live_server,
-            ["PollingService", "ListMetaculusQuestions", "-r", json.dumps({"limit": 5})],
+            [
+                "polling.v1.PollingService",
+                "ListMetaculusQuestions",
+                "-r",
+                json.dumps({"limit": 5}),
+            ],
         )
         assert "questions" in result
         questions = result["questions"]
@@ -91,7 +102,12 @@ class TestLiveMetaculus:
     def test_question_has_fields(self, live_server):
         result = _cli_or_skip(
             live_server,
-            ["PollingService", "ListMetaculusQuestions", "-r", json.dumps({"limit": 3})],
+            [
+                "polling.v1.PollingService",
+                "ListMetaculusQuestions",
+                "-r",
+                json.dumps({"limit": 3}),
+            ],
         )
         questions = result.get("questions", [])
         if len(questions) == 0:
@@ -104,7 +120,12 @@ class TestLiveMetaculus:
         # First get a question ID from the list
         result = _cli_or_skip(
             live_server,
-            ["PollingService", "ListMetaculusQuestions", "-r", json.dumps({"limit": 1})],
+            [
+                "polling.v1.PollingService",
+                "ListMetaculusQuestions",
+                "-r",
+                json.dumps({"limit": 1}),
+            ],
         )
         questions = result.get("questions", [])
         if len(questions) == 0:
@@ -112,7 +133,12 @@ class TestLiveMetaculus:
         qid = questions[0]["id"]
         detail = _cli_or_skip(
             live_server,
-            ["PollingService", "GetMetaculusQuestion", "-r", json.dumps({"id": qid})],
+            [
+                "polling.v1.PollingService",
+                "GetMetaculusQuestion",
+                "-r",
+                json.dumps({"id": qid}),
+            ],
         )
         assert "question" in detail
         assert detail["question"]["id"] == qid

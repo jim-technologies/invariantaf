@@ -34,11 +34,11 @@ def live_server():
     from secedgar_mcp.gen.secedgar.v1 import secedgar_pb2 as _pb  # noqa: F401
     from secedgar_mcp.service import SECEdgarService
 
-    srv = Server.from_descriptor(
-        DESCRIPTOR_PATH
-    )
+    srv = Server.from_descriptor(DESCRIPTOR_PATH)
     servicer = SECEdgarService()
-    srv.register(servicer)
+    from secedgar_mcp.gen.secedgar.v1 import secedgar_pb2_grpc as _native_rpc
+
+    _native_rpc.add_SECEdgarServiceServicer_to_server(servicer, srv)
     yield srv
     asyncio.run(srv.stop())
 
@@ -49,9 +49,16 @@ def live_server():
 @pytest.fixture(scope="module")
 def apple_cik(live_server):
     """Look up Apple's CIK once for all tests that need it."""
-    result = asyncio.run(live_server._cli(
-        ["SECEdgarService", "GetTickerToCIK", "-r", json.dumps({"ticker": "AAPL"})]
-    ))
+    result = asyncio.run(
+        live_server._cli(
+            [
+                "secedgar.v1.SECEdgarService",
+                "GetTickerToCIK",
+                "-r",
+                json.dumps({"ticker": "AAPL"}),
+            ]
+        )
+    )
     cik = result.get("cik", "")
     assert cik, "expected a CIK for AAPL"
     return cik
@@ -60,18 +67,22 @@ def apple_cik(live_server):
 @pytest.fixture(scope="module")
 def recent_filing_accession(live_server, apple_cik):
     """Discover a valid accession number from Apple's filings."""
-    result = asyncio.run(live_server._cli(
-        [
-            "SECEdgarService",
-            "GetCompanyFilings",
-            "-r",
-            json.dumps({"cik": apple_cik, "limit": 1}),
-        ]
-    ))
+    result = asyncio.run(
+        live_server._cli(
+            [
+                "secedgar.v1.SECEdgarService",
+                "GetCompanyFilings",
+                "-r",
+                json.dumps({"cik": apple_cik, "limit": 1}),
+            ]
+        )
+    )
     filings = result.get("filings", [])
     if not filings:
         pytest.skip("no filings found for Apple")
-    accession = filings[0].get("accessionNumber") or filings[0].get("accession_number", "")
+    accession = filings[0].get("accessionNumber") or filings[0].get(
+        "accession_number", ""
+    )
     assert accession, "expected an accession number"
     return accession
 
@@ -81,9 +92,16 @@ def recent_filing_accession(live_server, apple_cik):
 
 class TestLiveTickerLookup:
     def test_get_ticker_to_cik(self, live_server):
-        result = asyncio.run(live_server._cli(
-            ["SECEdgarService", "GetTickerToCIK", "-r", json.dumps({"ticker": "AAPL"})]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "secedgar.v1.SECEdgarService",
+                    "GetTickerToCIK",
+                    "-r",
+                    json.dumps({"ticker": "AAPL"}),
+                ]
+            )
+        )
         cik = result.get("cik", "")
         assert cik
         # Apple's CIK is 320193
@@ -92,9 +110,16 @@ class TestLiveTickerLookup:
         assert name  # Should have a company name
 
     def test_get_ticker_to_cik_microsoft(self, live_server):
-        result = asyncio.run(live_server._cli(
-            ["SECEdgarService", "GetTickerToCIK", "-r", json.dumps({"ticker": "MSFT"})]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "secedgar.v1.SECEdgarService",
+                    "GetTickerToCIK",
+                    "-r",
+                    json.dumps({"ticker": "MSFT"}),
+                ]
+            )
+        )
         cik = result.get("cik", "")
         assert cik
         assert "789019" in cik
@@ -105,9 +130,16 @@ class TestLiveTickerLookup:
 
 class TestLiveSearchCompany:
     def test_search_company(self, live_server):
-        result = asyncio.run(live_server._cli(
-            ["SECEdgarService", "SearchCompany", "-r", json.dumps({"query": "Apple", "limit": 5})]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "secedgar.v1.SECEdgarService",
+                    "SearchCompany",
+                    "-r",
+                    json.dumps({"query": "Apple", "limit": 5}),
+                ]
+            )
+        )
         companies = result.get("companies", [])
         assert isinstance(companies, list)
         assert len(companies) > 0
@@ -115,9 +147,16 @@ class TestLiveSearchCompany:
         assert "name" in c or "cik" in c
 
     def test_search_company_by_ticker(self, live_server):
-        result = asyncio.run(live_server._cli(
-            ["SECEdgarService", "SearchCompany", "-r", json.dumps({"query": "TSLA", "limit": 3})]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "secedgar.v1.SECEdgarService",
+                    "SearchCompany",
+                    "-r",
+                    json.dumps({"query": "TSLA", "limit": 3}),
+                ]
+            )
+        )
         companies = result.get("companies", [])
         assert isinstance(companies, list)
         assert len(companies) > 0
@@ -128,14 +167,16 @@ class TestLiveSearchCompany:
 
 class TestLiveCompanyFilings:
     def test_get_company_filings(self, live_server, apple_cik):
-        result = asyncio.run(live_server._cli(
-            [
-                "SECEdgarService",
-                "GetCompanyFilings",
-                "-r",
-                json.dumps({"cik": apple_cik, "limit": 5}),
-            ]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "secedgar.v1.SECEdgarService",
+                    "GetCompanyFilings",
+                    "-r",
+                    json.dumps({"cik": apple_cik, "limit": 5}),
+                ]
+            )
+        )
         filings = result.get("filings", [])
         assert isinstance(filings, list)
         assert len(filings) > 0
@@ -146,14 +187,16 @@ class TestLiveCompanyFilings:
         assert form
 
     def test_get_company_filings_by_form_type(self, live_server, apple_cik):
-        result = asyncio.run(live_server._cli(
-            [
-                "SECEdgarService",
-                "GetCompanyFilings",
-                "-r",
-                json.dumps({"cik": apple_cik, "form_type": "10-K", "limit": 3}),
-            ]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "secedgar.v1.SECEdgarService",
+                    "GetCompanyFilings",
+                    "-r",
+                    json.dumps({"cik": apple_cik, "form_type": "10-K", "limit": 3}),
+                ]
+            )
+        )
         filings = result.get("filings", [])
         assert isinstance(filings, list)
         if filings:
@@ -167,14 +210,16 @@ class TestLiveCompanyFilings:
 
 class TestLiveCompanyFacts:
     def test_get_company_facts(self, live_server, apple_cik):
-        result = asyncio.run(live_server._cli(
-            [
-                "SECEdgarService",
-                "GetCompanyFacts",
-                "-r",
-                json.dumps({"cik": apple_cik}),
-            ]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "secedgar.v1.SECEdgarService",
+                    "GetCompanyFacts",
+                    "-r",
+                    json.dumps({"cik": apple_cik}),
+                ]
+            )
+        )
         facts = result.get("facts", [])
         assert isinstance(facts, list)
         assert len(facts) > 0
@@ -183,18 +228,22 @@ class TestLiveCompanyFacts:
         assert "unit" in f
 
     def test_get_company_concept(self, live_server, apple_cik):
-        result = asyncio.run(live_server._cli(
-            [
-                "SECEdgarService",
-                "GetCompanyConcept",
-                "-r",
-                json.dumps({
-                    "cik": apple_cik,
-                    "taxonomy": "us-gaap",
-                    "concept": "Revenues",
-                }),
-            ]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "secedgar.v1.SECEdgarService",
+                    "GetCompanyConcept",
+                    "-r",
+                    json.dumps(
+                        {
+                            "cik": apple_cik,
+                            "taxonomy": "us-gaap",
+                            "concept": "Revenues",
+                        }
+                    ),
+                ]
+            )
+        )
         values = result.get("values", [])
         assert isinstance(values, list)
         assert len(values) > 0
@@ -208,14 +257,16 @@ class TestLiveCompanyFacts:
 
 class TestLiveFullTextSearch:
     def test_search_full_text(self, live_server):
-        result = asyncio.run(live_server._cli(
-            [
-                "SECEdgarService",
-                "SearchFullText",
-                "-r",
-                json.dumps({"query": "artificial intelligence", "limit": 3}),
-            ]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "secedgar.v1.SECEdgarService",
+                    "SearchFullText",
+                    "-r",
+                    json.dumps({"query": "artificial intelligence", "limit": 3}),
+                ]
+            )
+        )
         total = result.get("totalHits") or result.get("total_hits", 0)
         assert int(total) > 0
         hits = result.get("hits", [])
@@ -228,14 +279,16 @@ class TestLiveFullTextSearch:
 
 class TestLiveFiling:
     def test_get_filing(self, live_server, recent_filing_accession):
-        result = asyncio.run(live_server._cli(
-            [
-                "SECEdgarService",
-                "GetFiling",
-                "-r",
-                json.dumps({"accession_number": recent_filing_accession}),
-            ]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "secedgar.v1.SECEdgarService",
+                    "GetFiling",
+                    "-r",
+                    json.dumps({"accession_number": recent_filing_accession}),
+                ]
+            )
+        )
         acc = result.get("accessionNumber") or result.get("accession_number", "")
         assert acc
         name = result.get("companyName") or result.get("company_name", "")
@@ -247,14 +300,16 @@ class TestLiveFiling:
 
 class TestLiveRecentFilings:
     def test_get_recent_filings(self, live_server):
-        result = asyncio.run(live_server._cli(
-            [
-                "SECEdgarService",
-                "GetRecentFilings",
-                "-r",
-                json.dumps({"limit": 5}),
-            ]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "secedgar.v1.SECEdgarService",
+                    "GetRecentFilings",
+                    "-r",
+                    json.dumps({"limit": 5}),
+                ]
+            )
+        )
         filings = result.get("filings", [])
         assert isinstance(filings, list)
         assert len(filings) > 0
@@ -263,14 +318,16 @@ class TestLiveRecentFilings:
         assert form
 
     def test_get_recent_filings_by_form(self, live_server):
-        result = asyncio.run(live_server._cli(
-            [
-                "SECEdgarService",
-                "GetRecentFilings",
-                "-r",
-                json.dumps({"form_type": "10-K", "limit": 3}),
-            ]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "secedgar.v1.SECEdgarService",
+                    "GetRecentFilings",
+                    "-r",
+                    json.dumps({"form_type": "10-K", "limit": 3}),
+                ]
+            )
+        )
         filings = result.get("filings", [])
         assert isinstance(filings, list)
         # May be empty if no recent 10-K filings, but should succeed
@@ -284,14 +341,16 @@ class TestLiveRecentFilings:
 
 class TestLiveInsiderTransactions:
     def test_get_insider_transactions(self, live_server, apple_cik):
-        result = asyncio.run(live_server._cli(
-            [
-                "SECEdgarService",
-                "GetInsiderTransactions",
-                "-r",
-                json.dumps({"cik": apple_cik, "limit": 5}),
-            ]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "secedgar.v1.SECEdgarService",
+                    "GetInsiderTransactions",
+                    "-r",
+                    json.dumps({"cik": apple_cik, "limit": 5}),
+                ]
+            )
+        )
         name = result.get("companyName") or result.get("company_name", "")
         assert name
         # Transactions may or may not be present depending on API data
@@ -304,14 +363,16 @@ class TestLiveInsiderTransactions:
 
 class TestLiveInstitutionalHoldings:
     def test_get_institutional_holdings(self, live_server, apple_cik):
-        result = asyncio.run(live_server._cli(
-            [
-                "SECEdgarService",
-                "GetInstitutionalHoldings",
-                "-r",
-                json.dumps({"cik": apple_cik, "limit": 5}),
-            ]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "secedgar.v1.SECEdgarService",
+                    "GetInstitutionalHoldings",
+                    "-r",
+                    json.dumps({"cik": apple_cik, "limit": 5}),
+                ]
+            )
+        )
         name = result.get("companyName") or result.get("company_name", "")
         assert name
         holdings = result.get("holdings", [])

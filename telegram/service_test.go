@@ -3,14 +3,12 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"google.golang.org/protobuf/types/known/structpb"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"strings"
 	"testing"
-
-	invariant "github.com/jim-technologies/invariantprotocol/go"
-	"google.golang.org/protobuf/types/known/structpb"
 )
 
 func mustStruct(t *testing.T, m map[string]any) *structpb.Struct {
@@ -23,22 +21,20 @@ func mustStruct(t *testing.T, m map[string]any) *structpb.Struct {
 }
 
 func TestServerWiring(t *testing.T) {
-	srv, err := invariant.ServerFromBytes(descriptorBytes)
+	srv, err := providerServer(NewTelegramService())
 	if err != nil {
 		t.Fatalf("ServerFromBytes: %v", err)
 	}
-	if err := srv.Register(NewTelegramService()); err != nil {
-		t.Fatalf("Register: %v", err)
-	}
+
 	tools := srv.Tools()
 	if len(tools) < 40 {
 		t.Fatalf("expected at least 40 tools, got %d", len(tools))
 	}
 	for _, n := range []string{
-		"TelegramService.GetMe",
-		"TelegramService.SendMessage",
-		"TelegramService.EditMessageText",
-		"TelegramService.SetWebhook",
+		"telegram.v1.TelegramService.GetMe",
+		"telegram.v1.TelegramService.SendMessage",
+		"telegram.v1.TelegramService.EditMessageText",
+		"telegram.v1.TelegramService.SetWebhook",
 	} {
 		if _, ok := tools[n]; !ok {
 			t.Fatalf("missing tool %s", n)

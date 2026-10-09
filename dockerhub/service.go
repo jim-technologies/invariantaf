@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -46,7 +45,7 @@ func (s *DockerHubService) get(path string, params url.Values) (map[string]any, 
 		return nil, fmt.Errorf("docker hub api returned %d: %s", resp.StatusCode, string(body))
 	}
 	var result map[string]any
-	if err := json.Unmarshal(body, &result); err != nil {
+	if err := decodeProviderJSON(body, &result); err != nil {
 		return nil, fmt.Errorf("decode json: %w", err)
 	}
 	return result, nil
@@ -71,7 +70,7 @@ func (s *DockerHubService) getList(path string, params url.Values) ([]any, error
 		return nil, fmt.Errorf("docker hub api returned %d: %s", resp.StatusCode, string(body))
 	}
 	var result []any
-	if err := json.Unmarshal(body, &result); err != nil {
+	if err := decodeProviderJSON(body, &result); err != nil {
 		return nil, fmt.Errorf("decode json array: %w", err)
 	}
 	return result, nil
@@ -103,23 +102,11 @@ func toStr(v any) string {
 }
 
 func toInt32(v any) int32 {
-	if v == nil {
-		return 0
-	}
-	if f, ok := v.(float64); ok {
-		return int32(f)
-	}
-	return 0
+	return providerInteger32(v)
 }
 
 func toInt64(v any) int64 {
-	if v == nil {
-		return 0
-	}
-	if f, ok := v.(float64); ok {
-		return int64(f)
-	}
-	return 0
+	return providerInteger(v)
 }
 
 func toBool(v any) bool {

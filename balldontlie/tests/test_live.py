@@ -41,7 +41,19 @@ def _cli_or_skip(live_server, service, method, params=None):
         pytest.skip(f"{method}: {type(exc).__name__}: {exc}")
     except Exception as exc:
         msg = str(exc)
-        if any(code in msg for code in ("401", "403", "429", "500", "502", "503", "Timeout", "timed out")):
+        if any(
+            code in msg
+            for code in (
+                "401",
+                "403",
+                "429",
+                "500",
+                "502",
+                "503",
+                "Timeout",
+                "timed out",
+            )
+        ):
             pytest.skip(f"{method}: {msg[:120]}")
         raise
 
@@ -55,11 +67,11 @@ def live_server():
     base_url = (os.getenv("BALLDONTLIE_BASE_URL") or DEFAULT_BASE_URL).rstrip("/")
     api_key = (os.getenv("BALLDONTLIE_API_KEY") or "").strip()
 
-    srv = Server.from_descriptor(
-        DESCRIPTOR_PATH
-    )
+    srv = Server.from_descriptor(DESCRIPTOR_PATH)
     servicer = BallDontLieService(base_url=base_url, api_key=api_key)
-    srv.register(servicer, service_name="balldontlie.v1.BallDontLieService")
+    from balldontlie_mcp.gen.balldontlie.v1 import balldontlie_pb2_grpc as _native_rpc
+
+    _native_rpc.add_BallDontLieServiceServicer_to_server(servicer, srv)
     yield srv
     asyncio.run(srv.stop())
 
@@ -70,7 +82,9 @@ def live_server():
 class TestLiveListNBAPlayers:
     def test_search_lebron(self, live_server):
         result = _cli_or_skip(
-            live_server, "BallDontLieService", "ListNBAPlayers",
+            live_server,
+            "balldontlie.v1.BallDontLieService",
+            "ListNBAPlayers",
             {"search": "LeBron", "per_page": 5},
         )
         assert "data" in result
@@ -81,7 +95,9 @@ class TestLiveListNBAPlayers:
 
     def test_search_curry(self, live_server):
         result = _cli_or_skip(
-            live_server, "BallDontLieService", "ListNBAPlayers",
+            live_server,
+            "balldontlie.v1.BallDontLieService",
+            "ListNBAPlayers",
             {"search": "Curry", "per_page": 5},
         )
         assert "data" in result
@@ -95,7 +111,9 @@ class TestLiveGetNBAPlayer:
     def test_get_player(self, live_server):
         # First search to get a valid player ID
         search = _cli_or_skip(
-            live_server, "BallDontLieService", "ListNBAPlayers",
+            live_server,
+            "balldontlie.v1.BallDontLieService",
+            "ListNBAPlayers",
             {"search": "LeBron", "per_page": 1},
         )
         if not search.get("data"):
@@ -103,7 +121,9 @@ class TestLiveGetNBAPlayer:
         player_id = search["data"][0]["id"]
 
         result = _cli_or_skip(
-            live_server, "BallDontLieService", "GetNBAPlayer",
+            live_server,
+            "balldontlie.v1.BallDontLieService",
+            "GetNBAPlayer",
             {"id": player_id},
         )
         assert "data" in result
@@ -116,7 +136,9 @@ class TestLiveGetNBAPlayer:
 class TestLiveListNBATeams:
     def test_list_teams(self, live_server):
         result = _cli_or_skip(
-            live_server, "BallDontLieService", "ListNBATeams",
+            live_server,
+            "balldontlie.v1.BallDontLieService",
+            "ListNBATeams",
         )
         assert "data" in result
         teams = result["data"]
@@ -132,7 +154,9 @@ class TestLiveListNBATeams:
 class TestLiveListNBAGames:
     def test_list_games_by_date(self, live_server):
         result = _cli_or_skip(
-            live_server, "BallDontLieService", "ListNBAGames",
+            live_server,
+            "balldontlie.v1.BallDontLieService",
+            "ListNBAGames",
             {"dates": ["2025-01-15"], "per_page": 5},
         )
         assert "data" in result
@@ -144,7 +168,9 @@ class TestLiveListNBAGames:
 
     def test_list_games_by_season(self, live_server):
         result = _cli_or_skip(
-            live_server, "BallDontLieService", "ListNBAGames",
+            live_server,
+            "balldontlie.v1.BallDontLieService",
+            "ListNBAGames",
             {"seasons": [2024], "per_page": 5},
         )
         assert "data" in result
@@ -158,7 +184,9 @@ class TestLiveGetNBAGame:
     def test_get_game(self, live_server):
         # First list games to get a valid game ID
         search = _cli_or_skip(
-            live_server, "BallDontLieService", "ListNBAGames",
+            live_server,
+            "balldontlie.v1.BallDontLieService",
+            "ListNBAGames",
             {"seasons": [2024], "per_page": 1},
         )
         if not search.get("data"):
@@ -166,7 +194,9 @@ class TestLiveGetNBAGame:
         game_id = search["data"][0]["id"]
 
         result = _cli_or_skip(
-            live_server, "BallDontLieService", "GetNBAGame",
+            live_server,
+            "balldontlie.v1.BallDontLieService",
+            "GetNBAGame",
             {"id": game_id},
         )
         assert "data" in result
@@ -180,7 +210,9 @@ class TestLiveGetNBAStats:
     def test_get_stats_by_game(self, live_server):
         # First list games to get a valid game ID
         search = _cli_or_skip(
-            live_server, "BallDontLieService", "ListNBAGames",
+            live_server,
+            "balldontlie.v1.BallDontLieService",
+            "ListNBAGames",
             {"seasons": [2024], "per_page": 1},
         )
         if not search.get("data"):
@@ -188,7 +220,9 @@ class TestLiveGetNBAStats:
         game_id = search["data"][0]["id"]
 
         result = _cli_or_skip(
-            live_server, "BallDontLieService", "GetNBAStats",
+            live_server,
+            "balldontlie.v1.BallDontLieService",
+            "GetNBAStats",
             {"game_ids": [game_id], "per_page": 5},
         )
         assert "data" in result
@@ -202,7 +236,9 @@ class TestLiveGetNBASeasonAverages:
     def test_season_averages(self, live_server):
         # Search for a player to get a valid ID
         search = _cli_or_skip(
-            live_server, "BallDontLieService", "ListNBAPlayers",
+            live_server,
+            "balldontlie.v1.BallDontLieService",
+            "ListNBAPlayers",
             {"search": "LeBron", "per_page": 1},
         )
         if not search.get("data"):
@@ -210,7 +246,9 @@ class TestLiveGetNBASeasonAverages:
         player_id = search["data"][0]["id"]
 
         result = _cli_or_skip(
-            live_server, "BallDontLieService", "GetNBASeasonAverages",
+            live_server,
+            "balldontlie.v1.BallDontLieService",
+            "GetNBASeasonAverages",
             {"season": 2024, "player_ids": [player_id]},
         )
         assert "data" in result
@@ -223,7 +261,9 @@ class TestLiveGetNBASeasonAverages:
 class TestLiveListNBAStandings:
     def test_standings(self, live_server):
         result = _cli_or_skip(
-            live_server, "BallDontLieService", "ListNBAStandings",
+            live_server,
+            "balldontlie.v1.BallDontLieService",
+            "ListNBAStandings",
             {"season": 2024},
         )
         assert "data" in result

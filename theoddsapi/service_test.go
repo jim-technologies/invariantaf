@@ -11,7 +11,9 @@ import (
 func mustStruct(t *testing.T, m map[string]any) *structpb.Struct {
 	t.Helper()
 	s, err := structpb.NewStruct(m)
-	if err != nil { t.Fatalf("failed to create struct: %v", err) }
+	if err != nil {
+		t.Fatalf("failed to create struct: %v", err)
+	}
 	return s
 }
 
@@ -28,9 +30,13 @@ func TestLiveListSports(t *testing.T) {
 	skipUnlessLive(t)
 	svc := liveService()
 	resp, err := svc.ListSports(context.Background(), mustStruct(t, map[string]any{}))
-	if err != nil { t.Fatalf("ListSports: %v", err) }
-	fields := resp.GetFields()
-	if len(fields) == 0 { t.Fatal("empty response from ListSports") }
+	if err != nil {
+		t.Fatalf("ListSports: %v", err)
+	}
+	fields := replyFields(t, resp)
+	if len(fields) == 0 {
+		t.Fatal("empty response from ListSports")
+	}
 	t.Logf("ListSports response keys: %v", keysOf(fields))
 }
 
@@ -38,9 +44,13 @@ func TestLiveGetOdds(t *testing.T) {
 	skipUnlessLive(t)
 	svc := liveService()
 	resp, err := svc.GetOdds(context.Background(), mustStruct(t, map[string]any{"sport": "upcoming"}))
-	if err != nil { t.Fatalf("GetOdds: %v", err) }
-	fields := resp.GetFields()
-	if len(fields) == 0 { t.Fatal("empty response from GetOdds") }
+	if err != nil {
+		t.Fatalf("GetOdds: %v", err)
+	}
+	fields := replyFields(t, resp)
+	if len(fields) == 0 {
+		t.Fatal("empty response from GetOdds")
+	}
 	t.Logf("GetOdds response keys: %v", keysOf(fields))
 }
 
@@ -52,8 +62,10 @@ func TestLiveGetScores(t *testing.T) {
 		t.Logf("GetScores returned error (may be expected): %v", err)
 		return
 	}
-	fields := resp.GetFields()
-	if len(fields) == 0 { t.Fatal("empty response from GetScores") }
+	fields := replyFields(t, resp)
+	if len(fields) == 0 {
+		t.Fatal("empty response from GetScores")
+	}
 	t.Logf("GetScores response keys: %v", keysOf(fields))
 }
 
@@ -61,14 +73,29 @@ func TestLiveGetEvents(t *testing.T) {
 	skipUnlessLive(t)
 	svc := liveService()
 	resp, err := svc.GetEvents(context.Background(), mustStruct(t, map[string]any{"sport": "upcoming"}))
-	if err != nil { t.Fatalf("GetEvents: %v", err) }
-	fields := resp.GetFields()
-	if len(fields) == 0 { t.Fatal("empty response from GetEvents") }
+	if err != nil {
+		t.Fatalf("GetEvents: %v", err)
+	}
+	fields := replyFields(t, resp)
+	if len(fields) == 0 {
+		t.Fatal("empty response from GetEvents")
+	}
 	t.Logf("GetEvents response keys: %v", keysOf(fields))
 }
 
 func keysOf(fields map[string]*structpb.Value) []string {
 	keys := make([]string, 0, len(fields))
-	for k := range fields { keys = append(keys, k) }
+	for k := range fields {
+		keys = append(keys, k)
+	}
 	return keys
+}
+
+func replyFields(t *testing.T, body []byte) map[string]*structpb.Value {
+	t.Helper()
+	result := new(structpb.Struct)
+	if err := result.UnmarshalJSON(body); err != nil {
+		t.Fatal(err)
+	}
+	return result.GetFields()
 }

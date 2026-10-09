@@ -48,8 +48,12 @@ def _parse_market_history_point(pt: dict) -> pb.MarketHistoryPoint:
     return pb.MarketHistoryPoint(
         block_number=int(pt.get("block_number") or 0),
         block_timestamp=int(pt.get("block_timestamp") or 0),
-        supply_rate=float(pt.get("rates", [{}])[0].get("rate") or 0) if pt.get("rates") else 0,
-        borrow_rate=float(pt.get("rates", [{}])[0].get("rate") or 0) if pt.get("rates") else 0,
+        supply_rate=float(pt.get("rates", [{}])[0].get("rate") or 0)
+        if pt.get("rates")
+        else 0,
+        borrow_rate=float(pt.get("rates", [{}])[0].get("rate") or 0)
+        if pt.get("rates")
+        else 0,
         total_supply=str(pt.get("total_supply", {}).get("value", "") or ""),
         total_borrows=str(pt.get("total_borrows", {}).get("value", "") or ""),
     )
@@ -79,37 +83,43 @@ class CompoundService:
 
     async def aclose(self) -> None:
         """Close the HTTP client. Idempotent."""
-        await self._client.aclose()
+        await self._http.aclose()
 
-    def _get(self, url: str, params: dict | None = None) -> Any:
-        resp = self._http.get(url, params=params)
+    async def _get(self, url: str, params: dict | None = None) -> Any:
+        resp = await self._http.get(url, params=params)
         resp.raise_for_status()
         return resp.json()
 
-    async def ListCTokens(self, request: Any, context: Any = None) -> pb.ListCTokensResponse:
-        raw = self._get(f"{_BASE_URL}/ctoken")
+    async def ListCTokens(
+        self, request: Any, context: Any = None
+    ) -> pb.ListCTokensResponse:
+        raw = await self._get(f"{_BASE_URL}/ctoken")
         resp = pb.ListCTokensResponse()
         for ct in raw.get("cToken", []):
             resp.ctokens.append(_parse_ctoken(ct))
         return resp
 
-    async def GetMarketHistory(self, request: Any, context: Any = None) -> pb.GetMarketHistoryResponse:
+    async def GetMarketHistory(
+        self, request: Any, context: Any = None
+    ) -> pb.GetMarketHistoryResponse:
         params: dict[str, Any] = {"asset": request.asset}
         if request.min_block_timestamp:
             params["min_block_timestamp"] = request.min_block_timestamp
         if request.num_points:
             params["num_points"] = request.num_points
-        raw = self._get(f"{_BASE_URL}/market_history/graph", params=params)
+        raw = await self._get(f"{_BASE_URL}/market_history/graph", params=params)
         resp = pb.GetMarketHistoryResponse()
         for pt in raw.get("market_history", []):
             resp.points.append(_parse_market_history_point(pt))
         return resp
 
-    async def ListProposals(self, request: Any, context: Any = None) -> pb.ListProposalsResponse:
+    async def ListProposals(
+        self, request: Any, context: Any = None
+    ) -> pb.ListProposalsResponse:
         params: dict[str, Any] = {}
         if request.limit:
             params["page_size"] = request.limit
-        raw = self._get(f"{_BASE_URL}/governance/proposals", params=params)
+        raw = await self._get(f"{_BASE_URL}/governance/proposals", params=params)
         resp = pb.ListProposalsResponse()
         for p in raw.get("proposals", []):
             resp.proposals.append(_parse_proposal(p))

@@ -53,14 +53,14 @@ func (s *SteamService) get(url string) (map[string]any, error) {
 	}
 
 	var result map[string]any
-	if err := json.Unmarshal(body, &result); err != nil {
+	if err := decodeProviderJSON(body, &result); err != nil {
 		return nil, fmt.Errorf("decode json: %w", err)
 	}
 	return result, nil
 }
 
 // GetPlayerSummaries retrieves profile info for one or more Steam players.
-func (s *SteamService) GetPlayerSummaries(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *SteamService) GetPlayerSummaries(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	steamIDs := req.GetFields()["steam_ids"].GetStringValue()
 	if steamIDs == "" {
 		return nil, fmt.Errorf("steam_ids is required")
@@ -101,13 +101,13 @@ func (s *SteamService) GetPlayerSummaries(_ context.Context, req *structpb.Struc
 		players = append(players, player)
 	}
 
-	return structpb.NewStruct(map[string]any{
+	return json.Marshal(map[string]any{
 		"players": players,
 	})
 }
 
 // GetOwnedGames retrieves the games owned by a player.
-func (s *SteamService) GetOwnedGames(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *SteamService) GetOwnedGames(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	steamID := fields["steam_id"].GetStringValue()
 	if steamID == "" {
@@ -153,14 +153,14 @@ func (s *SteamService) GetOwnedGames(_ context.Context, req *structpb.Struct) (*
 		games = append(games, game)
 	}
 
-	return structpb.NewStruct(map[string]any{
+	return json.Marshal(map[string]any{
 		"game_count": gameCount,
 		"games":      games,
 	})
 }
 
 // GetRecentlyPlayedGames retrieves recently played games for a player.
-func (s *SteamService) GetRecentlyPlayedGames(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *SteamService) GetRecentlyPlayedGames(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	steamID := fields["steam_id"].GetStringValue()
 	if steamID == "" {
@@ -203,14 +203,14 @@ func (s *SteamService) GetRecentlyPlayedGames(_ context.Context, req *structpb.S
 		games = append(games, game)
 	}
 
-	return structpb.NewStruct(map[string]any{
+	return json.Marshal(map[string]any{
 		"total_count": totalCount,
 		"games":       games,
 	})
 }
 
 // GetPlayerAchievements retrieves a player's achievements for a specific game.
-func (s *SteamService) GetPlayerAchievements(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *SteamService) GetPlayerAchievements(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	steamID := fields["steam_id"].GetStringValue()
 	appID := int(fields["app_id"].GetNumberValue())
@@ -262,7 +262,7 @@ func (s *SteamService) GetPlayerAchievements(_ context.Context, req *structpb.St
 		achievements = append(achievements, achievement)
 	}
 
-	return structpb.NewStruct(map[string]any{
+	return json.Marshal(map[string]any{
 		"game_name":    gameName,
 		"steam_id":     respSteamID,
 		"success":      success,
@@ -271,7 +271,7 @@ func (s *SteamService) GetPlayerAchievements(_ context.Context, req *structpb.St
 }
 
 // GetAppDetails retrieves detailed metadata about a Steam app from the Store API.
-func (s *SteamService) GetAppDetails(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *SteamService) GetAppDetails(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	appID := int(req.GetFields()["app_id"].GetNumberValue())
 	if appID == 0 {
 		return nil, fmt.Errorf("app_id is required")
@@ -287,12 +287,12 @@ func (s *SteamService) GetAppDetails(_ context.Context, req *structpb.Struct) (*
 
 	appData, ok := raw[appIDStr].(map[string]any)
 	if !ok {
-		return structpb.NewStruct(map[string]any{"success": false})
+		return json.Marshal(map[string]any{"success": false})
 	}
 
 	success := getBool(appData, "success")
 	if !success {
-		return structpb.NewStruct(map[string]any{"success": false})
+		return json.Marshal(map[string]any{"success": false})
 	}
 
 	data, _ := traverse(appData, "data")
@@ -391,11 +391,11 @@ func (s *SteamService) GetAppDetails(_ context.Context, req *structpb.Struct) (*
 		result["data"].(map[string]any)["genres"] = genres
 	}
 
-	return structpb.NewStruct(result)
+	return json.Marshal(result)
 }
 
 // GetAppList retrieves the complete list of all Steam apps.
-func (s *SteamService) GetAppList(_ context.Context, _ *structpb.Struct) (*structpb.Struct, error) {
+func (s *SteamService) GetAppList(_ context.Context, _ *structpb.Struct) (json.RawMessage, error) {
 	u := fmt.Sprintf("%s/ISteamApps/GetAppList/v0002/", s.steamBaseURL)
 
 	raw, err := s.get(u)
@@ -418,13 +418,13 @@ func (s *SteamService) GetAppList(_ context.Context, _ *structpb.Struct) (*struc
 		})
 	}
 
-	return structpb.NewStruct(map[string]any{
+	return json.Marshal(map[string]any{
 		"apps": apps,
 	})
 }
 
 // GetNumberOfCurrentPlayers retrieves the current player count for an app.
-func (s *SteamService) GetNumberOfCurrentPlayers(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *SteamService) GetNumberOfCurrentPlayers(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	appID := int(req.GetFields()["app_id"].GetNumberValue())
 	if appID == 0 {
 		return nil, fmt.Errorf("app_id is required")
@@ -441,13 +441,13 @@ func (s *SteamService) GetNumberOfCurrentPlayers(_ context.Context, req *structp
 	response, _ := traverse(raw, "response")
 	playerCount := getNumber(response, "player_count")
 
-	return structpb.NewStruct(map[string]any{
+	return json.Marshal(map[string]any{
 		"player_count": playerCount,
 	})
 }
 
 // GetFriendList retrieves a player's friend list.
-func (s *SteamService) GetFriendList(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *SteamService) GetFriendList(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	steamID := req.GetFields()["steam_id"].GetStringValue()
 	if steamID == "" {
 		return nil, fmt.Errorf("steam_id is required")
@@ -477,13 +477,13 @@ func (s *SteamService) GetFriendList(_ context.Context, req *structpb.Struct) (*
 		})
 	}
 
-	return structpb.NewStruct(map[string]any{
+	return json.Marshal(map[string]any{
 		"friends": friends,
 	})
 }
 
 // GetNewsForApp retrieves news articles for a Steam app.
-func (s *SteamService) GetNewsForApp(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *SteamService) GetNewsForApp(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	appID := int(fields["app_id"].GetNumberValue())
 	if appID == 0 {
@@ -534,14 +534,14 @@ func (s *SteamService) GetNewsForApp(_ context.Context, req *structpb.Struct) (*
 		})
 	}
 
-	return structpb.NewStruct(map[string]any{
+	return json.Marshal(map[string]any{
 		"app_id":     respAppID,
 		"news_items": newsItems,
 	})
 }
 
 // GetGlobalAchievementPercentages retrieves global achievement completion rates for a game.
-func (s *SteamService) GetGlobalAchievementPercentages(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *SteamService) GetGlobalAchievementPercentages(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	appID := int(req.GetFields()["app_id"].GetNumberValue())
 	if appID == 0 {
 		return nil, fmt.Errorf("app_id is required")
@@ -570,7 +570,7 @@ func (s *SteamService) GetGlobalAchievementPercentages(_ context.Context, req *s
 		})
 	}
 
-	return structpb.NewStruct(map[string]any{
+	return json.Marshal(map[string]any{
 		"achievements": achievements,
 	})
 }
@@ -636,6 +636,8 @@ func getNumber(m map[string]any, key string) float64 {
 		return 0
 	}
 	switch val := v.(type) {
+	case json.Number:
+		return providerNumber(val)
 	case float64:
 		return val
 	case int:
@@ -667,6 +669,8 @@ func getBool(m map[string]any, key string) bool {
 	switch val := v.(type) {
 	case bool:
 		return val
+	case json.Number:
+		return providerNumber(val) != 0
 	case float64:
 		return val != 0
 	case string:

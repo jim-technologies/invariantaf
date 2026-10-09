@@ -20,15 +20,17 @@ class LidoService:
 
     async def aclose(self) -> None:
         """Close the HTTP client. Idempotent."""
-        await self._client.aclose()
+        await self._http.aclose()
 
-    def _get(self, url: str, params: dict | None = None) -> Any:
-        resp = self._http.get(url, params=params)
+    async def _get(self, url: str, params: dict | None = None) -> Any:
+        resp = await self._http.get(url, params=params)
         resp.raise_for_status()
         return resp.json()
 
-    async def GetStETHApr(self, request: Any, context: Any = None) -> pb.GetStETHAprResponse:
-        raw = self._get(f"{_ETH_API_URL}/v1/protocol/steth/apr/last")
+    async def GetStETHApr(
+        self, request: Any, context: Any = None
+    ) -> pb.GetStETHAprResponse:
+        raw = await self._get(f"{_ETH_API_URL}/v1/protocol/steth/apr/last")
         data = raw.get("data", {})
         meta = raw.get("meta", {})
         return pb.GetStETHAprResponse(
@@ -43,16 +45,20 @@ class LidoService:
             ),
         )
 
-    async def GetStETHAprSMA(self, request: Any, context: Any = None) -> pb.GetStETHAprSMAResponse:
-        raw = self._get(f"{_ETH_API_URL}/v1/protocol/steth/apr/sma")
+    async def GetStETHAprSMA(
+        self, request: Any, context: Any = None
+    ) -> pb.GetStETHAprSMAResponse:
+        raw = await self._get(f"{_ETH_API_URL}/v1/protocol/steth/apr/sma")
         data = raw.get("data", {})
         meta = raw.get("meta", {})
         aprs = []
         for dp in data.get("aprs", []):
-            aprs.append(pb.AprDataPoint(
-                time_unix=dp.get("timeUnix", 0),
-                apr=dp.get("apr", 0),
-            ))
+            aprs.append(
+                pb.AprDataPoint(
+                    time_unix=dp.get("timeUnix", 0),
+                    apr=dp.get("apr", 0),
+                )
+            )
         return pb.GetStETHAprSMAResponse(
             aprs=aprs,
             sma_apr=data.get("smaApr", 0),
@@ -63,9 +69,11 @@ class LidoService:
             ),
         )
 
-    async def GetWithdrawalTime(self, request: Any, context: Any = None) -> pb.GetWithdrawalTimeResponse:
+    async def GetWithdrawalTime(
+        self, request: Any, context: Any = None
+    ) -> pb.GetWithdrawalTimeResponse:
         amount = request.amount if hasattr(request, "amount") and request.amount else 1
-        raw = self._get(
+        raw = await self._get(
             f"{_WQ_API_URL}/v2/request-time/calculate",
             params={"amount": amount},
         )

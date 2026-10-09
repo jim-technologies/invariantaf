@@ -11,6 +11,9 @@ from invariant import Server
 
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
+from binance_mcp.gen.binance.v1 import binance_pb2_grpc as pb_grpc
+
+
 # Ensure generated protobuf descriptors are loaded in the default descriptor pool.
 from binance_mcp.gen.binance.v1 import binance_pb2 as _binance_pb2  # noqa: F401
 from binance_mcp.service import DEFAULT_BASE_URL, BinanceService
@@ -56,7 +59,7 @@ def main() -> None:
     base_url = (_env("BINANCE_BASE_URL") or DEFAULT_BASE_URL).rstrip("/")
 
     servicer = BinanceService(base_url=base_url)
-    server.register(servicer, service_name="binance.v1.BinanceMarketService")
+    pb_grpc.add_BinanceMarketServiceServicer_to_server(servicer, server)
 
     asyncio.run(_serve(server, _projection_from_argv(sys.argv[1:])))
 

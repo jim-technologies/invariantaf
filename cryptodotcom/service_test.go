@@ -48,7 +48,7 @@ func TestLiveGetInstruments(t *testing.T) {
 		t.Fatalf("GetInstruments: %v", err)
 	}
 
-	fields := resp.GetFields()
+	fields := replyFields(t, resp)
 	data := fields["data"].GetListValue().GetValues()
 	if len(data) == 0 {
 		t.Fatal("empty response from GetInstruments")
@@ -71,7 +71,7 @@ func TestLiveGetTickers(t *testing.T) {
 		t.Fatalf("GetTickers: %v", err)
 	}
 
-	fields := resp.GetFields()
+	fields := replyFields(t, resp)
 	data := fields["data"].GetListValue().GetValues()
 	if len(data) == 0 {
 		t.Fatal("empty response from GetTickers")
@@ -95,7 +95,7 @@ func TestLiveGetOrderbook(t *testing.T) {
 		t.Fatalf("GetOrderbook: %v", err)
 	}
 
-	fields := resp.GetFields()
+	fields := replyFields(t, resp)
 	book := fields["data"].GetStructValue().GetFields()
 	bids := book["bids"].GetListValue().GetValues()
 	asks := book["asks"].GetListValue().GetValues()
@@ -120,7 +120,7 @@ func TestLiveGetCandlestick(t *testing.T) {
 		t.Fatalf("GetCandlestick: %v", err)
 	}
 
-	fields := resp.GetFields()
+	fields := replyFields(t, resp)
 	data := fields["data"].GetListValue().GetValues()
 	if len(data) == 0 {
 		t.Fatal("empty response from GetCandlestick")
@@ -145,7 +145,7 @@ func TestLiveGetTrades(t *testing.T) {
 		t.Fatalf("GetTrades: %v", err)
 	}
 
-	fields := resp.GetFields()
+	fields := replyFields(t, resp)
 	data := fields["data"].GetListValue().GetValues()
 	if len(data) == 0 {
 		t.Fatal("empty response from GetTrades")
@@ -156,4 +156,13 @@ func TestLiveGetTrades(t *testing.T) {
 		first["side"].GetStringValue(),
 		first["price"].GetStringValue(),
 		first["quantity"].GetStringValue())
+}
+
+func replyFields(t *testing.T, body []byte) map[string]*structpb.Value {
+	t.Helper()
+	result := new(structpb.Struct)
+	if err := result.UnmarshalJSON(body); err != nil {
+		t.Fatal(err)
+	}
+	return result.GetFields()
 }

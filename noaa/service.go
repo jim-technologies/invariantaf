@@ -65,9 +65,9 @@ func (s *NOAAService) getNWS(path string, params url.Values) (map[string]any, er
 	}
 
 	var result map[string]any
-	if err := json.Unmarshal(body, &result); err != nil {
+	if err := decodeProviderJSON(body, &result); err != nil {
 		var arr []any
-		if err2 := json.Unmarshal(body, &arr); err2 == nil {
+		if err2 := decodeProviderJSON(body, &arr); err2 == nil {
 			result = map[string]any{"items": arr}
 		} else {
 			return nil, fmt.Errorf("decode response: %w (body: %s)", err, string(body))
@@ -106,9 +106,9 @@ func (s *NOAAService) getCDO(path string, params url.Values) (map[string]any, er
 	}
 
 	var result map[string]any
-	if err := json.Unmarshal(body, &result); err != nil {
+	if err := decodeProviderJSON(body, &result); err != nil {
 		var arr []any
-		if err2 := json.Unmarshal(body, &arr); err2 == nil {
+		if err2 := decodeProviderJSON(body, &arr); err2 == nil {
 			result = map[string]any{"items": arr}
 		} else {
 			return nil, fmt.Errorf("decode response: %w (body: %s)", err, string(body))
@@ -129,7 +129,7 @@ func getString(fields map[string]*structpb.Value, key, def string) string {
 // helper: get an int field from structpb (numbers come as float64).
 func getInt(fields map[string]*structpb.Value, key string) int64 {
 	if v, ok := fields[key]; ok {
-		return int64(v.GetNumberValue())
+		return requestInteger(v)
 	}
 	return 0
 }
@@ -137,22 +137,18 @@ func getInt(fields map[string]*structpb.Value, key string) int64 {
 // helper: get a float field from structpb.
 func getFloat(fields map[string]*structpb.Value, key string) float64 {
 	if v, ok := fields[key]; ok {
-		return v.GetNumberValue()
+		return requestNumber(v)
 	}
 	return 0
 }
 
 // helper: convert API response to structpb.Struct.
-func toStruct(data map[string]any) (*structpb.Struct, error) {
-	result, err := structpb.NewStruct(data)
-	if err != nil {
-		return nil, fmt.Errorf("convert to struct: %w", err)
-	}
-	return result, nil
+func responseJSON(data map[string]any) (json.RawMessage, error) {
+	return json.Marshal(data)
 }
 
 // GetForecast gets a detailed forecast for a specific NWS grid point.
-func (s *NOAAService) GetForecast(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *NOAAService) GetForecast(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	office := getString(fields, "office", "")
 	if office == "" {
@@ -170,11 +166,11 @@ func (s *NOAAService) GetForecast(_ context.Context, req *structpb.Struct) (*str
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetForecastByStation gets the latest observation from a weather station.
-func (s *NOAAService) GetForecastByStation(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *NOAAService) GetForecastByStation(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	stationID := getString(fields, "station_id", "")
 	if stationID == "" {
@@ -187,11 +183,11 @@ func (s *NOAAService) GetForecastByStation(_ context.Context, req *structpb.Stru
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetHourlyForecast gets an hourly forecast for a specific NWS grid point.
-func (s *NOAAService) GetHourlyForecast(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *NOAAService) GetHourlyForecast(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	office := getString(fields, "office", "")
 	if office == "" {
@@ -209,11 +205,11 @@ func (s *NOAAService) GetHourlyForecast(_ context.Context, req *structpb.Struct)
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetAlerts gets active weather alerts for a US state.
-func (s *NOAAService) GetAlerts(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *NOAAService) GetAlerts(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	state := getString(fields, "state", "")
 	if state == "" {
@@ -228,11 +224,11 @@ func (s *NOAAService) GetAlerts(_ context.Context, req *structpb.Struct) (*struc
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetStations finds weather stations in a US state.
-func (s *NOAAService) GetStations(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *NOAAService) GetStations(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	state := getString(fields, "state", "")
 	if state == "" {
@@ -254,11 +250,11 @@ func (s *NOAAService) GetStations(_ context.Context, req *structpb.Struct) (*str
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetPointInfo gets NWS grid point and station info from lat/lon coordinates.
-func (s *NOAAService) GetPointInfo(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *NOAAService) GetPointInfo(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	lat := getFloat(fields, "lat")
 	lon := getFloat(fields, "lon")
@@ -272,11 +268,11 @@ func (s *NOAAService) GetPointInfo(_ context.Context, req *structpb.Struct) (*st
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetClimateData gets historical daily climate observations from NOAA CDO.
-func (s *NOAAService) GetClimateData(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *NOAAService) GetClimateData(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	station := getString(fields, "station", "")
 	if station == "" {
@@ -304,5 +300,5 @@ func (s *NOAAService) GetClimateData(_ context.Context, req *structpb.Struct) (*
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }

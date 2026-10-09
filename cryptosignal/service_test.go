@@ -4,8 +4,8 @@ import (
 	"context"
 	"os"
 	"testing"
-	
-		"google.golang.org/protobuf/types/known/structpb"
+
+	"google.golang.org/protobuf/types/known/structpb"
 )
 
 func mustStruct(t *testing.T, m map[string]any) *structpb.Struct {
@@ -32,9 +32,13 @@ func TestLiveGetFearGreedIndex(t *testing.T) {
 	skipUnlessLive(t)
 	svc := liveService()
 	resp, err := svc.GetFearGreedIndex(context.Background(), mustStruct(t, map[string]any{"limit": float64(5)}))
-	if err != nil { t.Fatalf("GetFearGreedIndex: %v", err) }
-	fields := resp.GetFields()
-	if len(fields) == 0 { t.Fatal("empty response from GetFearGreedIndex") }
+	if err != nil {
+		t.Fatalf("GetFearGreedIndex: %v", err)
+	}
+	fields := replyFields(t, resp)
+	if len(fields) == 0 {
+		t.Fatal("empty response from GetFearGreedIndex")
+	}
 	t.Logf("GetFearGreedIndex response keys: %v", keysOf(fields))
 }
 
@@ -42,9 +46,13 @@ func TestLiveGetGlobalMetrics(t *testing.T) {
 	skipUnlessLive(t)
 	svc := liveService()
 	resp, err := svc.GetGlobalMetrics(context.Background(), mustStruct(t, map[string]any{}))
-	if err != nil { t.Fatalf("GetGlobalMetrics: %v", err) }
-	fields := resp.GetFields()
-	if len(fields) == 0 { t.Fatal("empty response from GetGlobalMetrics") }
+	if err != nil {
+		t.Fatalf("GetGlobalMetrics: %v", err)
+	}
+	fields := replyFields(t, resp)
+	if len(fields) == 0 {
+		t.Fatal("empty response from GetGlobalMetrics")
+	}
 	t.Logf("GetGlobalMetrics response keys: %v", keysOf(fields))
 }
 
@@ -52,9 +60,13 @@ func TestLiveGetTrendingCoins(t *testing.T) {
 	skipUnlessLive(t)
 	svc := liveService()
 	resp, err := svc.GetTrendingCoins(context.Background(), mustStruct(t, map[string]any{}))
-	if err != nil { t.Fatalf("GetTrendingCoins: %v", err) }
-	fields := resp.GetFields()
-	if len(fields) == 0 { t.Fatal("empty response from GetTrendingCoins") }
+	if err != nil {
+		t.Fatalf("GetTrendingCoins: %v", err)
+	}
+	fields := replyFields(t, resp)
+	if len(fields) == 0 {
+		t.Fatal("empty response from GetTrendingCoins")
+	}
 	t.Logf("GetTrendingCoins response keys: %v", keysOf(fields))
 }
 
@@ -62,13 +74,15 @@ func TestLiveGetGasPrice(t *testing.T) {
 	skipUnlessLive(t)
 	svc := liveService()
 	resp, err := svc.GetGasPrice(context.Background(), mustStruct(t, map[string]any{}))
-	if err != nil { t.Fatalf("GetGasPrice: %v", err) }
-	fields := resp.GetFields()
-	if len(fields) == 0 { t.Fatal("empty response from GetGasPrice") }
+	if err != nil {
+		t.Fatalf("GetGasPrice: %v", err)
+	}
+	fields := replyFields(t, resp)
+	if len(fields) == 0 {
+		t.Fatal("empty response from GetGasPrice")
+	}
 	t.Logf("GetGasPrice response keys: %v", keysOf(fields))
 }
-
-
 
 func keysOf(fields map[string]*structpb.Value) []string {
 	keys := make([]string, 0, len(fields))
@@ -76,4 +90,13 @@ func keysOf(fields map[string]*structpb.Value) []string {
 		keys = append(keys, k)
 	}
 	return keys
+}
+
+func replyFields(t *testing.T, body []byte) map[string]*structpb.Value {
+	t.Helper()
+	result := new(structpb.Struct)
+	if err := result.UnmarshalJSON(body); err != nil {
+		t.Fatal(err)
+	}
+	return result.GetFields()
 }

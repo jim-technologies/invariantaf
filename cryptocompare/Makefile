@@ -1,24 +1,23 @@
+.DEFAULT_GOAL := help
 .PHONY: generate descriptor lint fmt test test-go test-py serve-go serve-py clean
 
-generate:
-	cd proto && buf dep update
-	cd proto && buf generate
-	cd proto && buf build -o ../descriptor.binpb
+generate: ## Regenerate exact descriptor and native language bindings
+	cd .. && uv run scripts/generate-go-adapters --bindings cryptocompare
+	cd .. && python3 scripts/generate-python-adapters --write cryptocompare
 
-descriptor:
-	cd proto && buf build -o ../descriptor.binpb
+descriptor: generate ## Rebuild descriptor and bindings from the same graph
 
-lint:
+lint: ## Lint the canonical source and Go implementation
 	cd proto && buf lint
 	go vet ./...
 	ruff check src/
 
-fmt:
+fmt: ## Format protobuf and Go source
 	cd proto && buf format -w
 	gofmt -w .
 	ruff format src/ tests/ main.py
 
-test: test-go test-py
+test: test-go test-py ## Run Go tests with live integrations opt-in
 
 test-go:
 	go test -v -count=1 ./...
@@ -32,5 +31,9 @@ serve-go:
 serve-py:
 	uv run python main.py
 
-clean:
+clean: ## Remove local generated or build output
 	rm -rf descriptor.binpb src/cryptocompare_mcp/gen/cryptocompare/ proto/cryptocompare/v1/*.pb.go
+
+.PHONY: help
+help: ## List adapter targets
+	@awk 'BEGIN { FS = ":.*## " } /^[a-zA-Z0-9_-]+:.*##/ { printf "%-20s %s\n", $$1, $$2 }' $(MAKEFILE_LIST)

@@ -58,11 +58,11 @@ func (s *AcrossService) get(path string, params url.Values) (map[string]any, err
 	}
 
 	var result map[string]any
-	if err := json.Unmarshal(body, &result); err != nil {
+	if err := decodeProviderJSON(body, &result); err != nil {
 		// The response may be an array (e.g. available-routes endpoint).
 		// Try wrapping in a map.
 		var arr []any
-		if err2 := json.Unmarshal(body, &arr); err2 == nil {
+		if err2 := decodeProviderJSON(body, &arr); err2 == nil {
 			result = map[string]any{"items": arr}
 		} else {
 			return nil, fmt.Errorf("decode response: %w (body: %s)", err, string(body))
@@ -83,22 +83,18 @@ func getString(fields map[string]*structpb.Value, key, def string) string {
 // helper: get an int field from structpb (numbers come as float64).
 func getInt(fields map[string]*structpb.Value, key string) int64 {
 	if v, ok := fields[key]; ok {
-		return int64(v.GetNumberValue())
+		return requestInteger(v)
 	}
 	return 0
 }
 
 // helper: convert API response to structpb.Struct.
-func toStruct(data map[string]any) (*structpb.Struct, error) {
-	result, err := structpb.NewStruct(data)
-	if err != nil {
-		return nil, fmt.Errorf("convert to struct: %w", err)
-	}
-	return result, nil
+func responseJSON(data map[string]any) (json.RawMessage, error) {
+	return json.Marshal(data)
 }
 
 // GetSuggestedFees gets suggested fees for a cross-chain bridge transfer.
-func (s *AcrossService) GetSuggestedFees(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *AcrossService) GetSuggestedFees(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	params := url.Values{}
 
@@ -131,11 +127,11 @@ func (s *AcrossService) GetSuggestedFees(_ context.Context, req *structpb.Struct
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetAvailableRoutes gets available bridge routes between chains.
-func (s *AcrossService) GetAvailableRoutes(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *AcrossService) GetAvailableRoutes(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	params := url.Values{}
 
@@ -151,11 +147,11 @@ func (s *AcrossService) GetAvailableRoutes(_ context.Context, req *structpb.Stru
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetLimits gets transfer limits for a token between two chains.
-func (s *AcrossService) GetLimits(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *AcrossService) GetLimits(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	params := url.Values{}
 
@@ -182,11 +178,11 @@ func (s *AcrossService) GetLimits(_ context.Context, req *structpb.Struct) (*str
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetPoolState gets LP pool state for a token.
-func (s *AcrossService) GetPoolState(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *AcrossService) GetPoolState(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 
 	token := getString(fields, "token", "")
@@ -202,5 +198,5 @@ func (s *AcrossService) GetPoolState(_ context.Context, req *structpb.Struct) (*
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }

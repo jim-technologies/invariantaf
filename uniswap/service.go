@@ -58,11 +58,11 @@ func (s *UniswapService) get(path string, params url.Values) (map[string]any, er
 	}
 
 	var result map[string]any
-	if err := json.Unmarshal(body, &result); err != nil {
+	if err := decodeProviderJSON(body, &result); err != nil {
 		// The response may be an array (e.g. search endpoint).
 		// Try wrapping in a map.
 		var arr []any
-		if err2 := json.Unmarshal(body, &arr); err2 == nil {
+		if err2 := decodeProviderJSON(body, &arr); err2 == nil {
 			result = map[string]any{"items": arr}
 		} else {
 			return nil, fmt.Errorf("decode response: %w (body: %s)", err, string(body))
@@ -83,22 +83,18 @@ func getString(fields map[string]*structpb.Value, key, def string) string {
 // helper: get an int field from structpb (numbers come as float64).
 func getInt(fields map[string]*structpb.Value, key string) int64 {
 	if v, ok := fields[key]; ok {
-		return int64(v.GetNumberValue())
+		return requestInteger(v)
 	}
 	return 0
 }
 
 // helper: convert API response to structpb.Struct.
-func toStruct(data map[string]any) (*structpb.Struct, error) {
-	result, err := structpb.NewStruct(data)
-	if err != nil {
-		return nil, fmt.Errorf("convert to struct: %w", err)
-	}
-	return result, nil
+func responseJSON(data map[string]any) (json.RawMessage, error) {
+	return json.Marshal(data)
 }
 
 // ListTopPools lists the top Uniswap V3 pools on Ethereum.
-func (s *UniswapService) ListTopPools(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *UniswapService) ListTopPools(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	params := url.Values{}
 
@@ -111,11 +107,11 @@ func (s *UniswapService) ListTopPools(_ context.Context, req *structpb.Struct) (
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetPool gets detailed data for a specific pool by address.
-func (s *UniswapService) GetPool(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *UniswapService) GetPool(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	poolAddress := getString(fields, "pool_address", "")
 	if poolAddress == "" {
@@ -128,11 +124,11 @@ func (s *UniswapService) GetPool(_ context.Context, req *structpb.Struct) (*stru
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetTokenPrice gets the current USD price for a token.
-func (s *UniswapService) GetTokenPrice(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *UniswapService) GetTokenPrice(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	tokenAddress := getString(fields, "token_address", "")
 	if tokenAddress == "" {
@@ -145,11 +141,11 @@ func (s *UniswapService) GetTokenPrice(_ context.Context, req *structpb.Struct) 
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // ListTrendingPools lists currently trending pools on Ethereum.
-func (s *UniswapService) ListTrendingPools(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *UniswapService) ListTrendingPools(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	params := url.Values{}
 
@@ -162,11 +158,11 @@ func (s *UniswapService) ListTrendingPools(_ context.Context, req *structpb.Stru
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetOHLCV gets OHLCV candlestick data for a pool.
-func (s *UniswapService) GetOHLCV(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *UniswapService) GetOHLCV(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	poolAddress := getString(fields, "pool_address", "")
 	if poolAddress == "" {
@@ -184,11 +180,11 @@ func (s *UniswapService) GetOHLCV(_ context.Context, req *structpb.Struct) (*str
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // SearchPools searches for pools by name, symbol, or token address.
-func (s *UniswapService) SearchPools(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *UniswapService) SearchPools(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	query := getString(fields, "query", "")
 	if query == "" {
@@ -209,5 +205,5 @@ func (s *UniswapService) SearchPools(_ context.Context, req *structpb.Struct) (*
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }

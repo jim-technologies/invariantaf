@@ -33,11 +33,11 @@ def live_server():
     from xkcd_mcp.gen.xkcd.v1 import xkcd_pb2 as _pb  # noqa: F401
     from xkcd_mcp.service import XKCDService
 
-    srv = Server.from_descriptor(
-        DESCRIPTOR_PATH
-    )
+    srv = Server.from_descriptor(DESCRIPTOR_PATH)
     svc = XKCDService()
-    srv.register(svc)
+    from xkcd_mcp.gen.xkcd.v1 import xkcd_pb2_grpc as _native_rpc
+
+    _native_rpc.add_XKCDServiceServicer_to_server(svc, srv)
     yield srv
     asyncio.run(srv.stop())
 
@@ -48,7 +48,7 @@ def live_server():
 @pytest.fixture(scope="module")
 def latest_comic(live_server):
     """Fetch the latest comic once for tests that need it."""
-    result = asyncio.run(live_server._cli(["XKCDService", "GetLatest"]))
+    result = asyncio.run(live_server._cli(["xkcd.v1.XKCDService", "GetLatest"]))
     assert "comic" in result
     return result["comic"]
 
@@ -69,9 +69,9 @@ class TestLiveLatest:
 
 class TestLiveGetComic:
     def test_get_comic_1(self, live_server):
-        result = asyncio.run(live_server._cli(
-            ["XKCDService", "GetComic", "-r", '{"num": 1}']
-        ))
+        result = asyncio.run(
+            live_server._cli(["xkcd.v1.XKCDService", "GetComic", "-r", '{"num": 1}'])
+        )
         assert "comic" in result
         comic = result["comic"]
         assert comic["num"] == 1
@@ -80,9 +80,9 @@ class TestLiveGetComic:
 
     def test_get_comic_353(self, live_server):
         """Comic 353 is the famous 'Python' comic."""
-        result = asyncio.run(live_server._cli(
-            ["XKCDService", "GetComic", "-r", '{"num": 353}']
-        ))
+        result = asyncio.run(
+            live_server._cli(["xkcd.v1.XKCDService", "GetComic", "-r", '{"num": 353}'])
+        )
         comic = result["comic"]
         assert comic["num"] == 353
         assert "Python" in comic.get("title", "")
@@ -93,7 +93,7 @@ class TestLiveGetComic:
 
 class TestLiveRandom:
     def test_get_random(self, live_server):
-        result = asyncio.run(live_server._cli(["XKCDService", "GetRandom"]))
+        result = asyncio.run(live_server._cli(["xkcd.v1.XKCDService", "GetRandom"]))
         assert "comic" in result
         comic = result["comic"]
         assert comic["num"] > 0
@@ -106,9 +106,16 @@ class TestLiveRandom:
 
 class TestLiveRange:
     def test_get_range(self, live_server):
-        result = asyncio.run(live_server._cli(
-            ["XKCDService", "GetRange", "-r", '{"start_num": 1, "end_num": 3}']
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "xkcd.v1.XKCDService",
+                    "GetRange",
+                    "-r",
+                    '{"start_num": 1, "end_num": 3}',
+                ]
+            )
+        )
         assert "comics" in result
         comics = result["comics"]
         assert len(comics) == 3
@@ -123,14 +130,25 @@ class TestLiveRange:
 
 class TestLiveSearchByTitle:
     def test_search_by_title(self, live_server):
-        result = asyncio.run(live_server._cli(
-            ["XKCDService", "SearchByTitle", "-r", json.dumps({"query": "Python", "search_count": 500})]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "xkcd.v1.XKCDService",
+                    "SearchByTitle",
+                    "-r",
+                    json.dumps({"query": "Python", "search_count": 500}),
+                ]
+            )
+        )
         assert "comics" in result
         comics = result["comics"]
         assert len(comics) > 0
         # At least one result should have "Python" in the title
-        assert any("Python" in c.get("title", "").lower() or "python" in c.get("title", "").lower() for c in comics)
+        assert any(
+            "Python" in c.get("title", "").lower()
+            or "python" in c.get("title", "").lower()
+            for c in comics
+        )
 
 
 # --- Explanation ---
@@ -138,9 +156,11 @@ class TestLiveSearchByTitle:
 
 class TestLiveExplanation:
     def test_get_explanation(self, live_server):
-        result = asyncio.run(live_server._cli(
-            ["XKCDService", "GetExplanation", "-r", '{"num": 353}']
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                ["xkcd.v1.XKCDService", "GetExplanation", "-r", '{"num": 353}']
+            )
+        )
         assert result.get("num") == 353
         assert result.get("title")
         assert result.get("explanation")
@@ -153,7 +173,7 @@ class TestLiveExplanation:
 
 class TestLiveComicCount:
     def test_get_comic_count(self, live_server):
-        result = asyncio.run(live_server._cli(["XKCDService", "GetComicCount"]))
+        result = asyncio.run(live_server._cli(["xkcd.v1.XKCDService", "GetComicCount"]))
         count = result.get("count")
         assert count is not None
         assert count > 2000  # There are well over 2000 XKCD comics
@@ -164,9 +184,11 @@ class TestLiveComicCount:
 
 class TestLiveMultiple:
     def test_get_multiple(self, live_server):
-        result = asyncio.run(live_server._cli(
-            ["XKCDService", "GetMultiple", "-r", '{"nums": [1, 353, 927]}']
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                ["xkcd.v1.XKCDService", "GetMultiple", "-r", '{"nums": [1, 353, 927]}']
+            )
+        )
         assert "comics" in result
         comics = result["comics"]
         assert len(comics) == 3
@@ -179,9 +201,9 @@ class TestLiveMultiple:
 
 class TestLiveRecent:
     def test_get_recent(self, live_server):
-        result = asyncio.run(live_server._cli(
-            ["XKCDService", "GetRecent", "-r", '{"count": 3}']
-        ))
+        result = asyncio.run(
+            live_server._cli(["xkcd.v1.XKCDService", "GetRecent", "-r", '{"count": 3}'])
+        )
         assert "comics" in result
         comics = result["comics"]
         assert len(comics) == 3
@@ -196,9 +218,16 @@ class TestLiveRecent:
 class TestLiveByDate:
     def test_get_by_date(self, live_server):
         # 2024 January should have some comics
-        result = asyncio.run(live_server._cli(
-            ["XKCDService", "GetByDate", "-r", json.dumps({"year": 2024, "month": 1, "search_count": 500})]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "xkcd.v1.XKCDService",
+                    "GetByDate",
+                    "-r",
+                    json.dumps({"year": 2024, "month": 1, "search_count": 500}),
+                ]
+            )
+        )
         assert "comics" in result
         comics = result["comics"]
         assert len(comics) > 0

@@ -60,10 +60,10 @@ func (s *DriftService) get(path string, params url.Values) (map[string]any, erro
 	}
 
 	var result map[string]any
-	if err := json.Unmarshal(body, &result); err != nil {
+	if err := decodeProviderJSON(body, &result); err != nil {
 		// The response may be an array (e.g. candles, trades).
 		var arr []any
-		if err2 := json.Unmarshal(body, &arr); err2 == nil {
+		if err2 := decodeProviderJSON(body, &arr); err2 == nil {
 			result = map[string]any{"items": arr}
 		} else {
 			return nil, fmt.Errorf("decode response: %w (body: %s)", err, string(body))
@@ -84,32 +84,28 @@ func getString(fields map[string]*structpb.Value, key, def string) string {
 // helper: get an int field from structpb (numbers come as float64).
 func getInt(fields map[string]*structpb.Value, key string) int64 {
 	if v, ok := fields[key]; ok {
-		return int64(v.GetNumberValue())
+		return requestInteger(v)
 	}
 	return 0
 }
 
 // helper: convert API response to structpb.Struct.
-func toStruct(data map[string]any) (*structpb.Struct, error) {
-	result, err := structpb.NewStruct(data)
-	if err != nil {
-		return nil, fmt.Errorf("convert to struct: %w", err)
-	}
-	return result, nil
+func responseJSON(data map[string]any) (json.RawMessage, error) {
+	return json.Marshal(data)
 }
 
 // ListMarkets lists all markets with live stats.
-func (s *DriftService) ListMarkets(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *DriftService) ListMarkets(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	data, err := s.get("/stats/markets", nil)
 	if err != nil {
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetCandles gets OHLCV candlestick data for a market.
-func (s *DriftService) GetCandles(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *DriftService) GetCandles(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	symbol := getString(fields, "symbol", "")
 	if symbol == "" {
@@ -137,11 +133,11 @@ func (s *DriftService) GetCandles(_ context.Context, req *structpb.Struct) (*str
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetTrades gets recent trades for a market.
-func (s *DriftService) GetTrades(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *DriftService) GetTrades(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	symbol := getString(fields, "symbol", "")
 	if symbol == "" {
@@ -162,11 +158,11 @@ func (s *DriftService) GetTrades(_ context.Context, req *structpb.Struct) (*stru
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetFundingRates gets funding rate history for a perpetual market.
-func (s *DriftService) GetFundingRates(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *DriftService) GetFundingRates(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	symbol := getString(fields, "symbol", "")
 	if symbol == "" {
@@ -187,16 +183,16 @@ func (s *DriftService) GetFundingRates(_ context.Context, req *structpb.Struct) 
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetFundingRateStats gets aggregated funding rate statistics across all
 // perp markets.
-func (s *DriftService) GetFundingRateStats(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *DriftService) GetFundingRateStats(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	data, err := s.get("/stats/fundingRates", nil)
 	if err != nil {
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }

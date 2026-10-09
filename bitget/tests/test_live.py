@@ -42,7 +42,9 @@ def _cli_or_skip(live_server, service, method, params=None):
         pytest.skip(f"{method}: {type(exc).__name__}: {exc}")
     except Exception as exc:
         msg = str(exc)
-        if any(code in msg for code in ("429", "500", "502", "503", "Timeout", "timed out")):
+        if any(
+            code in msg for code in ("429", "500", "502", "503", "Timeout", "timed out")
+        ):
             pytest.skip(f"{method}: {msg[:120]}")
         raise
 
@@ -55,11 +57,11 @@ def live_server():
 
     base_url = (os.getenv("BITGET_BASE_URL") or DEFAULT_BASE_URL).rstrip("/")
 
-    srv = Server.from_descriptor(
-        DESCRIPTOR_PATH
-    )
+    srv = Server.from_descriptor(DESCRIPTOR_PATH)
     servicer = BitgetService(base_url=base_url, timeout=10.0)
-    srv.register(servicer, service_name="bitget.v1.BitgetService")
+    from bitget_mcp.gen.bitget.v1 import bitget_pb2_grpc as _native_rpc
+
+    _native_rpc.add_BitgetServiceServicer_to_server(servicer, srv)
     yield srv
     asyncio.run(srv.stop())
 
@@ -70,7 +72,10 @@ def live_server():
 class TestLiveListSpotTickers:
     def test_list_all_spot_tickers(self, live_server):
         result = _cli_or_skip(
-            live_server, "BitgetService", "ListSpotTickers", {},
+            live_server,
+            "bitget.v1.BitgetService",
+            "ListSpotTickers",
+            {},
         )
         assert "tickers" in result
         tickers = result["tickers"]
@@ -82,7 +87,9 @@ class TestLiveListSpotTickers:
 
     def test_list_spot_tickers_btcusdt(self, live_server):
         result = _cli_or_skip(
-            live_server, "BitgetService", "ListSpotTickers",
+            live_server,
+            "bitget.v1.BitgetService",
+            "ListSpotTickers",
             {"symbol": "BTCUSDT"},
         )
         assert "tickers" in result
@@ -97,7 +104,9 @@ class TestLiveListSpotTickers:
 class TestLiveGetSpotOrderbook:
     def test_get_orderbook(self, live_server):
         result = _cli_or_skip(
-            live_server, "BitgetService", "GetSpotOrderbook",
+            live_server,
+            "bitget.v1.BitgetService",
+            "GetSpotOrderbook",
             {"symbol": "BTCUSDT"},
         )
         assert "asks" in result
@@ -109,7 +118,9 @@ class TestLiveGetSpotOrderbook:
 
     def test_get_orderbook_with_limit(self, live_server):
         result = _cli_or_skip(
-            live_server, "BitgetService", "GetSpotOrderbook",
+            live_server,
+            "bitget.v1.BitgetService",
+            "GetSpotOrderbook",
             {"symbol": "BTCUSDT", "limit": 5},
         )
         assert len(result["asks"]) <= 5
@@ -122,7 +133,9 @@ class TestLiveGetSpotOrderbook:
 class TestLiveGetSpotCandles:
     def test_get_candles_1h(self, live_server):
         result = _cli_or_skip(
-            live_server, "BitgetService", "GetSpotCandles",
+            live_server,
+            "bitget.v1.BitgetService",
+            "GetSpotCandles",
             {"symbol": "BTCUSDT", "granularity": "1h"},
         )
         assert "candles" in result
@@ -138,7 +151,9 @@ class TestLiveGetSpotCandles:
 
     def test_get_candles_with_limit(self, live_server):
         result = _cli_or_skip(
-            live_server, "BitgetService", "GetSpotCandles",
+            live_server,
+            "bitget.v1.BitgetService",
+            "GetSpotCandles",
             {"symbol": "BTCUSDT", "granularity": "1h", "limit": 10},
         )
         assert "candles" in result
@@ -151,7 +166,9 @@ class TestLiveGetSpotCandles:
 class TestLiveListFuturesTickers:
     def test_list_usdt_futures(self, live_server):
         result = _cli_or_skip(
-            live_server, "BitgetService", "ListFuturesTickers",
+            live_server,
+            "bitget.v1.BitgetService",
+            "ListFuturesTickers",
             {"productType": "USDT-FUTURES"},
         )
         assert "tickers" in result
@@ -164,7 +181,9 @@ class TestLiveListFuturesTickers:
 
     def test_list_usdt_futures_has_btc(self, live_server):
         result = _cli_or_skip(
-            live_server, "BitgetService", "ListFuturesTickers",
+            live_server,
+            "bitget.v1.BitgetService",
+            "ListFuturesTickers",
             {"productType": "USDT-FUTURES"},
         )
         tickers = result["tickers"]
@@ -178,7 +197,9 @@ class TestLiveListFuturesTickers:
 class TestLiveGetFuturesOrderbook:
     def test_get_futures_orderbook(self, live_server):
         result = _cli_or_skip(
-            live_server, "BitgetService", "GetFuturesOrderbook",
+            live_server,
+            "bitget.v1.BitgetService",
+            "GetFuturesOrderbook",
             {"symbol": "BTCUSDT", "productType": "USDT-FUTURES"},
         )
         assert "asks" in result
@@ -190,7 +211,9 @@ class TestLiveGetFuturesOrderbook:
 
     def test_get_futures_orderbook_with_limit(self, live_server):
         result = _cli_or_skip(
-            live_server, "BitgetService", "GetFuturesOrderbook",
+            live_server,
+            "bitget.v1.BitgetService",
+            "GetFuturesOrderbook",
             {"symbol": "BTCUSDT", "productType": "USDT-FUTURES", "limit": 5},
         )
         assert len(result["asks"]) <= 5

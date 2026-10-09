@@ -103,10 +103,10 @@ class LifiService:
 
     async def aclose(self) -> None:
         """Close the HTTP client. Idempotent."""
-        await self._client.aclose()
+        await self._http.aclose()
 
-    def _get(self, path: str, params: dict | None = None) -> Any:
-        resp = self._http.get(f"{_BASE_URL}{path}", params=params)
+    async def _get(self, path: str, params: dict | None = None) -> Any:
+        resp = await self._http.get(f"{_BASE_URL}{path}", params=params)
         resp.raise_for_status()
         return resp.json()
 
@@ -121,7 +121,7 @@ class LifiService:
             "fromAmount": request.from_amount,
             "fromAddress": request.from_address,
         }
-        raw = self._get("/quote", params=params)
+        raw = await self._get("/quote", params=params)
         tool_details = raw.get("toolDetails", {})
         return pb.GetQuoteResponse(
             type=raw.get("type", ""),
@@ -139,8 +139,10 @@ class LifiService:
             ),
         )
 
-    async def ListChains(self, request: Any, context: Any = None) -> pb.ListChainsResponse:
-        raw = self._get("/chains")
+    async def ListChains(
+        self, request: Any, context: Any = None
+    ) -> pb.ListChainsResponse:
+        raw = await self._get("/chains")
         chains = []
         for c in raw.get("chains", []):
             nt = c.get("nativeToken")
@@ -158,12 +160,16 @@ class LifiService:
             )
         return pb.ListChainsResponse(chains=chains)
 
-    async def ListTokens(self, request: Any, context: Any = None) -> pb.ListTokensResponse:
+    async def ListTokens(
+        self, request: Any, context: Any = None
+    ) -> pb.ListTokensResponse:
         params = {}
-        chains_val = request.chains if hasattr(request, "chains") and request.chains else ""
+        chains_val = (
+            request.chains if hasattr(request, "chains") and request.chains else ""
+        )
         if chains_val:
             params["chains"] = chains_val
-        raw = self._get("/tokens", params=params or None)
+        raw = await self._get("/tokens", params=params or None)
         chain_tokens = []
         tokens_map = raw.get("tokens", {})
         for chain_id_str, token_list in tokens_map.items():
@@ -184,7 +190,7 @@ class LifiService:
             params["fromChain"] = request.from_chain
         if hasattr(request, "to_chain") and request.to_chain:
             params["toChain"] = request.to_chain
-        raw = self._get("/connections", params=params or None)
+        raw = await self._get("/connections", params=params or None)
         connections = []
         for conn in raw.get("connections", []):
             from_tokens = [_parse_token(t) for t in conn.get("fromTokens", [])]
@@ -199,8 +205,10 @@ class LifiService:
             )
         return pb.GetConnectionsResponse(connections=connections)
 
-    async def ListTools(self, request: Any, context: Any = None) -> pb.ListToolsResponse:
-        raw = self._get("/tools")
+    async def ListTools(
+        self, request: Any, context: Any = None
+    ) -> pb.ListToolsResponse:
+        raw = await self._get("/tools")
         bridges = []
         for b in raw.get("bridges", []):
             supported = []
@@ -230,7 +238,9 @@ class LifiService:
             )
         return pb.ListToolsResponse(bridges=bridges, exchanges=exchanges)
 
-    async def GetStatus(self, request: Any, context: Any = None) -> pb.GetStatusResponse:
+    async def GetStatus(
+        self, request: Any, context: Any = None
+    ) -> pb.GetStatusResponse:
         params: dict[str, Any] = {"txHash": request.tx_hash}
         if hasattr(request, "bridge") and request.bridge:
             params["bridge"] = request.bridge
@@ -238,7 +248,7 @@ class LifiService:
             params["fromChain"] = request.from_chain
         if hasattr(request, "to_chain") and request.to_chain:
             params["toChain"] = request.to_chain
-        raw = self._get("/status", params=params)
+        raw = await self._get("/status", params=params)
         receiving_raw = raw.get("receiving", {})
         receiving = None
         if receiving_raw:
@@ -261,6 +271,8 @@ class LifiService:
             sub_status_msg=raw.get("substatusMessage", raw.get("subStatusMsg", "")),
             bridge=raw.get("bridge", raw.get("tool", "")),
             from_chain_id=raw.get("sending", {}).get("chainId", 0),
-            to_chain_id=raw.get("receiving", {}).get("chainId", 0) if raw.get("receiving") else 0,
+            to_chain_id=raw.get("receiving", {}).get("chainId", 0)
+            if raw.get("receiving")
+            else 0,
             receiving=receiving,
         )

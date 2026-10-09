@@ -86,22 +86,18 @@ func getString(fields map[string]*structpb.Value, key, def string) string {
 // helper: get an int field from structpb (numbers come as float64).
 func getInt(fields map[string]*structpb.Value, key string) int64 {
 	if v, ok := fields[key]; ok {
-		return int64(v.GetNumberValue())
+		return requestInteger(v)
 	}
 	return 0
 }
 
 // helper: convert API response to structpb.Struct.
-func toStruct(data map[string]any) (*structpb.Struct, error) {
-	result, err := structpb.NewStruct(data)
-	if err != nil {
-		return nil, fmt.Errorf("convert to struct: %w", err)
-	}
-	return result, nil
+func responseJSON(data map[string]any) (json.RawMessage, error) {
+	return json.Marshal(data)
 }
 
 // getByID fetches a resource at pathFmt (containing one %d verb) using the "id" field from the request.
-func (s *PredictFunService) getByID(ctx context.Context, req *structpb.Struct, pathFmt string) (*structpb.Struct, error) {
+func (s *PredictFunService) getByID(ctx context.Context, req *structpb.Struct, pathFmt string) (json.RawMessage, error) {
 	id := getInt(req.GetFields(), "id")
 	if id == 0 {
 		return nil, fmt.Errorf("id is required")
@@ -110,11 +106,11 @@ func (s *PredictFunService) getByID(ctx context.Context, req *structpb.Struct, p
 	if err != nil {
 		return nil, err
 	}
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // ListMarkets lists prediction markets with optional filters.
-func (s *PredictFunService) ListMarkets(ctx context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *PredictFunService) ListMarkets(ctx context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	params := url.Values{}
 
@@ -135,21 +131,21 @@ func (s *PredictFunService) ListMarkets(ctx context.Context, req *structpb.Struc
 	if err != nil {
 		return nil, err
 	}
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetMarket gets a single market by its numeric ID.
-func (s *PredictFunService) GetMarket(ctx context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *PredictFunService) GetMarket(ctx context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	return s.getByID(ctx, req, "/v1/markets/%d")
 }
 
 // GetOrderbook gets the orderbook for a specific market.
-func (s *PredictFunService) GetOrderbook(ctx context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *PredictFunService) GetOrderbook(ctx context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	return s.getByID(ctx, req, "/v1/markets/%d/orderbook")
 }
 
 // ListCategories lists available market categories.
-func (s *PredictFunService) ListCategories(ctx context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *PredictFunService) ListCategories(ctx context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	params := url.Values{}
 
@@ -164,5 +160,5 @@ func (s *PredictFunService) ListCategories(ctx context.Context, req *structpb.St
 	if err != nil {
 		return nil, err
 	}
-	return toStruct(data)
+	return responseJSON(data)
 }

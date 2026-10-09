@@ -27,7 +27,7 @@ def _safe_int(value: Any) -> int:
         return 0
     try:
         return int(value)
-    except (ValueError, TypeError):
+    except ValueError, TypeError:
         return 0
 
 
@@ -40,7 +40,9 @@ def _clean_dict(d: dict[str, Any]) -> dict[str, Any]:
         elif isinstance(v, dict):
             cleaned[k] = _clean_dict(v)
         elif isinstance(v, list):
-            cleaned[k] = [_clean_dict(i) if isinstance(i, dict) else i for i in v if i is not None]
+            cleaned[k] = [
+                _clean_dict(i) if isinstance(i, dict) else i for i in v if i is not None
+            ]
         else:
             cleaned[k] = v
     return cleaned
@@ -112,7 +114,9 @@ class PandaScoreService:
         query = self._pagination_params(request, per_page_default=50)
         data = await self._get("/dota2/tournaments", query)
         tournaments = self._transform_tournaments(data)
-        return self._parse_message({"tournaments": tournaments}, pb.ListTournamentsResponse)
+        return self._parse_message(
+            {"tournaments": tournaments}, pb.ListTournamentsResponse
+        )
 
     async def ListTeams(
         self, request: pb.ListTeamsRequest, context: Any = None
@@ -256,16 +260,20 @@ class PandaScoreService:
                     if isinstance(opp, dict):
                         opp_inner = opp.get("opponent")
                         if isinstance(opp_inner, dict):
-                            opponents.append({
-                                "type": _safe_str(opp.get("type")),
-                                "opponent": {
-                                    "id": _safe_int(opp_inner.get("id")),
-                                    "name": _safe_str(opp_inner.get("name")),
-                                    "slug": _safe_str(opp_inner.get("slug")),
-                                    "acronym": _safe_str(opp_inner.get("acronym")),
-                                    "image_url": _safe_str(opp_inner.get("image_url")),
-                                },
-                            })
+                            opponents.append(
+                                {
+                                    "type": _safe_str(opp.get("type")),
+                                    "opponent": {
+                                        "id": _safe_int(opp_inner.get("id")),
+                                        "name": _safe_str(opp_inner.get("name")),
+                                        "slug": _safe_str(opp_inner.get("slug")),
+                                        "acronym": _safe_str(opp_inner.get("acronym")),
+                                        "image_url": _safe_str(
+                                            opp_inner.get("image_url")
+                                        ),
+                                    },
+                                }
+                            )
                 match["opponents"] = opponents
             # Winner
             winner = item.get("winner")
@@ -283,10 +291,12 @@ class PandaScoreService:
                 results = []
                 for r in results_raw:
                     if isinstance(r, dict):
-                        results.append({
-                            "team_id": _safe_int(r.get("team_id")),
-                            "score": _safe_int(r.get("score")),
-                        })
+                        results.append(
+                            {
+                                "team_id": _safe_int(r.get("team_id")),
+                                "score": _safe_int(r.get("score")),
+                            }
+                        )
                 match["results"] = results
             # Games
             games_raw = item.get("games")
@@ -368,15 +378,17 @@ class PandaScoreService:
                 players = []
                 for p in players_raw:
                     if isinstance(p, dict):
-                        players.append({
-                            "id": _safe_int(p.get("id")),
-                            "name": _safe_str(p.get("name")),
-                            "slug": _safe_str(p.get("slug")),
-                            "first_name": _safe_str(p.get("first_name")),
-                            "last_name": _safe_str(p.get("last_name")),
-                            "role": _safe_str(p.get("role")),
-                            "image_url": _safe_str(p.get("image_url")),
-                        })
+                        players.append(
+                            {
+                                "id": _safe_int(p.get("id")),
+                                "name": _safe_str(p.get("name")),
+                                "slug": _safe_str(p.get("slug")),
+                                "first_name": _safe_str(p.get("first_name")),
+                                "last_name": _safe_str(p.get("last_name")),
+                                "role": _safe_str(p.get("role")),
+                                "image_url": _safe_str(p.get("image_url")),
+                            }
+                        )
                 team["players"] = players
             teams.append(team)
         return teams

@@ -44,7 +44,9 @@ class CryptoCompareService:
 
         payload = await self._get("/data/price", query)
         # Response is like {"USD": 64500, "EUR": 59000}
-        prices = {k: float(v) for k, v in payload.items() if isinstance(v, (int, float))}
+        prices = {
+            k: float(v) for k, v in payload.items() if isinstance(v, (int, float))
+        }
         return self._parse_message({"prices": prices}, pb.GetPriceResponse)
 
     async def GetMultiPrice(
@@ -60,7 +62,11 @@ class CryptoCompareService:
         rows = []
         for from_sym, prices_map in payload.items():
             if isinstance(prices_map, dict):
-                prices = {k: float(v) for k, v in prices_map.items() if isinstance(v, (int, float))}
+                prices = {
+                    k: float(v)
+                    for k, v in prices_map.items()
+                    if isinstance(v, (int, float))
+                }
                 rows.append({"from_symbol": from_sym, "prices": prices})
         return self._parse_message({"rows": rows}, pb.GetMultiPriceResponse)
 
@@ -80,18 +86,20 @@ class CryptoCompareService:
             if isinstance(to_map, dict):
                 for to_sym, data in to_map.items():
                     if isinstance(data, dict):
-                        coins.append({
-                            "from_symbol": from_sym,
-                            "to_symbol": to_sym,
-                            "price": data.get("PRICE", 0.0),
-                            "volume_24h": data.get("VOLUME24HOUR", 0.0),
-                            "market_cap": data.get("MKTCAP", 0.0),
-                            "change_pct_24h": data.get("CHANGEPCT24HOUR", 0.0),
-                            "high_24h": data.get("HIGH24HOUR", 0.0),
-                            "low_24h": data.get("LOW24HOUR", 0.0),
-                            "open_24h": data.get("OPEN24HOUR", 0.0),
-                            "supply": data.get("SUPPLY", 0.0),
-                        })
+                        coins.append(
+                            {
+                                "from_symbol": from_sym,
+                                "to_symbol": to_sym,
+                                "price": data.get("PRICE", 0.0),
+                                "volume_24h": data.get("VOLUME24HOUR", 0.0),
+                                "market_cap": data.get("MKTCAP", 0.0),
+                                "change_pct_24h": data.get("CHANGEPCT24HOUR", 0.0),
+                                "high_24h": data.get("HIGH24HOUR", 0.0),
+                                "low_24h": data.get("LOW24HOUR", 0.0),
+                                "open_24h": data.get("OPEN24HOUR", 0.0),
+                                "supply": data.get("SUPPLY", 0.0),
+                            }
+                        )
         return self._parse_message({"coins": coins}, pb.GetFullPriceResponse)
 
     async def GetHistoHour(
@@ -142,15 +150,19 @@ class CryptoCompareService:
                 continue
             coin_info = item.get("CoinInfo", {})
             raw_data = item.get("RAW", {})
-            tsym_data = raw_data.get(request.tsym, {}) if isinstance(raw_data, dict) else {}
-            coins.append({
-                "name": coin_info.get("FullName", ""),
-                "symbol": coin_info.get("Name", ""),
-                "price": tsym_data.get("PRICE", 0.0),
-                "volume_24h": tsym_data.get("VOLUME24HOUR", 0.0),
-                "market_cap": tsym_data.get("MKTCAP", 0.0),
-                "change_pct_24h": tsym_data.get("CHANGEPCT24HOUR", 0.0),
-            })
+            tsym_data = (
+                raw_data.get(request.tsym, {}) if isinstance(raw_data, dict) else {}
+            )
+            coins.append(
+                {
+                    "name": coin_info.get("FullName", ""),
+                    "symbol": coin_info.get("Name", ""),
+                    "price": tsym_data.get("PRICE", 0.0),
+                    "volume_24h": tsym_data.get("VOLUME24HOUR", 0.0),
+                    "market_cap": tsym_data.get("MKTCAP", 0.0),
+                    "change_pct_24h": tsym_data.get("CHANGEPCT24HOUR", 0.0),
+                }
+            )
         return self._parse_message({"coins": coins}, pb.GetTopByVolumeResponse)
 
     # -------------------------
@@ -168,15 +180,17 @@ class CryptoCompareService:
         candles = []
         for c in raw_candles:
             if isinstance(c, dict):
-                candles.append({
-                    "time": c.get("time", 0),
-                    "open": c.get("open", 0.0),
-                    "high": c.get("high", 0.0),
-                    "low": c.get("low", 0.0),
-                    "close": c.get("close", 0.0),
-                    "volumefrom": c.get("volumefrom", 0.0),
-                    "volumeto": c.get("volumeto", 0.0),
-                })
+                candles.append(
+                    {
+                        "time": c.get("time", 0),
+                        "open": c.get("open", 0.0),
+                        "high": c.get("high", 0.0),
+                        "low": c.get("low", 0.0),
+                        "close": c.get("close", 0.0),
+                        "volumefrom": c.get("volumefrom", 0.0),
+                        "volumeto": c.get("volumeto", 0.0),
+                    }
+                )
         return candles
 
     # -------------------------

@@ -58,11 +58,11 @@ func (s *PendleService) get(path string, params url.Values) (map[string]any, err
 	}
 
 	var result map[string]any
-	if err := json.Unmarshal(body, &result); err != nil {
+	if err := decodeProviderJSON(body, &result); err != nil {
 		// The response may be an array (e.g. prices endpoint).
 		// Try wrapping in a map.
 		var arr []any
-		if err2 := json.Unmarshal(body, &arr); err2 == nil {
+		if err2 := decodeProviderJSON(body, &arr); err2 == nil {
 			result = map[string]any{"items": arr}
 		} else {
 			return nil, fmt.Errorf("decode response: %w (body: %s)", err, string(body))
@@ -113,22 +113,18 @@ func getString(fields map[string]*structpb.Value, key, def string) string {
 // helper: get an int field from structpb (numbers come as float64).
 func getInt(fields map[string]*structpb.Value, key string) int64 {
 	if v, ok := fields[key]; ok {
-		return int64(v.GetNumberValue())
+		return requestInteger(v)
 	}
 	return 0
 }
 
 // helper: convert API response to structpb.Struct.
-func toStruct(data map[string]any) (*structpb.Struct, error) {
-	result, err := structpb.NewStruct(data)
-	if err != nil {
-		return nil, fmt.Errorf("convert to struct: %w", err)
-	}
-	return result, nil
+func responseJSON(data map[string]any) (json.RawMessage, error) {
+	return json.Marshal(data)
 }
 
 // ListMarkets lists all yield markets across supported chains.
-func (s *PendleService) ListMarkets(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *PendleService) ListMarkets(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	params := url.Values{}
 
@@ -147,11 +143,11 @@ func (s *PendleService) ListMarkets(_ context.Context, req *structpb.Struct) (*s
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetMarketData gets detailed market data for a specific market.
-func (s *PendleService) GetMarketData(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *PendleService) GetMarketData(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	chainID := getInt(fields, "chain_id")
 	if chainID == 0 {
@@ -168,11 +164,11 @@ func (s *PendleService) GetMarketData(_ context.Context, req *structpb.Struct) (
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetPrices gets current prices for Pendle assets/tokens.
-func (s *PendleService) GetPrices(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *PendleService) GetPrices(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	params := url.Values{}
 
@@ -193,7 +189,7 @@ func (s *PendleService) GetPrices(_ context.Context, req *structpb.Struct) (*str
 
 	// Try parsing as a direct map of address -> price.
 	var priceMap map[string]any
-	if err := json.Unmarshal(body, &priceMap); err != nil {
+	if err := decodeProviderJSON(body, &priceMap); err != nil {
 		return nil, fmt.Errorf("decode prices response: %w", err)
 	}
 
@@ -204,11 +200,11 @@ func (s *PendleService) GetPrices(_ context.Context, req *structpb.Struct) (*str
 		result = map[string]any{"prices": priceMap}
 	}
 
-	return toStruct(result)
+	return responseJSON(result)
 }
 
 // GetHistoricalData gets historical market data for a specific market.
-func (s *PendleService) GetHistoricalData(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *PendleService) GetHistoricalData(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	chainID := getInt(fields, "chain_id")
 	if chainID == 0 {
@@ -230,11 +226,11 @@ func (s *PendleService) GetHistoricalData(_ context.Context, req *structpb.Struc
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetSwapPrices gets swap pricing for PT/YT tokens in a specific market.
-func (s *PendleService) GetSwapPrices(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *PendleService) GetSwapPrices(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	chainID := getInt(fields, "chain_id")
 	if chainID == 0 {
@@ -251,5 +247,5 @@ func (s *PendleService) GetSwapPrices(_ context.Context, req *structpb.Struct) (
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }

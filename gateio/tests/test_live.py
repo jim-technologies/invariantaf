@@ -52,11 +52,11 @@ def live_server():
 
     base_url = (os.getenv("GATEIO_BASE_URL") or DEFAULT_BASE_URL).rstrip("/")
 
-    srv = Server.from_descriptor(
-        DESCRIPTOR_PATH
-    )
+    srv = Server.from_descriptor(DESCRIPTOR_PATH)
     servicer = GateioService(base_url=base_url)
-    srv.register(servicer, service_name="gateio.v1.GateioService")
+    from gateio_mcp.gen.gateio.v1 import gateio_pb2_grpc as _native_rpc
+
+    _native_rpc.add_GateioServiceServicer_to_server(servicer, srv)
     yield srv
     asyncio.run(srv.stop())
 
@@ -67,7 +67,9 @@ def live_server():
 class TestLiveListSpotTickers:
     def test_single_pair(self, live_server):
         result = _cli_or_skip(
-            live_server, "GateioService", "ListSpotTickers",
+            live_server,
+            "gateio.v1.GateioService",
+            "ListSpotTickers",
             {"currency_pair": "BTC_USDT"},
         )
         assert "tickers" in result
@@ -82,7 +84,9 @@ class TestLiveListSpotTickers:
 
     def test_all_tickers(self, live_server):
         result = _cli_or_skip(
-            live_server, "GateioService", "ListSpotTickers",
+            live_server,
+            "gateio.v1.GateioService",
+            "ListSpotTickers",
             {},
         )
         assert "tickers" in result
@@ -97,7 +101,9 @@ class TestLiveListSpotTickers:
 class TestLiveGetSpotOrderbook:
     def test_btc_usdt(self, live_server):
         result = _cli_or_skip(
-            live_server, "GateioService", "GetSpotOrderbook",
+            live_server,
+            "gateio.v1.GateioService",
+            "GetSpotOrderbook",
             {"currency_pair": "BTC_USDT", "limit": 10},
         )
         assert "asks" in result
@@ -111,7 +117,9 @@ class TestLiveGetSpotOrderbook:
 
     def test_orderbook_with_limit(self, live_server):
         result = _cli_or_skip(
-            live_server, "GateioService", "GetSpotOrderbook",
+            live_server,
+            "gateio.v1.GateioService",
+            "GetSpotOrderbook",
             {"currency_pair": "BTC_USDT", "limit": 5},
         )
         assert len(result["asks"]) <= 5
@@ -124,7 +132,9 @@ class TestLiveGetSpotOrderbook:
 class TestLiveGetSpotCandlesticks:
     def test_btc_usdt_1h(self, live_server):
         result = _cli_or_skip(
-            live_server, "GateioService", "GetSpotCandlesticks",
+            live_server,
+            "gateio.v1.GateioService",
+            "GetSpotCandlesticks",
             {"currency_pair": "BTC_USDT", "interval": "1h", "limit": 10},
         )
         assert "candlesticks" in result
@@ -141,7 +151,9 @@ class TestLiveGetSpotCandlesticks:
 
     def test_eth_usdt_15m(self, live_server):
         result = _cli_or_skip(
-            live_server, "GateioService", "GetSpotCandlesticks",
+            live_server,
+            "gateio.v1.GateioService",
+            "GetSpotCandlesticks",
             {"currency_pair": "ETH_USDT", "interval": "15m", "limit": 5},
         )
         assert "candlesticks" in result
@@ -154,7 +166,9 @@ class TestLiveGetSpotCandlesticks:
 class TestLiveListCurrencyPairs:
     def test_list_all(self, live_server):
         result = _cli_or_skip(
-            live_server, "GateioService", "ListCurrencyPairs",
+            live_server,
+            "gateio.v1.GateioService",
+            "ListCurrencyPairs",
             {},
         )
         assert "currency_pairs" in result
@@ -176,7 +190,9 @@ class TestLiveListCurrencyPairs:
 class TestLiveListFuturesTickers:
     def test_single_contract(self, live_server):
         result = _cli_or_skip(
-            live_server, "GateioService", "ListFuturesTickers",
+            live_server,
+            "gateio.v1.GateioService",
+            "ListFuturesTickers",
             {"contract": "BTC_USDT"},
         )
         assert "tickers" in result
@@ -191,7 +207,9 @@ class TestLiveListFuturesTickers:
 
     def test_all_futures(self, live_server):
         result = _cli_or_skip(
-            live_server, "GateioService", "ListFuturesTickers",
+            live_server,
+            "gateio.v1.GateioService",
+            "ListFuturesTickers",
             {},
         )
         assert "tickers" in result
@@ -204,7 +222,9 @@ class TestLiveListFuturesTickers:
 class TestLiveGetFuturesOrderbook:
     def test_btc_usdt(self, live_server):
         result = _cli_or_skip(
-            live_server, "GateioService", "GetFuturesOrderbook",
+            live_server,
+            "gateio.v1.GateioService",
+            "GetFuturesOrderbook",
             {"contract": "BTC_USDT", "limit": 10},
         )
         assert "asks" in result
@@ -218,7 +238,9 @@ class TestLiveGetFuturesOrderbook:
 
     def test_orderbook_with_limit(self, live_server):
         result = _cli_or_skip(
-            live_server, "GateioService", "GetFuturesOrderbook",
+            live_server,
+            "gateio.v1.GateioService",
+            "GetFuturesOrderbook",
             {"contract": "BTC_USDT", "limit": 5},
         )
         assert len(result["asks"]) <= 5

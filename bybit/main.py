@@ -80,7 +80,9 @@ def _build_bybit_header_provider(recv_window: str):
             payload = req.body.decode("utf-8") if req.body else ""
 
         plain = f"{timestamp}{api_key}{recv_window}{payload}"
-        signature = hmac.new(api_secret.encode(), plain.encode(), hashlib.sha256).hexdigest()
+        signature = hmac.new(
+            api_secret.encode(), plain.encode(), hashlib.sha256
+        ).hexdigest()
 
         headers.update(
             {

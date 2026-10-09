@@ -34,26 +34,32 @@ def live_server():
     from invariant import Server
 
     srv = Server.from_descriptor(DESCRIPTOR_PATH)
-    srv.register(TelegramService(), service_name="telegram.v1.TelegramService")
+    from telegram_mcp.gen.telegram.v1 import telegram_pb2_grpc as _native_rpc
+
+    _native_rpc.add_TelegramServiceServicer_to_server(TelegramService(), srv)
     yield srv
     asyncio.run(srv.stop())
 
 
 def test_get_me(live_server):
-    result = asyncio.run(live_server._cli(["TelegramService", "GetMe"]))
+    result = asyncio.run(live_server._cli(["telegram.v1.TelegramService", "GetMe"]))
     assert isinstance(result, dict)
     assert result.get("is_bot") is True, result
     assert result.get("id"), result
 
 
 def test_get_webhook_info(live_server):
-    result = asyncio.run(live_server._cli(["TelegramService", "GetWebhookInfo"]))
+    result = asyncio.run(
+        live_server._cli(["telegram.v1.TelegramService", "GetWebhookInfo"])
+    )
     assert isinstance(result, dict)
     # The "url" field is always present in webhook info (empty string if no webhook).
     assert "url" in result, result
 
 
-@pytest.mark.skipif(not os.getenv("TELEGRAM_LIVE_CHAT_ID"), reason="set TELEGRAM_LIVE_CHAT_ID")
+@pytest.mark.skipif(
+    not os.getenv("TELEGRAM_LIVE_CHAT_ID"), reason="set TELEGRAM_LIVE_CHAT_ID"
+)
 def test_send_and_delete_message(live_server):
     import json
 
@@ -61,7 +67,7 @@ def test_send_and_delete_message(live_server):
     sent = asyncio.run(
         live_server._cli(
             [
-                "TelegramService",
+                "telegram.v1.TelegramService",
                 "SendMessage",
                 "-r",
                 json.dumps({"chat_id": chat_id, "text": "invariantaf live test"}),
@@ -73,7 +79,7 @@ def test_send_and_delete_message(live_server):
     deleted = asyncio.run(
         live_server._cli(
             [
-                "TelegramService",
+                "telegram.v1.TelegramService",
                 "DeleteMessage",
                 "-r",
                 json.dumps({"chat_id": chat_id, "message_id": message_id}),

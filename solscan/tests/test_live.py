@@ -36,11 +36,11 @@ def live_server():
 
     from solscan_mcp.service import SolscanService
 
-    srv = Server.from_descriptor(
-        DESCRIPTOR_PATH
-    )
+    srv = Server.from_descriptor(DESCRIPTOR_PATH)
     servicer = SolscanService()
-    srv.register(servicer)
+    from solscan_mcp.gen.solscan.v1 import solscan_pb2_grpc as _native_rpc
+
+    _native_rpc.add_SolscanServiceServicer_to_server(servicer, srv)
     yield srv
     asyncio.run(srv.stop())
 
@@ -50,14 +50,16 @@ def live_server():
 
 class TestLiveGetAccountInfo:
     def test_returns_account(self, live_server):
-        result = asyncio.run(live_server._cli(
-            [
-                "SolscanService",
-                "GetAccountInfo",
-                "-r",
-                json.dumps({"address": _USDC_MINT}),
-            ]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "solscan.v1.SolscanService",
+                    "GetAccountInfo",
+                    "-r",
+                    json.dumps({"address": _USDC_MINT}),
+                ]
+            )
+        )
         assert "account" in result
         account = result["account"]
         assert "address" in account or "owner" in account
@@ -68,27 +70,31 @@ class TestLiveGetAccountInfo:
 
 class TestLiveGetTokenMeta:
     def test_returns_token_meta(self, live_server):
-        result = asyncio.run(live_server._cli(
-            [
-                "SolscanService",
-                "GetTokenMeta",
-                "-r",
-                json.dumps({"address": _USDC_MINT}),
-            ]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "solscan.v1.SolscanService",
+                    "GetTokenMeta",
+                    "-r",
+                    json.dumps({"address": _USDC_MINT}),
+                ]
+            )
+        )
         assert "token" in result
         token = result["token"]
         assert "symbol" in token
 
     def test_sol_token_meta(self, live_server):
-        result = asyncio.run(live_server._cli(
-            [
-                "SolscanService",
-                "GetTokenMeta",
-                "-r",
-                json.dumps({"address": _SOL_MINT}),
-            ]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "solscan.v1.SolscanService",
+                    "GetTokenMeta",
+                    "-r",
+                    json.dumps({"address": _SOL_MINT}),
+                ]
+            )
+        )
         assert "token" in result
 
 
@@ -97,14 +103,16 @@ class TestLiveGetTokenMeta:
 
 class TestLiveGetTokenPrice:
     def test_returns_price(self, live_server):
-        result = asyncio.run(live_server._cli(
-            [
-                "SolscanService",
-                "GetTokenPrice",
-                "-r",
-                json.dumps({"address": _USDC_MINT}),
-            ]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "solscan.v1.SolscanService",
+                    "GetTokenPrice",
+                    "-r",
+                    json.dumps({"address": _USDC_MINT}),
+                ]
+            )
+        )
         assert "price" in result
         price = result["price"]
         assert "priceUsdt" in price or "price_usdt" in price
@@ -115,14 +123,16 @@ class TestLiveGetTokenPrice:
 
 class TestLiveGetTokenHolders:
     def test_returns_holders(self, live_server):
-        result = asyncio.run(live_server._cli(
-            [
-                "SolscanService",
-                "GetTokenHolders",
-                "-r",
-                json.dumps({"address": _USDC_MINT, "page": 1, "pageSize": 5}),
-            ]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "solscan.v1.SolscanService",
+                    "GetTokenHolders",
+                    "-r",
+                    json.dumps({"address": _USDC_MINT, "page": 1, "pageSize": 5}),
+                ]
+            )
+        )
         assert "holders" in result
         holders = result["holders"]
         assert isinstance(holders, list)
@@ -133,12 +143,14 @@ class TestLiveGetTokenHolders:
 
 class TestLiveGetMarketInfo:
     def test_returns_market_info(self, live_server):
-        result = asyncio.run(live_server._cli(
-            [
-                "SolscanService",
-                "GetMarketInfo",
-                "-r",
-                json.dumps({"address": _USDC_MINT}),
-            ]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "solscan.v1.SolscanService",
+                    "GetMarketInfo",
+                    "-r",
+                    json.dumps({"address": _USDC_MINT}),
+                ]
+            )
+        )
         assert "market" in result

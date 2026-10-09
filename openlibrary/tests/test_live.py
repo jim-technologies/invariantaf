@@ -32,11 +32,11 @@ def live_server():
     from openlibrary_mcp.service import OpenLibraryService
     from invariant import Server
 
-    srv = Server.from_descriptor(
-        DESCRIPTOR_PATH
-    )
+    srv = Server.from_descriptor(DESCRIPTOR_PATH)
     svc = OpenLibraryService()
-    srv.register(svc)
+    from openlibrary_mcp.gen.openlibrary.v1 import openlibrary_pb2_grpc as _native_rpc
+
+    _native_rpc.add_OpenLibraryServiceServicer_to_server(svc, srv)
     yield srv
     asyncio.run(srv.stop())
 
@@ -47,9 +47,16 @@ def live_server():
 @pytest.fixture(scope="module")
 def discovered_book(live_server):
     """Discover a book via search for tests that need a work key."""
-    result = asyncio.run(live_server._cli(
-        ["OpenLibraryService", "SearchBooks", "-r", json.dumps({"query": "lord of the rings", "limit": 1})]
-    ))
+    result = asyncio.run(
+        live_server._cli(
+            [
+                "openlibrary.v1.OpenLibraryService",
+                "SearchBooks",
+                "-r",
+                json.dumps({"query": "lord of the rings", "limit": 1}),
+            ]
+        )
+    )
     books = result.get("books", [])
     assert books, "expected at least one book from search"
     return books[0]
@@ -67,9 +74,16 @@ def discovered_author_id(live_server):
 
 class TestLiveSearchBooks:
     def test_search_books(self, live_server):
-        result = asyncio.run(live_server._cli(
-            ["OpenLibraryService", "SearchBooks", "-r", json.dumps({"query": "dune", "limit": 3})]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "openlibrary.v1.OpenLibraryService",
+                    "SearchBooks",
+                    "-r",
+                    json.dumps({"query": "dune", "limit": 3}),
+                ]
+            )
+        )
         assert "books" in result
         books = result["books"]
         assert isinstance(books, list)
@@ -79,18 +93,32 @@ class TestLiveSearchBooks:
         assert "key" in b
 
     def test_search_by_author(self, live_server):
-        result = asyncio.run(live_server._cli(
-            ["OpenLibraryService", "SearchByAuthor", "-r", json.dumps({"name": "tolkien", "limit": 3})]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "openlibrary.v1.OpenLibraryService",
+                    "SearchByAuthor",
+                    "-r",
+                    json.dumps({"name": "tolkien", "limit": 3}),
+                ]
+            )
+        )
         assert "books" in result
         books = result["books"]
         assert isinstance(books, list)
         assert len(books) > 0
 
     def test_search_by_subject(self, live_server):
-        result = asyncio.run(live_server._cli(
-            ["OpenLibraryService", "SearchBySubject", "-r", json.dumps({"subject": "fantasy", "limit": 3})]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "openlibrary.v1.OpenLibraryService",
+                    "SearchBySubject",
+                    "-r",
+                    json.dumps({"subject": "fantasy", "limit": 3}),
+                ]
+            )
+        )
         assert "works" in result
         works = result["works"]
         assert isinstance(works, list)
@@ -104,23 +132,44 @@ class TestLiveSearchBooks:
 
 class TestLiveBookLookup:
     def test_get_book(self, live_server):
-        result = asyncio.run(live_server._cli(
-            ["OpenLibraryService", "GetBook", "-r", json.dumps({"work_id": "OL45883W"})]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "openlibrary.v1.OpenLibraryService",
+                    "GetBook",
+                    "-r",
+                    json.dumps({"work_id": "OL45883W"}),
+                ]
+            )
+        )
         assert result.get("title"), "expected a title for The Lord of the Rings"
         assert "key" in result
 
     def test_get_edition(self, live_server):
-        result = asyncio.run(live_server._cli(
-            ["OpenLibraryService", "GetEdition", "-r", json.dumps({"edition_id": "OL7353617M"})]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "openlibrary.v1.OpenLibraryService",
+                    "GetEdition",
+                    "-r",
+                    json.dumps({"edition_id": "OL7353617M"}),
+                ]
+            )
+        )
         assert result.get("title"), "expected a title for the edition"
         assert "key" in result
 
     def test_get_book_by_isbn(self, live_server):
-        result = asyncio.run(live_server._cli(
-            ["OpenLibraryService", "GetBookByISBN", "-r", json.dumps({"isbn": "9780261103573"})]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "openlibrary.v1.OpenLibraryService",
+                    "GetBookByISBN",
+                    "-r",
+                    json.dumps({"isbn": "9780261103573"}),
+                ]
+            )
+        )
         assert result.get("title"), "expected a title for the ISBN lookup"
 
 
@@ -129,21 +178,30 @@ class TestLiveBookLookup:
 
 class TestLiveAuthor:
     def test_get_author(self, live_server, discovered_author_id):
-        result = asyncio.run(live_server._cli(
-            ["OpenLibraryService", "GetAuthor", "-r", json.dumps({"author_id": discovered_author_id})]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "openlibrary.v1.OpenLibraryService",
+                    "GetAuthor",
+                    "-r",
+                    json.dumps({"author_id": discovered_author_id}),
+                ]
+            )
+        )
         assert result.get("name"), "expected author name"
         assert "key" in result
 
     def test_get_author_works(self, live_server, discovered_author_id):
-        result = asyncio.run(live_server._cli(
-            [
-                "OpenLibraryService",
-                "GetAuthorWorks",
-                "-r",
-                json.dumps({"author_id": discovered_author_id, "limit": 3}),
-            ]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "openlibrary.v1.OpenLibraryService",
+                    "GetAuthorWorks",
+                    "-r",
+                    json.dumps({"author_id": discovered_author_id, "limit": 3}),
+                ]
+            )
+        )
         assert "works" in result
         works = result["works"]
         assert isinstance(works, list)
@@ -155,9 +213,16 @@ class TestLiveAuthor:
 
 class TestLiveTrending:
     def test_get_trending_books(self, live_server):
-        result = asyncio.run(live_server._cli(
-            ["OpenLibraryService", "GetTrendingBooks", "-r", json.dumps({"limit": 3})]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "openlibrary.v1.OpenLibraryService",
+                    "GetTrendingBooks",
+                    "-r",
+                    json.dumps({"limit": 3}),
+                ]
+            )
+        )
         assert "books" in result
         books = result["books"]
         assert isinstance(books, list)
@@ -166,9 +231,16 @@ class TestLiveTrending:
             assert "title" in books[0]
 
     def test_get_recent_changes(self, live_server):
-        result = asyncio.run(live_server._cli(
-            ["OpenLibraryService", "GetRecentChanges", "-r", json.dumps({"limit": 3})]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "openlibrary.v1.OpenLibraryService",
+                    "GetRecentChanges",
+                    "-r",
+                    json.dumps({"limit": 3}),
+                ]
+            )
+        )
         assert "changes" in result
         changes = result["changes"]
         assert isinstance(changes, list)

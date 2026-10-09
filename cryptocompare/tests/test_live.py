@@ -58,16 +58,17 @@ def _rate_limit_delay():
 @pytest.fixture(scope="module")
 def live_server():
     from invariant import Server
-    from cryptocompare_mcp.gen.cryptocompare.v1 import cryptocompare_pb2 as _cryptocompare_pb2  # noqa: F401
     from cryptocompare_mcp.service import CryptoCompareService
 
     base_url = (os.getenv("CRYPTOCOMPARE_BASE_URL") or DEFAULT_BASE_URL).rstrip("/")
 
-    srv = Server.from_descriptor(
-        DESCRIPTOR_PATH
-    )
+    srv = Server.from_descriptor(DESCRIPTOR_PATH)
     servicer = CryptoCompareService(base_url=base_url)
-    srv.register(servicer, service_name="cryptocompare.v1.CryptoCompareService")
+    from cryptocompare_mcp.gen.cryptocompare.v1 import (
+        cryptocompare_pb2_grpc as _native_rpc,
+    )
+
+    _native_rpc.add_CryptoCompareServiceServicer_to_server(servicer, srv)
     yield srv
     asyncio.run(srv.stop())
 
@@ -78,7 +79,9 @@ def live_server():
 class TestLiveGetPrice:
     def test_btc_usd(self, live_server):
         result = _cli_or_skip(
-            live_server, "CryptoCompareService", "GetPrice",
+            live_server,
+            "cryptocompare.v1.CryptoCompareService",
+            "GetPrice",
             {"fsym": "BTC", "tsyms": "USD"},
         )
         assert "prices" in result
@@ -86,7 +89,9 @@ class TestLiveGetPrice:
 
     def test_btc_multi_currency(self, live_server):
         result = _cli_or_skip(
-            live_server, "CryptoCompareService", "GetPrice",
+            live_server,
+            "cryptocompare.v1.CryptoCompareService",
+            "GetPrice",
             {"fsym": "BTC", "tsyms": "USD,EUR,GBP"},
         )
         assert "prices" in result
@@ -102,7 +107,9 @@ class TestLiveGetPrice:
 class TestLiveGetMultiPrice:
     def test_btc_eth_multi(self, live_server):
         result = _cli_or_skip(
-            live_server, "CryptoCompareService", "GetMultiPrice",
+            live_server,
+            "cryptocompare.v1.CryptoCompareService",
+            "GetMultiPrice",
             {"fsyms": "BTC,ETH", "tsyms": "USD,EUR"},
         )
         assert "rows" in result
@@ -121,7 +128,9 @@ class TestLiveGetMultiPrice:
 class TestLiveGetFullPrice:
     def test_btc_full(self, live_server):
         result = _cli_or_skip(
-            live_server, "CryptoCompareService", "GetFullPrice",
+            live_server,
+            "cryptocompare.v1.CryptoCompareService",
+            "GetFullPrice",
             {"fsyms": "BTC", "tsyms": "USD"},
         )
         assert "coins" in result
@@ -140,7 +149,9 @@ class TestLiveGetFullPrice:
 class TestLiveGetHistoHour:
     def test_btc_hourly(self, live_server):
         result = _cli_or_skip(
-            live_server, "CryptoCompareService", "GetHistoHour",
+            live_server,
+            "cryptocompare.v1.CryptoCompareService",
+            "GetHistoHour",
             {"fsym": "BTC", "tsym": "USD", "limit": 5},
         )
         assert "candles" in result
@@ -161,7 +172,9 @@ class TestLiveGetHistoHour:
 class TestLiveGetHistoDay:
     def test_btc_daily(self, live_server):
         result = _cli_or_skip(
-            live_server, "CryptoCompareService", "GetHistoDay",
+            live_server,
+            "cryptocompare.v1.CryptoCompareService",
+            "GetHistoDay",
             {"fsym": "BTC", "tsym": "USD", "limit": 5},
         )
         assert "candles" in result
@@ -178,7 +191,9 @@ class TestLiveGetHistoDay:
 class TestLiveGetTopByVolume:
     def test_top_coins_usd(self, live_server):
         result = _cli_or_skip(
-            live_server, "CryptoCompareService", "GetTopByVolume",
+            live_server,
+            "cryptocompare.v1.CryptoCompareService",
+            "GetTopByVolume",
             {"tsym": "USD", "limit": 5},
         )
         assert "coins" in result

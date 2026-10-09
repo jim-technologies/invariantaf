@@ -72,7 +72,7 @@ func (s *CryptoDotComService) get(path string, params url.Values) (any, error) {
 	}
 
 	var envelope apiResponse
-	if err := json.Unmarshal(body, &envelope); err != nil {
+	if err := decodeProviderJSON(body, &envelope); err != nil {
 		return nil, fmt.Errorf("decode response: %w (body: %s)", err, string(body))
 	}
 
@@ -81,7 +81,7 @@ func (s *CryptoDotComService) get(path string, params url.Values) (any, error) {
 	}
 
 	var data any
-	if err := json.Unmarshal(envelope.Result.Data, &data); err != nil {
+	if err := decodeProviderJSON(envelope.Result.Data, &data); err != nil {
 		return nil, fmt.Errorf("decode result data: %w", err)
 	}
 
@@ -99,22 +99,18 @@ func getString(fields map[string]*structpb.Value, key, def string) string {
 // helper: get an int field from structpb (numbers come as float64).
 func getInt(fields map[string]*structpb.Value, key string) int64 {
 	if v, ok := fields[key]; ok {
-		return int64(v.GetNumberValue())
+		return requestInteger(v)
 	}
 	return 0
 }
 
 // helper: convert any value to structpb.Struct wrapping it in {"data": ...}.
-func toStruct(data map[string]any) (*structpb.Struct, error) {
-	result, err := structpb.NewStruct(data)
-	if err != nil {
-		return nil, fmt.Errorf("convert to struct: %w", err)
-	}
-	return result, nil
+func responseJSON(data map[string]any) (json.RawMessage, error) {
+	return json.Marshal(data)
 }
 
 // GetInstruments returns all available trading instruments.
-func (s *CryptoDotComService) GetInstruments(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *CryptoDotComService) GetInstruments(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	raw, err := s.get("/public/get-instruments", nil)
 	if err != nil {
 		return nil, err
@@ -128,20 +124,20 @@ func (s *CryptoDotComService) GetInstruments(_ context.Context, req *structpb.St
 			continue
 		}
 		instruments = append(instruments, map[string]any{
-			"instrument_name":       stringVal(m, "instrument_name"),
-			"quote_currency":        stringVal(m, "quote_currency"),
-			"base_currency":         stringVal(m, "base_currency"),
-			"price_decimals":        fmt.Sprintf("%v", m["price_decimals"]),
-			"quantity_decimals":     fmt.Sprintf("%v", m["quantity_decimals"]),
+			"instrument_name":        stringVal(m, "instrument_name"),
+			"quote_currency":         stringVal(m, "quote_currency"),
+			"base_currency":          stringVal(m, "base_currency"),
+			"price_decimals":         fmt.Sprintf("%v", m["price_decimals"]),
+			"quantity_decimals":      fmt.Sprintf("%v", m["quantity_decimals"]),
 			"margin_trading_enabled": boolVal(m, "margin_trading_enabled"),
 		})
 	}
 
-	return toStruct(map[string]any{"data": instruments})
+	return responseJSON(map[string]any{"data": instruments})
 }
 
 // GetTickers returns ticker data for one or all instruments.
-func (s *CryptoDotComService) GetTickers(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *CryptoDotComService) GetTickers(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	params := url.Values{}
 
@@ -175,11 +171,11 @@ func (s *CryptoDotComService) GetTickers(_ context.Context, req *structpb.Struct
 		})
 	}
 
-	return toStruct(map[string]any{"data": tickers})
+	return responseJSON(map[string]any{"data": tickers})
 }
 
 // GetOrderbook returns the order book for an instrument.
-func (s *CryptoDotComService) GetOrderbook(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *CryptoDotComService) GetOrderbook(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	name := getString(fields, "instrument_name", "")
 	if name == "" {
@@ -199,7 +195,7 @@ func (s *CryptoDotComService) GetOrderbook(_ context.Context, req *structpb.Stru
 
 	items, _ := raw.([]any)
 	if len(items) == 0 {
-		return toStruct(map[string]any{"data": map[string]any{
+		return responseJSON(map[string]any{"data": map[string]any{
 			"bids": []any{}, "asks": []any{}, "timestamp": int64(0),
 		}})
 	}
@@ -212,7 +208,7 @@ func (s *CryptoDotComService) GetOrderbook(_ context.Context, req *structpb.Stru
 	bids := parseLevels(book, "bids")
 	asks := parseLevels(book, "asks")
 
-	return toStruct(map[string]any{"data": map[string]any{
+	return responseJSON(map[string]any{"data": map[string]any{
 		"bids":      bids,
 		"asks":      asks,
 		"timestamp": intVal(book, "t"),
@@ -220,7 +216,7 @@ func (s *CryptoDotComService) GetOrderbook(_ context.Context, req *structpb.Stru
 }
 
 // GetCandlestick returns OHLCV candlestick data for an instrument.
-func (s *CryptoDotComService) GetCandlestick(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *CryptoDotComService) GetCandlestick(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	name := getString(fields, "instrument_name", "")
 	if name == "" {
@@ -255,11 +251,11 @@ func (s *CryptoDotComService) GetCandlestick(_ context.Context, req *structpb.St
 		})
 	}
 
-	return toStruct(map[string]any{"data": candles})
+	return responseJSON(map[string]any{"data": candles})
 }
 
 // GetTrades returns recent trades for an instrument.
-func (s *CryptoDotComService) GetTrades(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *CryptoDotComService) GetTrades(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	name := getString(fields, "instrument_name", "")
 	if name == "" {
@@ -291,7 +287,7 @@ func (s *CryptoDotComService) GetTrades(_ context.Context, req *structpb.Struct)
 		})
 	}
 
-	return toStruct(map[string]any{"data": trades})
+	return responseJSON(map[string]any{"data": trades})
 }
 
 // parseLevels extracts bid/ask levels from the orderbook response.
@@ -327,8 +323,10 @@ func stringVal(m map[string]any, key string) string {
 func intVal(m map[string]any, key string) int64 {
 	if v, ok := m[key]; ok {
 		switch n := v.(type) {
+		case json.Number:
+			return providerInteger(n)
 		case float64:
-			return int64(n)
+			return providerInteger(n)
 		case string:
 			return 0
 		}

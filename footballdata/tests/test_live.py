@@ -41,7 +41,19 @@ def _cli_or_skip(live_server, service, method, params=None):
         pytest.skip(f"{method}: {type(exc).__name__}: {exc}")
     except Exception as exc:
         msg = str(exc)
-        if any(code in msg for code in ("401", "403", "429", "500", "502", "503", "Timeout", "timed out")):
+        if any(
+            code in msg
+            for code in (
+                "401",
+                "403",
+                "429",
+                "500",
+                "502",
+                "503",
+                "Timeout",
+                "timed out",
+            )
+        ):
             pytest.skip(f"{method}: {msg[:120]}")
         raise
 
@@ -49,17 +61,18 @@ def _cli_or_skip(live_server, service, method, params=None):
 @pytest.fixture(scope="module")
 def live_server():
     from invariant import Server
-    from footballdata_mcp.gen.footballdata.v1 import footballdata_pb2 as _footballdata_pb2  # noqa: F401
     from footballdata_mcp.service import FootballDataService
 
     base_url = (os.getenv("FOOTBALLDATA_BASE_URL") or DEFAULT_BASE_URL).rstrip("/")
     api_key = (os.getenv("FOOTBALLDATA_API_KEY") or "").strip()
 
-    srv = Server.from_descriptor(
-        DESCRIPTOR_PATH
-    )
+    srv = Server.from_descriptor(DESCRIPTOR_PATH)
     servicer = FootballDataService(base_url=base_url, api_key=api_key)
-    srv.register(servicer, service_name="footballdata.v1.FootballDataService")
+    from footballdata_mcp.gen.footballdata.v1 import (
+        footballdata_pb2_grpc as _native_rpc,
+    )
+
+    _native_rpc.add_FootballDataServiceServicer_to_server(servicer, srv)
     yield srv
     asyncio.run(srv.stop())
 
@@ -70,7 +83,9 @@ def live_server():
 class TestLiveListCompetitions:
     def test_list_competitions(self, live_server):
         result = _cli_or_skip(
-            live_server, "FootballDataService", "ListCompetitions",
+            live_server,
+            "footballdata.v1.FootballDataService",
+            "ListCompetitions",
         )
         assert "competitions" in result
         competitions = result["competitions"]
@@ -87,7 +102,9 @@ class TestLiveListCompetitions:
 class TestLiveGetCompetition:
     def test_get_premier_league(self, live_server):
         result = _cli_or_skip(
-            live_server, "FootballDataService", "GetCompetition",
+            live_server,
+            "footballdata.v1.FootballDataService",
+            "GetCompetition",
             {"code": "PL"},
         )
         assert "competition" in result
@@ -97,7 +114,9 @@ class TestLiveGetCompetition:
 
     def test_get_bundesliga(self, live_server):
         result = _cli_or_skip(
-            live_server, "FootballDataService", "GetCompetition",
+            live_server,
+            "footballdata.v1.FootballDataService",
+            "GetCompetition",
             {"code": "BL1"},
         )
         assert "competition" in result
@@ -110,7 +129,9 @@ class TestLiveGetCompetition:
 class TestLiveGetStandings:
     def test_pl_standings(self, live_server):
         result = _cli_or_skip(
-            live_server, "FootballDataService", "GetStandings",
+            live_server,
+            "footballdata.v1.FootballDataService",
+            "GetStandings",
             {"code": "PL"},
         )
         assert "standings" in result
@@ -131,7 +152,9 @@ class TestLiveGetStandings:
 class TestLiveListMatches:
     def test_pl_matches(self, live_server):
         result = _cli_or_skip(
-            live_server, "FootballDataService", "ListMatches",
+            live_server,
+            "footballdata.v1.FootballDataService",
+            "ListMatches",
             {"code": "PL"},
         )
         assert "matches" in result
@@ -141,7 +164,9 @@ class TestLiveListMatches:
 
     def test_pl_finished_matches(self, live_server):
         result = _cli_or_skip(
-            live_server, "FootballDataService", "ListMatches",
+            live_server,
+            "footballdata.v1.FootballDataService",
+            "ListMatches",
             {"code": "PL", "status": "FINISHED"},
         )
         assert "matches" in result
@@ -155,7 +180,9 @@ class TestLiveListMatches:
 class TestLiveListTodayMatches:
     def test_today_matches(self, live_server):
         result = _cli_or_skip(
-            live_server, "FootballDataService", "ListTodayMatches",
+            live_server,
+            "footballdata.v1.FootballDataService",
+            "ListTodayMatches",
         )
         assert "matches" in result
         assert isinstance(result["matches"], list)
@@ -167,7 +194,9 @@ class TestLiveListTodayMatches:
 class TestLiveGetTeam:
     def test_get_arsenal(self, live_server):
         result = _cli_or_skip(
-            live_server, "FootballDataService", "GetTeam",
+            live_server,
+            "footballdata.v1.FootballDataService",
+            "GetTeam",
             {"id": 57},
         )
         assert result["name"] == "Arsenal FC"
@@ -176,7 +205,9 @@ class TestLiveGetTeam:
 
     def test_get_man_city(self, live_server):
         result = _cli_or_skip(
-            live_server, "FootballDataService", "GetTeam",
+            live_server,
+            "footballdata.v1.FootballDataService",
+            "GetTeam",
             {"id": 65},
         )
         assert result["name"] == "Manchester City FC"
@@ -188,7 +219,9 @@ class TestLiveGetTeam:
 class TestLiveGetScorers:
     def test_pl_scorers(self, live_server):
         result = _cli_or_skip(
-            live_server, "FootballDataService", "GetScorers",
+            live_server,
+            "footballdata.v1.FootballDataService",
+            "GetScorers",
             {"code": "PL"},
         )
         assert "scorers" in result
@@ -202,7 +235,9 @@ class TestLiveGetScorers:
 
     def test_pl_scorers_with_limit(self, live_server):
         result = _cli_or_skip(
-            live_server, "FootballDataService", "GetScorers",
+            live_server,
+            "footballdata.v1.FootballDataService",
+            "GetScorers",
             {"code": "PL", "limit": 5},
         )
         assert "scorers" in result

@@ -11,8 +11,10 @@ from invariant import Server
 
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
+from coinmarketcal_mcp.gen.coinmarketcal.v1 import coinmarketcal_pb2_grpc as pb_grpc
+
+
 # Ensure generated protobuf descriptors are loaded in the default descriptor pool.
-from coinmarketcal_mcp.gen.coinmarketcal.v1 import coinmarketcal_pb2 as _coinmarketcal_pb2  # noqa: F401
 from coinmarketcal_mcp.service import DEFAULT_BASE_URL, CoinMarketCalService
 
 DESCRIPTOR = Path(__file__).parent / "descriptor.binpb"
@@ -57,7 +59,7 @@ def main() -> None:
     base_url = (_env("COINMARKETCAL_BASE_URL") or DEFAULT_BASE_URL).rstrip("/")
 
     servicer = CoinMarketCalService(api_key=api_key, base_url=base_url)
-    server.register(servicer, service_name="coinmarketcal.v1.CoinMarketCalService")
+    pb_grpc.add_CoinMarketCalServiceServicer_to_server(servicer, server)
 
     asyncio.run(_serve(server, _projection_from_argv(sys.argv[1:])))
 

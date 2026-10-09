@@ -81,17 +81,13 @@ func getString(fields map[string]*structpb.Value, key, def string) string {
 }
 
 // helper: convert a map to structpb.Struct.
-func toStruct(data map[string]any) (*structpb.Struct, error) {
-	result, err := structpb.NewStruct(data)
-	if err != nil {
-		return nil, fmt.Errorf("convert to struct: %w", err)
-	}
-	return result, nil
+func responseJSON(data map[string]any) (json.RawMessage, error) {
+	return json.Marshal(data)
 }
 
 // ListMarkets lists all perpetual markets with liquidity, open interest,
 // funding/borrowing rates, and net rates.
-func (s *GmxService) ListMarkets(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *GmxService) ListMarkets(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	chain := getString(fields, "chain", "arbitrum")
 	baseURL := resolveBaseURL(chain)
@@ -103,15 +99,15 @@ func (s *GmxService) ListMarkets(_ context.Context, req *structpb.Struct) (*stru
 
 	// The response is {"markets": [...]}
 	var raw map[string]any
-	if err := json.Unmarshal(body, &raw); err != nil {
+	if err := decodeProviderJSON(body, &raw); err != nil {
 		return nil, fmt.Errorf("decode response: %w (body: %s)", err, string(body))
 	}
 
-	return toStruct(raw)
+	return responseJSON(raw)
 }
 
 // GetTickers gets current price tickers for all tokens on the specified chain.
-func (s *GmxService) GetTickers(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *GmxService) GetTickers(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	chain := getString(fields, "chain", "arbitrum")
 	baseURL := resolveBaseURL(chain)
@@ -123,15 +119,15 @@ func (s *GmxService) GetTickers(_ context.Context, req *structpb.Struct) (*struc
 
 	// The response is an array of ticker objects.
 	var arr []any
-	if err := json.Unmarshal(body, &arr); err != nil {
+	if err := decodeProviderJSON(body, &arr); err != nil {
 		return nil, fmt.Errorf("decode response: %w (body: %s)", err, string(body))
 	}
 
-	return toStruct(map[string]any{"tickers": arr})
+	return responseJSON(map[string]any{"tickers": arr})
 }
 
 // GetCandles gets historical OHLC price candles for a token.
-func (s *GmxService) GetCandles(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *GmxService) GetCandles(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	chain := getString(fields, "chain", "arbitrum")
 	baseURL := resolveBaseURL(chain)
@@ -157,7 +153,7 @@ func (s *GmxService) GetCandles(_ context.Context, req *structpb.Struct) (*struc
 		Period  string      `json:"period"`
 		Candles [][]float64 `json:"candles"`
 	}
-	if err := json.Unmarshal(body, &raw); err != nil {
+	if err := decodeProviderJSON(body, &raw); err != nil {
 		return nil, fmt.Errorf("decode response: %w (body: %s)", err, string(body))
 	}
 
@@ -176,7 +172,7 @@ func (s *GmxService) GetCandles(_ context.Context, req *structpb.Struct) (*struc
 		})
 	}
 
-	return toStruct(map[string]any{
+	return responseJSON(map[string]any{
 		"period":  raw.Period,
 		"candles": candles,
 	})

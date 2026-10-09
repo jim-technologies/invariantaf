@@ -42,11 +42,15 @@ class KrakenService:
     # Spot handlers
     # -------------------------
 
-    async def GetServerTime(self, request: Any, context: Any = None) -> pb.GetServerTimeResponse:
+    async def GetServerTime(
+        self, request: Any, context: Any = None
+    ) -> pb.GetServerTimeResponse:
         payload = await self._spot_public_get("/public/Time")
         return self._parse_message(payload, pb.GetServerTimeResponse)
 
-    async def GetSystemStatus(self, request: Any, context: Any = None) -> pb.GetSystemStatusResponse:
+    async def GetSystemStatus(
+        self, request: Any, context: Any = None
+    ) -> pb.GetSystemStatusResponse:
         payload = await self._spot_public_get("/public/SystemStatus")
         return self._parse_message(payload, pb.GetSystemStatusResponse)
 
@@ -78,7 +82,9 @@ class KrakenService:
         self._transform_spot_ticker(payload)
         return self._parse_message(payload, pb.GetTickerInformationResponse)
 
-    async def GetOrderBook(self, request: pb.GetOrderBookRequest, context: Any = None) -> pb.GetOrderBookResponse:
+    async def GetOrderBook(
+        self, request: pb.GetOrderBookRequest, context: Any = None
+    ) -> pb.GetOrderBookResponse:
         query: dict[str, Any] = {"pair": request.pair}
         if self._has_field(request, "count"):
             query["count"] = request.count
@@ -113,7 +119,9 @@ class KrakenService:
         self._normalize_spot_errors(payload)
         return self._parse_message(payload, pb.GetOpenOrdersResponse)
 
-    async def AddOrder(self, request: pb.AddOrderRequest, context: Any = None) -> pb.AddOrderResponse:
+    async def AddOrder(
+        self, request: pb.AddOrderRequest, context: Any = None
+    ) -> pb.AddOrderResponse:
         params: dict[str, Any] = {
             "ordertype": request.ordertype,
             "type": request.type,
@@ -185,32 +193,44 @@ class KrakenService:
             return await self._spot_get_open_orders(request, context)
         if isinstance(request, pb.GetFuturesOpenOrdersRequest):
             return await self._futures_get_open_orders(request, context)
-        raise TypeError(f"unsupported request type for GetOpenOrders: {type(request).__name__}")
+        raise TypeError(
+            f"unsupported request type for GetOpenOrders: {type(request).__name__}"
+        )
 
     async def CancelOrder(self, request: Any, context: Any = None):
         if isinstance(request, pb.CancelOrderRequest):
             return await self._spot_cancel_order(request, context)
         if isinstance(request, pb.CancelFuturesOrderRequest):
             return await self._futures_cancel_order(request, context)
-        raise TypeError(f"unsupported request type for CancelOrder: {type(request).__name__}")
+        raise TypeError(
+            f"unsupported request type for CancelOrder: {type(request).__name__}"
+        )
 
     # -------------------------
     # Futures handlers
     # -------------------------
 
-    async def GetInstruments(self, request: Any, context: Any = None) -> pb.GetInstrumentsResponse:
+    async def GetInstruments(
+        self, request: Any, context: Any = None
+    ) -> pb.GetInstrumentsResponse:
         payload = await self._futures_request("GET", "/instruments", private=False)
         return self._parse_message(payload, pb.GetInstrumentsResponse)
 
-    async def GetTickers(self, request: pb.GetTickersRequest, context: Any = None) -> pb.GetTickersResponse:
+    async def GetTickers(
+        self, request: pb.GetTickersRequest, context: Any = None
+    ) -> pb.GetTickersResponse:
         query: dict[str, Any] = {}
         if request.symbol:
             query["symbol"] = list(request.symbol)
 
-        payload = await self._futures_request("GET", "/tickers", query=query, private=False)
+        payload = await self._futures_request(
+            "GET", "/tickers", query=query, private=False
+        )
         return self._parse_message(payload, pb.GetTickersResponse)
 
-    async def GetOrderbook(self, request: pb.GetOrderbookRequest, context: Any = None) -> pb.GetOrderbookResponse:
+    async def GetOrderbook(
+        self, request: pb.GetOrderbookRequest, context: Any = None
+    ) -> pb.GetOrderbookResponse:
         payload = await self._futures_request(
             "GET",
             "/orderbook",
@@ -220,7 +240,9 @@ class KrakenService:
         self._transform_futures_orderbook(payload)
         return self._parse_message(payload, pb.GetOrderbookResponse)
 
-    async def SendOrder(self, request: pb.SendOrderRequest, context: Any = None) -> pb.SendOrderResponse:
+    async def SendOrder(
+        self, request: pb.SendOrderRequest, context: Any = None
+    ) -> pb.SendOrderResponse:
         params: dict[str, Any] = {
             "orderType": request.order_type,
             "symbol": request.symbol,
@@ -233,13 +255,23 @@ class KrakenService:
         self._add_opt(params, "cliOrdId", request, "cli_ord_id")
         self._add_opt(params, "triggerSignal", request, "trigger_signal")
         self._add_opt(params, "reduceOnly", request, "reduce_only")
-        self._add_opt(params, "trailingStopMaxDeviation", request, "trailing_stop_max_deviation")
-        self._add_opt(params, "trailingStopDeviationUnit", request, "trailing_stop_deviation_unit")
-        self._add_opt(params, "limitPriceOffsetValue", request, "limit_price_offset_value")
-        self._add_opt(params, "limitPriceOffsetUnit", request, "limit_price_offset_unit")
+        self._add_opt(
+            params, "trailingStopMaxDeviation", request, "trailing_stop_max_deviation"
+        )
+        self._add_opt(
+            params, "trailingStopDeviationUnit", request, "trailing_stop_deviation_unit"
+        )
+        self._add_opt(
+            params, "limitPriceOffsetValue", request, "limit_price_offset_value"
+        )
+        self._add_opt(
+            params, "limitPriceOffsetUnit", request, "limit_price_offset_unit"
+        )
         self._add_opt(params, "broker", request, "broker")
 
-        payload = await self._futures_request("POST", "/sendorder", query=params, private=True)
+        payload = await self._futures_request(
+            "POST", "/sendorder", query=params, private=True
+        )
         return self._parse_message(payload, pb.SendOrderResponse)
 
     async def _futures_cancel_order(
@@ -250,7 +282,9 @@ class KrakenService:
         self._add_opt(params, "order_id", request, "order_id")
         self._add_opt(params, "cliOrdId", request, "cli_ord_id")
 
-        payload = await self._futures_request("POST", "/cancelorder", query=params, private=True)
+        payload = await self._futures_request(
+            "POST", "/cancelorder", query=params, private=True
+        )
         return self._parse_message(payload, pb.CancelFuturesOrderResponse)
 
     async def _futures_get_open_orders(
@@ -265,22 +299,32 @@ class KrakenService:
         payload = await self._futures_request("GET", "/openpositions", private=True)
         return self._parse_message(payload, pb.GetOpenPositionsResponse)
 
-    async def GetFills(self, request: pb.GetFillsRequest, context: Any = None) -> pb.GetFillsResponse:
+    async def GetFills(
+        self, request: pb.GetFillsRequest, context: Any = None
+    ) -> pb.GetFillsResponse:
         query: dict[str, Any] = {}
         self._add_opt(query, "lastFillTime", request, "last_fill_time")
 
-        payload = await self._futures_request("GET", "/fills", query=query, private=True)
+        payload = await self._futures_request(
+            "GET", "/fills", query=query, private=True
+        )
         return self._parse_message(payload, pb.GetFillsResponse)
 
     # -------------------------
     # HTTP + auth helpers
     # -------------------------
 
-    async def _spot_public_get(self, path: str, query: dict[str, Any] | None = None) -> dict[str, Any]:
+    async def _spot_public_get(
+        self, path: str, query: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         url = self._build_url(self._spot_base_url, path, query=query)
-        return await self._request_json("GET", url, headers={"Accept": "application/json"})
+        return await self._request_json(
+            "GET", url, headers={"Accept": "application/json"}
+        )
 
-    async def _spot_private_post(self, path: str, params: dict[str, Any]) -> dict[str, Any]:
+    async def _spot_private_post(
+        self, path: str, params: dict[str, Any]
+    ) -> dict[str, Any]:
         api_key, api_secret = self._spot_credentials()
 
         params = dict(params)
@@ -295,7 +339,9 @@ class KrakenService:
         sha256_digest = hashlib.sha256((nonce + body).encode()).digest()
         signature_input = sign_path.encode() + sha256_digest
         signature = base64.b64encode(
-            hmac.new(base64.b64decode(api_secret), signature_input, hashlib.sha512).digest()
+            hmac.new(
+                base64.b64decode(api_secret), signature_input, hashlib.sha512
+            ).digest()
         ).decode()
 
         headers = {
@@ -370,9 +416,13 @@ class KrakenService:
             raise RuntimeError(f"{method} {url}: invalid JSON response: {exc}") from exc
 
         if response.status_code >= 400:
-            raise RuntimeError(f"{method} {url}: HTTP {response.status_code}: {payload}")
+            raise RuntimeError(
+                f"{method} {url}: HTTP {response.status_code}: {payload}"
+            )
         if not isinstance(payload, dict):
-            raise RuntimeError(f"{method} {url}: expected object JSON response, got {type(payload).__name__}")
+            raise RuntimeError(
+                f"{method} {url}: expected object JSON response, got {type(payload).__name__}"
+            )
         return payload
 
     # -------------------------
@@ -401,7 +451,9 @@ class KrakenService:
             if not isinstance(pair_data, dict):
                 continue
             pair_data["fees"] = self._transform_fee_levels(pair_data.get("fees"))
-            pair_data["fees_maker"] = self._transform_fee_levels(pair_data.get("fees_maker"))
+            pair_data["fees_maker"] = self._transform_fee_levels(
+                pair_data.get("fees_maker")
+            )
 
     def _transform_fee_levels(self, value: Any) -> list[dict[str, float]]:
         out: list[dict[str, float]] = []
@@ -520,7 +572,9 @@ class KrakenService:
         json_format.ParseDict(payload, message, ignore_unknown_fields=True)
         return message
 
-    def _build_url(self, base: str, path: str, query: dict[str, Any] | None = None) -> str:
+    def _build_url(
+        self, base: str, path: str, query: dict[str, Any] | None = None
+    ) -> str:
         full = f"{base.rstrip('/')}{path}"
         if not query:
             return full
@@ -535,7 +589,9 @@ class KrakenService:
         for key, value in params.items():
             if value is None:
                 continue
-            if isinstance(value, Iterable) and not isinstance(value, (str, bytes, bytearray, dict)):
+            if isinstance(value, Iterable) and not isinstance(
+                value, (str, bytes, bytearray, dict)
+            ):
                 for item in value:
                     if item is None:
                         continue
@@ -560,7 +616,9 @@ class KrakenService:
         except ValueError:
             return False
 
-    def _add_opt(self, out: dict[str, Any], out_name: str, request: Any, field_name: str) -> None:
+    def _add_opt(
+        self, out: dict[str, Any], out_name: str, request: Any, field_name: str
+    ) -> None:
         if self._has_field(request, field_name):
             out[out_name] = getattr(request, field_name)
 
@@ -568,7 +626,9 @@ class KrakenService:
         api_key = self._first_env("KRAKEN_SPOT_API_KEY", "KRAKEN_API_KEY")
         api_secret = self._first_env("KRAKEN_SPOT_API_SECRET", "KRAKEN_API_SECRET")
         if not api_key or not api_secret:
-            raise RuntimeError("missing Kraken Spot credentials (KRAKEN_SPOT_API_KEY/KRAKEN_SPOT_API_SECRET)")
+            raise RuntimeError(
+                "missing Kraken Spot credentials (KRAKEN_SPOT_API_KEY/KRAKEN_SPOT_API_SECRET)"
+            )
         return api_key, api_secret
 
     def _futures_credentials(self) -> tuple[str, str]:

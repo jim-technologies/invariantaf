@@ -41,14 +41,18 @@ class CryptoDotComService:
         items = raw if isinstance(raw, list) else []
         instruments = []
         for item in items:
-            instruments.append({
-                "instrument_name": item.get("instrument_name", ""),
-                "quote_currency": item.get("quote_currency", ""),
-                "base_currency": item.get("base_currency", ""),
-                "price_decimals": str(item.get("price_decimals", "")),
-                "quantity_decimals": str(item.get("quantity_decimals", "")),
-                "margin_trading_enabled": bool(item.get("margin_trading_enabled", False)),
-            })
+            instruments.append(
+                {
+                    "instrument_name": item.get("instrument_name", ""),
+                    "quote_currency": item.get("quote_currency", ""),
+                    "base_currency": item.get("base_currency", ""),
+                    "price_decimals": str(item.get("price_decimals", "")),
+                    "quantity_decimals": str(item.get("quantity_decimals", "")),
+                    "margin_trading_enabled": bool(
+                        item.get("margin_trading_enabled", False)
+                    ),
+                }
+            )
         return self._parse_message({"data": instruments}, pb.GetInstrumentsResponse)
 
     async def GetTickers(
@@ -62,18 +66,20 @@ class CryptoDotComService:
         items = raw if isinstance(raw, list) else []
         tickers = []
         for item in items:
-            tickers.append({
-                "instrument_name": item.get("i", ""),
-                "high": str(item.get("h", "")),
-                "low": str(item.get("l", "")),
-                "latest_trade": str(item.get("a", "")),
-                "volume": str(item.get("v", "")),
-                "best_bid": str(item.get("b", "")),
-                "best_ask": str(item.get("k", "")),
-                "price_change": str(item.get("c", "")),
-                "price_change_percent": str(item.get("cp", "")),
-                "timestamp": int(item.get("t", 0)),
-            })
+            tickers.append(
+                {
+                    "instrument_name": item.get("i", ""),
+                    "high": str(item.get("h", "")),
+                    "low": str(item.get("l", "")),
+                    "latest_trade": str(item.get("a", "")),
+                    "volume": str(item.get("v", "")),
+                    "best_bid": str(item.get("b", "")),
+                    "best_ask": str(item.get("k", "")),
+                    "price_change": str(item.get("c", "")),
+                    "price_change_percent": str(item.get("cp", "")),
+                    "timestamp": int(item.get("t", 0)),
+                }
+            )
         return self._parse_message({"data": tickers}, pb.GetTickersResponse)
 
     async def GetOrderbook(
@@ -110,14 +116,16 @@ class CryptoDotComService:
         items = raw if isinstance(raw, list) else []
         candles = []
         for item in items:
-            candles.append({
-                "timestamp": int(item.get("t", 0)),
-                "open": str(item.get("o", "")),
-                "high": str(item.get("h", "")),
-                "low": str(item.get("l", "")),
-                "close": str(item.get("c", "")),
-                "volume": str(item.get("v", "")),
-            })
+            candles.append(
+                {
+                    "timestamp": int(item.get("t", 0)),
+                    "open": str(item.get("o", "")),
+                    "high": str(item.get("h", "")),
+                    "low": str(item.get("l", "")),
+                    "close": str(item.get("c", "")),
+                    "volume": str(item.get("v", "")),
+                }
+            )
         return self._parse_message({"data": candles}, pb.GetCandlestickResponse)
 
     async def GetTrades(
@@ -129,14 +137,16 @@ class CryptoDotComService:
         items = raw if isinstance(raw, list) else []
         trades = []
         for item in items:
-            trades.append({
-                "trade_id": str(item.get("d", "")),
-                "instrument_name": item.get("i", ""),
-                "side": item.get("s", ""),
-                "price": str(item.get("p", "")),
-                "quantity": str(item.get("q", "")),
-                "timestamp": int(item.get("t", 0)),
-            })
+            trades.append(
+                {
+                    "trade_id": str(item.get("d", "")),
+                    "instrument_name": item.get("i", ""),
+                    "side": item.get("s", ""),
+                    "price": str(item.get("p", "")),
+                    "quantity": str(item.get("q", "")),
+                    "timestamp": int(item.get("t", 0)),
+                }
+            )
         return self._parse_message({"data": trades}, pb.GetTradesResponse)
 
     # -------------------------
@@ -148,11 +158,13 @@ class CryptoDotComService:
         levels = []
         for entry in raw_levels:
             if isinstance(entry, list) and len(entry) >= 3:
-                levels.append({
-                    "price": str(entry[0]),
-                    "quantity": str(entry[1]),
-                    "count": str(entry[2]),
-                })
+                levels.append(
+                    {
+                        "price": str(entry[0]),
+                        "quantity": str(entry[1]),
+                        "count": str(entry[2]),
+                    }
+                )
         return levels
 
     # -------------------------

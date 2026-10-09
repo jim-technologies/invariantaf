@@ -11,8 +11,10 @@ from invariant import Server
 
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
+from alternativeme_mcp.gen.alternativeme.v1 import alternativeme_pb2_grpc as pb_grpc
+
+
 # Ensure generated protobuf descriptors are loaded in the default descriptor pool.
-from alternativeme_mcp.gen.alternativeme.v1 import alternativeme_pb2 as _alternativeme_pb2  # noqa: F401
 from alternativeme_mcp.service import DEFAULT_BASE_URL, AlternativeMeService
 
 DESCRIPTOR = Path(__file__).parent / "descriptor.binpb"
@@ -56,7 +58,7 @@ def main() -> None:
     base_url = (_env("ALTERNATIVEME_BASE_URL") or DEFAULT_BASE_URL).rstrip("/")
 
     servicer = AlternativeMeService(base_url=base_url)
-    server.register(servicer, service_name="alternativeme.v1.AlternativeMeService")
+    pb_grpc.add_AlternativeMeServiceServicer_to_server(servicer, server)
 
     asyncio.run(_serve(server, _projection_from_argv(sys.argv[1:])))
 

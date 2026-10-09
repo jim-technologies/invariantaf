@@ -11,8 +11,10 @@ from invariant import Server
 
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
+from geckoterminal_mcp.gen.geckoterminal.v1 import geckoterminal_pb2_grpc as pb_grpc
+
+
 # Ensure generated protobuf descriptors are loaded in the default descriptor pool.
-from geckoterminal_mcp.gen.geckoterminal.v1 import geckoterminal_pb2 as _geckoterminal_pb2  # noqa: F401, E501
 from geckoterminal_mcp.service import DEFAULT_BASE_URL, GeckoTerminalService
 
 DESCRIPTOR = Path(__file__).parent / "descriptor.binpb"
@@ -56,7 +58,7 @@ def main() -> None:
     base_url = (_env("GECKOTERMINAL_BASE_URL") or DEFAULT_BASE_URL).rstrip("/")
 
     servicer = GeckoTerminalService(base_url=base_url)
-    server.register(servicer, service_name="geckoterminal.v1.GeckoTerminalService")
+    pb_grpc.add_GeckoTerminalServiceServicer_to_server(servicer, server)
 
     asyncio.run(_serve(server, _projection_from_argv(sys.argv[1:])))
 

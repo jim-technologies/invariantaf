@@ -62,44 +62,56 @@ class EtherscanService:
 
     async def aclose(self) -> None:
         """Close the HTTP client. Idempotent."""
-        await self._client.aclose()
+        await self._http.aclose()
 
-    def _get(self, params: dict) -> Any:
+    async def _get(self, params: dict) -> Any:
         params["apikey"] = self._api_key
-        resp = self._http.get(_BASE_URL, params=params)
+        resp = await self._http.get(_BASE_URL, params=params)
         resp.raise_for_status()
         data = resp.json()
         return data
 
-    async def GetBalance(self, request: Any, context: Any = None) -> pb.GetBalanceResponse:
-        data = self._get({
-            "module": "account",
-            "action": "balance",
-            "address": request.address,
-        })
+    async def GetBalance(
+        self, request: Any, context: Any = None
+    ) -> pb.GetBalanceResponse:
+        data = await self._get(
+            {
+                "module": "account",
+                "action": "balance",
+                "address": request.address,
+            }
+        )
         return pb.GetBalanceResponse(balance=str(data.get("result", "")))
 
-    async def GetTokenBalance(self, request: Any, context: Any = None) -> pb.GetTokenBalanceResponse:
-        data = self._get({
-            "module": "account",
-            "action": "tokenbalance",
-            "contractaddress": request.contract_address,
-            "address": request.address,
-        })
+    async def GetTokenBalance(
+        self, request: Any, context: Any = None
+    ) -> pb.GetTokenBalanceResponse:
+        data = await self._get(
+            {
+                "module": "account",
+                "action": "tokenbalance",
+                "contractaddress": request.contract_address,
+                "address": request.address,
+            }
+        )
         return pb.GetTokenBalanceResponse(balance=str(data.get("result", "")))
 
-    async def GetTransactions(self, request: Any, context: Any = None) -> pb.GetTransactionsResponse:
+    async def GetTransactions(
+        self, request: Any, context: Any = None
+    ) -> pb.GetTransactionsResponse:
         start_block = request.start_block if request.start_block else 0
         end_block = request.end_block if request.end_block else 99999999
         sort = request.sort if request.sort else "desc"
-        data = self._get({
-            "module": "account",
-            "action": "txlist",
-            "address": request.address,
-            "startblock": start_block,
-            "endblock": end_block,
-            "sort": sort,
-        })
+        data = await self._get(
+            {
+                "module": "account",
+                "action": "txlist",
+                "address": request.address,
+                "startblock": start_block,
+                "endblock": end_block,
+                "sort": sort,
+            }
+        )
         resp = pb.GetTransactionsResponse()
         result = data.get("result", [])
         if isinstance(result, list):
@@ -107,18 +119,22 @@ class EtherscanService:
                 resp.transactions.append(_parse_transaction(t))
         return resp
 
-    async def GetTokenTransfers(self, request: Any, context: Any = None) -> pb.GetTokenTransfersResponse:
+    async def GetTokenTransfers(
+        self, request: Any, context: Any = None
+    ) -> pb.GetTokenTransfersResponse:
         start_block = request.start_block if request.start_block else 0
         end_block = request.end_block if request.end_block else 99999999
         sort = request.sort if request.sort else "desc"
-        data = self._get({
-            "module": "account",
-            "action": "tokentx",
-            "address": request.address,
-            "startblock": start_block,
-            "endblock": end_block,
-            "sort": sort,
-        })
+        data = await self._get(
+            {
+                "module": "account",
+                "action": "tokentx",
+                "address": request.address,
+                "startblock": start_block,
+                "endblock": end_block,
+                "sort": sort,
+            }
+        )
         resp = pb.GetTokenTransfersResponse()
         result = data.get("result", [])
         if isinstance(result, list):
@@ -126,11 +142,15 @@ class EtherscanService:
                 resp.transfers.append(_parse_token_transfer(t))
         return resp
 
-    async def GetGasPrice(self, request: Any, context: Any = None) -> pb.GetGasPriceResponse:
-        data = self._get({
-            "module": "gastracker",
-            "action": "gasoracle",
-        })
+    async def GetGasPrice(
+        self, request: Any, context: Any = None
+    ) -> pb.GetGasPriceResponse:
+        data = await self._get(
+            {
+                "module": "gastracker",
+                "action": "gasoracle",
+            }
+        )
         result = data.get("result", {})
         gas_oracle = pb.GasOracle(
             safe_gas_price=str(result.get("SafeGasPrice", "")),
@@ -141,11 +161,15 @@ class EtherscanService:
         )
         return pb.GetGasPriceResponse(gas_oracle=gas_oracle)
 
-    async def GetETHPrice(self, request: Any, context: Any = None) -> pb.GetETHPriceResponse:
-        data = self._get({
-            "module": "stats",
-            "action": "ethprice",
-        })
+    async def GetETHPrice(
+        self, request: Any, context: Any = None
+    ) -> pb.GetETHPriceResponse:
+        data = await self._get(
+            {
+                "module": "stats",
+                "action": "ethprice",
+            }
+        )
         result = data.get("result", {})
         eth_price = pb.ETHPrice(
             ethusd=str(result.get("ethusd", "")),
@@ -155,10 +179,14 @@ class EtherscanService:
         )
         return pb.GetETHPriceResponse(eth_price=eth_price)
 
-    async def GetContractABI(self, request: Any, context: Any = None) -> pb.GetContractABIResponse:
-        data = self._get({
-            "module": "contract",
-            "action": "getabi",
-            "address": request.address,
-        })
+    async def GetContractABI(
+        self, request: Any, context: Any = None
+    ) -> pb.GetContractABIResponse:
+        data = await self._get(
+            {
+                "module": "contract",
+                "action": "getabi",
+                "address": request.address,
+            }
+        )
         return pb.GetContractABIResponse(abi=str(data.get("result", "")))

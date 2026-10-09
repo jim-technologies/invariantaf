@@ -95,7 +95,9 @@ class SlackService:
     async def AuthTest(self, request: Any, context: Any = None) -> struct_pb2.Struct:
         return self._wrap(await self._call_form("auth.test", {}))
 
-    async def ChatPostMessage(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def ChatPostMessage(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         body: dict[str, Any] = {
             "channel": request.channel,
             "text": request.text,
@@ -120,7 +122,9 @@ class SlackService:
             body["metadata"] = metadata
         return self._wrap(await self._call_json("chat.postMessage", body))
 
-    async def ChatPostEphemeral(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def ChatPostEphemeral(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         body: dict[str, Any] = {
             "channel": request.channel,
             "user": request.user,
@@ -159,7 +163,9 @@ class SlackService:
         }
         return self._wrap(await self._call_json("chat.delete", body))
 
-    async def ChatScheduleMessage(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def ChatScheduleMessage(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         body: dict[str, Any] = {
             "channel": request.channel,
             "post_at": int(request.post_at),
@@ -175,21 +181,27 @@ class SlackService:
             body["attachments"] = attachments.get("items", attachments)
         return self._wrap(await self._call_json("chat.scheduleMessage", body))
 
-    async def ChatDeleteScheduledMessage(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def ChatDeleteScheduledMessage(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         params = {
             "channel": request.channel,
             "scheduled_message_id": request.scheduled_message_id,
         }
         return self._wrap(await self._call_form("chat.deleteScheduledMessage", params))
 
-    async def ChatGetPermalink(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def ChatGetPermalink(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         params = {
             "channel": request.channel,
             "message_ts": request.message_ts,
         }
         return self._wrap(await self._call_form("chat.getPermalink", params))
 
-    async def ConversationsList(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def ConversationsList(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         params = {
             "types": request.types,
             "exclude_archived": request.exclude_archived,
@@ -198,7 +210,9 @@ class SlackService:
         }
         return self._wrap(await self._call_form("conversations.list", params))
 
-    async def ConversationsHistory(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def ConversationsHistory(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         params = {
             "channel": request.channel,
             "limit": request.limit,
@@ -209,7 +223,9 @@ class SlackService:
         }
         return self._wrap(await self._call_form("conversations.history", params))
 
-    async def ConversationsReplies(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def ConversationsReplies(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         params = {
             "channel": request.channel,
             "ts": request.ts,
@@ -221,7 +237,9 @@ class SlackService:
         }
         return self._wrap(await self._call_form("conversations.replies", params))
 
-    async def ConversationsInfo(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def ConversationsInfo(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         params = {
             "channel": request.channel,
             "include_locale": request.include_locale,
@@ -229,7 +247,9 @@ class SlackService:
         }
         return self._wrap(await self._call_form("conversations.info", params))
 
-    async def ConversationsCreate(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def ConversationsCreate(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         body = {
             "name": request.name,
             "is_private": request.is_private,
@@ -237,13 +257,23 @@ class SlackService:
         }
         return self._wrap(await self._call_json("conversations.create", body))
 
-    async def ConversationsJoin(self, request: Any, context: Any = None) -> struct_pb2.Struct:
-        return self._wrap(await self._call_form("conversations.join", {"channel": request.channel}))
+    async def ConversationsJoin(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
+        return self._wrap(
+            await self._call_form("conversations.join", {"channel": request.channel})
+        )
 
-    async def ConversationsLeave(self, request: Any, context: Any = None) -> struct_pb2.Struct:
-        return self._wrap(await self._call_form("conversations.leave", {"channel": request.channel}))
+    async def ConversationsLeave(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
+        return self._wrap(
+            await self._call_form("conversations.leave", {"channel": request.channel})
+        )
 
-    async def ConversationsInvite(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def ConversationsInvite(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         body = {
             "channel": request.channel,
             "users": request.users,
@@ -251,29 +281,49 @@ class SlackService:
         }
         return self._wrap(await self._call_json("conversations.invite", body))
 
-    async def ConversationsKick(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def ConversationsKick(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         params = {"channel": request.channel, "user": request.user}
         return self._wrap(await self._call_form("conversations.kick", params))
 
-    async def ConversationsArchive(self, request: Any, context: Any = None) -> struct_pb2.Struct:
-        return self._wrap(await self._call_form("conversations.archive", {"channel": request.channel}))
+    async def ConversationsArchive(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
+        return self._wrap(
+            await self._call_form("conversations.archive", {"channel": request.channel})
+        )
 
-    async def ConversationsUnarchive(self, request: Any, context: Any = None) -> struct_pb2.Struct:
-        return self._wrap(await self._call_form("conversations.unarchive", {"channel": request.channel}))
+    async def ConversationsUnarchive(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
+        return self._wrap(
+            await self._call_form(
+                "conversations.unarchive", {"channel": request.channel}
+            )
+        )
 
-    async def ConversationsRename(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def ConversationsRename(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         params = {"channel": request.channel, "name": request.name}
         return self._wrap(await self._call_form("conversations.rename", params))
 
-    async def ConversationsSetTopic(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def ConversationsSetTopic(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         body = {"channel": request.channel, "topic": request.topic}
         return self._wrap(await self._call_json("conversations.setTopic", body))
 
-    async def ConversationsSetPurpose(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def ConversationsSetPurpose(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         body = {"channel": request.channel, "purpose": request.purpose}
         return self._wrap(await self._call_json("conversations.setPurpose", body))
 
-    async def ConversationsMembers(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def ConversationsMembers(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         params = {
             "channel": request.channel,
             "limit": request.limit,
@@ -281,7 +331,9 @@ class SlackService:
         }
         return self._wrap(await self._call_form("conversations.members", params))
 
-    async def ConversationsOpen(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def ConversationsOpen(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         body = {
             "users": request.users,
             "channel": request.channel,
@@ -301,17 +353,29 @@ class SlackService:
         params = {"user": request.user, "include_locale": request.include_locale}
         return self._wrap(await self._call_form("users.info", params))
 
-    async def UsersLookupByEmail(self, request: Any, context: Any = None) -> struct_pb2.Struct:
-        return self._wrap(await self._call_form("users.lookupByEmail", {"email": request.email}))
+    async def UsersLookupByEmail(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
+        return self._wrap(
+            await self._call_form("users.lookupByEmail", {"email": request.email})
+        )
 
-    async def UsersProfileGet(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def UsersProfileGet(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         params = {"user": request.user, "include_labels": request.include_labels}
         return self._wrap(await self._call_form("users.profile.get", params))
 
-    async def UsersGetPresence(self, request: Any, context: Any = None) -> struct_pb2.Struct:
-        return self._wrap(await self._call_form("users.getPresence", {"user": request.user}))
+    async def UsersGetPresence(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
+        return self._wrap(
+            await self._call_form("users.getPresence", {"user": request.user})
+        )
 
-    async def ReactionsAdd(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def ReactionsAdd(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         params = {
             "name": request.name,
             "channel": request.channel,
@@ -319,7 +383,9 @@ class SlackService:
         }
         return self._wrap(await self._call_form("reactions.add", params))
 
-    async def ReactionsRemove(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def ReactionsRemove(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         params = {
             "name": request.name,
             "channel": request.channel,
@@ -327,7 +393,9 @@ class SlackService:
         }
         return self._wrap(await self._call_form("reactions.remove", params))
 
-    async def ReactionsGet(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def ReactionsGet(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         params = {
             "channel": request.channel,
             "timestamp": request.timestamp,
@@ -344,9 +412,13 @@ class SlackService:
         return self._wrap(await self._call_form("pins.remove", params))
 
     async def PinsList(self, request: Any, context: Any = None) -> struct_pb2.Struct:
-        return self._wrap(await self._call_form("pins.list", {"channel": request.channel}))
+        return self._wrap(
+            await self._call_form("pins.list", {"channel": request.channel})
+        )
 
-    async def SearchMessages(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def SearchMessages(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         params = {
             "query": request.query,
             "sort": request.sort,
@@ -386,10 +458,16 @@ class SlackService:
     async def FilesDelete(self, request: Any, context: Any = None) -> struct_pb2.Struct:
         return self._wrap(await self._call_form("files.delete", {"file": request.file}))
 
-    async def BookmarksList(self, request: Any, context: Any = None) -> struct_pb2.Struct:
-        return self._wrap(await self._call_form("bookmarks.list", {"channel_id": request.channel_id}))
+    async def BookmarksList(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
+        return self._wrap(
+            await self._call_form("bookmarks.list", {"channel_id": request.channel_id})
+        )
 
-    async def BookmarksAdd(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def BookmarksAdd(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         body = {
             "channel_id": request.channel_id,
             "title": request.title,
@@ -400,7 +478,9 @@ class SlackService:
         }
         return self._wrap(await self._call_json("bookmarks.add", body))
 
-    async def BookmarksRemove(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def BookmarksRemove(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         body = {
             "channel_id": request.channel_id,
             "bookmark_id": request.bookmark_id,
@@ -412,7 +492,9 @@ class SlackService:
 
     async def EmojiList(self, request: Any, context: Any = None) -> struct_pb2.Struct:
         return self._wrap(
-            await self._call_form("emoji.list", {"include_categories": request.include_categories})
+            await self._call_form(
+                "emoji.list", {"include_categories": request.include_categories}
+            )
         )
 
     async def ViewsOpen(self, request: Any, context: Any = None) -> struct_pb2.Struct:
@@ -422,7 +504,9 @@ class SlackService:
             body["view"] = view
         return self._wrap(await self._call_json("views.open", body))
 
-    async def ViewsPublish(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def ViewsPublish(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         body: dict[str, Any] = {"user_id": request.user_id, "hash": request.hash}
         view = self._struct_to_dict(request.view)
         if view:

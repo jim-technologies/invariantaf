@@ -11,6 +11,9 @@ from invariant import Server
 
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
+from cryptodotcom_mcp.gen.cryptodotcom.v1 import cryptodotcom_pb2_grpc as pb_grpc
+
+
 # Ensure generated protobuf descriptors are loaded in the default descriptor pool.
 from cryptodotcom_mcp.gen.cryptodotcom.v1 import cryptodotcom_pb2 as _cryptodotcom_pb2  # noqa: F401
 from cryptodotcom_mcp.service import DEFAULT_BASE_URL, CryptoDotComService
@@ -56,7 +59,7 @@ def main() -> None:
     base_url = (_env("CRYPTODOTCOM_BASE_URL") or DEFAULT_BASE_URL).rstrip("/")
 
     servicer = CryptoDotComService(base_url=base_url)
-    server.register(servicer, service_name="cryptodotcom.v1.CryptoDotComService")
+    pb_grpc.add_CryptoDotComServiceServicer_to_server(servicer, server)
 
     asyncio.run(_serve(server, _projection_from_argv(sys.argv[1:])))
 

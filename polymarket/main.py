@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-import os
 import asyncio
+import os
 import sys
 import time
 import urllib.parse
@@ -16,7 +16,9 @@ from invariant import Server
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
 # Ensure generated protobuf descriptors are loaded into the default descriptor pool.
+from bindings import ClobBindings
 from gen.polymarket.v1 import polymarket_pb2 as _polymarket_pb2  # noqa: F401
+from gen.polymarket.v1 import polymarket_pb2_grpc as rpc
 
 DESCRIPTOR = Path(__file__).parent / "descriptor.binpb"
 
@@ -113,7 +115,8 @@ def _install_http_debug_hook() -> None:
 
         print(f"[polymarket-debug] >>> {method} {url}", file=sys.stderr)
         print(
-            f"[polymarket-debug] >>> headers={_redact_headers(headers)} timeout={timeout}",
+            f"[polymarket-debug] >>> headers={_redact_headers(headers)} "
+            f"timeout={timeout}",
             file=sys.stderr,
         )
         if content is not None:
@@ -135,7 +138,8 @@ def _install_http_debug_hook() -> None:
         elapsed_ms = (time.perf_counter() - started) * 1000.0
 
         print(
-            f"[polymarket-debug] <<< {response.status_code} {response.reason_phrase} ({elapsed_ms:.1f}ms)",
+            f"[polymarket-debug] <<< {response.status_code} "
+            f"{response.reason_phrase} ({elapsed_ms:.1f}ms)",
             file=sys.stderr,
         )
         print(
@@ -157,7 +161,9 @@ def _read_chain_id() -> int:
     try:
         return int(chain_id_raw)
     except ValueError as exc:
-        raise SystemExit(f"POLYMARKET_CHAIN_ID must be an integer, got {chain_id_raw!r}") from exc
+        raise SystemExit(
+            f"POLYMARKET_CHAIN_ID must be an integer, got {chain_id_raw!r}"
+        ) from exc
 
 
 def _build_clob_client(clob_base_url: str, signature_type_default: int):
@@ -223,7 +229,9 @@ def _read_signature_type() -> int:
     try:
         value = int(raw)
     except ValueError as exc:
-        raise SystemExit(f"POLYMARKET_SIGNATURE_TYPE must be an integer, got {raw!r}") from exc
+        raise SystemExit(
+            f"POLYMARKET_SIGNATURE_TYPE must be an integer, got {raw!r}"
+        ) from exc
     if value not in (0, 1, 2):
         raise SystemExit(
             f"POLYMARKET_SIGNATURE_TYPE must be one of 0, 1, 2; got {value!r}"
@@ -253,7 +261,8 @@ class _PolymarketClobCompositeService:
         if self._clob is None:
             raise InvariantError(
                 grpc.StatusCode.UNAUTHENTICATED,
-                "CLOB authenticated method requires POLYMARKET_PRIVATE_KEY and CLOB L2 credentials",
+                "CLOB authenticated method requires POLYMARKET_PRIVATE_KEY "
+                "and CLOB L2 credentials",
             ) from None
         return self._clob
 
@@ -275,6 +284,7 @@ class _PolymarketClobCompositeService:
     def PlaceOrder(self, request, _context):
         import grpc
         from invariant.errors import InvariantError
+
         from gen.polymarket.v1 import polymarket_pb2
 
         clob = self._require_clob()
@@ -322,6 +332,7 @@ class _PolymarketClobCompositeService:
     def CancelOrder(self, request, _context):
         import grpc
         from invariant.errors import InvariantError
+
         from gen.polymarket.v1 import polymarket_pb2
 
         clob = self._require_clob()
@@ -341,6 +352,7 @@ class _PolymarketClobCompositeService:
     def CancelAllOrders(self, _request, _context):
         import grpc
         from invariant.errors import InvariantError
+
         from gen.polymarket.v1 import polymarket_pb2
 
         clob = self._require_clob()
@@ -359,6 +371,7 @@ class _PolymarketClobCompositeService:
         import grpc
         from invariant.errors import InvariantError
         from py_clob_client.clob_types import OpenOrderParams
+
         from gen.polymarket.v1 import polymarket_pb2
 
         clob = self._require_clob()
@@ -385,6 +398,7 @@ class _PolymarketClobCompositeService:
         import grpc
         from invariant.errors import InvariantError
         from py_clob_client.clob_types import TradeParams
+
         from gen.polymarket.v1 import polymarket_pb2
 
         clob = self._require_clob()
@@ -397,7 +411,14 @@ class _PolymarketClobCompositeService:
             after=request.after or None,
         )
         if not any(
-            [params.id, params.maker_address, params.market, params.asset_id, params.before, params.after]
+            [
+                params.id,
+                params.maker_address,
+                params.market,
+                params.asset_id,
+                params.before,
+                params.after,
+            ]
         ):
             params = None
         next_cursor = request.next_cursor or "MA=="
@@ -455,6 +476,7 @@ class _PolymarketClobCompositeService:
             OrderArgs,
             PartialCreateOrderOptions,
         )
+
         from gen.polymarket.v1 import polymarket_pb2
 
         clob = self._require_clob()
@@ -535,25 +557,32 @@ def main() -> None:
 
     server = Server.from_descriptor(str(DESCRIPTOR))
 
-    gamma_base = (_env("POLYMARKET_GAMMA_BASE_URL") or DEFAULT_GAMMA_BASE_URL).rstrip("/")
+    gamma_base = (_env("POLYMARKET_GAMMA_BASE_URL") or DEFAULT_GAMMA_BASE_URL).rstrip(
+        "/"
+    )
     clob_base = (_env("POLYMARKET_CLOB_BASE_URL") or DEFAULT_CLOB_BASE_URL).rstrip("/")
     data_base = (_env("POLYMARKET_DATA_BASE_URL") or DEFAULT_DATA_BASE_URL).rstrip("/")
     signature_type_default = _read_signature_type()
 
     # Align private endpoint defaults with py-clob-client behavior.
-    server.use(_build_clob_defaults_interceptor(signature_type_default))
 
     clob_client = _build_clob_client(clob_base, signature_type_default)
     header_provider = _build_clob_header_provider(clob_client)
-    if header_provider is not None:
-        server.use_http_header_provider(header_provider)
 
     server.connect_http(gamma_base, service_name="polymarket.v1.PolymarketGammaService")
-    server.connect_http(clob_base, service_name="polymarket.v1.PolymarketClobService")
-    server.connect_http(data_base, service_name="polymarket.v1.PolymarketDataService")
-    server.register(
-        _PolymarketClobCompositeService(clob_client, signature_type_default),
+    public_proxy = Server.from_descriptor(str(DESCRIPTOR))
+    public_proxy.connect_http(
+        clob_base,
         service_name="polymarket.v1.PolymarketClobService",
+        auth=header_provider,
+    )
+    server.connect_http(data_base, service_name="polymarket.v1.PolymarketDataService")
+    rpc.add_PolymarketClobServiceServicer_to_server(
+        ClobBindings(
+            _PolymarketClobCompositeService(clob_client, signature_type_default),
+            public_proxy,
+        ),
+        server,
     )
 
     asyncio.run(_serve(server, _projection_from_argv(sys.argv[1:])))

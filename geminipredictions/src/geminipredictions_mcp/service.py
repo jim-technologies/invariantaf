@@ -105,7 +105,9 @@ class GeminiPredictionsService:
             raw = payload.get("categories", [])
             if isinstance(raw, list):
                 categories = [str(c) for c in raw if isinstance(c, str)]
-        return self._parse_message({"categories": categories}, pb.ListCategoriesResponse)
+        return self._parse_message(
+            {"categories": categories}, pb.ListCategoriesResponse
+        )
 
     # -------------------------
     # Data extraction / transforms

@@ -1,0 +1,128 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import argparse
+import re
+import subprocess
+import tempfile
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def generate(provider: Path, *, write: bool) -> None:
+    packages = list((provider / "src").glob("*_mcp"))
+    namespace = packages[0].name if len(packages) == 1 else "gen"
+    destination = provider / "src" / namespace
+    if namespace != "gen":
+        destination /= "gen"
+    with tempfile.TemporaryDirectory(prefix="adapter-codegen-") as temporary:
+        scratch = Path(temporary)
+        image = scratch / "descriptor.binpb"
+        subprocess.run(
+            [
+                "buf",
+                "build",
+                str(provider / "proto"),
+                "--as-file-descriptor-set",
+                "-o",
+                str(image),
+            ],
+            check=True,
+        )
+        output = scratch / "python"
+        output.mkdir()
+        sources = sorted(
+            path.relative_to(provider / "proto").as_posix()
+            for path in (provider / "proto").rglob("*.proto")
+        )
+        subprocess.run(
+            [
+                "uv",
+                "run",
+                "--directory",
+                str(provider),
+                "--locked",
+                "python",
+                "-m",
+                "grpc_tools.protoc",
+                f"--descriptor_set_in={image}",
+                f"--python_out={output}",
+                f"--grpc_python_out={output}",
+                *sources,
+            ],
+            check=True,
+        )
+        prefix = f"{namespace}.gen" if namespace != "gen" else "gen"
+        for path in output.rglob("*_pb2*.py"):
+            contents = path.read_text()
+            contents = re.sub(
+                rf"(?m)^from ({provider.name}(?:\.[\w]+)*) import ",
+                lambda match: f"from {prefix}.{match[1]} import ",
+                contents,
+            )
+            path.write_text(contents)
+        expected = {
+            path.relative_to(output): path.read_bytes()
+            for path in output.rglob("*_pb2*.py")
+        }
+        existing = {
+            path.relative_to(destination) for path in destination.rglob("*_pb2*.py")
+        }
+        drift = [
+            str(path)
+            for path in expected
+            if not (destination / path).exists()
+            or (destination / path).read_bytes() != expected[path]
+        ]
+        drift.extend(str(path) for path in existing - expected.keys())
+        if write:
+            (provider / "descriptor.binpb").write_bytes(image.read_bytes())
+            for relative, contents in expected.items():
+                target = destination / relative
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes(contents)
+                parent = target.parent
+                while parent != provider / "src":
+                    (parent / "__init__.py").touch()
+                    parent = parent.parent
+            for obsolete in existing - expected.keys():
+                (destination / obsolete).unlink()
+        else:
+            if (provider / "descriptor.binpb").read_bytes() != image.read_bytes():
+                drift.append("descriptor.binpb")
+            if drift:
+                raise SystemExit(
+                    f"{provider.name}: generated Python drift: "
+                    f"{', '.join(sorted(drift))}"
+                )
+        print(
+            f"{provider.name}: Python graph {'generated' if write else 'verified'}",
+            flush=True,
+        )
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    mode = parser.add_mutually_exclusive_group(required=True)
+    mode.add_argument("--write", action="store_true")
+    mode.add_argument("--check", action="store_true")
+    parser.add_argument("providers", nargs="*")
+    args = parser.parse_args()
+    providers = (
+        [ROOT / name for name in args.providers]
+        if args.providers
+        else sorted(
+            path.parent
+            for path in ROOT.glob("*/pyproject.toml")
+            if "grpcio-tools==1.84.0" in path.read_text()
+        )
+    )
+    for provider in providers:
+        if provider.parent != ROOT or not (provider / "proto").is_dir():
+            parser.error("provider must name one repository adapter directory")
+        generate(provider, write=args.write)
+
+
+if __name__ == "__main__":
+    main()

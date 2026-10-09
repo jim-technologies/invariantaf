@@ -10,10 +10,14 @@ from invariant import Server
 
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
+from gateio_mcp.gen.gateio.v1 import gateio_pb2_grpc as pb_grpc
+
+
 from gateio_mcp.gen.gateio.v1 import gateio_pb2 as _gateio_pb2  # noqa: F401
 from gateio_mcp.service import GateioService
 
 DESCRIPTOR = Path(__file__).parent / "descriptor.binpb"
+
 
 def _projection_from_argv(argv: list[str]) -> dict:
     """Parse [--mcp|--cli|--http [port]|--grpc [port]] into serve() kwargs."""
@@ -46,8 +50,9 @@ async def _serve(server: Server, modes: dict) -> None:
 def main() -> None:
     server = Server.from_descriptor(str(DESCRIPTOR))
     servicer = GateioService()
-    server.register(servicer, service_name="gateio.v1.GateioService")
+    pb_grpc.add_GateioServiceServicer_to_server(servicer, server)
     asyncio.run(_serve(server, _projection_from_argv(sys.argv[1:])))
+
 
 if __name__ == "__main__":
     main()

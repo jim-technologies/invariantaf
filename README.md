@@ -43,11 +43,20 @@ This repo uses Flox for reproducible tooling (`buf`, `uv`, `ruff`, `go`, and gen
 flox activate
 ```
 
+Go adapters use root `invariantprotocol` v0.16.7; the `/go` import package
+still exists, while the former nested module is removed. Run
+`make generate-go` to regenerate Go descriptors, bindings and typed registration
+from one graph. `scripts/generate-python-adapters --write` regenerates Python
+bindings from the embedded graph. Run `make validate` for the offline gate and `make audit` for
+unsuppressed dependency checks. Source/protobuf contracts remain unchanged;
+provider live qualification stays behind its explicit opt-in.
+
 ## Common workflow
 
 From the repo root, `make validate` is the gate — the one gate verb every public
 repository in this organisation shares. Here it runs `lint` (public-surface and
-tracked-artifact guards, then `go vet` and `ruff check`) and `test`:
+tracked-artifact guards, then `go vet` and `ruff check`), generated graph checks
+and `test`:
 
 ```bash
 make validate
@@ -88,7 +97,11 @@ Use [AGENTS.md](./AGENTS.md) as the source of truth for:
 
 ## CI
 
-GitHub workflows run adapter matrices for lint and tests in Flox-backed environments to match local development behavior.
+GitHub workflows run the repository gate in Flox and an unsuppressed weekly
+dependency audit. Neither enables live provider tests.
+
+The [framework migration record](docs/framework-migration.md) describes source
+coverage, regeneration and the separate live-provider qualification boundary.
 
 ## License
 

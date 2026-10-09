@@ -10,6 +10,9 @@ from invariant import Server
 
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
+from discord_mcp.gen.discord.v1 import discord_pb2_grpc as pb_grpc
+
+
 # Ensure generated descriptors are loaded into the default descriptor pool.
 from discord_mcp.gen.discord.v1 import discord_pb2 as _discord_pb2  # noqa: F401
 from discord_mcp.service import DiscordService
@@ -47,7 +50,7 @@ async def _serve(server: Server, modes: dict) -> None:
 
 def main() -> None:
     server = Server.from_descriptor(str(DESCRIPTOR))
-    server.register(DiscordService(), service_name="discord.v1.DiscordService")
+    pb_grpc.add_DiscordServiceServicer_to_server(DiscordService(), server)
     asyncio.run(_serve(server, _projection_from_argv(sys.argv[1:])))
 
 

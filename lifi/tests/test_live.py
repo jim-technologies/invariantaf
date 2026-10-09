@@ -33,11 +33,11 @@ def live_server():
 
     from lifi_mcp.service import LifiService
 
-    srv = Server.from_descriptor(
-        DESCRIPTOR_PATH
-    )
+    srv = Server.from_descriptor(DESCRIPTOR_PATH)
     servicer = LifiService()
-    srv.register(servicer)
+    from lifi_mcp.gen.lifi.v1 import lifi_pb2_grpc as _native_rpc
+
+    _native_rpc.add_LifiServiceServicer_to_server(servicer, srv)
     yield srv
     asyncio.run(srv.stop())
 
@@ -47,7 +47,7 @@ def live_server():
 
 class TestLiveListChains:
     def test_list_chains(self, live_server):
-        result = asyncio.run(live_server._cli(["LifiService", "ListChains"]))
+        result = asyncio.run(live_server._cli(["lifi.v1.LifiService", "ListChains"]))
         assert "chains" in result
         chains = result["chains"]
         assert isinstance(chains, list)
@@ -57,7 +57,7 @@ class TestLiveListChains:
         assert "id" in c
 
     def test_has_ethereum(self, live_server):
-        result = asyncio.run(live_server._cli(["LifiService", "ListChains"]))
+        result = asyncio.run(live_server._cli(["lifi.v1.LifiService", "ListChains"]))
         chains = result["chains"]
         names = [c["name"] for c in chains]
         assert "Ethereum" in names
@@ -68,14 +68,16 @@ class TestLiveListChains:
 
 class TestLiveListTokens:
     def test_list_tokens_for_ethereum(self, live_server):
-        result = asyncio.run(live_server._cli(
-            [
-                "LifiService",
-                "ListTokens",
-                "-r",
-                json.dumps({"chains": "1"}),
-            ]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "lifi.v1.LifiService",
+                    "ListTokens",
+                    "-r",
+                    json.dumps({"chains": "1"}),
+                ]
+            )
+        )
         key = "chainTokens" if "chainTokens" in result else "chain_tokens"
         assert key in result
         chain_tokens = result[key]
@@ -91,14 +93,16 @@ class TestLiveListTokens:
 
 class TestLiveGetConnections:
     def test_get_connections_eth_to_arb(self, live_server):
-        result = asyncio.run(live_server._cli(
-            [
-                "LifiService",
-                "GetConnections",
-                "-r",
-                json.dumps({"fromChain": "1", "toChain": "42161"}),
-            ]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "lifi.v1.LifiService",
+                    "GetConnections",
+                    "-r",
+                    json.dumps({"fromChain": "1", "toChain": "42161"}),
+                ]
+            )
+        )
         assert "connections" in result
         connections = result["connections"]
         assert isinstance(connections, list)
@@ -110,7 +114,7 @@ class TestLiveGetConnections:
 
 class TestLiveListTools:
     def test_list_tools(self, live_server):
-        result = asyncio.run(live_server._cli(["LifiService", "ListTools"]))
+        result = asyncio.run(live_server._cli(["lifi.v1.LifiService", "ListTools"]))
         assert "bridges" in result
         assert "exchanges" in result
         bridges = result["bridges"]
@@ -121,7 +125,7 @@ class TestLiveListTools:
         assert "name" in b
 
     def test_exchanges_exist(self, live_server):
-        result = asyncio.run(live_server._cli(["LifiService", "ListTools"]))
+        result = asyncio.run(live_server._cli(["lifi.v1.LifiService", "ListTools"]))
         exchanges = result["exchanges"]
         assert isinstance(exchanges, list)
         assert len(exchanges) > 0
@@ -132,23 +136,25 @@ class TestLiveListTools:
 
 class TestLiveGetQuote:
     def test_get_quote_eth_to_arb(self, live_server):
-        result = asyncio.run(live_server._cli(
-            [
-                "LifiService",
-                "GetQuote",
-                "-r",
-                json.dumps(
-                    {
-                        "fromChain": "ETH",
-                        "toChain": "ARB",
-                        "fromToken": "ETH",
-                        "toToken": "ETH",
-                        "fromAmount": "1000000000000000000",
-                        "fromAddress": "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
-                    }
-                ),
-            ]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "lifi.v1.LifiService",
+                    "GetQuote",
+                    "-r",
+                    json.dumps(
+                        {
+                            "fromChain": "ETH",
+                            "toChain": "ARB",
+                            "fromToken": "ETH",
+                            "toToken": "ETH",
+                            "fromAmount": "1000000000000000000",
+                            "fromAddress": "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
+                        }
+                    ),
+                ]
+            )
+        )
         assert "action" in result
         assert "estimate" in result
         assert result.get("tool") or result.get("id")
@@ -160,17 +166,19 @@ class TestLiveGetQuote:
 class TestLiveGetStatus:
     def test_get_status_not_found(self, live_server):
         """Query a fake tx hash -- should return NOT_FOUND or similar."""
-        result = asyncio.run(live_server._cli(
-            [
-                "LifiService",
-                "GetStatus",
-                "-r",
-                json.dumps(
-                    {
-                        "txHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
-                    }
-                ),
-            ]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "lifi.v1.LifiService",
+                    "GetStatus",
+                    "-r",
+                    json.dumps(
+                        {
+                            "txHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+                        }
+                    ),
+                ]
+            )
+        )
         # The API should return a status field even for unknown transactions.
         assert "status" in result

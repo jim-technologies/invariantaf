@@ -135,9 +135,7 @@ func str(m map[string]any, key string) string {
 // num safely extracts a float64 value from a map.
 func num(m map[string]any, key string) float64 {
 	if v, ok := m[key]; ok {
-		if f, ok := v.(float64); ok {
-			return f
-		}
+		return providerNumber(v)
 	}
 	return 0
 }
@@ -159,7 +157,7 @@ func addSearchParams(params url.Values, fields map[string]*structpb.Value) {
 }
 
 // Search searches for GIFs by keyword or phrase.
-func (s *GiphyService) Search(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *GiphyService) Search(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	query := fields["query"].GetStringValue()
 	if query == "" {
@@ -174,7 +172,7 @@ func (s *GiphyService) Search(_ context.Context, req *structpb.Struct) (*structp
 		return nil, err
 	}
 
-	result, err := structpb.NewStruct(map[string]any{
+	result, err := json.Marshal(map[string]any{
 		"data":       parseGifList(raw),
 		"pagination": parsePagination(raw),
 	})
@@ -185,7 +183,7 @@ func (s *GiphyService) Search(_ context.Context, req *structpb.Struct) (*structp
 }
 
 // Trending gets currently trending GIFs.
-func (s *GiphyService) Trending(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *GiphyService) Trending(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	params := url.Values{}
 	addSearchParams(params, fields)
@@ -195,7 +193,7 @@ func (s *GiphyService) Trending(_ context.Context, req *structpb.Struct) (*struc
 		return nil, err
 	}
 
-	result, err := structpb.NewStruct(map[string]any{
+	result, err := json.Marshal(map[string]any{
 		"data":       parseGifList(raw),
 		"pagination": parsePagination(raw),
 	})
@@ -206,7 +204,7 @@ func (s *GiphyService) Trending(_ context.Context, req *structpb.Struct) (*struc
 }
 
 // GetGifById gets a single GIF by its unique Giphy ID.
-func (s *GiphyService) GetGifById(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *GiphyService) GetGifById(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	id := fields["id"].GetStringValue()
 	if id == "" {
@@ -223,7 +221,7 @@ func (s *GiphyService) GetGifById(_ context.Context, req *structpb.Struct) (*str
 		return nil, fmt.Errorf("unexpected response format: missing data")
 	}
 
-	result, err := structpb.NewStruct(map[string]any{
+	result, err := json.Marshal(map[string]any{
 		"data": parseGif(dataRaw),
 	})
 	if err != nil {
@@ -233,7 +231,7 @@ func (s *GiphyService) GetGifById(_ context.Context, req *structpb.Struct) (*str
 }
 
 // GetGifsByIds gets multiple GIFs by their Giphy IDs.
-func (s *GiphyService) GetGifsByIds(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *GiphyService) GetGifsByIds(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	idsValue, ok := fields["ids"]
 	if !ok {
@@ -254,7 +252,7 @@ func (s *GiphyService) GetGifsByIds(_ context.Context, req *structpb.Struct) (*s
 		return nil, err
 	}
 
-	result, err := structpb.NewStruct(map[string]any{
+	result, err := json.Marshal(map[string]any{
 		"data": parseGifList(raw),
 	})
 	if err != nil {
@@ -264,7 +262,7 @@ func (s *GiphyService) GetGifsByIds(_ context.Context, req *structpb.Struct) (*s
 }
 
 // Random gets a random GIF, optionally filtered by tag.
-func (s *GiphyService) Random(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *GiphyService) Random(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	params := url.Values{}
 	if v, ok := fields["tag"]; ok && v.GetStringValue() != "" {
@@ -284,7 +282,7 @@ func (s *GiphyService) Random(_ context.Context, req *structpb.Struct) (*structp
 		return nil, fmt.Errorf("unexpected response format: missing data")
 	}
 
-	result, err := structpb.NewStruct(map[string]any{
+	result, err := json.Marshal(map[string]any{
 		"data": parseGif(dataRaw),
 	})
 	if err != nil {
@@ -294,7 +292,7 @@ func (s *GiphyService) Random(_ context.Context, req *structpb.Struct) (*structp
 }
 
 // SearchStickers searches for stickers by keyword.
-func (s *GiphyService) SearchStickers(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *GiphyService) SearchStickers(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	query := fields["query"].GetStringValue()
 	if query == "" {
@@ -309,7 +307,7 @@ func (s *GiphyService) SearchStickers(_ context.Context, req *structpb.Struct) (
 		return nil, err
 	}
 
-	result, err := structpb.NewStruct(map[string]any{
+	result, err := json.Marshal(map[string]any{
 		"data":       parseGifList(raw),
 		"pagination": parsePagination(raw),
 	})
@@ -320,7 +318,7 @@ func (s *GiphyService) SearchStickers(_ context.Context, req *structpb.Struct) (
 }
 
 // TrendingStickers gets currently trending stickers.
-func (s *GiphyService) TrendingStickers(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *GiphyService) TrendingStickers(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	params := url.Values{}
 	addSearchParams(params, fields)
@@ -330,7 +328,7 @@ func (s *GiphyService) TrendingStickers(_ context.Context, req *structpb.Struct)
 		return nil, err
 	}
 
-	result, err := structpb.NewStruct(map[string]any{
+	result, err := json.Marshal(map[string]any{
 		"data":       parseGifList(raw),
 		"pagination": parsePagination(raw),
 	})
@@ -341,7 +339,7 @@ func (s *GiphyService) TrendingStickers(_ context.Context, req *structpb.Struct)
 }
 
 // RandomSticker gets a random sticker, optionally filtered by tag.
-func (s *GiphyService) RandomSticker(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *GiphyService) RandomSticker(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	params := url.Values{}
 	if v, ok := fields["tag"]; ok && v.GetStringValue() != "" {
@@ -361,7 +359,7 @@ func (s *GiphyService) RandomSticker(_ context.Context, req *structpb.Struct) (*
 		return nil, fmt.Errorf("unexpected response format: missing data")
 	}
 
-	result, err := structpb.NewStruct(map[string]any{
+	result, err := json.Marshal(map[string]any{
 		"data": parseGif(dataRaw),
 	})
 	if err != nil {
@@ -371,7 +369,7 @@ func (s *GiphyService) RandomSticker(_ context.Context, req *structpb.Struct) (*
 }
 
 // Translate translates text into the most relevant GIF.
-func (s *GiphyService) Translate(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *GiphyService) Translate(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	query := fields["query"].GetStringValue()
 	if query == "" {
@@ -396,7 +394,7 @@ func (s *GiphyService) Translate(_ context.Context, req *structpb.Struct) (*stru
 		return nil, fmt.Errorf("unexpected response format: missing data")
 	}
 
-	result, err := structpb.NewStruct(map[string]any{
+	result, err := json.Marshal(map[string]any{
 		"data": parseGif(dataRaw),
 	})
 	if err != nil {
@@ -406,7 +404,7 @@ func (s *GiphyService) Translate(_ context.Context, req *structpb.Struct) (*stru
 }
 
 // GetCategories gets the list of GIF content categories.
-func (s *GiphyService) GetCategories(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *GiphyService) GetCategories(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	params := url.Values{}
 	if v, ok := fields["limit"]; ok && v.GetNumberValue() > 0 {
@@ -441,7 +439,7 @@ func (s *GiphyService) GetCategories(_ context.Context, req *structpb.Struct) (*
 		categories = append(categories, cat)
 	}
 
-	result, err := structpb.NewStruct(map[string]any{
+	result, err := json.Marshal(map[string]any{
 		"data": categories,
 	})
 	if err != nil {

@@ -25,7 +25,7 @@ def _safe_float(val: Any, default: float = 0.0) -> float:
         return default
     try:
         return float(val)
-    except (ValueError, TypeError):
+    except ValueError, TypeError:
         return default
 
 
@@ -35,7 +35,7 @@ def _safe_int(val: Any, default: int = 0) -> int:
         return default
     try:
         return int(float(val))
-    except (ValueError, TypeError):
+    except ValueError, TypeError:
         return default
 
 
@@ -48,19 +48,19 @@ class AlphaVantageService:
 
     async def aclose(self) -> None:
         """Close the HTTP client. Idempotent."""
-        await self._client.aclose()
+        await self._http.aclose()
 
-    def _get(self, function: str, **params: Any) -> Any:
+    async def _get(self, function: str, **params: Any) -> Any:
         params["function"] = function
         params["apikey"] = self._api_key
-        resp = self._http.get(f"{_BASE_URL}/query", params=params)
+        resp = await self._http.get(f"{_BASE_URL}/query", params=params)
         resp.raise_for_status()
         return resp.json()
 
     # --- RPCs ---
 
     async def GetQuote(self, request: Any, context: Any = None) -> pb.GetQuoteResponse:
-        raw = self._get("GLOBAL_QUOTE", symbol=request.symbol)
+        raw = await self._get("GLOBAL_QUOTE", symbol=request.symbol)
         quote = raw.get("Global Quote", {})
         return pb.GetQuoteResponse(
             symbol=quote.get("01. symbol", ""),
@@ -75,24 +75,30 @@ class AlphaVantageService:
             change_percent=quote.get("10. change percent", ""),
         )
 
-    async def SearchSymbol(self, request: Any, context: Any = None) -> pb.SearchSymbolResponse:
-        raw = self._get("SYMBOL_SEARCH", keywords=request.keywords)
+    async def SearchSymbol(
+        self, request: Any, context: Any = None
+    ) -> pb.SearchSymbolResponse:
+        raw = await self._get("SYMBOL_SEARCH", keywords=request.keywords)
         resp = pb.SearchSymbolResponse()
         for m in raw.get("bestMatches", []):
-            resp.matches.append(pb.SymbolMatch(
-                symbol=m.get("1. symbol", ""),
-                name=m.get("2. name", ""),
-                type=m.get("3. type", ""),
-                region=m.get("4. region", ""),
-                market_open=m.get("5. marketOpen", ""),
-                market_close=m.get("6. marketClose", ""),
-                timezone=m.get("7. timezone", ""),
-                currency=m.get("8. currency", ""),
-                match_score=_safe_float(m.get("9. matchScore")),
-            ))
+            resp.matches.append(
+                pb.SymbolMatch(
+                    symbol=m.get("1. symbol", ""),
+                    name=m.get("2. name", ""),
+                    type=m.get("3. type", ""),
+                    region=m.get("4. region", ""),
+                    market_open=m.get("5. marketOpen", ""),
+                    market_close=m.get("6. marketClose", ""),
+                    timezone=m.get("7. timezone", ""),
+                    currency=m.get("8. currency", ""),
+                    match_score=_safe_float(m.get("9. matchScore")),
+                )
+            )
         return resp
 
-    def _parse_time_series(self, raw: dict, ts_key: str, meta_key: str = "Meta Data") -> pb.GetTimeSeriesResponse:
+    def _parse_time_series(
+        self, raw: dict, ts_key: str, meta_key: str = "Meta Data"
+    ) -> pb.GetTimeSeriesResponse:
         meta = raw.get(meta_key, {})
         # Meta data keys vary: "2. Symbol" in daily, "2. Symbol" in weekly/monthly.
         symbol = ""
@@ -109,32 +115,42 @@ class AlphaVantageService:
         )
         ts_data = raw.get(ts_key, {})
         for date_str, ohlcv in sorted(ts_data.items(), reverse=True):
-            resp.entries.append(pb.TimeSeriesEntry(
-                date=date_str,
-                open=_safe_float(ohlcv.get("1. open")),
-                high=_safe_float(ohlcv.get("2. high")),
-                low=_safe_float(ohlcv.get("3. low")),
-                close=_safe_float(ohlcv.get("4. close")),
-                volume=_safe_int(ohlcv.get("5. volume")),
-            ))
+            resp.entries.append(
+                pb.TimeSeriesEntry(
+                    date=date_str,
+                    open=_safe_float(ohlcv.get("1. open")),
+                    high=_safe_float(ohlcv.get("2. high")),
+                    low=_safe_float(ohlcv.get("3. low")),
+                    close=_safe_float(ohlcv.get("4. close")),
+                    volume=_safe_int(ohlcv.get("5. volume")),
+                )
+            )
         return resp
 
-    async def GetDailyTimeSeries(self, request: Any, context: Any = None) -> pb.GetTimeSeriesResponse:
+    async def GetDailyTimeSeries(
+        self, request: Any, context: Any = None
+    ) -> pb.GetTimeSeriesResponse:
         params = {"symbol": request.symbol}
         if request.outputsize:
             params["outputsize"] = request.outputsize
-        raw = self._get("TIME_SERIES_DAILY", **params)
+        raw = await self._get("TIME_SERIES_DAILY", **params)
         return self._parse_time_series(raw, "Time Series (Daily)")
 
-    async def GetWeeklyTimeSeries(self, request: Any, context: Any = None) -> pb.GetTimeSeriesResponse:
-        raw = self._get("TIME_SERIES_WEEKLY", symbol=request.symbol)
+    async def GetWeeklyTimeSeries(
+        self, request: Any, context: Any = None
+    ) -> pb.GetTimeSeriesResponse:
+        raw = await self._get("TIME_SERIES_WEEKLY", symbol=request.symbol)
         return self._parse_time_series(raw, "Weekly Time Series")
 
-    async def GetMonthlyTimeSeries(self, request: Any, context: Any = None) -> pb.GetTimeSeriesResponse:
-        raw = self._get("TIME_SERIES_MONTHLY", symbol=request.symbol)
+    async def GetMonthlyTimeSeries(
+        self, request: Any, context: Any = None
+    ) -> pb.GetTimeSeriesResponse:
+        raw = await self._get("TIME_SERIES_MONTHLY", symbol=request.symbol)
         return self._parse_time_series(raw, "Monthly Time Series")
 
-    def _parse_indicator(self, raw: dict, indicator_key: str, value_key: str) -> pb.GetIndicatorResponse:
+    def _parse_indicator(
+        self, raw: dict, indicator_key: str, value_key: str
+    ) -> pb.GetIndicatorResponse:
         meta = raw.get("Meta Data", {})
         symbol = ""
         indicator = ""
@@ -150,15 +166,19 @@ class AlphaVantageService:
         )
         ta_data = raw.get(indicator_key, {})
         for date_str, vals in sorted(ta_data.items(), reverse=True):
-            resp.entries.append(pb.IndicatorEntry(
-                date=date_str,
-                value=_safe_float(vals.get(value_key)),
-            ))
+            resp.entries.append(
+                pb.IndicatorEntry(
+                    date=date_str,
+                    value=_safe_float(vals.get(value_key)),
+                )
+            )
         return resp
 
-    async def GetSMA(self, request: Any, context: Any = None) -> pb.GetIndicatorResponse:
+    async def GetSMA(
+        self, request: Any, context: Any = None
+    ) -> pb.GetIndicatorResponse:
         interval = _INTERVAL_MAP.get(request.interval or "daily", "daily")
-        raw = self._get(
+        raw = await self._get(
             "SMA",
             symbol=request.symbol,
             interval=interval,
@@ -167,9 +187,11 @@ class AlphaVantageService:
         )
         return self._parse_indicator(raw, "Technical Analysis: SMA", "SMA")
 
-    async def GetRSI(self, request: Any, context: Any = None) -> pb.GetIndicatorResponse:
+    async def GetRSI(
+        self, request: Any, context: Any = None
+    ) -> pb.GetIndicatorResponse:
         interval = _INTERVAL_MAP.get(request.interval or "daily", "daily")
-        raw = self._get(
+        raw = await self._get(
             "RSI",
             symbol=request.symbol,
             interval=interval,
@@ -192,7 +214,7 @@ class AlphaVantageService:
         if request.signal_period:
             params["signalperiod"] = request.signal_period
 
-        raw = self._get("MACD", **params)
+        raw = await self._get("MACD", **params)
 
         meta = raw.get("Meta Data", {})
         symbol = ""
@@ -203,16 +225,20 @@ class AlphaVantageService:
         resp = pb.GetMACDResponse(symbol=symbol)
         ta_data = raw.get("Technical Analysis: MACD", {})
         for date_str, vals in sorted(ta_data.items(), reverse=True):
-            resp.entries.append(pb.MACDEntry(
-                date=date_str,
-                macd=_safe_float(vals.get("MACD")),
-                signal=_safe_float(vals.get("MACD_Signal")),
-                histogram=_safe_float(vals.get("MACD_Hist")),
-            ))
+            resp.entries.append(
+                pb.MACDEntry(
+                    date=date_str,
+                    macd=_safe_float(vals.get("MACD")),
+                    signal=_safe_float(vals.get("MACD_Signal")),
+                    histogram=_safe_float(vals.get("MACD_Hist")),
+                )
+            )
         return resp
 
-    async def GetCompanyOverview(self, request: Any, context: Any = None) -> pb.GetCompanyOverviewResponse:
-        raw = self._get("OVERVIEW", symbol=request.symbol)
+    async def GetCompanyOverview(
+        self, request: Any, context: Any = None
+    ) -> pb.GetCompanyOverviewResponse:
+        raw = await self._get("OVERVIEW", symbol=request.symbol)
         return pb.GetCompanyOverviewResponse(
             symbol=raw.get("Symbol", ""),
             name=raw.get("Name", ""),
@@ -242,23 +268,29 @@ class AlphaVantageService:
             forward_pe=_safe_float(raw.get("ForwardPE")),
         )
 
-    async def GetEarnings(self, request: Any, context: Any = None) -> pb.GetEarningsResponse:
-        raw = self._get("EARNINGS", symbol=request.symbol)
+    async def GetEarnings(
+        self, request: Any, context: Any = None
+    ) -> pb.GetEarningsResponse:
+        raw = await self._get("EARNINGS", symbol=request.symbol)
         resp = pb.GetEarningsResponse(
             symbol=raw.get("symbol", request.symbol),
         )
         for ae in raw.get("annualEarnings", []):
-            resp.annual_earnings.append(pb.AnnualEarnings(
-                fiscal_date_ending=ae.get("fiscalDateEnding", ""),
-                reported_eps=_safe_float(ae.get("reportedEPS")),
-            ))
+            resp.annual_earnings.append(
+                pb.AnnualEarnings(
+                    fiscal_date_ending=ae.get("fiscalDateEnding", ""),
+                    reported_eps=_safe_float(ae.get("reportedEPS")),
+                )
+            )
         for qe in raw.get("quarterlyEarnings", []):
-            resp.quarterly_earnings.append(pb.QuarterlyEarnings(
-                fiscal_date_ending=qe.get("fiscalDateEnding", ""),
-                reported_eps=_safe_float(qe.get("reportedEPS")),
-                estimated_eps=_safe_float(qe.get("estimatedEPS")),
-                surprise=_safe_float(qe.get("surprise")),
-                surprise_percentage=_safe_float(qe.get("surprisePercentage")),
-                reported_date=qe.get("reportedDate", ""),
-            ))
+            resp.quarterly_earnings.append(
+                pb.QuarterlyEarnings(
+                    fiscal_date_ending=qe.get("fiscalDateEnding", ""),
+                    reported_eps=_safe_float(qe.get("reportedEPS")),
+                    estimated_eps=_safe_float(qe.get("estimatedEPS")),
+                    surprise=_safe_float(qe.get("surprise")),
+                    surprise_percentage=_safe_float(qe.get("surprisePercentage")),
+                    reported_date=qe.get("reportedDate", ""),
+                )
+            )
         return resp

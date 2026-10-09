@@ -96,14 +96,16 @@ class GeckoTerminalService:
         candles = []
         for row in ohlcv_list:
             if isinstance(row, list) and len(row) >= 6:
-                candles.append({
-                    "timestamp": int(row[0]),
-                    "open": float(row[1]),
-                    "high": float(row[2]),
-                    "low": float(row[3]),
-                    "close": float(row[4]),
-                    "volume": float(row[5]),
-                })
+                candles.append(
+                    {
+                        "timestamp": int(row[0]),
+                        "open": float(row[1]),
+                        "high": float(row[2]),
+                        "low": float(row[3]),
+                        "close": float(row[4]),
+                        "volume": float(row[5]),
+                    }
+                )
         return self._parse_message({"candles": candles}, pb.GetPoolOHLCVResponse)
 
     async def GetNewPools(
@@ -141,7 +143,9 @@ class GeckoTerminalService:
             return data
         return []
 
-    def _extract_attributes(self, item: Any, *, keep_id: bool = False) -> dict[str, Any]:
+    def _extract_attributes(
+        self, item: Any, *, keep_id: bool = False
+    ) -> dict[str, Any]:
         """Extract attributes from a JSON:API resource object."""
         if not isinstance(item, dict):
             return {}
@@ -277,7 +281,7 @@ class GeckoTerminalService:
             return 0.0
         try:
             return float(value)
-        except (ValueError, TypeError):
+        except ValueError, TypeError:
             return 0.0
 
     def _parse_message(self, payload: dict[str, Any], message_cls: type):

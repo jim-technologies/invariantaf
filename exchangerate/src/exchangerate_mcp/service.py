@@ -19,31 +19,35 @@ class ExchangeRateService:
 
     async def aclose(self) -> None:
         """Close the HTTP client. Idempotent."""
-        await self._client.aclose()
+        await self._http.aclose()
 
-    def _get(self, path: str, params: dict | None = None) -> Any:
-        resp = self._http.get(f"{_BASE_URL}{path}", params=params)
+    async def _get(self, path: str, params: dict | None = None) -> Any:
+        resp = await self._http.get(f"{_BASE_URL}{path}", params=params)
         resp.raise_for_status()
         return resp.json()
 
-    async def GetLatestRates(self, request: Any, context: Any = None) -> pb.GetLatestRatesResponse:
+    async def GetLatestRates(
+        self, request: Any, context: Any = None
+    ) -> pb.GetLatestRatesResponse:
         params = {}
         if request.base:
             params["base"] = request.base
-        raw = self._get("/latest", params=params or None)
+        raw = await self._get("/latest", params=params or None)
         return pb.GetLatestRatesResponse(
             base=raw.get("base", ""),
             date=raw.get("date", ""),
             rates=raw.get("rates", {}),
         )
 
-    async def GetLatestForCurrencies(self, request: Any, context: Any = None) -> pb.GetLatestForCurrenciesResponse:
+    async def GetLatestForCurrencies(
+        self, request: Any, context: Any = None
+    ) -> pb.GetLatestForCurrenciesResponse:
         params = {}
         if request.base:
             params["base"] = request.base
         if request.symbols:
             params["symbols"] = request.symbols
-        raw = self._get("/latest", params=params or None)
+        raw = await self._get("/latest", params=params or None)
         return pb.GetLatestForCurrenciesResponse(
             base=raw.get("base", ""),
             date=raw.get("date", ""),
@@ -52,7 +56,10 @@ class ExchangeRateService:
 
     async def Convert(self, request: Any, context: Any = None) -> pb.ConvertResponse:
         params = {}
-        if getattr(request, "from", "") or request.DESCRIPTOR.fields_by_name["from"].number:
+        if (
+            getattr(request, "from", "")
+            or request.DESCRIPTOR.fields_by_name["from"].number
+        ):
             # Proto field "from" is a reserved keyword — access via getattr.
             from_currency = getattr(request, "from", "") or "EUR"
             params["base"] = from_currency
@@ -60,7 +67,7 @@ class ExchangeRateService:
             params["symbols"] = request.to
         if request.amount:
             params["amount"] = request.amount
-        raw = self._get("/latest", params=params)
+        raw = await self._get("/latest", params=params)
         return pb.ConvertResponse(
             base=raw.get("base", ""),
             date=raw.get("date", ""),
@@ -68,32 +75,38 @@ class ExchangeRateService:
             amount=raw.get("amount", 0),
         )
 
-    async def GetHistoricalRates(self, request: Any, context: Any = None) -> pb.GetHistoricalRatesResponse:
+    async def GetHistoricalRates(
+        self, request: Any, context: Any = None
+    ) -> pb.GetHistoricalRatesResponse:
         date = request.date or "latest"
         params = {}
         if request.base:
             params["base"] = request.base
-        raw = self._get(f"/{date}", params=params or None)
+        raw = await self._get(f"/{date}", params=params or None)
         return pb.GetHistoricalRatesResponse(
             base=raw.get("base", ""),
             date=raw.get("date", ""),
             rates=raw.get("rates", {}),
         )
 
-    async def GetTimeSeries(self, request: Any, context: Any = None) -> pb.GetTimeSeriesResponse:
+    async def GetTimeSeries(
+        self, request: Any, context: Any = None
+    ) -> pb.GetTimeSeriesResponse:
         path = f"/{request.start_date}..{request.end_date}"
         params = {}
         if request.base:
             params["base"] = request.base
         if request.symbols:
             params["symbols"] = request.symbols
-        raw = self._get(path, params=params or None)
+        raw = await self._get(path, params=params or None)
         daily = []
         for date_str in sorted(raw.get("rates", {}).keys()):
-            daily.append(pb.DailyRates(
-                date=date_str,
-                rates=raw["rates"][date_str],
-            ))
+            daily.append(
+                pb.DailyRates(
+                    date=date_str,
+                    rates=raw["rates"][date_str],
+                )
+            )
         return pb.GetTimeSeriesResponse(
             base=raw.get("base", ""),
             start_date=raw.get("start_date", ""),
@@ -101,25 +114,31 @@ class ExchangeRateService:
             daily_rates=daily,
         )
 
-    async def ListCurrencies(self, request: Any, context: Any = None) -> pb.ListCurrenciesResponse:
-        raw = self._get("/currencies")
+    async def ListCurrencies(
+        self, request: Any, context: Any = None
+    ) -> pb.ListCurrenciesResponse:
+        raw = await self._get("/currencies")
         return pb.ListCurrenciesResponse(currencies=raw)
 
-    async def GetHistoricalForCurrencies(self, request: Any, context: Any = None) -> pb.GetHistoricalForCurrenciesResponse:
+    async def GetHistoricalForCurrencies(
+        self, request: Any, context: Any = None
+    ) -> pb.GetHistoricalForCurrenciesResponse:
         date = request.date or "latest"
         params = {}
         if request.base:
             params["base"] = request.base
         if request.symbols:
             params["symbols"] = request.symbols
-        raw = self._get(f"/{date}", params=params or None)
+        raw = await self._get(f"/{date}", params=params or None)
         return pb.GetHistoricalForCurrenciesResponse(
             base=raw.get("base", ""),
             date=raw.get("date", ""),
             rates=raw.get("rates", {}),
         )
 
-    async def ConvertHistorical(self, request: Any, context: Any = None) -> pb.ConvertHistoricalResponse:
+    async def ConvertHistorical(
+        self, request: Any, context: Any = None
+    ) -> pb.ConvertHistoricalResponse:
         date = request.date or "latest"
         from_currency = getattr(request, "from", "") or "EUR"
         params = {
@@ -129,7 +148,7 @@ class ExchangeRateService:
             params["symbols"] = request.to
         if request.amount:
             params["amount"] = request.amount
-        raw = self._get(f"/{date}", params=params)
+        raw = await self._get(f"/{date}", params=params)
         return pb.ConvertHistoricalResponse(
             base=raw.get("base", ""),
             date=raw.get("date", ""),
@@ -137,19 +156,23 @@ class ExchangeRateService:
             amount=raw.get("amount", 0),
         )
 
-    async def GetTimeSeriesForPair(self, request: Any, context: Any = None) -> pb.GetTimeSeriesForPairResponse:
+    async def GetTimeSeriesForPair(
+        self, request: Any, context: Any = None
+    ) -> pb.GetTimeSeriesForPairResponse:
         path = f"/{request.start_date}..{request.end_date}"
         from_currency = getattr(request, "from", "") or "EUR"
         params = {"base": from_currency}
         if request.to:
             params["symbols"] = request.to
-        raw = self._get(path, params=params)
+        raw = await self._get(path, params=params)
         daily = []
         for date_str in sorted(raw.get("rates", {}).keys()):
-            daily.append(pb.DailyRates(
-                date=date_str,
-                rates=raw["rates"][date_str],
-            ))
+            daily.append(
+                pb.DailyRates(
+                    date=date_str,
+                    rates=raw["rates"][date_str],
+                )
+            )
         return pb.GetTimeSeriesForPairResponse(
             base=raw.get("base", ""),
             start_date=raw.get("start_date", ""),
@@ -157,8 +180,10 @@ class ExchangeRateService:
             daily_rates=daily,
         )
 
-    async def GetLatestAll(self, request: Any, context: Any = None) -> pb.GetLatestAllResponse:
-        raw = self._get("/latest")
+    async def GetLatestAll(
+        self, request: Any, context: Any = None
+    ) -> pb.GetLatestAllResponse:
+        raw = await self._get("/latest")
         return pb.GetLatestAllResponse(
             base=raw.get("base", ""),
             date=raw.get("date", ""),

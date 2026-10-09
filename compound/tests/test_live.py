@@ -32,11 +32,11 @@ def live_server():
 
     from compound_mcp.service import CompoundService
 
-    srv = Server.from_descriptor(
-        DESCRIPTOR_PATH
-    )
+    srv = Server.from_descriptor(DESCRIPTOR_PATH)
     servicer = CompoundService()
-    srv.register(servicer)
+    from compound_mcp.gen.compound.v1 import compound_pb2_grpc as _native_rpc
+
+    _native_rpc.add_CompoundServiceServicer_to_server(servicer, srv)
     yield srv
     asyncio.run(srv.stop())
 
@@ -54,27 +54,35 @@ def _cli_or_skip(live_server, args):
 
 class TestLiveListCTokens:
     def test_returns_ctokens(self, live_server):
-        result = _cli_or_skip(live_server, ["CompoundService", "ListCTokens"])
+        result = _cli_or_skip(
+            live_server, ["compound.v1.CompoundService", "ListCTokens"]
+        )
         assert "ctokens" in result
         ctokens = result["ctokens"]
         assert isinstance(ctokens, list)
         assert len(ctokens) > 0
 
     def test_ctoken_has_address(self, live_server):
-        result = _cli_or_skip(live_server, ["CompoundService", "ListCTokens"])
+        result = _cli_or_skip(
+            live_server, ["compound.v1.CompoundService", "ListCTokens"]
+        )
         ct = result["ctokens"][0]
         assert "address" in ct or "token_address" in ct
 
 
 class TestLiveListProposals:
     def test_returns_proposals(self, live_server):
-        result = _cli_or_skip(live_server, ["CompoundService", "ListProposals"])
+        result = _cli_or_skip(
+            live_server, ["compound.v1.CompoundService", "ListProposals"]
+        )
         assert "proposals" in result
         proposals = result["proposals"]
         assert isinstance(proposals, list)
         assert len(proposals) > 0
 
     def test_proposal_has_title(self, live_server):
-        result = _cli_or_skip(live_server, ["CompoundService", "ListProposals"])
+        result = _cli_or_skip(
+            live_server, ["compound.v1.CompoundService", "ListProposals"]
+        )
         p = result["proposals"][0]
         assert "title" in p

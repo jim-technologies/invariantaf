@@ -102,9 +102,7 @@ class DexScreenerService:
     ) -> pb.GetTopBoostedTokensResponse:
         payload = await self._get("/token-boosts/top/v1")
         tokens = self._normalize_boosted_tokens(payload)
-        return self._parse_message(
-            {"tokens": tokens}, pb.GetTopBoostedTokensResponse
-        )
+        return self._parse_message({"tokens": tokens}, pb.GetTopBoostedTokensResponse)
 
     async def GetOrdersByToken(
         self, request: pb.GetOrdersByTokenRequest, context: Any = None
@@ -289,21 +287,25 @@ class DexScreenerService:
                 orders.append(normalized)
         elif isinstance(payload, dict):
             for item in payload.get("orders", []):
-                orders.append({
-                    "chain_id": item.get("chainId", ""),
-                    "token_address": item.get("tokenAddress", ""),
-                    "type": item.get("type", ""),
-                    "status": item.get("status", ""),
-                    "payment_timestamp": item.get("paymentTimestamp", 0) or 0,
-                })
+                orders.append(
+                    {
+                        "chain_id": item.get("chainId", ""),
+                        "token_address": item.get("tokenAddress", ""),
+                        "type": item.get("type", ""),
+                        "status": item.get("status", ""),
+                        "payment_timestamp": item.get("paymentTimestamp", 0) or 0,
+                    }
+                )
             for item in payload.get("boosts", []):
-                boosts.append({
-                    "chain_id": item.get("chainId", ""),
-                    "token_address": item.get("tokenAddress", ""),
-                    "id": item.get("id", ""),
-                    "amount": item.get("amount", 0) or 0,
-                    "payment_timestamp": item.get("paymentTimestamp", 0) or 0,
-                })
+                boosts.append(
+                    {
+                        "chain_id": item.get("chainId", ""),
+                        "token_address": item.get("tokenAddress", ""),
+                        "id": item.get("id", ""),
+                        "amount": item.get("amount", 0) or 0,
+                        "payment_timestamp": item.get("paymentTimestamp", 0) or 0,
+                    }
+                )
 
         return self._parse_message(
             {"orders": orders, "boosts": boosts}, pb.GetOrdersByTokenResponse

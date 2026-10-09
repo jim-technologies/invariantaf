@@ -41,7 +41,9 @@ def _cli_or_skip(live_server, service, method, params=None):
         pytest.skip(f"{method}: {type(exc).__name__}: {exc}")
     except Exception as exc:
         msg = str(exc)
-        if any(code in msg for code in ("429", "500", "502", "503", "Timeout", "timed out")):
+        if any(
+            code in msg for code in ("429", "500", "502", "503", "Timeout", "timed out")
+        ):
             pytest.skip(f"{method}: {msg[:120]}")
         raise
 
@@ -54,11 +56,11 @@ def live_server():
 
     base_url = (os.getenv("NHL_BASE_URL") or DEFAULT_BASE_URL).rstrip("/")
 
-    srv = Server.from_descriptor(
-        DESCRIPTOR_PATH
-    )
+    srv = Server.from_descriptor(DESCRIPTOR_PATH)
     servicer = NHLService(base_url=base_url)
-    srv.register(servicer, service_name="nhl.v1.NHLService")
+    from nhl_mcp.gen.nhl.v1 import nhl_pb2_grpc as _native_rpc
+
+    _native_rpc.add_NHLServiceServicer_to_server(servicer, srv)
     yield srv
     asyncio.run(srv.stop())
 
@@ -68,7 +70,7 @@ def live_server():
 
 class TestLiveListTeams:
     def test_list_teams(self, live_server):
-        result = _cli_or_skip(live_server, "NHLService", "ListTeams")
+        result = _cli_or_skip(live_server, "nhl.v1.NHLService", "ListTeams")
         assert "teams" in result
         teams = result["teams"]
         assert isinstance(teams, list)
@@ -85,7 +87,7 @@ class TestLiveListTeams:
 
 class TestLiveGetStandings:
     def test_full_standings(self, live_server):
-        result = _cli_or_skip(live_server, "NHLService", "GetStandings")
+        result = _cli_or_skip(live_server, "nhl.v1.NHLService", "GetStandings")
         assert "standings" in result
         standings = result["standings"]
         assert isinstance(standings, list)
@@ -104,7 +106,7 @@ class TestLiveGetStandings:
 
 class TestLiveGetSchedule:
     def test_get_schedule_now(self, live_server):
-        result = _cli_or_skip(live_server, "NHLService", "GetSchedule")
+        result = _cli_or_skip(live_server, "nhl.v1.NHLService", "GetSchedule")
         assert "games" in result
         games = result["games"]
         assert isinstance(games, list)
@@ -118,7 +120,9 @@ class TestLiveGetSchedule:
 
     def test_get_schedule_with_date(self, live_server):
         result = _cli_or_skip(
-            live_server, "NHLService", "GetSchedule",
+            live_server,
+            "nhl.v1.NHLService",
+            "GetSchedule",
             {"date": "2026-01-15"},
         )
         assert "games" in result
@@ -135,7 +139,9 @@ class TestLiveGetSchedule:
 class TestLiveGetGameBoxscore:
     def test_get_boxscore(self, live_server):
         result = _cli_or_skip(
-            live_server, "NHLService", "GetGameBoxscore",
+            live_server,
+            "nhl.v1.NHLService",
+            "GetGameBoxscore",
             {"game_id": 2025020001},
         )
         assert "id" in result
@@ -155,7 +161,9 @@ class TestLiveGetGameBoxscore:
 class TestLiveGetPlayerStats:
     def test_mcdavid(self, live_server):
         result = _cli_or_skip(
-            live_server, "NHLService", "GetPlayerStats",
+            live_server,
+            "nhl.v1.NHLService",
+            "GetPlayerStats",
             {"player_id": 8478402},
         )
         assert result["first_name"] == "Connor"
@@ -170,7 +178,9 @@ class TestLiveGetPlayerStats:
 
     def test_matthews(self, live_server):
         result = _cli_or_skip(
-            live_server, "NHLService", "GetPlayerStats",
+            live_server,
+            "nhl.v1.NHLService",
+            "GetPlayerStats",
             {"player_id": 8479318},
         )
         assert result["last_name"] == "Matthews"
@@ -183,7 +193,9 @@ class TestLiveGetPlayerStats:
 class TestLiveGetTeamSchedule:
     def test_leafs_schedule(self, live_server):
         result = _cli_or_skip(
-            live_server, "NHLService", "GetTeamSchedule",
+            live_server,
+            "nhl.v1.NHLService",
+            "GetTeamSchedule",
             {"team_abbrev": "TOR"},
         )
         assert "games" in result
@@ -203,7 +215,9 @@ class TestLiveGetTeamSchedule:
 class TestLiveGetTeamRoster:
     def test_leafs_roster(self, live_server):
         result = _cli_or_skip(
-            live_server, "NHLService", "GetTeamRoster",
+            live_server,
+            "nhl.v1.NHLService",
+            "GetTeamRoster",
             {"team_abbrev": "TOR"},
         )
         assert "forwards" in result
@@ -219,7 +233,9 @@ class TestLiveGetTeamRoster:
 
     def test_oilers_roster(self, live_server):
         result = _cli_or_skip(
-            live_server, "NHLService", "GetTeamRoster",
+            live_server,
+            "nhl.v1.NHLService",
+            "GetTeamRoster",
             {"team_abbrev": "EDM"},
         )
         assert len(result["forwards"]) > 0
@@ -230,7 +246,7 @@ class TestLiveGetTeamRoster:
 
 class TestLiveGetScoreboard:
     def test_scoreboard_now(self, live_server):
-        result = _cli_or_skip(live_server, "NHLService", "GetScoreboard")
+        result = _cli_or_skip(live_server, "nhl.v1.NHLService", "GetScoreboard")
         assert "games" in result
         games = result["games"]
         assert isinstance(games, list)

@@ -33,11 +33,11 @@ def live_server():
     from reddit_mcp.service import RedditService
     from invariant import Server
 
-    srv = Server.from_descriptor(
-        DESCRIPTOR_PATH
-    )
+    srv = Server.from_descriptor(DESCRIPTOR_PATH)
     svc = RedditService()
-    srv.register(svc)
+    from reddit_mcp.gen.reddit.v1 import reddit_pb2_grpc as _native_rpc
+
+    _native_rpc.add_RedditServiceServicer_to_server(svc, srv)
     yield srv
     asyncio.run(srv.stop())
 
@@ -48,9 +48,16 @@ def live_server():
 @pytest.fixture(scope="module")
 def discovered_post(live_server):
     """Discover a post from a well-known subreddit for tests that need a post ID."""
-    result = asyncio.run(live_server._cli(
-        ["RedditService", "GetHot", "-r", json.dumps({"subreddit": "python", "limit": 3})]
-    ))
+    result = asyncio.run(
+        live_server._cli(
+            [
+                "reddit.v1.RedditService",
+                "GetHot",
+                "-r",
+                json.dumps({"subreddit": "python", "limit": 3}),
+            ]
+        )
+    )
     posts = result.get("posts", [])
     assert posts, "expected at least one post from r/python"
     return posts[0]
@@ -61,9 +68,16 @@ def discovered_post(live_server):
 
 class TestLiveSubredditListings:
     def test_get_hot(self, live_server):
-        result = asyncio.run(live_server._cli(
-            ["RedditService", "GetHot", "-r", json.dumps({"subreddit": "python", "limit": 3})]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "reddit.v1.RedditService",
+                    "GetHot",
+                    "-r",
+                    json.dumps({"subreddit": "python", "limit": 3}),
+                ]
+            )
+        )
         assert "posts" in result
         posts = result["posts"]
         assert isinstance(posts, list)
@@ -74,23 +88,34 @@ class TestLiveSubredditListings:
         assert "subreddit" in p
 
     def test_get_top(self, live_server):
-        result = asyncio.run(live_server._cli(
-            [
-                "RedditService",
-                "GetTop",
-                "-r",
-                json.dumps({"subreddit": "python", "time_filter": "month", "limit": 3}),
-            ]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "reddit.v1.RedditService",
+                    "GetTop",
+                    "-r",
+                    json.dumps(
+                        {"subreddit": "python", "time_filter": "month", "limit": 3}
+                    ),
+                ]
+            )
+        )
         assert "posts" in result
         posts = result["posts"]
         assert isinstance(posts, list)
         assert len(posts) > 0
 
     def test_get_new(self, live_server):
-        result = asyncio.run(live_server._cli(
-            ["RedditService", "GetNew", "-r", json.dumps({"subreddit": "python", "limit": 3})]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "reddit.v1.RedditService",
+                    "GetNew",
+                    "-r",
+                    json.dumps({"subreddit": "python", "limit": 3}),
+                ]
+            )
+        )
         assert "posts" in result
         posts = result["posts"]
         assert isinstance(posts, list)
@@ -106,14 +131,16 @@ class TestLivePost:
         subreddit = discovered_post.get("subreddit", "")
         if not post_id or not subreddit:
             pytest.skip("no post_id or subreddit in discovered post")
-        result = asyncio.run(live_server._cli(
-            [
-                "RedditService",
-                "GetPost",
-                "-r",
-                json.dumps({"subreddit": subreddit, "post_id": post_id}),
-            ]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "reddit.v1.RedditService",
+                    "GetPost",
+                    "-r",
+                    json.dumps({"subreddit": subreddit, "post_id": post_id}),
+                ]
+            )
+        )
         assert "post" in result
         assert result["post"]["id"] == post_id
         # Comments may or may not be present
@@ -125,9 +152,16 @@ class TestLivePost:
 
 class TestLiveSearch:
     def test_search_posts(self, live_server):
-        result = asyncio.run(live_server._cli(
-            ["RedditService", "SearchPosts", "-r", json.dumps({"query": "python tutorial", "limit": 3})]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "reddit.v1.RedditService",
+                    "SearchPosts",
+                    "-r",
+                    json.dumps({"query": "python tutorial", "limit": 3}),
+                ]
+            )
+        )
         assert "posts" in result
         posts = result["posts"]
         assert isinstance(posts, list)
@@ -139,9 +173,16 @@ class TestLiveSearch:
 
 class TestLiveSubreddit:
     def test_get_subreddit(self, live_server):
-        result = asyncio.run(live_server._cli(
-            ["RedditService", "GetSubreddit", "-r", json.dumps({"subreddit": "python"})]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "reddit.v1.RedditService",
+                    "GetSubreddit",
+                    "-r",
+                    json.dumps({"subreddit": "python"}),
+                ]
+            )
+        )
         assert "subreddit" in result
         sr = result["subreddit"]
         assert sr.get("displayName") == "python" or sr.get("display_name") == "python"
@@ -154,17 +195,31 @@ class TestLiveSubreddit:
 class TestLiveUser:
     def test_get_user(self, live_server):
         # Use the AutoModerator account which is always present
-        result = asyncio.run(live_server._cli(
-            ["RedditService", "GetUser", "-r", json.dumps({"username": "AutoModerator"})]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "reddit.v1.RedditService",
+                    "GetUser",
+                    "-r",
+                    json.dumps({"username": "AutoModerator"}),
+                ]
+            )
+        )
         assert "user" in result
         user = result["user"]
         assert user.get("name") == "AutoModerator"
 
     def test_get_user_posts(self, live_server):
-        result = asyncio.run(live_server._cli(
-            ["RedditService", "GetUserPosts", "-r", json.dumps({"username": "AutoModerator", "limit": 3})]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "reddit.v1.RedditService",
+                    "GetUserPosts",
+                    "-r",
+                    json.dumps({"username": "AutoModerator", "limit": 3}),
+                ]
+            )
+        )
         assert "posts" in result
         posts = result["posts"]
         assert isinstance(posts, list)
@@ -178,9 +233,16 @@ class TestLiveUser:
 
 class TestLivePopular:
     def test_get_popular_subreddits(self, live_server):
-        result = asyncio.run(live_server._cli(
-            ["RedditService", "GetPopularSubreddits", "-r", json.dumps({"limit": 3})]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "reddit.v1.RedditService",
+                    "GetPopularSubreddits",
+                    "-r",
+                    json.dumps({"limit": 3}),
+                ]
+            )
+        )
         assert "subreddits" in result
         subs = result["subreddits"]
         assert isinstance(subs, list)
@@ -189,9 +251,16 @@ class TestLivePopular:
         assert "displayName" in sr or "display_name" in sr
 
     def test_get_front_page(self, live_server):
-        result = asyncio.run(live_server._cli(
-            ["RedditService", "GetFrontPage", "-r", json.dumps({"limit": 3})]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "reddit.v1.RedditService",
+                    "GetFrontPage",
+                    "-r",
+                    json.dumps({"limit": 3}),
+                ]
+            )
+        )
         assert "posts" in result
         posts = result["posts"]
         assert isinstance(posts, list)

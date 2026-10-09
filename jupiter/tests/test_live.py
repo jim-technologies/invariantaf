@@ -37,11 +37,11 @@ def live_server():
 
     from jupiter_mcp.service import JupiterService
 
-    srv = Server.from_descriptor(
-        DESCRIPTOR_PATH
-    )
+    srv = Server.from_descriptor(DESCRIPTOR_PATH)
     servicer = JupiterService()
-    srv.register(servicer)
+    from jupiter_mcp.gen.jupiter.v1 import jupiter_pb2_grpc as _native_rpc
+
+    _native_rpc.add_JupiterServiceServicer_to_server(servicer, srv)
     yield srv
     asyncio.run(srv.stop())
 
@@ -51,12 +51,16 @@ def live_server():
 
 class TestLivePrices:
     def test_get_price_single(self, live_server):
-        result = asyncio.run(live_server._cli([
-            "JupiterService",
-            "GetPrice",
-            "-r",
-            json.dumps({"ids": SOL_MINT}),
-        ]))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "jupiter.v1.JupiterService",
+                    "GetPrice",
+                    "-r",
+                    json.dumps({"ids": SOL_MINT}),
+                ]
+            )
+        )
         assert "prices" in result
         prices = result["prices"]
         assert isinstance(prices, list)
@@ -67,12 +71,16 @@ class TestLivePrices:
         assert p["price"] > 0
 
     def test_get_price_multiple(self, live_server):
-        result = asyncio.run(live_server._cli([
-            "JupiterService",
-            "GetPrice",
-            "-r",
-            json.dumps({"ids": f"{SOL_MINT},{USDC_MINT}"}),
-        ]))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "jupiter.v1.JupiterService",
+                    "GetPrice",
+                    "-r",
+                    json.dumps({"ids": f"{SOL_MINT},{USDC_MINT}"}),
+                ]
+            )
+        )
         assert "prices" in result
         prices = result["prices"]
         assert len(prices) >= 2
@@ -84,17 +92,23 @@ class TestLivePrices:
 class TestLiveQuotes:
     def test_get_quote_sol_to_usdc(self, live_server):
         # Quote for 0.01 SOL -> USDC
-        result = asyncio.run(live_server._cli([
-            "JupiterService",
-            "GetQuote",
-            "-r",
-            json.dumps({
-                "input_mint": SOL_MINT,
-                "output_mint": USDC_MINT,
-                "amount": "10000000",
-                "slippage_bps": 50,
-            }),
-        ]))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "jupiter.v1.JupiterService",
+                    "GetQuote",
+                    "-r",
+                    json.dumps(
+                        {
+                            "input_mint": SOL_MINT,
+                            "output_mint": USDC_MINT,
+                            "amount": "10000000",
+                            "slippage_bps": 50,
+                        }
+                    ),
+                ]
+            )
+        )
         # Check key fields are present (camelCase or snake_case).
         assert result.get("inputMint") or result.get("input_mint")
         assert result.get("outAmount") or result.get("out_amount")
@@ -110,12 +124,16 @@ class TestLiveQuotes:
 
 class TestLiveTokens:
     def test_list_tokens_search(self, live_server):
-        result = asyncio.run(live_server._cli([
-            "JupiterService",
-            "ListTokens",
-            "-r",
-            json.dumps({"query": "SOL"}),
-        ]))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "jupiter.v1.JupiterService",
+                    "ListTokens",
+                    "-r",
+                    json.dumps({"query": "SOL"}),
+                ]
+            )
+        )
         assert "tokens" in result
         tokens = result["tokens"]
         assert isinstance(tokens, list)
@@ -124,7 +142,9 @@ class TestLiveTokens:
         assert "symbol" in t
 
     def test_list_verified_tokens(self, live_server):
-        result = asyncio.run(live_server._cli(["JupiterService", "ListVerifiedTokens"]))
+        result = asyncio.run(
+            live_server._cli(["jupiter.v1.JupiterService", "ListVerifiedTokens"])
+        )
         assert "tokens" in result
         tokens = result["tokens"]
         assert isinstance(tokens, list)

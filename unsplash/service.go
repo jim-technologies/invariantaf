@@ -74,23 +74,11 @@ func toString(v any) string {
 }
 
 func toInt32(v any) int32 {
-	if v == nil {
-		return 0
-	}
-	if f, ok := v.(float64); ok {
-		return int32(f)
-	}
-	return 0
+	return providerInteger32(v)
 }
 
 func toFloat64(v any) float64 {
-	if v == nil {
-		return 0
-	}
-	if f, ok := v.(float64); ok {
-		return f
-	}
-	return 0
+	return providerNumber(v)
 }
 
 func toMap(v any) map[string]any {

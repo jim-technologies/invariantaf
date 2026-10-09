@@ -11,8 +11,12 @@ from invariant import Server
 
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
+from geminipredictions_mcp.gen.geminipredictions.v1 import (
+    geminipredictions_pb2_grpc as pb_grpc,
+)
+
+
 # Ensure generated protobuf descriptors are loaded in the default descriptor pool.
-from geminipredictions_mcp.gen.geminipredictions.v1 import geminipredictions_pb2 as _geminipredictions_pb2  # noqa: F401
 from geminipredictions_mcp.service import DEFAULT_BASE_URL, GeminiPredictionsService
 
 DESCRIPTOR = Path(__file__).parent / "descriptor.binpb"
@@ -57,7 +61,7 @@ def main() -> None:
     api_key = _env("GEMINI_API_KEY")
 
     servicer = GeminiPredictionsService(base_url=base_url, api_key=api_key)
-    server.register(servicer, service_name="geminipredictions.v1.GeminiPredictionsService")
+    pb_grpc.add_GeminiPredictionsServiceServicer_to_server(servicer, server)
 
     asyncio.run(_serve(server, _projection_from_argv(sys.argv[1:])))
 

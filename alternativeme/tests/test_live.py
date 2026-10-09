@@ -31,6 +31,7 @@ pytestmark = pytest.mark.skipif(
 
 def _cli_or_skip(live_server, service, method, params=None):
     import httpx
+
     args = [service, method]
     if params:
         args.extend(["-r", json.dumps(params)])
@@ -40,7 +41,9 @@ def _cli_or_skip(live_server, service, method, params=None):
         pytest.skip(f"{method}: {type(exc).__name__}: {exc}")
     except Exception as exc:
         msg = str(exc)
-        if any(code in msg for code in ("429", "500", "502", "503", "Timeout", "timed out")):
+        if any(
+            code in msg for code in ("429", "500", "502", "503", "Timeout", "timed out")
+        ):
             pytest.skip(f"{method}: {msg[:120]}")
         raise
 
@@ -48,16 +51,17 @@ def _cli_or_skip(live_server, service, method, params=None):
 @pytest.fixture(scope="module")
 def live_server():
     from invariant import Server
-    from alternativeme_mcp.gen.alternativeme.v1 import alternativeme_pb2 as _alternativeme_pb2  # noqa: F401
     from alternativeme_mcp.service import AlternativeMeService
 
     base_url = (os.getenv("ALTERNATIVEME_BASE_URL") or DEFAULT_BASE_URL).rstrip("/")
 
-    srv = Server.from_descriptor(
-        DESCRIPTOR_PATH
-    )
+    srv = Server.from_descriptor(DESCRIPTOR_PATH)
     servicer = AlternativeMeService(base_url=base_url)
-    srv.register(servicer, service_name="alternativeme.v1.AlternativeMeService")
+    from alternativeme_mcp.gen.alternativeme.v1 import (
+        alternativeme_pb2_grpc as _native_rpc,
+    )
+
+    _native_rpc.add_AlternativeMeServiceServicer_to_server(servicer, srv)
     yield srv
     asyncio.run(srv.stop())
 
@@ -68,7 +72,9 @@ def live_server():
 class TestLiveGetFearGreedIndex:
     def test_current_value(self, live_server):
         result = _cli_or_skip(
-            live_server, "AlternativeMeService", "GetFearGreedIndex",
+            live_server,
+            "alternativeme.v1.AlternativeMeService",
+            "GetFearGreedIndex",
         )
         assert "data" in result
         data = result["data"]
@@ -80,12 +86,18 @@ class TestLiveGetFearGreedIndex:
         assert 0 <= val <= 100
         assert "value_classification" in entry
         assert entry["value_classification"] in (
-            "Extreme Fear", "Fear", "Neutral", "Greed", "Extreme Greed",
+            "Extreme Fear",
+            "Fear",
+            "Neutral",
+            "Greed",
+            "Extreme Greed",
         )
 
     def test_historical_values(self, live_server):
         result = _cli_or_skip(
-            live_server, "AlternativeMeService", "GetFearGreedIndex",
+            live_server,
+            "alternativeme.v1.AlternativeMeService",
+            "GetFearGreedIndex",
             {"limit": 5},
         )
         assert "data" in result
@@ -103,7 +115,9 @@ class TestLiveGetFearGreedIndex:
 class TestLiveGetGlobalMarketData:
     def test_top_coins(self, live_server):
         result = _cli_or_skip(
-            live_server, "AlternativeMeService", "GetGlobalMarketData",
+            live_server,
+            "alternativeme.v1.AlternativeMeService",
+            "GetGlobalMarketData",
             {"limit": 5},
         )
         assert "data" in result
@@ -124,7 +138,9 @@ class TestLiveGetGlobalMarketData:
 class TestLiveGetCoinData:
     def test_get_bitcoin(self, live_server):
         result = _cli_or_skip(
-            live_server, "AlternativeMeService", "GetCoinData",
+            live_server,
+            "alternativeme.v1.AlternativeMeService",
+            "GetCoinData",
             {"id": "1"},
         )
         assert "data" in result
@@ -135,7 +151,9 @@ class TestLiveGetCoinData:
 
     def test_get_ethereum(self, live_server):
         result = _cli_or_skip(
-            live_server, "AlternativeMeService", "GetCoinData",
+            live_server,
+            "alternativeme.v1.AlternativeMeService",
+            "GetCoinData",
             {"id": "1027"},
         )
         assert "data" in result
@@ -151,7 +169,9 @@ class TestLiveGetCoinData:
 class TestLiveGetListings:
     def test_get_listings(self, live_server):
         result = _cli_or_skip(
-            live_server, "AlternativeMeService", "GetListings",
+            live_server,
+            "alternativeme.v1.AlternativeMeService",
+            "GetListings",
             {"limit": 10},
         )
         assert "data" in result

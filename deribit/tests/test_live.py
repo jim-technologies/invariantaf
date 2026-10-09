@@ -53,11 +53,11 @@ def live_server():
 
     base_url = (os.getenv("DERIBIT_BASE_URL") or DEFAULT_BASE_URL).rstrip("/")
 
-    srv = Server.from_descriptor(
-        DESCRIPTOR_PATH
-    )
+    srv = Server.from_descriptor(DESCRIPTOR_PATH)
     servicer = DeribitService(base_url=base_url)
-    srv.register(servicer, service_name="deribit.v1.DeribitService")
+    from deribit_mcp.gen.deribit.v1 import deribit_pb2_grpc as _native_rpc
+
+    _native_rpc.add_DeribitServiceServicer_to_server(servicer, srv)
     yield srv
     asyncio.run(srv.stop())
 
@@ -68,7 +68,9 @@ def live_server():
 class TestLiveGetInstruments:
     def test_get_btc_options(self, live_server):
         result = _cli_or_skip(
-            live_server, "DeribitService", "GetInstruments",
+            live_server,
+            "deribit.v1.DeribitService",
+            "GetInstruments",
             {"currency": "BTC", "kind": "option"},
         )
         assert "instruments" in result
@@ -82,7 +84,9 @@ class TestLiveGetInstruments:
 
     def test_get_btc_futures(self, live_server):
         result = _cli_or_skip(
-            live_server, "DeribitService", "GetInstruments",
+            live_server,
+            "deribit.v1.DeribitService",
+            "GetInstruments",
             {"currency": "BTC", "kind": "future"},
         )
         assert "instruments" in result
@@ -93,7 +97,9 @@ class TestLiveGetInstruments:
 
     def test_get_eth_instruments(self, live_server):
         result = _cli_or_skip(
-            live_server, "DeribitService", "GetInstruments",
+            live_server,
+            "deribit.v1.DeribitService",
+            "GetInstruments",
             {"currency": "ETH"},
         )
         assert "instruments" in result
@@ -106,7 +112,9 @@ class TestLiveGetInstruments:
 class TestLiveGetOrderbook:
     def test_get_orderbook_perpetual(self, live_server):
         result = _cli_or_skip(
-            live_server, "DeribitService", "GetOrderbook",
+            live_server,
+            "deribit.v1.DeribitService",
+            "GetOrderbook",
             {"instrument_name": "BTC-PERPETUAL"},
         )
         assert result["instrument_name"] == "BTC-PERPETUAL"
@@ -119,7 +127,9 @@ class TestLiveGetOrderbook:
 
     def test_get_orderbook_with_depth(self, live_server):
         result = _cli_or_skip(
-            live_server, "DeribitService", "GetOrderbook",
+            live_server,
+            "deribit.v1.DeribitService",
+            "GetOrderbook",
             {"instrument_name": "BTC-PERPETUAL", "depth": 5},
         )
         assert len(result["bids"]) <= 5
@@ -132,7 +142,9 @@ class TestLiveGetOrderbook:
 class TestLiveGetTicker:
     def test_get_ticker_perpetual(self, live_server):
         result = _cli_or_skip(
-            live_server, "DeribitService", "GetTicker",
+            live_server,
+            "deribit.v1.DeribitService",
+            "GetTicker",
             {"instrument_name": "BTC-PERPETUAL"},
         )
         assert result["instrument_name"] == "BTC-PERPETUAL"
@@ -143,7 +155,9 @@ class TestLiveGetTicker:
 
     def test_get_ticker_eth(self, live_server):
         result = _cli_or_skip(
-            live_server, "DeribitService", "GetTicker",
+            live_server,
+            "deribit.v1.DeribitService",
+            "GetTicker",
             {"instrument_name": "ETH-PERPETUAL"},
         )
         assert result["instrument_name"] == "ETH-PERPETUAL"
@@ -156,7 +170,9 @@ class TestLiveGetTicker:
 class TestLiveGetBookSummaryByCurrency:
     def test_btc_futures(self, live_server):
         result = _cli_or_skip(
-            live_server, "DeribitService", "GetBookSummaryByCurrency",
+            live_server,
+            "deribit.v1.DeribitService",
+            "GetBookSummaryByCurrency",
             {"currency": "BTC", "kind": "future"},
         )
         assert "summaries" in result
@@ -174,7 +190,9 @@ class TestLiveGetBookSummaryByCurrency:
 class TestLiveGetHistoricalVolatility:
     def test_btc_volatility(self, live_server):
         result = _cli_or_skip(
-            live_server, "DeribitService", "GetHistoricalVolatility",
+            live_server,
+            "deribit.v1.DeribitService",
+            "GetHistoricalVolatility",
             {"currency": "BTC"},
         )
         assert "data" in result
@@ -194,7 +212,9 @@ class TestLiveGetFundingRateValue:
         now_ms = int(time.time() * 1000)
         eight_hours_ago = now_ms - (8 * 60 * 60 * 1000)
         result = _cli_or_skip(
-            live_server, "DeribitService", "GetFundingRateValue",
+            live_server,
+            "deribit.v1.DeribitService",
+            "GetFundingRateValue",
             {
                 "instrument_name": "BTC-PERPETUAL",
                 "start_timestamp": eight_hours_ago,
@@ -210,14 +230,18 @@ class TestLiveGetFundingRateValue:
 class TestLiveGetIndexPrice:
     def test_btc_usd(self, live_server):
         result = _cli_or_skip(
-            live_server, "DeribitService", "GetIndexPrice",
+            live_server,
+            "deribit.v1.DeribitService",
+            "GetIndexPrice",
             {"index_name": "btc_usd"},
         )
         assert result["index_price"] > 0
 
     def test_eth_usd(self, live_server):
         result = _cli_or_skip(
-            live_server, "DeribitService", "GetIndexPrice",
+            live_server,
+            "deribit.v1.DeribitService",
+            "GetIndexPrice",
             {"index_name": "eth_usd"},
         )
         assert result["index_price"] > 0
@@ -231,7 +255,9 @@ class TestLiveGetTradingviewChartData:
         now_ms = int(time.time() * 1000)
         one_day_ago = now_ms - (24 * 60 * 60 * 1000)
         result = _cli_or_skip(
-            live_server, "DeribitService", "GetTradingviewChartData",
+            live_server,
+            "deribit.v1.DeribitService",
+            "GetTradingviewChartData",
             {
                 "instrument_name": "BTC-PERPETUAL",
                 "start_timestamp": one_day_ago,

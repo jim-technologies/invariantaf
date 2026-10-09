@@ -31,6 +31,7 @@ pytestmark = pytest.mark.skipif(
 
 def _cli_or_skip(live_server, service, method, params=None):
     import httpx
+
     args = [service, method]
     if params:
         args.extend(["-r", json.dumps(params)])
@@ -40,7 +41,9 @@ def _cli_or_skip(live_server, service, method, params=None):
         pytest.skip(f"{method}: {type(exc).__name__}: {exc}")
     except Exception as exc:
         msg = str(exc)
-        if any(code in msg for code in ("429", "500", "502", "503", "Timeout", "timed out")):
+        if any(
+            code in msg for code in ("429", "500", "502", "503", "Timeout", "timed out")
+        ):
             pytest.skip(f"{method}: {msg[:120]}")
         raise
 
@@ -53,11 +56,11 @@ def live_server():
 
     base_url = (os.getenv("WIKIMEDIA_BASE_URL") or DEFAULT_BASE_URL).rstrip("/")
 
-    srv = Server.from_descriptor(
-        DESCRIPTOR_PATH
-    )
+    srv = Server.from_descriptor(DESCRIPTOR_PATH)
     servicer = WikimediaService(base_url=base_url)
-    srv.register(servicer, service_name="wikimedia.v1.WikimediaService")
+    from wikimedia_mcp.gen.wikimedia.v1 import wikimedia_pb2_grpc as _native_rpc
+
+    _native_rpc.add_WikimediaServiceServicer_to_server(servicer, srv)
     yield srv
     asyncio.run(srv.stop())
 
@@ -68,7 +71,9 @@ def live_server():
 class TestLiveGetPageviews:
     def test_bitcoin_pageviews(self, live_server):
         result = _cli_or_skip(
-            live_server, "WikimediaService", "GetPageviews",
+            live_server,
+            "wikimedia.v1.WikimediaService",
+            "GetPageviews",
             {"article": "Bitcoin", "start": "20250101", "end": "20250107"},
         )
         assert "items" in result
@@ -82,7 +87,9 @@ class TestLiveGetPageviews:
 
     def test_ethereum_pageviews(self, live_server):
         result = _cli_or_skip(
-            live_server, "WikimediaService", "GetPageviews",
+            live_server,
+            "wikimedia.v1.WikimediaService",
+            "GetPageviews",
             {"article": "Ethereum", "start": "20250101", "end": "20250107"},
         )
         assert "items" in result
@@ -93,7 +100,9 @@ class TestLiveGetPageviews:
 
     def test_donald_trump_pageviews(self, live_server):
         result = _cli_or_skip(
-            live_server, "WikimediaService", "GetPageviews",
+            live_server,
+            "wikimedia.v1.WikimediaService",
+            "GetPageviews",
             {"article": "Donald_Trump", "start": "20250101", "end": "20250107"},
         )
         assert "items" in result
@@ -104,7 +113,9 @@ class TestLiveGetPageviews:
 
     def test_federal_reserve_pageviews(self, live_server):
         result = _cli_or_skip(
-            live_server, "WikimediaService", "GetPageviews",
+            live_server,
+            "wikimedia.v1.WikimediaService",
+            "GetPageviews",
             {"article": "Federal_Reserve", "start": "20250101", "end": "20250107"},
         )
         assert "items" in result
@@ -120,7 +131,9 @@ class TestLiveGetPageviews:
 class TestLiveGetTopPages:
     def test_top_pages(self, live_server):
         result = _cli_or_skip(
-            live_server, "WikimediaService", "GetTopPages",
+            live_server,
+            "wikimedia.v1.WikimediaService",
+            "GetTopPages",
             {"year": "2025", "month": "01", "day": "15"},
         )
         assert "articles" in result
@@ -137,7 +150,9 @@ class TestLiveGetTopPages:
 class TestLiveGetAggregatePageviews:
     def test_aggregate_pageviews(self, live_server):
         result = _cli_or_skip(
-            live_server, "WikimediaService", "GetAggregatePageviews",
+            live_server,
+            "wikimedia.v1.WikimediaService",
+            "GetAggregatePageviews",
             {"start": "20250101", "end": "20250107"},
         )
         assert "items" in result
@@ -154,7 +169,9 @@ class TestLiveGetAggregatePageviews:
 class TestLiveGetMostViewed:
     def test_most_viewed_month(self, live_server):
         result = _cli_or_skip(
-            live_server, "WikimediaService", "GetMostViewed",
+            live_server,
+            "wikimedia.v1.WikimediaService",
+            "GetMostViewed",
             {"year": "2025", "month": "01"},
         )
         assert "articles" in result
@@ -171,7 +188,9 @@ class TestLiveGetMostViewed:
 class TestLiveGetUniqueDevices:
     def test_unique_devices(self, live_server):
         result = _cli_or_skip(
-            live_server, "WikimediaService", "GetUniqueDevices",
+            live_server,
+            "wikimedia.v1.WikimediaService",
+            "GetUniqueDevices",
             {"start": "20250101", "end": "20250107"},
         )
         assert "items" in result

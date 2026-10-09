@@ -16,14 +16,16 @@ class RedditService:
     """Implements RedditService RPCs via the Reddit public JSON API."""
 
     def __init__(self):
-        self._http = httpx.AsyncClient(timeout=30, headers=_HEADERS, follow_redirects=True)
+        self._http = httpx.AsyncClient(
+            timeout=30, headers=_HEADERS, follow_redirects=True
+        )
 
     async def aclose(self) -> None:
         """Close the HTTP client. Idempotent."""
-        await self._client.aclose()
+        await self._http.aclose()
 
-    def _get(self, path: str, params: dict | None = None) -> Any:
-        resp = self._http.get(f"{_BASE_URL}{path}", params=params or {})
+    async def _get(self, path: str, params: dict | None = None) -> Any:
+        resp = await self._http.get(f"{_BASE_URL}{path}", params=params or {})
         resp.raise_for_status()
         return resp.json()
 
@@ -62,8 +64,10 @@ class RedditService:
             replies=replies,
         )
 
-    def _get_listing_posts(self, path: str, params: dict | None = None) -> list[pb.Post]:
-        raw = self._get(path, params)
+    async def _get_listing_posts(
+        self, path: str, params: dict | None = None
+    ) -> list[pb.Post]:
+        raw = await self._get(path, params)
         posts = []
         for child in raw.get("data", {}).get("children", []):
             if child.get("kind") == "t3":
@@ -72,7 +76,7 @@ class RedditService:
 
     async def GetHot(self, request: Any, context: Any = None) -> pb.GetHotResponse:
         limit = request.limit or 25
-        posts = self._get_listing_posts(
+        posts = await self._get_listing_posts(
             f"/r/{request.subreddit}/hot.json",
             params={"limit": limit},
         )
@@ -81,7 +85,7 @@ class RedditService:
     async def GetTop(self, request: Any, context: Any = None) -> pb.GetTopResponse:
         limit = request.limit or 25
         time_filter = request.time_filter or "day"
-        posts = self._get_listing_posts(
+        posts = await self._get_listing_posts(
             f"/r/{request.subreddit}/top.json",
             params={"t": time_filter, "limit": limit},
         )
@@ -89,14 +93,14 @@ class RedditService:
 
     async def GetNew(self, request: Any, context: Any = None) -> pb.GetNewResponse:
         limit = request.limit or 25
-        posts = self._get_listing_posts(
+        posts = await self._get_listing_posts(
             f"/r/{request.subreddit}/new.json",
             params={"limit": limit},
         )
         return pb.GetNewResponse(posts=posts)
 
     async def GetPost(self, request: Any, context: Any = None) -> pb.GetPostResponse:
-        raw = self._get(f"/r/{request.subreddit}/comments/{request.post_id}.json")
+        raw = await self._get(f"/r/{request.subreddit}/comments/{request.post_id}.json")
         # Reddit returns an array of 2 listings: [post_listing, comments_listing]
         post = pb.Post()
         comments = []
@@ -110,16 +114,20 @@ class RedditService:
                     comments.append(self._parse_comment(child.get("data", {})))
         return pb.GetPostResponse(post=post, comments=comments)
 
-    async def SearchPosts(self, request: Any, context: Any = None) -> pb.SearchPostsResponse:
+    async def SearchPosts(
+        self, request: Any, context: Any = None
+    ) -> pb.SearchPostsResponse:
         limit = request.limit or 25
-        posts = self._get_listing_posts(
+        posts = await self._get_listing_posts(
             "/search.json",
             params={"q": request.query, "type": "link", "limit": limit},
         )
         return pb.SearchPostsResponse(posts=posts)
 
-    async def GetSubreddit(self, request: Any, context: Any = None) -> pb.GetSubredditResponse:
-        raw = self._get(f"/r/{request.subreddit}/about.json")
+    async def GetSubreddit(
+        self, request: Any, context: Any = None
+    ) -> pb.GetSubredditResponse:
+        raw = await self._get(f"/r/{request.subreddit}/about.json")
         data = raw.get("data", {})
         return pb.GetSubredditResponse(
             subreddit=pb.SubredditInfo(
@@ -136,7 +144,7 @@ class RedditService:
         )
 
     async def GetUser(self, request: Any, context: Any = None) -> pb.GetUserResponse:
-        raw = self._get(f"/user/{request.username}/about.json")
+        raw = await self._get(f"/user/{request.username}/about.json")
         data = raw.get("data", {})
         return pb.GetUserResponse(
             user=pb.UserInfo(
@@ -144,42 +152,52 @@ class RedditService:
                 link_karma=data.get("link_karma", 0),
                 comment_karma=data.get("comment_karma", 0),
                 created_utc=data.get("created_utc", 0.0),
-                description=data.get("subreddit", {}).get("public_description", "") if isinstance(data.get("subreddit"), dict) else "",
+                description=data.get("subreddit", {}).get("public_description", "")
+                if isinstance(data.get("subreddit"), dict)
+                else "",
                 is_gold=data.get("is_gold", False),
                 verified=data.get("verified", False),
             ),
         )
 
-    async def GetUserPosts(self, request: Any, context: Any = None) -> pb.GetUserPostsResponse:
+    async def GetUserPosts(
+        self, request: Any, context: Any = None
+    ) -> pb.GetUserPostsResponse:
         limit = request.limit or 25
-        posts = self._get_listing_posts(
+        posts = await self._get_listing_posts(
             f"/user/{request.username}/submitted.json",
             params={"limit": limit},
         )
         return pb.GetUserPostsResponse(posts=posts)
 
-    async def GetPopularSubreddits(self, request: Any, context: Any = None) -> pb.GetPopularSubredditsResponse:
+    async def GetPopularSubreddits(
+        self, request: Any, context: Any = None
+    ) -> pb.GetPopularSubredditsResponse:
         limit = request.limit or 25
-        raw = self._get("/subreddits/popular.json", params={"limit": limit})
+        raw = await self._get("/subreddits/popular.json", params={"limit": limit})
         subreddits = []
         for child in raw.get("data", {}).get("children", []):
             data = child.get("data", {})
-            subreddits.append(pb.SubredditInfo(
-                name=data.get("name", ""),
-                display_name=data.get("display_name", ""),
-                title=data.get("title", ""),
-                description=data.get("public_description", ""),
-                subscribers=data.get("subscribers", 0),
-                active_users=data.get("accounts_active", 0) or 0,
-                created_utc=data.get("created_utc", 0.0),
-                url=data.get("url", ""),
-                over18=data.get("over18", False),
-            ))
+            subreddits.append(
+                pb.SubredditInfo(
+                    name=data.get("name", ""),
+                    display_name=data.get("display_name", ""),
+                    title=data.get("title", ""),
+                    description=data.get("public_description", ""),
+                    subscribers=data.get("subscribers", 0),
+                    active_users=data.get("accounts_active", 0) or 0,
+                    created_utc=data.get("created_utc", 0.0),
+                    url=data.get("url", ""),
+                    over18=data.get("over18", False),
+                )
+            )
         return pb.GetPopularSubredditsResponse(subreddits=subreddits)
 
-    async def GetFrontPage(self, request: Any, context: Any = None) -> pb.GetFrontPageResponse:
+    async def GetFrontPage(
+        self, request: Any, context: Any = None
+    ) -> pb.GetFrontPageResponse:
         limit = request.limit or 25
-        posts = self._get_listing_posts(
+        posts = await self._get_listing_posts(
             "/.json",
             params={"limit": limit},
         )

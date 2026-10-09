@@ -58,10 +58,10 @@ func (s *AevoService) get(path string, params url.Values) (map[string]any, error
 	}
 
 	var result map[string]any
-	if err := json.Unmarshal(body, &result); err != nil {
+	if err := decodeProviderJSON(body, &result); err != nil {
 		// The response may be an array (e.g. /assets endpoint).
 		var arr []any
-		if err2 := json.Unmarshal(body, &arr); err2 == nil {
+		if err2 := decodeProviderJSON(body, &arr); err2 == nil {
 			result = map[string]any{"items": arr}
 		} else {
 			return nil, fmt.Errorf("decode response: %w (body: %s)", err, string(body))
@@ -82,33 +82,29 @@ func getString(fields map[string]*structpb.Value, key, def string) string {
 // helper: get an int field from structpb (numbers come as float64).
 func getInt(fields map[string]*structpb.Value, key string) int64 {
 	if v, ok := fields[key]; ok {
-		return int64(v.GetNumberValue())
+		return requestInteger(v)
 	}
 	return 0
 }
 
 // helper: convert API response to structpb.Struct.
-func toStruct(data map[string]any) (*structpb.Struct, error) {
-	result, err := structpb.NewStruct(data)
-	if err != nil {
-		return nil, fmt.Errorf("convert to struct: %w", err)
-	}
-	return result, nil
+func responseJSON(data map[string]any) (json.RawMessage, error) {
+	return json.Marshal(data)
 }
 
 // ListAssets returns all tradeable asset symbols on Aevo.
-func (s *AevoService) ListAssets(_ context.Context, _ *structpb.Struct) (*structpb.Struct, error) {
+func (s *AevoService) ListAssets(_ context.Context, _ *structpb.Struct) (json.RawMessage, error) {
 	data, err := s.get("/assets", nil)
 	if err != nil {
 		return nil, err
 	}
 
 	// Response is an array of strings, wrapped as {"items": [...]}.
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // ListMarkets returns all markets (perps + options) on Aevo.
-func (s *AevoService) ListMarkets(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *AevoService) ListMarkets(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	params := url.Values{}
 
@@ -125,11 +121,11 @@ func (s *AevoService) ListMarkets(_ context.Context, req *structpb.Struct) (*str
 	}
 
 	// Response is an array of market objects, wrapped as {"items": [...]}.
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetOrderbook returns the orderbook for a specific instrument.
-func (s *AevoService) GetOrderbook(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *AevoService) GetOrderbook(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	instrumentName := getString(fields, "instrument_name", "")
 	if instrumentName == "" {
@@ -163,11 +159,11 @@ func (s *AevoService) GetOrderbook(_ context.Context, req *structpb.Struct) (*st
 		}
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetFunding returns the current funding rate for a perpetual instrument.
-func (s *AevoService) GetFunding(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *AevoService) GetFunding(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	instrumentName := getString(fields, "instrument_name", "")
 	if instrumentName == "" {
@@ -182,11 +178,11 @@ func (s *AevoService) GetFunding(_ context.Context, req *structpb.Struct) (*stru
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetFundingHistory returns historical funding rates for a perpetual instrument.
-func (s *AevoService) GetFundingHistory(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *AevoService) GetFundingHistory(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	instrumentName := getString(fields, "instrument_name", "")
 	if instrumentName == "" {
@@ -231,11 +227,11 @@ func (s *AevoService) GetFundingHistory(_ context.Context, req *structpb.Struct)
 		}
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetIndex returns the current index price for an asset.
-func (s *AevoService) GetIndex(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *AevoService) GetIndex(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	asset := getString(fields, "asset", "")
 	if asset == "" {
@@ -250,11 +246,11 @@ func (s *AevoService) GetIndex(_ context.Context, req *structpb.Struct) (*struct
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetStatistics returns market statistics for an asset.
-func (s *AevoService) GetStatistics(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *AevoService) GetStatistics(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	asset := getString(fields, "asset", "")
 	if asset == "" {
@@ -282,11 +278,11 @@ func (s *AevoService) GetStatistics(_ context.Context, req *structpb.Struct) (*s
 		}
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetTradeHistory returns recent trade history for an instrument.
-func (s *AevoService) GetTradeHistory(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *AevoService) GetTradeHistory(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	instrumentName := getString(fields, "instrument_name", "")
 	if instrumentName == "" {
@@ -300,5 +296,5 @@ func (s *AevoService) GetTradeHistory(_ context.Context, req *structpb.Struct) (
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }

@@ -3,14 +3,12 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"google.golang.org/protobuf/types/known/structpb"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"strings"
 	"testing"
-
-	invariant "github.com/jim-technologies/invariantprotocol/go"
-	"google.golang.org/protobuf/types/known/structpb"
 )
 
 func mustStruct(t *testing.T, m map[string]any) *structpb.Struct {
@@ -23,21 +21,19 @@ func mustStruct(t *testing.T, m map[string]any) *structpb.Struct {
 }
 
 func TestServerWiring(t *testing.T) {
-	srv, err := invariant.ServerFromBytes(descriptorBytes)
+	srv, err := providerServer(NewSlackService())
 	if err != nil {
 		t.Fatalf("ServerFromBytes: %v", err)
 	}
-	if err := srv.Register(NewSlackService()); err != nil {
-		t.Fatalf("Register: %v", err)
-	}
+
 	tools := srv.Tools()
 	if len(tools) < 30 {
 		t.Fatalf("expected at least 30 tools, got %d", len(tools))
 	}
-	if _, ok := tools["SlackService.ChatPostMessage"]; !ok {
+	if _, ok := tools["slack.v1.SlackService.ChatPostMessage"]; !ok {
 		t.Fatalf("missing SlackService.ChatPostMessage")
 	}
-	if _, ok := tools["SlackService.AuthTest"]; !ok {
+	if _, ok := tools["slack.v1.SlackService.AuthTest"]; !ok {
 		t.Fatalf("missing SlackService.AuthTest")
 	}
 }

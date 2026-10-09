@@ -57,11 +57,11 @@ func (s *VenusService) get(path string, params url.Values) (map[string]any, erro
 	}
 
 	var result map[string]any
-	if err := json.Unmarshal(body, &result); err != nil {
+	if err := decodeProviderJSON(body, &result); err != nil {
 		// The response may be an array (e.g. pools endpoint).
 		// Try wrapping in a map.
 		var arr []any
-		if err2 := json.Unmarshal(body, &arr); err2 == nil {
+		if err2 := decodeProviderJSON(body, &arr); err2 == nil {
 			result = map[string]any{"items": arr}
 		} else {
 			return nil, fmt.Errorf("decode response: %w (body: %s)", err, string(body))
@@ -80,26 +80,22 @@ func getString(fields map[string]*structpb.Value, key, def string) string {
 }
 
 // helper: convert API response to structpb.Struct.
-func toStruct(data map[string]any) (*structpb.Struct, error) {
-	result, err := structpb.NewStruct(data)
-	if err != nil {
-		return nil, fmt.Errorf("convert to struct: %w", err)
-	}
-	return result, nil
+func responseJSON(data map[string]any) (json.RawMessage, error) {
+	return json.Marshal(data)
 }
 
 // ListMarkets lists all lending markets in the Venus core pool.
-func (s *VenusService) ListMarkets(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *VenusService) ListMarkets(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	data, err := s.get("/markets/core-pool", url.Values{})
 	if err != nil {
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetMarket gets details for a specific lending market by underlying token address.
-func (s *VenusService) GetMarket(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *VenusService) GetMarket(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	underlyingAddress := getString(fields, "underlying_address", "")
 	if underlyingAddress == "" {
@@ -114,25 +110,25 @@ func (s *VenusService) GetMarket(_ context.Context, req *structpb.Struct) (*stru
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // ListPools lists all lending pools on Venus Protocol.
-func (s *VenusService) ListPools(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *VenusService) ListPools(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	data, err := s.get("/pools", url.Values{})
 	if err != nil {
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetPoolLiquidity gets pool liquidity data across Venus lending pools.
-func (s *VenusService) GetPoolLiquidity(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *VenusService) GetPoolLiquidity(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	data, err := s.get("/pools/liquidity", url.Values{})
 	if err != nil {
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }

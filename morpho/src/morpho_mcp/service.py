@@ -127,18 +127,18 @@ class MorphoService:
 
     async def aclose(self) -> None:
         """Close the HTTP client. Idempotent."""
-        await self._client.aclose()
+        await self._http.aclose()
 
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
 
-    def _gql(self, query: str, variables: dict | None = None) -> dict:
+    async def _gql(self, query: str, variables: dict | None = None) -> dict:
         """Execute a GraphQL query and return the data dict."""
         body: dict[str, Any] = {"query": query}
         if variables:
             body["variables"] = variables
-        resp = self._http.post(_GRAPHQL_URL, json=body)
+        resp = await self._http.post(_GRAPHQL_URL, json=body)
         resp.raise_for_status()
         result = resp.json()
         if "errors" in result:
@@ -238,7 +238,9 @@ class MorphoService:
     # RPC implementations
     # ------------------------------------------------------------------
 
-    async def ListMarkets(self, request: Any, context: Any = None) -> pb.ListMarketsResponse:
+    async def ListMarkets(
+        self, request: Any, context: Any = None
+    ) -> pb.ListMarketsResponse:
         first = request.first if hasattr(request, "first") and request.first else 10
         first = min(first, 100)
         skip = request.skip if hasattr(request, "skip") and request.skip else 0
@@ -260,12 +262,14 @@ class MorphoService:
         if where:
             variables["where"] = where
 
-        data = self._gql(_MARKETS_QUERY, variables)
+        data = await self._gql(_MARKETS_QUERY, variables)
         items = (data.get("markets") or {}).get("items", [])
         markets = [self._parse_market(m) for m in items]
         return pb.ListMarketsResponse(markets=markets)
 
-    async def GetMarket(self, request: Any, context: Any = None) -> pb.GetMarketResponse:
+    async def GetMarket(
+        self, request: Any, context: Any = None
+    ) -> pb.GetMarketResponse:
         unique_key = getattr(request, "unique_key", "") or ""
         if not unique_key:
             raise ValueError("unique_key is required")
@@ -275,11 +279,13 @@ class MorphoService:
         if chain_id:
             variables["chainId"] = chain_id
 
-        data = self._gql(_MARKET_BY_KEY_QUERY, variables)
+        data = await self._gql(_MARKET_BY_KEY_QUERY, variables)
         raw = data.get("marketByUniqueKey", {})
         return pb.GetMarketResponse(market=self._parse_market(raw))
 
-    async def ListVaults(self, request: Any, context: Any = None) -> pb.ListVaultsResponse:
+    async def ListVaults(
+        self, request: Any, context: Any = None
+    ) -> pb.ListVaultsResponse:
         first = request.first if hasattr(request, "first") and request.first else 10
         first = min(first, 100)
         skip = request.skip if hasattr(request, "skip") and request.skip else 0
@@ -304,7 +310,7 @@ class MorphoService:
         if where:
             variables["where"] = where
 
-        data = self._gql(_VAULTS_QUERY, variables)
+        data = await self._gql(_VAULTS_QUERY, variables)
         items = (data.get("vaults") or {}).get("items", [])
         vaults = [self._parse_vault(v) for v in items]
         return pb.ListVaultsResponse(vaults=vaults)
@@ -319,7 +325,7 @@ class MorphoService:
         if chain_id:
             variables["chainId"] = chain_id
 
-        data = self._gql(_VAULT_BY_ADDRESS_QUERY, variables)
+        data = await self._gql(_VAULT_BY_ADDRESS_QUERY, variables)
         raw = data.get("vaultByAddress", {})
         return pb.GetVaultResponse(vault=self._parse_vault(raw))
 
@@ -341,7 +347,7 @@ class MorphoService:
 
         variables: dict[str, Any] = {"first": first, "skip": skip, "where": where}
 
-        data = self._gql(_MARKET_POSITIONS_QUERY, variables)
+        data = await self._gql(_MARKET_POSITIONS_QUERY, variables)
         items = (data.get("marketPositions") or {}).get("items", [])
 
         positions = []

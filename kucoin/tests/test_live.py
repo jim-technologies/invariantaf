@@ -43,7 +43,9 @@ def _cli_or_skip(live_server, service, method, params=None):
         pytest.skip(f"{method}: {type(exc).__name__}: {exc}")
     except Exception as exc:
         msg = str(exc)
-        if any(code in msg for code in ("429", "500", "502", "503", "Timeout", "timed out")):
+        if any(
+            code in msg for code in ("429", "500", "502", "503", "Timeout", "timed out")
+        ):
             pytest.skip(f"{method}: {msg[:120]}")
         raise
 
@@ -56,11 +58,11 @@ def live_server():
 
     base_url = (os.getenv("KUCOIN_BASE_URL") or DEFAULT_BASE_URL).rstrip("/")
 
-    srv = Server.from_descriptor(
-        DESCRIPTOR_PATH
-    )
+    srv = Server.from_descriptor(DESCRIPTOR_PATH)
     servicer = KucoinService(base_url=base_url, timeout=10.0)
-    srv.register(servicer, service_name="kucoin.v1.KucoinService")
+    from kucoin_mcp.gen.kucoin.v1 import kucoin_pb2_grpc as _native_rpc
+
+    _native_rpc.add_KucoinServiceServicer_to_server(servicer, srv)
     yield srv
     asyncio.run(srv.stop())
 
@@ -71,7 +73,9 @@ def live_server():
 class TestLiveGetAllTickers:
     def test_get_all_tickers(self, live_server):
         result = _cli_or_skip(
-            live_server, "KucoinService", "GetAllTickers",
+            live_server,
+            "kucoin.v1.KucoinService",
+            "GetAllTickers",
         )
         assert "time" in result
         assert "ticker" in result
@@ -91,7 +95,9 @@ class TestLiveGetAllTickers:
 class TestLiveGetTicker:
     def test_get_btc_usdt(self, live_server):
         result = _cli_or_skip(
-            live_server, "KucoinService", "GetTicker",
+            live_server,
+            "kucoin.v1.KucoinService",
+            "GetTicker",
             {"symbol": "BTC-USDT"},
         )
         assert result["symbol"] == "BTC-USDT"
@@ -102,7 +108,9 @@ class TestLiveGetTicker:
 
     def test_get_eth_usdt(self, live_server):
         result = _cli_or_skip(
-            live_server, "KucoinService", "GetTicker",
+            live_server,
+            "kucoin.v1.KucoinService",
+            "GetTicker",
             {"symbol": "ETH-USDT"},
         )
         assert result["symbol"] == "ETH-USDT"
@@ -115,7 +123,9 @@ class TestLiveGetTicker:
 class TestLiveGetOrderbook:
     def test_get_orderbook_btc(self, live_server):
         result = _cli_or_skip(
-            live_server, "KucoinService", "GetOrderbook",
+            live_server,
+            "kucoin.v1.KucoinService",
+            "GetOrderbook",
             {"symbol": "BTC-USDT"},
         )
         assert "bids" in result
@@ -128,7 +138,9 @@ class TestLiveGetOrderbook:
 
     def test_orderbook_has_time(self, live_server):
         result = _cli_or_skip(
-            live_server, "KucoinService", "GetOrderbook",
+            live_server,
+            "kucoin.v1.KucoinService",
+            "GetOrderbook",
             {"symbol": "BTC-USDT"},
         )
         assert "time" in result
@@ -142,7 +154,9 @@ class TestLiveGetKlines:
         now = int(time.time())
         one_day_ago = now - (24 * 60 * 60)
         result = _cli_or_skip(
-            live_server, "KucoinService", "GetKlines",
+            live_server,
+            "kucoin.v1.KucoinService",
+            "GetKlines",
             {
                 "symbol": "BTC-USDT",
                 "type": "1hour",
@@ -170,7 +184,9 @@ class TestLiveGetKlines:
 class TestLiveListSymbols:
     def test_list_all_symbols(self, live_server):
         result = _cli_or_skip(
-            live_server, "KucoinService", "ListSymbols",
+            live_server,
+            "kucoin.v1.KucoinService",
+            "ListSymbols",
         )
         assert "symbols" in result
         symbols = result["symbols"]
@@ -183,7 +199,9 @@ class TestLiveListSymbols:
 
     def test_list_symbols_has_trading_info(self, live_server):
         result = _cli_or_skip(
-            live_server, "KucoinService", "ListSymbols",
+            live_server,
+            "kucoin.v1.KucoinService",
+            "ListSymbols",
         )
         symbols = result["symbols"]
         assert len(symbols) > 0
@@ -197,7 +215,9 @@ class TestLiveListSymbols:
 class TestLiveGetFiat:
     def test_get_fiat_usd(self, live_server):
         result = _cli_or_skip(
-            live_server, "KucoinService", "GetFiat",
+            live_server,
+            "kucoin.v1.KucoinService",
+            "GetFiat",
             {"base": "USD"},
         )
         assert "prices" in result
@@ -211,7 +231,9 @@ class TestLiveGetFiat:
 
     def test_get_fiat_specific_currencies(self, live_server):
         result = _cli_or_skip(
-            live_server, "KucoinService", "GetFiat",
+            live_server,
+            "kucoin.v1.KucoinService",
+            "GetFiat",
             {"base": "USD", "currencies": "BTC,ETH"},
         )
         assert "prices" in result

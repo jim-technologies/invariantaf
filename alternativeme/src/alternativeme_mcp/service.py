@@ -45,12 +45,14 @@ class AlternativeMeService:
         raw_data = payload.get("data", []) if isinstance(payload, dict) else []
         entries = []
         for item in raw_data:
-            entries.append({
-                "value": str(item.get("value", "")),
-                "value_classification": item.get("value_classification", ""),
-                "timestamp": int(item.get("timestamp", 0)),
-                "time_until_update": str(item.get("time_until_update", "")),
-            })
+            entries.append(
+                {
+                    "value": str(item.get("value", "")),
+                    "value_classification": item.get("value_classification", ""),
+                    "timestamp": int(item.get("timestamp", 0)),
+                    "time_until_update": str(item.get("time_until_update", "")),
+                }
+            )
         return self._parse_message({"data": entries}, pb.GetFearGreedIndexResponse)
 
     async def GetGlobalMarketData(
@@ -93,13 +95,15 @@ class AlternativeMeService:
         raw_data = payload.get("data", []) if isinstance(payload, dict) else []
         listings = []
         for item in raw_data:
-            listings.append({
-                "id": str(item.get("id", "")),
-                "name": item.get("name", ""),
-                "symbol": item.get("symbol", ""),
-                "website_slug": item.get("website_slug", ""),
-                "rank": int(item.get("rank", 0)),
-            })
+            listings.append(
+                {
+                    "id": str(item.get("id", "")),
+                    "name": item.get("name", ""),
+                    "symbol": item.get("symbol", ""),
+                    "website_slug": item.get("website_slug", ""),
+                    "rank": int(item.get("rank", 0)),
+                }
+            )
         return self._parse_message({"data": listings}, pb.GetListingsResponse)
 
     # -------------------------
@@ -133,9 +137,15 @@ class AlternativeMeService:
             "price_btc": "",
             "market_cap_usd": str(usd.get("market_cap", "")),
             "volume_24h_usd": str(usd.get("volume_24h", "")),
-            "percent_change_1h": str(usd.get("percentage_change_1h", usd.get("percent_change_1h", ""))),
-            "percent_change_24h": str(usd.get("percentage_change_24h", usd.get("percent_change_24h", ""))),
-            "percent_change_7d": str(usd.get("percentage_change_7d", usd.get("percent_change_7d", ""))),
+            "percent_change_1h": str(
+                usd.get("percentage_change_1h", usd.get("percent_change_1h", ""))
+            ),
+            "percent_change_24h": str(
+                usd.get("percentage_change_24h", usd.get("percent_change_24h", ""))
+            ),
+            "percent_change_7d": str(
+                usd.get("percentage_change_7d", usd.get("percent_change_7d", ""))
+            ),
             "last_updated": int(item.get("last_updated", 0)),
         }
 

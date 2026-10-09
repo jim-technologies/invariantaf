@@ -32,9 +32,13 @@ func TestLiveListProducts(t *testing.T) {
 	skipUnlessLive(t)
 	svc := liveService()
 	resp, err := svc.ListProducts(context.Background(), mustStruct(t, map[string]any{}))
-	if err != nil { t.Fatalf("ListProducts: %v", err) }
-	fields := resp.GetFields()
-	if len(fields) == 0 { t.Fatal("empty response from ListProducts") }
+	if err != nil {
+		t.Fatalf("ListProducts: %v", err)
+	}
+	fields := replyFields(t, resp)
+	if len(fields) == 0 {
+		t.Fatal("empty response from ListProducts")
+	}
 	t.Logf("ListProducts response keys: %v", keysOf(fields))
 }
 
@@ -42,9 +46,13 @@ func TestLiveGetProduct(t *testing.T) {
 	skipUnlessLive(t)
 	svc := liveService()
 	resp, err := svc.GetProduct(context.Background(), mustStruct(t, map[string]any{"product_id": "BTC-USD"}))
-	if err != nil { t.Fatalf("GetProduct: %v", err) }
-	fields := resp.GetFields()
-	if len(fields) == 0 { t.Fatal("empty response from GetProduct") }
+	if err != nil {
+		t.Fatalf("GetProduct: %v", err)
+	}
+	fields := replyFields(t, resp)
+	if len(fields) == 0 {
+		t.Fatal("empty response from GetProduct")
+	}
 	t.Logf("GetProduct response keys: %v", keysOf(fields))
 }
 
@@ -52,9 +60,13 @@ func TestLiveGetProductTicker(t *testing.T) {
 	skipUnlessLive(t)
 	svc := liveService()
 	resp, err := svc.GetProductTicker(context.Background(), mustStruct(t, map[string]any{"product_id": "BTC-USD"}))
-	if err != nil { t.Fatalf("GetProductTicker: %v", err) }
-	fields := resp.GetFields()
-	if len(fields) == 0 { t.Fatal("empty response from GetProductTicker") }
+	if err != nil {
+		t.Fatalf("GetProductTicker: %v", err)
+	}
+	fields := replyFields(t, resp)
+	if len(fields) == 0 {
+		t.Fatal("empty response from GetProductTicker")
+	}
 	t.Logf("GetProductTicker response keys: %v", keysOf(fields))
 }
 
@@ -62,9 +74,13 @@ func TestLiveGetProductOrderbook(t *testing.T) {
 	skipUnlessLive(t)
 	svc := liveService()
 	resp, err := svc.GetProductOrderbook(context.Background(), mustStruct(t, map[string]any{"product_id": "BTC-USD"}))
-	if err != nil { t.Fatalf("GetProductOrderbook: %v", err) }
-	fields := resp.GetFields()
-	if len(fields) == 0 { t.Fatal("empty response from GetProductOrderbook") }
+	if err != nil {
+		t.Fatalf("GetProductOrderbook: %v", err)
+	}
+	fields := replyFields(t, resp)
+	if len(fields) == 0 {
+		t.Fatal("empty response from GetProductOrderbook")
+	}
 	t.Logf("GetProductOrderbook response keys: %v", keysOf(fields))
 }
 
@@ -72,9 +88,13 @@ func TestLiveGetProductCandles(t *testing.T) {
 	skipUnlessLive(t)
 	svc := liveService()
 	resp, err := svc.GetProductCandles(context.Background(), mustStruct(t, map[string]any{"product_id": "BTC-USD", "granularity": float64(3600)}))
-	if err != nil { t.Fatalf("GetProductCandles: %v", err) }
-	fields := resp.GetFields()
-	if len(fields) == 0 { t.Fatal("empty response from GetProductCandles") }
+	if err != nil {
+		t.Fatalf("GetProductCandles: %v", err)
+	}
+	fields := replyFields(t, resp)
+	if len(fields) == 0 {
+		t.Fatal("empty response from GetProductCandles")
+	}
 	t.Logf("GetProductCandles response keys: %v", keysOf(fields))
 }
 
@@ -82,9 +102,13 @@ func TestLiveGetProductTrades(t *testing.T) {
 	skipUnlessLive(t)
 	svc := liveService()
 	resp, err := svc.GetProductTrades(context.Background(), mustStruct(t, map[string]any{"product_id": "BTC-USD", "limit": float64(10)}))
-	if err != nil { t.Fatalf("GetProductTrades: %v", err) }
-	fields := resp.GetFields()
-	if len(fields) == 0 { t.Fatal("empty response from GetProductTrades") }
+	if err != nil {
+		t.Fatalf("GetProductTrades: %v", err)
+	}
+	fields := replyFields(t, resp)
+	if len(fields) == 0 {
+		t.Fatal("empty response from GetProductTrades")
+	}
 	t.Logf("GetProductTrades response keys: %v", keysOf(fields))
 }
 
@@ -92,9 +116,13 @@ func TestLiveGetProductStats(t *testing.T) {
 	skipUnlessLive(t)
 	svc := liveService()
 	resp, err := svc.GetProductStats(context.Background(), mustStruct(t, map[string]any{"product_id": "BTC-USD"}))
-	if err != nil { t.Fatalf("GetProductStats: %v", err) }
-	fields := resp.GetFields()
-	if len(fields) == 0 { t.Fatal("empty response from GetProductStats") }
+	if err != nil {
+		t.Fatalf("GetProductStats: %v", err)
+	}
+	fields := replyFields(t, resp)
+	if len(fields) == 0 {
+		t.Fatal("empty response from GetProductStats")
+	}
 	t.Logf("GetProductStats response keys: %v", keysOf(fields))
 }
 
@@ -104,4 +132,13 @@ func keysOf(fields map[string]*structpb.Value) []string {
 		keys = append(keys, k)
 	}
 	return keys
+}
+
+func replyFields(t *testing.T, body []byte) map[string]*structpb.Value {
+	t.Helper()
+	result := new(structpb.Struct)
+	if err := result.UnmarshalJSON(body); err != nil {
+		t.Fatal(err)
+	}
+	return result.GetFields()
 }

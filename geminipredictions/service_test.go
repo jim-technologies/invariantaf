@@ -37,7 +37,7 @@ func TestLiveListEvents(t *testing.T) {
 		t.Fatalf("ListEvents: %v", err)
 	}
 
-	fields := resp.GetFields()
+	fields := replyFields(t, resp)
 	events := fields["events"].GetListValue().GetValues()
 	if len(events) == 0 {
 		t.Fatal("empty response from ListEvents")
@@ -62,7 +62,7 @@ func TestLiveListEventsWithFilters(t *testing.T) {
 		t.Fatalf("ListEvents (filtered): %v", err)
 	}
 
-	fields := resp.GetFields()
+	fields := replyFields(t, resp)
 	events := fields["events"].GetListValue().GetValues()
 	t.Logf("ListEvents (active, Crypto) returned %d events", len(events))
 
@@ -86,7 +86,7 @@ func TestLiveGetEvent(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ListEvents: %v", err)
 	}
-	events := listResp.GetFields()["events"].GetListValue().GetValues()
+	events := replyFields(t, listResp)["events"].GetListValue().GetValues()
 	if len(events) == 0 {
 		t.Skip("no active events to test GetEvent")
 	}
@@ -102,7 +102,7 @@ func TestLiveGetEvent(t *testing.T) {
 		t.Fatalf("GetEvent(%s): %v", ticker, err)
 	}
 
-	fields := resp.GetFields()
+	fields := replyFields(t, resp)
 	event := fields["event"].GetStructValue().GetFields()
 	t.Logf("GetEvent(%s): title=%s type=%s",
 		ticker,
@@ -119,7 +119,7 @@ func TestLiveListNewlyListedEvents(t *testing.T) {
 		t.Fatalf("ListNewlyListedEvents: %v", err)
 	}
 
-	fields := resp.GetFields()
+	fields := replyFields(t, resp)
 	events := fields["events"].GetListValue().GetValues()
 	t.Logf("ListNewlyListedEvents returned %d events", len(events))
 }
@@ -133,7 +133,7 @@ func TestLiveListRecentlySettledEvents(t *testing.T) {
 		t.Fatalf("ListRecentlySettledEvents: %v", err)
 	}
 
-	fields := resp.GetFields()
+	fields := replyFields(t, resp)
 	events := fields["events"].GetListValue().GetValues()
 	t.Logf("ListRecentlySettledEvents returned %d events", len(events))
 }
@@ -147,7 +147,7 @@ func TestLiveListUpcomingEvents(t *testing.T) {
 		t.Fatalf("ListUpcomingEvents: %v", err)
 	}
 
-	fields := resp.GetFields()
+	fields := replyFields(t, resp)
 	events := fields["events"].GetListValue().GetValues()
 	t.Logf("ListUpcomingEvents returned %d events", len(events))
 }
@@ -161,7 +161,7 @@ func TestLiveListCategories(t *testing.T) {
 		t.Fatalf("ListCategories: %v", err)
 	}
 
-	fields := resp.GetFields()
+	fields := replyFields(t, resp)
 	categories := fields["categories"].GetListValue().GetValues()
 	if len(categories) == 0 {
 		t.Fatal("empty response from ListCategories")
@@ -184,4 +184,13 @@ func TestSmokeNewGeminiPredictionsService(t *testing.T) {
 	if svc.client == nil {
 		t.Fatal("client is nil")
 	}
+}
+
+func replyFields(t *testing.T, body []byte) map[string]*structpb.Value {
+	t.Helper()
+	result := new(structpb.Struct)
+	if err := result.UnmarshalJSON(body); err != nil {
+		t.Fatal(err)
+	}
+	return result.GetFields()
 }

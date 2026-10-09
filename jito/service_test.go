@@ -4,8 +4,8 @@ import (
 	"context"
 	"os"
 	"testing"
-	
-		"google.golang.org/protobuf/types/known/structpb"
+
+	"google.golang.org/protobuf/types/known/structpb"
 )
 
 func mustStruct(t *testing.T, m map[string]any) *structpb.Struct {
@@ -32,22 +32,30 @@ func TestLiveGetTipFloor(t *testing.T) {
 	skipUnlessLive(t)
 	svc := liveService()
 	resp, err := svc.GetTipFloor(context.Background(), mustStruct(t, map[string]any{}))
-	if err != nil { t.Fatalf("GetTipFloor: %v", err) }
-	fields := resp.GetFields()
+	if err != nil {
+		t.Fatalf("GetTipFloor: %v", err)
+	}
+	fields := replyFields(t, resp)
 	entries := fields["entries"]
-	if entries == nil { t.Fatal("response has no 'entries' field") }
+	if entries == nil {
+		t.Fatal("response has no 'entries' field")
+	}
 	items := entries.GetListValue().GetValues()
-	if len(items) == 0 { t.Fatal("expected at least 1 tip floor entry") }
+	if len(items) == 0 {
+		t.Fatal("expected at least 1 tip floor entry")
+	}
 	entry := items[0].GetStructValue().GetFields()
-	if len(entry) == 0 { t.Fatal("tip floor entry is empty") }
+	if len(entry) == 0 {
+		t.Fatal("tip floor entry is empty")
+	}
 	p50 := entry["landed_tips_50th_percentile"].GetNumberValue()
-	if p50 <= 0 { t.Errorf("landed_tips_50th_percentile = %v, want > 0", p50) }
+	if p50 <= 0 {
+		t.Errorf("landed_tips_50th_percentile = %v, want > 0", p50)
+	}
 	t.Logf("Tip floor entries: %d", len(items))
 	t.Logf("50th percentile tip: %v SOL", p50)
 	t.Logf("Entry keys: %v", keysOf(entry))
 }
-
-
 
 func keysOf(fields map[string]*structpb.Value) []string {
 	keys := make([]string, 0, len(fields))
@@ -55,4 +63,13 @@ func keysOf(fields map[string]*structpb.Value) []string {
 		keys = append(keys, k)
 	}
 	return keys
+}
+
+func replyFields(t *testing.T, body []byte) map[string]*structpb.Value {
+	t.Helper()
+	result := new(structpb.Struct)
+	if err := result.UnmarshalJSON(body); err != nil {
+		t.Fatal(err)
+	}
+	return result.GetFields()
 }

@@ -31,6 +31,7 @@ pytestmark = pytest.mark.skipif(
 
 def _cli_or_skip(live_server, service, method, params=None):
     import httpx
+
     args = [service, method]
     if params:
         args.extend(["-r", json.dumps(params)])
@@ -40,7 +41,9 @@ def _cli_or_skip(live_server, service, method, params=None):
         pytest.skip(f"{method}: {type(exc).__name__}: {exc}")
     except Exception as exc:
         msg = str(exc)
-        if any(code in msg for code in ("429", "500", "502", "503", "Timeout", "timed out")):
+        if any(
+            code in msg for code in ("429", "500", "502", "503", "Timeout", "timed out")
+        ):
             pytest.skip(f"{method}: {msg[:120]}")
         raise
 
@@ -48,16 +51,17 @@ def _cli_or_skip(live_server, service, method, params=None):
 @pytest.fixture(scope="module")
 def live_server():
     from invariant import Server
-    from cryptodotcom_mcp.gen.cryptodotcom.v1 import cryptodotcom_pb2 as _cryptodotcom_pb2  # noqa: F401
     from cryptodotcom_mcp.service import CryptoDotComService
 
     base_url = (os.getenv("CRYPTODOTCOM_BASE_URL") or DEFAULT_BASE_URL).rstrip("/")
 
-    srv = Server.from_descriptor(
-        DESCRIPTOR_PATH
-    )
+    srv = Server.from_descriptor(DESCRIPTOR_PATH)
     servicer = CryptoDotComService(base_url=base_url)
-    srv.register(servicer, service_name="cryptodotcom.v1.CryptoDotComService")
+    from cryptodotcom_mcp.gen.cryptodotcom.v1 import (
+        cryptodotcom_pb2_grpc as _native_rpc,
+    )
+
+    _native_rpc.add_CryptoDotComServiceServicer_to_server(servicer, srv)
     yield srv
     asyncio.run(srv.stop())
 
@@ -68,7 +72,9 @@ def live_server():
 class TestLiveGetInstruments:
     def test_list_instruments(self, live_server):
         result = _cli_or_skip(
-            live_server, "CryptoDotComService", "GetInstruments",
+            live_server,
+            "cryptodotcom.v1.CryptoDotComService",
+            "GetInstruments",
         )
         assert "data" in result
         data = result["data"]
@@ -86,7 +92,9 @@ class TestLiveGetInstruments:
 class TestLiveGetTickers:
     def test_single_ticker(self, live_server):
         result = _cli_or_skip(
-            live_server, "CryptoDotComService", "GetTickers",
+            live_server,
+            "cryptodotcom.v1.CryptoDotComService",
+            "GetTickers",
             {"instrument_name": "BTC_USDT"},
         )
         assert "data" in result
@@ -100,7 +108,9 @@ class TestLiveGetTickers:
 
     def test_all_tickers(self, live_server):
         result = _cli_or_skip(
-            live_server, "CryptoDotComService", "GetTickers",
+            live_server,
+            "cryptodotcom.v1.CryptoDotComService",
+            "GetTickers",
         )
         assert "data" in result
         data = result["data"]
@@ -114,7 +124,9 @@ class TestLiveGetTickers:
 class TestLiveGetOrderbook:
     def test_orderbook(self, live_server):
         result = _cli_or_skip(
-            live_server, "CryptoDotComService", "GetOrderbook",
+            live_server,
+            "cryptodotcom.v1.CryptoDotComService",
+            "GetOrderbook",
             {"instrument_name": "BTC_USDT", "depth": 5},
         )
         assert "data" in result
@@ -136,7 +148,9 @@ class TestLiveGetOrderbook:
 class TestLiveGetCandlestick:
     def test_daily_candles(self, live_server):
         result = _cli_or_skip(
-            live_server, "CryptoDotComService", "GetCandlestick",
+            live_server,
+            "cryptodotcom.v1.CryptoDotComService",
+            "GetCandlestick",
             {"instrument_name": "BTC_USDT", "timeframe": "1D"},
         )
         assert "data" in result
@@ -157,7 +171,9 @@ class TestLiveGetCandlestick:
 class TestLiveGetTrades:
     def test_recent_trades(self, live_server):
         result = _cli_or_skip(
-            live_server, "CryptoDotComService", "GetTrades",
+            live_server,
+            "cryptodotcom.v1.CryptoDotComService",
+            "GetTrades",
             {"instrument_name": "BTC_USDT"},
         )
         assert "data" in result

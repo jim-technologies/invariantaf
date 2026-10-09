@@ -66,7 +66,9 @@ class CoinMarketCalService:
         payload = await self._get("/categories")
         categories = self._extract_body(payload)
         if isinstance(categories, list):
-            return self._parse_message({"categories": categories}, pb.ListCategoriesResponse)
+            return self._parse_message(
+                {"categories": categories}, pb.ListCategoriesResponse
+            )
         return self._parse_message({"categories": []}, pb.ListCategoriesResponse)
 
     async def ListCoins(
@@ -77,12 +79,14 @@ class CoinMarketCalService:
         if isinstance(coins, list):
             normalized = []
             for c in coins:
-                normalized.append({
-                    "id": str(c.get("id", "")),
-                    "name": c.get("name", ""),
-                    "symbol": c.get("symbol", ""),
-                    "rank": c.get("rank", 0),
-                })
+                normalized.append(
+                    {
+                        "id": str(c.get("id", "")),
+                        "name": c.get("name", ""),
+                        "symbol": c.get("symbol", ""),
+                        "rank": c.get("rank", 0),
+                    }
+                )
             return self._parse_message({"coins": normalized}, pb.ListCoinsResponse)
         return self._parse_message({"coins": []}, pb.ListCoinsResponse)
 
@@ -122,24 +126,32 @@ class CoinMarketCalService:
         """Normalize a single event from the API into proto-compatible dict."""
         coins = []
         for c in raw.get("coins", []):
-            coins.append({
-                "id": str(c.get("id", "")),
-                "name": c.get("name", c.get("fullName", "")),
-                "symbol": c.get("symbol", ""),
-                "rank": c.get("rank", 0),
-            })
+            coins.append(
+                {
+                    "id": str(c.get("id", "")),
+                    "name": c.get("name", c.get("fullName", "")),
+                    "symbol": c.get("symbol", ""),
+                    "rank": c.get("rank", 0),
+                }
+            )
 
         categories = []
         for cat in raw.get("categories", []):
-            categories.append({
-                "id": cat.get("id", 0),
-                "name": cat.get("name", ""),
-            })
+            categories.append(
+                {
+                    "id": cat.get("id", 0),
+                    "name": cat.get("name", ""),
+                }
+            )
 
         return {
             "id": raw.get("id", 0),
-            "title": raw.get("title", {}).get("en", "") if isinstance(raw.get("title"), dict) else str(raw.get("title", "")),
-            "description": raw.get("description", {}).get("en", "") if isinstance(raw.get("description"), dict) else str(raw.get("description", "")),
+            "title": raw.get("title", {}).get("en", "")
+            if isinstance(raw.get("title"), dict)
+            else str(raw.get("title", "")),
+            "description": raw.get("description", {}).get("en", "")
+            if isinstance(raw.get("description"), dict)
+            else str(raw.get("description", "")),
             "source": raw.get("source", ""),
             "is_hot": raw.get("is_hot", raw.get("isHot", False)),
             "date_event": raw.get("date_event", ""),
@@ -147,7 +159,9 @@ class CoinMarketCalService:
             "coins": coins,
             "categories": categories,
             "percentage": raw.get("percentage", 0),
-            "positive_vote_count": raw.get("positive_vote_count", raw.get("positiveVoteCount", 0)),
+            "positive_vote_count": raw.get(
+                "positive_vote_count", raw.get("positiveVoteCount", 0)
+            ),
             "vote_count": raw.get("vote_count", raw.get("voteCount", 0)),
         }
 

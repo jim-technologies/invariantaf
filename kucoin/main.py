@@ -10,6 +10,9 @@ from invariant import Server
 
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
+from kucoin_mcp.gen.kucoin.v1 import kucoin_pb2_grpc as pb_grpc
+
+
 from kucoin_mcp.gen.kucoin.v1 import kucoin_pb2 as _kucoin_pb2  # noqa: F401
 from kucoin_mcp.service import KucoinService
 
@@ -47,7 +50,7 @@ async def _serve(server: Server, modes: dict) -> None:
 def main() -> None:
     server = Server.from_descriptor(str(DESCRIPTOR))
     servicer = KucoinService()
-    server.register(servicer, service_name="kucoin.v1.KucoinService")
+    pb_grpc.add_KucoinServiceServicer_to_server(servicer, server)
     asyncio.run(_serve(server, _projection_from_argv(sys.argv[1:])))
 
 

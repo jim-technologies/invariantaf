@@ -1,0 +1,15 @@
+version: v2
+plugins:
+  - protoc_builtin: go
+    out: ..
+    opt:
+      - paths=import
+      - module=github.com/jim-technologies/invariantaf/slack
+      - Mslack/v1/slack.proto=github.com/jim-technologies/invariantaf/slack/proto/slack/v1;slackv1
+  - local: protoc-gen-go-grpc
+    out: ..
+    opt:
+      - paths=import
+      - module=github.com/jim-technologies/invariantaf/slack
+      - Mslack/v1/slack.proto=github.com/jim-technologies/invariantaf/slack/proto/slack/v1;slackv1
+      - require_unimplemented_servers=false

@@ -65,9 +65,9 @@ func (s *CoinpaprikaService) get(path string, params url.Values) (map[string]any
 	}
 
 	var result map[string]any
-	if err := json.Unmarshal(body, &result); err != nil {
+	if err := decodeProviderJSON(body, &result); err != nil {
 		var arr []any
-		if err2 := json.Unmarshal(body, &arr); err2 == nil {
+		if err2 := decodeProviderJSON(body, &arr); err2 == nil {
 			result = map[string]any{"items": arr}
 		} else {
 			return nil, fmt.Errorf("decode response: %w (body: %s)", err, string(body))
@@ -86,12 +86,8 @@ func getString(fields map[string]*structpb.Value, key, def string) string {
 }
 
 // helper: convert API response to structpb.Struct.
-func toStruct(data map[string]any) (*structpb.Struct, error) {
-	result, err := structpb.NewStruct(data)
-	if err != nil {
-		return nil, fmt.Errorf("convert to struct: %w", err)
-	}
-	return result, nil
+func responseJSON(data map[string]any) (json.RawMessage, error) {
+	return json.Marshal(data)
 }
 
 // transformTicker flattens quotes.USD into quotes_usd for protobuf mapping.
@@ -137,16 +133,16 @@ func transformMarket(data map[string]any) map[string]any {
 }
 
 // GetGlobal gets global crypto market statistics.
-func (s *CoinpaprikaService) GetGlobal(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *CoinpaprikaService) GetGlobal(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	data, err := s.get("/global", nil)
 	if err != nil {
 		return nil, err
 	}
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // ListCoins lists all coins.
-func (s *CoinpaprikaService) ListCoins(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *CoinpaprikaService) ListCoins(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	data, err := s.get("/coins", nil)
 	if err != nil {
 		return nil, err
@@ -157,11 +153,11 @@ func (s *CoinpaprikaService) ListCoins(_ context.Context, req *structpb.Struct) 
 	if !ok {
 		coins = []any{}
 	}
-	return toStruct(map[string]any{"coins": coins})
+	return responseJSON(map[string]any{"coins": coins})
 }
 
 // GetCoinById gets detailed info for a specific coin.
-func (s *CoinpaprikaService) GetCoinById(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *CoinpaprikaService) GetCoinById(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	coinID := getString(fields, "coin_id", "")
 	if coinID == "" {
@@ -172,11 +168,11 @@ func (s *CoinpaprikaService) GetCoinById(_ context.Context, req *structpb.Struct
 	if err != nil {
 		return nil, err
 	}
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetTickerById gets ticker (price data) for a specific coin.
-func (s *CoinpaprikaService) GetTickerById(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *CoinpaprikaService) GetTickerById(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	coinID := getString(fields, "coin_id", "")
 	if coinID == "" {
@@ -187,11 +183,11 @@ func (s *CoinpaprikaService) GetTickerById(_ context.Context, req *structpb.Stru
 	if err != nil {
 		return nil, err
 	}
-	return toStruct(transformTicker(data))
+	return responseJSON(transformTicker(data))
 }
 
 // ListTickers lists all tickers.
-func (s *CoinpaprikaService) ListTickers(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *CoinpaprikaService) ListTickers(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	data, err := s.get("/tickers", nil)
 	if err != nil {
 		return nil, err
@@ -215,11 +211,11 @@ func (s *CoinpaprikaService) ListTickers(_ context.Context, req *structpb.Struct
 			tickers[i] = t
 		}
 	}
-	return toStruct(map[string]any{"tickers": tickers})
+	return responseJSON(map[string]any{"tickers": tickers})
 }
 
 // GetCoinMarkets gets markets/exchanges where a coin is traded.
-func (s *CoinpaprikaService) GetCoinMarkets(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *CoinpaprikaService) GetCoinMarkets(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	coinID := getString(fields, "coin_id", "")
 	if coinID == "" {
@@ -249,11 +245,11 @@ func (s *CoinpaprikaService) GetCoinMarkets(_ context.Context, req *structpb.Str
 			markets[i] = m
 		}
 	}
-	return toStruct(map[string]any{"markets": markets})
+	return responseJSON(map[string]any{"markets": markets})
 }
 
 // GetCoinOHLCV gets latest OHLCV data for a coin.
-func (s *CoinpaprikaService) GetCoinOHLCV(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *CoinpaprikaService) GetCoinOHLCV(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	coinID := getString(fields, "coin_id", "")
 	if coinID == "" {
@@ -270,11 +266,11 @@ func (s *CoinpaprikaService) GetCoinOHLCV(_ context.Context, req *structpb.Struc
 	if !ok {
 		entries = []any{}
 	}
-	return toStruct(map[string]any{"entries": entries})
+	return responseJSON(map[string]any{"entries": entries})
 }
 
 // SearchCoins searches coins by query string.
-func (s *CoinpaprikaService) SearchCoins(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *CoinpaprikaService) SearchCoins(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	query := getString(fields, "query", "")
 	if query == "" {
@@ -294,5 +290,5 @@ func (s *CoinpaprikaService) SearchCoins(_ context.Context, req *structpb.Struct
 	if !ok {
 		currencies = []any{}
 	}
-	return toStruct(map[string]any{"currencies": currencies})
+	return responseJSON(map[string]any{"currencies": currencies})
 }

@@ -44,9 +44,13 @@ class DeribitService:
             query["expired"] = request.expired
 
         payload = await self._get("/api/v2/public/get_instruments", query)
-        instruments = payload if isinstance(payload, list) else payload.get("result", payload)
+        instruments = (
+            payload if isinstance(payload, list) else payload.get("result", payload)
+        )
         if isinstance(instruments, list):
-            return self._parse_message({"instruments": instruments}, pb.GetInstrumentsResponse)
+            return self._parse_message(
+                {"instruments": instruments}, pb.GetInstrumentsResponse
+            )
         return self._parse_message({"instruments": []}, pb.GetInstrumentsResponse)
 
     async def GetOrderbook(
@@ -84,7 +88,9 @@ class DeribitService:
         transformed = []
         for s in summaries:
             transformed.append(self._transform_book_summary(s))
-        return self._parse_message({"summaries": transformed}, pb.GetBookSummaryByCurrencyResponse)
+        return self._parse_message(
+            {"summaries": transformed}, pb.GetBookSummaryByCurrencyResponse
+        )
 
     async def GetHistoricalVolatility(
         self, request: pb.GetHistoricalVolatilityRequest, context: Any = None
@@ -97,7 +103,9 @@ class DeribitService:
         if isinstance(result, list):
             for item in result:
                 if isinstance(item, list) and len(item) >= 2:
-                    points.append({"timestamp": int(item[0]), "volatility": float(item[1])})
+                    points.append(
+                        {"timestamp": int(item[0]), "volatility": float(item[1])}
+                    )
         return self._parse_message({"data": points}, pb.GetHistoricalVolatilityResponse)
 
     async def GetFundingRateValue(
@@ -112,8 +120,12 @@ class DeribitService:
         payload = await self._get("/api/v2/public/get_funding_rate_value", query)
         result = self._extract_result(payload)
         if isinstance(result, (int, float)):
-            return self._parse_message({"funding_rate": float(result)}, pb.GetFundingRateValueResponse)
-        return self._parse_message({"funding_rate": 0.0}, pb.GetFundingRateValueResponse)
+            return self._parse_message(
+                {"funding_rate": float(result)}, pb.GetFundingRateValueResponse
+            )
+        return self._parse_message(
+            {"funding_rate": 0.0}, pb.GetFundingRateValueResponse
+        )
 
     async def GetIndexPrice(
         self, request: pb.GetIndexPriceRequest, context: Any = None

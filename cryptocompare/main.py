@@ -11,8 +11,10 @@ from invariant import Server
 
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
+from cryptocompare_mcp.gen.cryptocompare.v1 import cryptocompare_pb2_grpc as pb_grpc
+
+
 # Ensure generated protobuf descriptors are loaded in the default descriptor pool.
-from cryptocompare_mcp.gen.cryptocompare.v1 import cryptocompare_pb2 as _cryptocompare_pb2  # noqa: F401
 from cryptocompare_mcp.service import DEFAULT_BASE_URL, CryptoCompareService
 
 DESCRIPTOR = Path(__file__).parent / "descriptor.binpb"
@@ -56,7 +58,7 @@ def main() -> None:
     base_url = (_env("CRYPTOCOMPARE_BASE_URL") or DEFAULT_BASE_URL).rstrip("/")
 
     servicer = CryptoCompareService(base_url=base_url)
-    server.register(servicer, service_name="cryptocompare.v1.CryptoCompareService")
+    pb_grpc.add_CryptoCompareServiceServicer_to_server(servicer, server)
 
     asyncio.run(_serve(server, _projection_from_argv(sys.argv[1:])))
 

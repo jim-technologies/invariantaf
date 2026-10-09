@@ -1,0 +1,15 @@
+version: v2
+plugins:
+  - protoc_builtin: go
+    out: ..
+    opt:
+      - paths=import
+      - module=github.com/jim-technologies/invariantaf/alternativeme
+      - Malternativeme/v1/alternativeme.proto=github.com/jim-technologies/invariantaf/alternativeme/proto/alternativeme/v1;alternativemev1
+  - local: protoc-gen-go-grpc
+    out: ..
+    opt:
+      - paths=import
+      - module=github.com/jim-technologies/invariantaf/alternativeme
+      - Malternativeme/v1/alternativeme.proto=github.com/jim-technologies/invariantaf/alternativeme/proto/alternativeme/v1;alternativemev1
+      - require_unimplemented_servers=false

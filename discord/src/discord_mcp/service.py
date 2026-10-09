@@ -65,7 +65,9 @@ class DiscordService:
             method, url, params=cleaned_params or None, json=body, headers=headers
         )
         if r.status_code >= 400:
-            raise RuntimeError(f"discord {method} {path} returned {r.status_code}: {r.text}")
+            raise RuntimeError(
+                f"discord {method} {path} returned {r.status_code}: {r.text}"
+            )
         if r.status_code == 204 or not r.content:
             return {"status": r.status_code}
         return r.json()
@@ -85,7 +87,9 @@ class DiscordService:
         if struct_field is None:
             return {}
         try:
-            raw = json_format.MessageToJson(struct_field, preserving_proto_field_name=True)
+            raw = json_format.MessageToJson(
+                struct_field, preserving_proto_field_name=True
+            )
         except Exception:
             return {}
         import json as _json
@@ -98,37 +102,55 @@ class DiscordService:
 
     # -- users --
 
-    async def GetCurrentUser(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def GetCurrentUser(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         return self._wrap(await self._request("GET", "/users/@me"))
 
     async def GetUser(self, request: Any, context: Any = None) -> struct_pb2.Struct:
         return self._wrap(await self._request("GET", f"/users/{request.user_id}"))
 
-    async def GetCurrentUserGuilds(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def GetCurrentUserGuilds(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         params = {
             "before": request.before,
             "after": request.after,
             "limit": request.limit,
             "with_counts": request.with_counts,
         }
-        return self._wrap(await self._request("GET", "/users/@me/guilds", params=params))
+        return self._wrap(
+            await self._request("GET", "/users/@me/guilds", params=params)
+        )
 
     async def LeaveGuild(self, request: Any, context: Any = None) -> struct_pb2.Struct:
-        return self._wrap(await self._request("DELETE", f"/users/@me/guilds/{request.guild_id}"))
+        return self._wrap(
+            await self._request("DELETE", f"/users/@me/guilds/{request.guild_id}")
+        )
 
     async def CreateDM(self, request: Any, context: Any = None) -> struct_pb2.Struct:
         return self._wrap(
-            await self._request("POST", "/users/@me/channels", body={"recipient_id": request.recipient_id})
+            await self._request(
+                "POST",
+                "/users/@me/channels",
+                body={"recipient_id": request.recipient_id},
+            )
         )
 
     # -- guilds --
 
     async def GetGuild(self, request: Any, context: Any = None) -> struct_pb2.Struct:
         params = {"with_counts": request.with_counts}
-        return self._wrap(await self._request("GET", f"/guilds/{request.guild_id}", params=params))
+        return self._wrap(
+            await self._request("GET", f"/guilds/{request.guild_id}", params=params)
+        )
 
-    async def GetGuildPreview(self, request: Any, context: Any = None) -> struct_pb2.Struct:
-        return self._wrap(await self._request("GET", f"/guilds/{request.guild_id}/preview"))
+    async def GetGuildPreview(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
+        return self._wrap(
+            await self._request("GET", f"/guilds/{request.guild_id}/preview")
+        )
 
     async def ModifyGuild(self, request: Any, context: Any = None) -> struct_pb2.Struct:
         return self._wrap(
@@ -140,10 +162,16 @@ class DiscordService:
             )
         )
 
-    async def GetGuildChannels(self, request: Any, context: Any = None) -> struct_pb2.Struct:
-        return self._wrap(await self._request("GET", f"/guilds/{request.guild_id}/channels"))
+    async def GetGuildChannels(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
+        return self._wrap(
+            await self._request("GET", f"/guilds/{request.guild_id}/channels")
+        )
 
-    async def CreateGuildChannel(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def CreateGuildChannel(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         return self._wrap(
             await self._request(
                 "POST",
@@ -153,22 +181,38 @@ class DiscordService:
             )
         )
 
-    async def ListGuildMembers(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def ListGuildMembers(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         params = {"limit": request.limit, "after": request.after}
-        return self._wrap(await self._request("GET", f"/guilds/{request.guild_id}/members", params=params))
+        return self._wrap(
+            await self._request(
+                "GET", f"/guilds/{request.guild_id}/members", params=params
+            )
+        )
 
-    async def SearchGuildMembers(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def SearchGuildMembers(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         params = {"query": request.query, "limit": request.limit}
         return self._wrap(
-            await self._request("GET", f"/guilds/{request.guild_id}/members/search", params=params)
+            await self._request(
+                "GET", f"/guilds/{request.guild_id}/members/search", params=params
+            )
         )
 
-    async def GetGuildMember(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def GetGuildMember(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         return self._wrap(
-            await self._request("GET", f"/guilds/{request.guild_id}/members/{request.user_id}")
+            await self._request(
+                "GET", f"/guilds/{request.guild_id}/members/{request.user_id}"
+            )
         )
 
-    async def ModifyGuildMember(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def ModifyGuildMember(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         return self._wrap(
             await self._request(
                 "PATCH",
@@ -178,7 +222,9 @@ class DiscordService:
             )
         )
 
-    async def RemoveGuildMember(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def RemoveGuildMember(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         return self._wrap(
             await self._request(
                 "DELETE",
@@ -187,7 +233,9 @@ class DiscordService:
             )
         )
 
-    async def CreateGuildBan(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def CreateGuildBan(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         body: dict[str, Any] = {}
         if request.delete_message_seconds:
             body["delete_message_seconds"] = int(request.delete_message_seconds)
@@ -200,7 +248,9 @@ class DiscordService:
             )
         )
 
-    async def RemoveGuildBan(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def RemoveGuildBan(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         return self._wrap(
             await self._request(
                 "DELETE",
@@ -209,18 +259,30 @@ class DiscordService:
             )
         )
 
-    async def GetGuildBans(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def GetGuildBans(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         params = {
             "limit": request.limit,
             "before": request.before,
             "after": request.after,
         }
-        return self._wrap(await self._request("GET", f"/guilds/{request.guild_id}/bans", params=params))
+        return self._wrap(
+            await self._request(
+                "GET", f"/guilds/{request.guild_id}/bans", params=params
+            )
+        )
 
-    async def GetGuildRoles(self, request: Any, context: Any = None) -> struct_pb2.Struct:
-        return self._wrap(await self._request("GET", f"/guilds/{request.guild_id}/roles"))
+    async def GetGuildRoles(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
+        return self._wrap(
+            await self._request("GET", f"/guilds/{request.guild_id}/roles")
+        )
 
-    async def CreateGuildRole(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def CreateGuildRole(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         return self._wrap(
             await self._request(
                 "POST",
@@ -230,7 +292,9 @@ class DiscordService:
             )
         )
 
-    async def ModifyGuildRole(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def ModifyGuildRole(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         return self._wrap(
             await self._request(
                 "PATCH",
@@ -240,7 +304,9 @@ class DiscordService:
             )
         )
 
-    async def DeleteGuildRole(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def DeleteGuildRole(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         return self._wrap(
             await self._request(
                 "DELETE",
@@ -249,7 +315,9 @@ class DiscordService:
             )
         )
 
-    async def AddGuildMemberRole(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def AddGuildMemberRole(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         return self._wrap(
             await self._request(
                 "PUT",
@@ -258,7 +326,9 @@ class DiscordService:
             )
         )
 
-    async def RemoveGuildMemberRole(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def RemoveGuildMemberRole(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         return self._wrap(
             await self._request(
                 "DELETE",
@@ -267,13 +337,23 @@ class DiscordService:
             )
         )
 
-    async def GetGuildInvites(self, request: Any, context: Any = None) -> struct_pb2.Struct:
-        return self._wrap(await self._request("GET", f"/guilds/{request.guild_id}/invites"))
+    async def GetGuildInvites(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
+        return self._wrap(
+            await self._request("GET", f"/guilds/{request.guild_id}/invites")
+        )
 
-    async def ListGuildEmojis(self, request: Any, context: Any = None) -> struct_pb2.Struct:
-        return self._wrap(await self._request("GET", f"/guilds/{request.guild_id}/emojis"))
+    async def ListGuildEmojis(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
+        return self._wrap(
+            await self._request("GET", f"/guilds/{request.guild_id}/emojis")
+        )
 
-    async def GetGuildAuditLog(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def GetGuildAuditLog(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         params = {
             "user_id": request.user_id,
             "action_type": request.action_type,
@@ -281,7 +361,9 @@ class DiscordService:
             "limit": request.limit,
         }
         return self._wrap(
-            await self._request("GET", f"/guilds/{request.guild_id}/audit-logs", params=params)
+            await self._request(
+                "GET", f"/guilds/{request.guild_id}/audit-logs", params=params
+            )
         )
 
     # -- channels & messages --
@@ -289,7 +371,9 @@ class DiscordService:
     async def GetChannel(self, request: Any, context: Any = None) -> struct_pb2.Struct:
         return self._wrap(await self._request("GET", f"/channels/{request.channel_id}"))
 
-    async def ModifyChannel(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def ModifyChannel(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         return self._wrap(
             await self._request(
                 "PATCH",
@@ -299,12 +383,18 @@ class DiscordService:
             )
         )
 
-    async def DeleteChannel(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def DeleteChannel(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         return self._wrap(
-            await self._request("DELETE", f"/channels/{request.channel_id}", reason=request.reason)
+            await self._request(
+                "DELETE", f"/channels/{request.channel_id}", reason=request.reason
+            )
         )
 
-    async def GetChannelMessages(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def GetChannelMessages(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         params = {
             "around": request.around,
             "before": request.before,
@@ -312,17 +402,23 @@ class DiscordService:
             "limit": request.limit,
         }
         return self._wrap(
-            await self._request("GET", f"/channels/{request.channel_id}/messages", params=params)
+            await self._request(
+                "GET", f"/channels/{request.channel_id}/messages", params=params
+            )
         )
 
-    async def GetChannelMessage(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def GetChannelMessage(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         return self._wrap(
             await self._request(
                 "GET", f"/channels/{request.channel_id}/messages/{request.message_id}"
             )
         )
 
-    async def CreateMessage(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def CreateMessage(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         return self._wrap(
             await self._request(
                 "POST",
@@ -340,7 +436,9 @@ class DiscordService:
             )
         )
 
-    async def DeleteMessage(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def DeleteMessage(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         return self._wrap(
             await self._request(
                 "DELETE",
@@ -349,7 +447,9 @@ class DiscordService:
             )
         )
 
-    async def CrosspostMessage(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def CrosspostMessage(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         return self._wrap(
             await self._request(
                 "POST",
@@ -357,7 +457,9 @@ class DiscordService:
             )
         )
 
-    async def BulkDeleteMessages(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def BulkDeleteMessages(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         ids = list(request.message_ids)
         body = {"messages": ids}
         return self._wrap(
@@ -369,28 +471,36 @@ class DiscordService:
             )
         )
 
-    async def CreateReaction(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def CreateReaction(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         path = (
             f"/channels/{request.channel_id}/messages/{request.message_id}"
             f"/reactions/{self._encode_emoji(request.emoji)}/@me"
         )
         return self._wrap(await self._request("PUT", path))
 
-    async def DeleteOwnReaction(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def DeleteOwnReaction(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         path = (
             f"/channels/{request.channel_id}/messages/{request.message_id}"
             f"/reactions/{self._encode_emoji(request.emoji)}/@me"
         )
         return self._wrap(await self._request("DELETE", path))
 
-    async def DeleteUserReaction(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def DeleteUserReaction(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         path = (
             f"/channels/{request.channel_id}/messages/{request.message_id}"
             f"/reactions/{self._encode_emoji(request.emoji)}/{request.user_id}"
         )
         return self._wrap(await self._request("DELETE", path))
 
-    async def GetReactions(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def GetReactions(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         params = {"after": request.after, "limit": request.limit}
         path = (
             f"/channels/{request.channel_id}/messages/{request.message_id}"
@@ -398,17 +508,27 @@ class DiscordService:
         )
         return self._wrap(await self._request("GET", path, params=params))
 
-    async def DeleteAllReactions(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def DeleteAllReactions(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         path = f"/channels/{request.channel_id}/messages/{request.message_id}/reactions"
         if request.emoji:
             path += f"/{self._encode_emoji(request.emoji)}"
         return self._wrap(await self._request("DELETE", path))
 
-    async def TriggerTypingIndicator(self, request: Any, context: Any = None) -> struct_pb2.Struct:
-        return self._wrap(await self._request("POST", f"/channels/{request.channel_id}/typing"))
+    async def TriggerTypingIndicator(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
+        return self._wrap(
+            await self._request("POST", f"/channels/{request.channel_id}/typing")
+        )
 
-    async def GetPinnedMessages(self, request: Any, context: Any = None) -> struct_pb2.Struct:
-        return self._wrap(await self._request("GET", f"/channels/{request.channel_id}/pins"))
+    async def GetPinnedMessages(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
+        return self._wrap(
+            await self._request("GET", f"/channels/{request.channel_id}/pins")
+        )
 
     async def PinMessage(self, request: Any, context: Any = None) -> struct_pb2.Struct:
         return self._wrap(
@@ -419,7 +539,9 @@ class DiscordService:
             )
         )
 
-    async def UnpinMessage(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def UnpinMessage(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         return self._wrap(
             await self._request(
                 "DELETE",
@@ -428,7 +550,9 @@ class DiscordService:
             )
         )
 
-    async def CreateChannelInvite(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def CreateChannelInvite(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         return self._wrap(
             await self._request(
                 "POST",
@@ -438,8 +562,12 @@ class DiscordService:
             )
         )
 
-    async def GetChannelInvites(self, request: Any, context: Any = None) -> struct_pb2.Struct:
-        return self._wrap(await self._request("GET", f"/channels/{request.channel_id}/invites"))
+    async def GetChannelInvites(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
+        return self._wrap(
+            await self._request("GET", f"/channels/{request.channel_id}/invites")
+        )
 
     async def StartThread(self, request: Any, context: Any = None) -> struct_pb2.Struct:
         return self._wrap(
@@ -452,24 +580,36 @@ class DiscordService:
         )
 
     async def JoinThread(self, request: Any, context: Any = None) -> struct_pb2.Struct:
-        return self._wrap(await self._request("PUT", f"/channels/{request.channel_id}/thread-members/@me"))
+        return self._wrap(
+            await self._request(
+                "PUT", f"/channels/{request.channel_id}/thread-members/@me"
+            )
+        )
 
     async def LeaveThread(self, request: Any, context: Any = None) -> struct_pb2.Struct:
         return self._wrap(
-            await self._request("DELETE", f"/channels/{request.channel_id}/thread-members/@me")
+            await self._request(
+                "DELETE", f"/channels/{request.channel_id}/thread-members/@me"
+            )
         )
 
-    async def ListThreadMembers(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def ListThreadMembers(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         params = {
             "with_member": request.with_member,
             "after": request.after,
             "limit": request.limit,
         }
         return self._wrap(
-            await self._request("GET", f"/channels/{request.channel_id}/thread-members", params=params)
+            await self._request(
+                "GET", f"/channels/{request.channel_id}/thread-members", params=params
+            )
         )
 
-    async def ExecuteWebhook(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def ExecuteWebhook(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         params = {"wait": request.wait, "thread_id": request.thread_id}
         return self._wrap(
             await self._request(
@@ -481,15 +621,21 @@ class DiscordService:
             )
         )
 
-    async def DeleteInvite(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def DeleteInvite(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         return self._wrap(
-            await self._request("DELETE", f"/invites/{request.invite_code}", reason=request.reason)
+            await self._request(
+                "DELETE", f"/invites/{request.invite_code}", reason=request.reason
+            )
         )
 
     async def GetGateway(self, request: Any, context: Any = None) -> struct_pb2.Struct:
         return self._wrap(await self._request("GET", "/gateway", require_auth=False))
 
-    async def GetGatewayBot(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def GetGatewayBot(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         return self._wrap(await self._request("GET", "/gateway/bot"))
 
 

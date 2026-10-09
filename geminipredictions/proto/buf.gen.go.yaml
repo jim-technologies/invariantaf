@@ -1,0 +1,15 @@
+version: v2
+plugins:
+  - protoc_builtin: go
+    out: ..
+    opt:
+      - paths=import
+      - module=github.com/jim-technologies/invariantaf/geminipredictions
+      - Mgeminipredictions/v1/geminipredictions.proto=github.com/jim-technologies/invariantaf/geminipredictions/proto/geminipredictions/v1;geminipredictionsv1
+  - local: protoc-gen-go-grpc
+    out: ..
+    opt:
+      - paths=import
+      - module=github.com/jim-technologies/invariantaf/geminipredictions
+      - Mgeminipredictions/v1/geminipredictions.proto=github.com/jim-technologies/invariantaf/geminipredictions/proto/geminipredictions/v1;geminipredictionsv1
+      - require_unimplemented_servers=false

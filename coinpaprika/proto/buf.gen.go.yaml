@@ -1,0 +1,15 @@
+version: v2
+plugins:
+  - protoc_builtin: go
+    out: ..
+    opt:
+      - paths=import
+      - module=github.com/jim-technologies/invariantaf/coinpaprika
+      - Mcoinpaprika/v1/coinpaprika.proto=github.com/jim-technologies/invariantaf/coinpaprika/proto/coinpaprika/v1;coinpaprikav1
+  - local: protoc-gen-go-grpc
+    out: ..
+    opt:
+      - paths=import
+      - module=github.com/jim-technologies/invariantaf/coinpaprika
+      - Mcoinpaprika/v1/coinpaprika.proto=github.com/jim-technologies/invariantaf/coinpaprika/proto/coinpaprika/v1;coinpaprikav1
+      - require_unimplemented_servers=false

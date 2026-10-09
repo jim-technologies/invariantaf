@@ -1,28 +1,29 @@
+.DEFAULT_GOAL := help
 .PHONY: descriptor lint fmt serve-mcp serve-cli test clean
 
-TEMPORAL_API_DIR := .temporal-api
-TEMPORAL_API_REPO := https://github.com/temporalio/api.git
+TEMPORAL_API_REVISION ?=
 
-$(TEMPORAL_API_DIR):
-	git clone --depth 1 $(TEMPORAL_API_REPO) $(TEMPORAL_API_DIR)
+descriptor: ## Refresh from a reviewed immutable TEMPORAL_API_REVISION
+	python3 ../scripts/refresh-temporal-descriptor.py "$(TEMPORAL_API_REVISION)"
 
-descriptor: $(TEMPORAL_API_DIR)
-	cd $(TEMPORAL_API_DIR) && buf build -o ../descriptor.binpb
-
-lint:
+lint: ## Lint the canonical source and Go implementation
 	go vet ./...
 
-fmt:
+fmt: ## Format protobuf and Go source
 	gofmt -w .
 
-test:
+test: ## Run Go tests with live integrations opt-in
 	go test -v -count=1 ./...
 
-serve-mcp:
+serve-mcp: ## Serve MCP over stdio
 	go run .
 
-serve-cli:
+serve-cli: ## Serve the CLI projection
 	go run . --cli
 
-clean:
-	rm -rf $(TEMPORAL_API_DIR) descriptor.binpb
+clean: ## Remove local generated or build output
+	rm -f descriptor.binpb
+
+.PHONY: help
+help: ## List adapter targets
+	@awk 'BEGIN { FS = ":.*## " } /^[a-zA-Z0-9_-]+:.*##/ { printf "%-20s %s\n", $$1, $$2 }' $(MAKEFILE_LIST)

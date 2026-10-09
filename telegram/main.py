@@ -10,6 +10,9 @@ from invariant import Server
 
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
+from telegram_mcp.gen.telegram.v1 import telegram_pb2_grpc as pb_grpc
+
+
 from telegram_mcp.gen.telegram.v1 import telegram_pb2 as _telegram_pb2  # noqa: F401
 from telegram_mcp.service import TelegramService
 
@@ -46,7 +49,7 @@ async def _serve(server: Server, modes: dict) -> None:
 
 def main() -> None:
     server = Server.from_descriptor(str(DESCRIPTOR))
-    server.register(TelegramService(), service_name="telegram.v1.TelegramService")
+    pb_grpc.add_TelegramServiceServicer_to_server(TelegramService(), server)
     asyncio.run(_serve(server, _projection_from_argv(sys.argv[1:])))
 
 

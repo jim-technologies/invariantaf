@@ -79,15 +79,17 @@ class KucoinService:
         if isinstance(payload, list):
             for row in payload:
                 if isinstance(row, list) and len(row) >= 7:
-                    klines.append({
-                        "time": str(row[0]),
-                        "open": str(row[1]),
-                        "close": str(row[2]),
-                        "high": str(row[3]),
-                        "low": str(row[4]),
-                        "volume": str(row[5]),
-                        "turnover": str(row[6]),
-                    })
+                    klines.append(
+                        {
+                            "time": str(row[0]),
+                            "open": str(row[1]),
+                            "close": str(row[2]),
+                            "high": str(row[3]),
+                            "low": str(row[4]),
+                            "volume": str(row[5]),
+                            "turnover": str(row[6]),
+                        }
+                    )
         return self._parse_message({"klines": klines}, pb.GetKlinesResponse)
 
     async def ListSymbols(

@@ -37,7 +37,7 @@ func TestLiveListAssets(t *testing.T) {
 		t.Fatalf("ListAssets: %v", err)
 	}
 
-	fields := resp.GetFields()
+	fields := replyFields(t, resp)
 	items := fields["items"]
 	if items == nil {
 		t.Fatal("response has no 'items' field")
@@ -61,7 +61,7 @@ func TestLiveListMarkets(t *testing.T) {
 		t.Fatalf("ListMarkets: %v", err)
 	}
 
-	fields := resp.GetFields()
+	fields := replyFields(t, resp)
 	items := fields["items"]
 	if items == nil {
 		t.Fatal("response has no 'items' field")
@@ -88,7 +88,7 @@ func TestLiveGetOrderbook(t *testing.T) {
 		t.Fatalf("GetOrderbook: %v", err)
 	}
 
-	fields := resp.GetFields()
+	fields := replyFields(t, resp)
 	if got := fields["instrument_name"].GetStringValue(); got != "ETH-PERP" {
 		t.Errorf("instrument_name = %q, want %q", got, "ETH-PERP")
 	}
@@ -119,7 +119,7 @@ func TestLiveGetFunding(t *testing.T) {
 		t.Fatalf("GetFunding: %v", err)
 	}
 
-	fields := resp.GetFields()
+	fields := replyFields(t, resp)
 	if fields["funding_rate"].GetStringValue() == "" {
 		t.Fatal("funding_rate is empty")
 	}
@@ -143,7 +143,7 @@ func TestLiveGetFundingHistory(t *testing.T) {
 		t.Fatalf("GetFundingHistory: %v", err)
 	}
 
-	fields := resp.GetFields()
+	fields := replyFields(t, resp)
 	history := fields["funding_history"]
 	if history == nil {
 		t.Fatal("response has no 'funding_history' field")
@@ -170,7 +170,7 @@ func TestLiveGetIndex(t *testing.T) {
 		t.Fatalf("GetIndex: %v", err)
 	}
 
-	fields := resp.GetFields()
+	fields := replyFields(t, resp)
 	if fields["price"].GetStringValue() == "" {
 		t.Fatal("price is empty")
 	}
@@ -189,7 +189,7 @@ func TestLiveGetStatistics(t *testing.T) {
 		t.Fatalf("GetStatistics: %v", err)
 	}
 
-	fields := resp.GetFields()
+	fields := replyFields(t, resp)
 	if fields["asset"].GetStringValue() != "ETH" {
 		t.Errorf("asset = %q, want %q", fields["asset"].GetStringValue(), "ETH")
 	}
@@ -213,7 +213,7 @@ func TestLiveGetTradeHistory(t *testing.T) {
 		t.Fatalf("GetTradeHistory: %v", err)
 	}
 
-	fields := resp.GetFields()
+	fields := replyFields(t, resp)
 	trades := fields["trade_history"].GetListValue().GetValues()
 	if len(trades) == 0 {
 		t.Fatal("expected at least 1 trade")
@@ -233,4 +233,13 @@ func keysOf(fields map[string]*structpb.Value) []string {
 		keys = append(keys, k)
 	}
 	return keys
+}
+
+func replyFields(t *testing.T, body []byte) map[string]*structpb.Value {
+	t.Helper()
+	result := new(structpb.Struct)
+	if err := result.UnmarshalJSON(body); err != nil {
+		t.Fatal(err)
+	}
+	return result.GetFields()
 }

@@ -55,7 +55,9 @@ class TwelveDataService:
             query["outputsize"] = request.outputsize
 
         payload = await self._get("/time_series", query)
-        return self._parse_message(self._normalize_time_series(payload), pb.GetTimeSeriesResponse)
+        return self._parse_message(
+            self._normalize_time_series(payload), pb.GetTimeSeriesResponse
+        )
 
     async def GetPrice(
         self, request: pb.GetPriceRequest, context: Any = None
@@ -110,7 +112,9 @@ class TwelveDataService:
 
         payload = await self._get("/earnings", query)
         earnings = self._extract_earnings(payload)
-        return self._parse_message({"earnings": earnings}, pb.GetEarningsCalendarResponse)
+        return self._parse_message(
+            {"earnings": earnings}, pb.GetEarningsCalendarResponse
+        )
 
     # -------------------------
     # Response normalization
@@ -133,8 +137,16 @@ class TwelveDataService:
             "volume": self._safe_int(data.get("volume", 0)),
             "datetime": data.get("datetime", ""),
             "timestamp": str(data.get("timestamp", "")),
-            "fifty_two_week_high": self._safe_float(data.get("fifty_two_week", {}).get("high", 0) if isinstance(data.get("fifty_two_week"), dict) else 0),
-            "fifty_two_week_low": self._safe_float(data.get("fifty_two_week", {}).get("low", 0) if isinstance(data.get("fifty_two_week"), dict) else 0),
+            "fifty_two_week_high": self._safe_float(
+                data.get("fifty_two_week", {}).get("high", 0)
+                if isinstance(data.get("fifty_two_week"), dict)
+                else 0
+            ),
+            "fifty_two_week_low": self._safe_float(
+                data.get("fifty_two_week", {}).get("low", 0)
+                if isinstance(data.get("fifty_two_week"), dict)
+                else 0
+            ),
         }
 
     def _normalize_time_series(self, data: dict[str, Any]) -> dict[str, Any]:
@@ -143,14 +155,16 @@ class TwelveDataService:
         values_raw = data.get("values", [])
         values = []
         for v in values_raw:
-            values.append({
-                "datetime": v.get("datetime", ""),
-                "open": self._safe_float(v.get("open", 0)),
-                "high": self._safe_float(v.get("high", 0)),
-                "low": self._safe_float(v.get("low", 0)),
-                "close": self._safe_float(v.get("close", 0)),
-                "volume": self._safe_int(v.get("volume", 0)),
-            })
+            values.append(
+                {
+                    "datetime": v.get("datetime", ""),
+                    "open": self._safe_float(v.get("open", 0)),
+                    "high": self._safe_float(v.get("high", 0)),
+                    "low": self._safe_float(v.get("low", 0)),
+                    "close": self._safe_float(v.get("close", 0)),
+                    "volume": self._safe_int(v.get("volume", 0)),
+                }
+            )
         return {
             "symbol": meta.get("symbol", ""),
             "interval": meta.get("interval", ""),
@@ -182,19 +196,21 @@ class TwelveDataService:
             return []
         result = []
         for e in earnings_raw:
-            result.append({
-                "symbol": e.get("symbol", ""),
-                "name": e.get("name", ""),
-                "currency": e.get("currency", ""),
-                "exchange": e.get("exchange", ""),
-                "country": e.get("country", ""),
-                "date": e.get("date", ""),
-                "time": e.get("time", ""),
-                "eps_estimate": self._safe_float(e.get("eps_estimate", 0)),
-                "eps_actual": self._safe_float(e.get("eps_actual", 0)),
-                "revenue_estimate": self._safe_float(e.get("revenue_estimate", 0)),
-                "revenue_actual": self._safe_float(e.get("revenue_actual", 0)),
-            })
+            result.append(
+                {
+                    "symbol": e.get("symbol", ""),
+                    "name": e.get("name", ""),
+                    "currency": e.get("currency", ""),
+                    "exchange": e.get("exchange", ""),
+                    "country": e.get("country", ""),
+                    "date": e.get("date", ""),
+                    "time": e.get("time", ""),
+                    "eps_estimate": self._safe_float(e.get("eps_estimate", 0)),
+                    "eps_actual": self._safe_float(e.get("eps_actual", 0)),
+                    "revenue_estimate": self._safe_float(e.get("revenue_estimate", 0)),
+                    "revenue_actual": self._safe_float(e.get("revenue_actual", 0)),
+                }
+            )
         return result
 
     # -------------------------
@@ -270,7 +286,7 @@ class TwelveDataService:
             return 0.0
         try:
             return float(value)
-        except (ValueError, TypeError):
+        except ValueError, TypeError:
             return 0.0
 
     def _safe_int(self, value: Any) -> int:
@@ -279,5 +295,5 @@ class TwelveDataService:
             return 0
         try:
             return int(float(value))
-        except (ValueError, TypeError):
+        except ValueError, TypeError:
             return 0

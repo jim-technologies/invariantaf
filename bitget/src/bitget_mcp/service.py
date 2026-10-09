@@ -167,16 +167,18 @@ class BitgetService:
             return candles
         for row in data:
             if isinstance(row, list) and len(row) >= 8:
-                candles.append({
-                    "ts": str(row[0]),
-                    "open": str(row[1]),
-                    "high": str(row[2]),
-                    "low": str(row[3]),
-                    "close": str(row[4]),
-                    "base_volume": str(row[5]),
-                    "quote_volume": str(row[6]),
-                    "usd_volume": str(row[7]),
-                })
+                candles.append(
+                    {
+                        "ts": str(row[0]),
+                        "open": str(row[1]),
+                        "high": str(row[2]),
+                        "low": str(row[3]),
+                        "close": str(row[4]),
+                        "base_volume": str(row[5]),
+                        "quote_volume": str(row[6]),
+                        "usd_volume": str(row[7]),
+                    }
+                )
         return candles
 
     # -------------------------

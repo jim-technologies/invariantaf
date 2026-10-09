@@ -137,7 +137,7 @@ func getBool(fields map[string]*structpb.Value, key string) bool {
 
 func getInt(fields map[string]*structpb.Value, key string) int {
 	if v, ok := fields[key]; ok {
-		return int(v.GetNumberValue())
+		return int(requestInteger(v))
 	}
 	return 0
 }

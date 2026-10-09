@@ -59,22 +59,24 @@ class DuneService:
 
     async def aclose(self) -> None:
         """Close the HTTP client. Idempotent."""
-        await self._client.aclose()
+        await self._http.aclose()
 
     def _headers(self) -> dict[str, str]:
         return {"X-Dune-API-Key": _get_api_key()}
 
-    def _get(self, url: str, params: dict | None = None) -> Any:
-        resp = self._http.get(url, headers=self._headers(), params=params)
+    async def _get(self, url: str, params: dict | None = None) -> Any:
+        resp = await self._http.get(url, headers=self._headers(), params=params)
         resp.raise_for_status()
         return resp.json()
 
-    def _post(self, url: str, json_body: dict | None = None) -> Any:
-        resp = self._http.post(url, headers=self._headers(), json=json_body)
+    async def _post(self, url: str, json_body: dict | None = None) -> Any:
+        resp = await self._http.post(url, headers=self._headers(), json=json_body)
         resp.raise_for_status()
         return resp.json()
 
-    async def ExecuteQuery(self, request: Any, context: Any = None) -> pb.ExecuteQueryResponse:
+    async def ExecuteQuery(
+        self, request: Any, context: Any = None
+    ) -> pb.ExecuteQueryResponse:
         body: dict[str, Any] = {}
         if request.query_parameters:
             params = {}
@@ -82,20 +84,26 @@ class DuneService:
                 params[p.key] = p.value
             body["query_parameters"] = params
 
-        raw = self._post(f"{_BASE_URL}/query/{request.query_id}/execute", json_body=body or None)
+        raw = await self._post(
+            f"{_BASE_URL}/query/{request.query_id}/execute", json_body=body or None
+        )
         return pb.ExecuteQueryResponse(
             execution_id=raw.get("execution_id", "") or "",
             state=raw.get("state", "QUERY_STATE_PENDING") or "",
         )
 
-    async def GetExecutionStatus(self, request: Any, context: Any = None) -> pb.GetExecutionStatusResponse:
-        raw = self._get(f"{_BASE_URL}/execution/{request.execution_id}/status")
+    async def GetExecutionStatus(
+        self, request: Any, context: Any = None
+    ) -> pb.GetExecutionStatusResponse:
+        raw = await self._get(f"{_BASE_URL}/execution/{request.execution_id}/status")
         return pb.GetExecutionStatusResponse(
             execution=_parse_execution_metadata(raw),
         )
 
-    async def GetExecutionResults(self, request: Any, context: Any = None) -> pb.GetExecutionResultsResponse:
-        raw = self._get(f"{_BASE_URL}/execution/{request.execution_id}/results")
+    async def GetExecutionResults(
+        self, request: Any, context: Any = None
+    ) -> pb.GetExecutionResultsResponse:
+        raw = await self._get(f"{_BASE_URL}/execution/{request.execution_id}/results")
         result = raw.get("result") or {}
         return pb.GetExecutionResultsResponse(
             execution=_parse_execution_metadata(raw),
@@ -103,8 +111,10 @@ class DuneService:
             rows=_rows_to_json_strings(result.get("rows")),
         )
 
-    async def GetLatestResults(self, request: Any, context: Any = None) -> pb.GetLatestResultsResponse:
-        raw = self._get(f"{_BASE_URL}/query/{request.query_id}/results")
+    async def GetLatestResults(
+        self, request: Any, context: Any = None
+    ) -> pb.GetLatestResultsResponse:
+        raw = await self._get(f"{_BASE_URL}/query/{request.query_id}/results")
         result = raw.get("result") or {}
         return pb.GetLatestResultsResponse(
             execution=_parse_execution_metadata(raw),
@@ -112,8 +122,10 @@ class DuneService:
             rows=_rows_to_json_strings(result.get("rows")),
         )
 
-    async def CancelExecution(self, request: Any, context: Any = None) -> pb.CancelExecutionResponse:
-        raw = self._post(f"{_BASE_URL}/execution/{request.execution_id}/cancel")
+    async def CancelExecution(
+        self, request: Any, context: Any = None
+    ) -> pb.CancelExecutionResponse:
+        raw = await self._post(f"{_BASE_URL}/execution/{request.execution_id}/cancel")
         return pb.CancelExecutionResponse(
             success=bool(raw.get("success", True)),
         )

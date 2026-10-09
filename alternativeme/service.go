@@ -63,9 +63,9 @@ func (s *AlternativeMeService) get(path string, params url.Values) (map[string]a
 	}
 
 	var result map[string]any
-	if err := json.Unmarshal(body, &result); err != nil {
+	if err := decodeProviderJSON(body, &result); err != nil {
 		var arr []any
-		if err2 := json.Unmarshal(body, &arr); err2 == nil {
+		if err2 := decodeProviderJSON(body, &arr); err2 == nil {
 			result = map[string]any{"items": arr}
 		} else {
 			return nil, fmt.Errorf("decode response: %w (body: %s)", err, string(body))
@@ -86,22 +86,18 @@ func getString(fields map[string]*structpb.Value, key, def string) string {
 // helper: get an int field from structpb (numbers come as float64).
 func getInt(fields map[string]*structpb.Value, key string) int64 {
 	if v, ok := fields[key]; ok {
-		return int64(v.GetNumberValue())
+		return requestInteger(v)
 	}
 	return 0
 }
 
 // helper: convert API response to structpb.Struct.
-func toStruct(data map[string]any) (*structpb.Struct, error) {
-	result, err := structpb.NewStruct(data)
-	if err != nil {
-		return nil, fmt.Errorf("convert to struct: %w", err)
-	}
-	return result, nil
+func responseJSON(data map[string]any) (json.RawMessage, error) {
+	return json.Marshal(data)
 }
 
 // GetFearGreedIndex returns the Fear & Greed Index (current + historical).
-func (s *AlternativeMeService) GetFearGreedIndex(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *AlternativeMeService) GetFearGreedIndex(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	params := url.Values{}
 	params.Set("format", "json")
@@ -131,11 +127,11 @@ func (s *AlternativeMeService) GetFearGreedIndex(_ context.Context, req *structp
 		entries = append(entries, entry)
 	}
 
-	return toStruct(map[string]any{"data": entries})
+	return responseJSON(map[string]any{"data": entries})
 }
 
 // GetGlobalMarketData returns global crypto market data (top coins).
-func (s *AlternativeMeService) GetGlobalMarketData(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *AlternativeMeService) GetGlobalMarketData(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	params := url.Values{}
 	params.Set("convert", "USD")
@@ -155,11 +151,11 @@ func (s *AlternativeMeService) GetGlobalMarketData(_ context.Context, req *struc
 		tickers = append(tickers, transformCoinTicker(item))
 	}
 
-	return toStruct(map[string]any{"data": tickers})
+	return responseJSON(map[string]any{"data": tickers})
 }
 
 // GetCoinData returns data for a specific coin by CoinMarketCap ID.
-func (s *AlternativeMeService) GetCoinData(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *AlternativeMeService) GetCoinData(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	id := getString(fields, "id", "")
 	if id == "" {
@@ -189,11 +185,11 @@ func (s *AlternativeMeService) GetCoinData(_ context.Context, req *structpb.Stru
 	}
 
 	ticker := transformCoinTicker(rawData)
-	return toStruct(map[string]any{"data": ticker})
+	return responseJSON(map[string]any{"data": ticker})
 }
 
 // GetListings returns all coin listings.
-func (s *AlternativeMeService) GetListings(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *AlternativeMeService) GetListings(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	params := url.Values{}
 	params.Set("convert", "USD")
@@ -224,7 +220,7 @@ func (s *AlternativeMeService) GetListings(_ context.Context, req *structpb.Stru
 		listings = append(listings, listing)
 	}
 
-	return toStruct(map[string]any{"data": listings})
+	return responseJSON(map[string]any{"data": listings})
 }
 
 // extractTickerData extracts ticker list from the v2/ticker response envelope.
@@ -270,10 +266,10 @@ func transformCoinTicker(item map[string]any) map[string]any {
 	}
 
 	return map[string]any{
-		"id":                  fmt.Sprintf("%v", item["id"]),
-		"name":                stringVal(item, "name"),
-		"symbol":              stringVal(item, "symbol"),
-		"rank":                intVal(item, "rank"),
+		"id":                 fmt.Sprintf("%v", item["id"]),
+		"name":               stringVal(item, "name"),
+		"symbol":             stringVal(item, "symbol"),
+		"rank":               intVal(item, "rank"),
 		"price_usd":          fmt.Sprintf("%v", usd["price"]),
 		"price_btc":          "",
 		"market_cap_usd":     fmt.Sprintf("%v", usd["market_cap"]),
@@ -300,8 +296,10 @@ func stringVal(m map[string]any, key string) string {
 func intVal(m map[string]any, key string) int64 {
 	if v, ok := m[key]; ok {
 		switch n := v.(type) {
+		case json.Number:
+			return providerInteger(n)
 		case float64:
-			return int64(n)
+			return providerInteger(n)
 		case string:
 			if i, err := strconv.ParseInt(n, 10, 64); err == nil {
 				return i

@@ -91,27 +91,33 @@ class PollingService:
 
     async def aclose(self) -> None:
         """Close the HTTP client. Idempotent."""
-        await self._client.aclose()
+        await self._http.aclose()
 
-    def _get(self, url: str, params: dict | None = None) -> Any:
-        resp = self._http.get(url, params=params)
+    async def _get(self, url: str, params: dict | None = None) -> Any:
+        resp = await self._http.get(url, params=params)
         resp.raise_for_status()
         return resp.json()
 
-    async def ListPredictItMarkets(self, request: Any, context: Any = None) -> pb.ListPredictItMarketsResponse:
-        raw = self._get(f"{_PREDICTIT_BASE}/all/")
+    async def ListPredictItMarkets(
+        self, request: Any, context: Any = None
+    ) -> pb.ListPredictItMarketsResponse:
+        raw = await self._get(f"{_PREDICTIT_BASE}/all/")
         resp = pb.ListPredictItMarketsResponse()
         for m in raw.get("markets") or []:
             resp.markets.append(_parse_market(m))
         return resp
 
-    async def GetPredictItMarket(self, request: Any, context: Any = None) -> pb.GetPredictItMarketResponse:
+    async def GetPredictItMarket(
+        self, request: Any, context: Any = None
+    ) -> pb.GetPredictItMarketResponse:
         ticker = request.ticker
-        raw = self._get(f"{_PREDICTIT_BASE}/ticker/{ticker}/")
+        raw = await self._get(f"{_PREDICTIT_BASE}/ticker/{ticker}/")
         market = _parse_market(raw)
         return pb.GetPredictItMarketResponse(market=market)
 
-    async def ListMetaculusQuestions(self, request: Any, context: Any = None) -> pb.ListMetaculusQuestionsResponse:
+    async def ListMetaculusQuestions(
+        self, request: Any, context: Any = None
+    ) -> pb.ListMetaculusQuestionsResponse:
         limit = request.limit if request.limit else 20
         offset = request.offset if request.offset else 0
         params = {
@@ -119,14 +125,16 @@ class PollingService:
             "offset": offset,
             "order_by": "-activity",
         }
-        raw = self._get(f"{_METACULUS_BASE}/", params=params)
+        raw = await self._get(f"{_METACULUS_BASE}/", params=params)
         resp = pb.ListMetaculusQuestionsResponse()
         for q in raw.get("results") or []:
             resp.questions.append(_parse_question(q))
         return resp
 
-    async def GetMetaculusQuestion(self, request: Any, context: Any = None) -> pb.GetMetaculusQuestionResponse:
+    async def GetMetaculusQuestion(
+        self, request: Any, context: Any = None
+    ) -> pb.GetMetaculusQuestionResponse:
         question_id = request.id
-        raw = self._get(f"{_METACULUS_BASE}/{question_id}/")
+        raw = await self._get(f"{_METACULUS_BASE}/{question_id}/")
         question = _parse_question(raw)
         return pb.GetMetaculusQuestionResponse(question=question)

@@ -4,9 +4,11 @@ import (
 	"context"
 	"crypto/tls"
 	_ "embed"
+	"errors"
 	"fmt"
 	"os"
-	"strconv"
+	"os/signal"
+	"syscall"
 
 	invariant "github.com/jim-technologies/invariantprotocol/go"
 	"google.golang.org/grpc"
@@ -43,52 +45,14 @@ func main() {
 	}
 	defer conn.Close()
 
-	if err := server.Connect(conn); err != nil {
+	if err := server.ConnectGRPC(conn); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 
-	ctx := context.Background()
-
-	args := os.Args[1:]
-	if len(args) > 0 && args[0] == "--cli" {
-		os.Args = append([]string{os.Args[0]}, args[1:]...)
-		if err := server.Serve(ctx, invariant.CLI()); err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			os.Exit(1)
-		}
-		return
-	}
-
-	if len(args) > 0 && args[0] == "--http" {
-		port := 8080
-		if len(args) > 1 {
-			if p, err := strconv.Atoi(args[1]); err == nil {
-				port = p
-			}
-		}
-		if err := server.Serve(ctx, invariant.HTTP(port)); err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			os.Exit(1)
-		}
-		return
-	}
-
-	if len(args) > 0 && args[0] == "--grpc" {
-		port := 50051
-		if len(args) > 1 {
-			if p, err := strconv.Atoi(args[1]); err == nil {
-				port = p
-			}
-		}
-		if err := server.Serve(ctx, invariant.GRPC(port)); err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			os.Exit(1)
-		}
-		return
-	}
-
-	if err := server.Serve(ctx, invariant.MCP()); err != nil {
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer cancel()
+	if err := serveAdapter(ctx, server, os.Args[1:]); err != nil && !errors.Is(err, context.Canceled) {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}

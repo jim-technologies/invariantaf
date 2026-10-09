@@ -72,9 +72,9 @@ func (s *PandaScoreService) get(path string, params url.Values) (map[string]any,
 	}
 
 	var result map[string]any
-	if err := json.Unmarshal(body, &result); err != nil {
+	if err := decodeProviderJSON(body, &result); err != nil {
 		var arr []any
-		if err2 := json.Unmarshal(body, &arr); err2 == nil {
+		if err2 := decodeProviderJSON(body, &arr); err2 == nil {
 			result = map[string]any{"items": arr}
 		} else {
 			return nil, fmt.Errorf("decode response: %w (body: %s)", err, string(body))
@@ -95,7 +95,7 @@ func getString(fields map[string]*structpb.Value, key, def string) string {
 // helper: get an int field from structpb (numbers come as float64).
 func getInt(fields map[string]*structpb.Value, key string) int64 {
 	if v, ok := fields[key]; ok {
-		return int64(v.GetNumberValue())
+		return requestInteger(v)
 	}
 	return 0
 }
@@ -103,18 +103,14 @@ func getInt(fields map[string]*structpb.Value, key string) int64 {
 // helper: get a float field from structpb.
 func getFloat(fields map[string]*structpb.Value, key string) float64 {
 	if v, ok := fields[key]; ok {
-		return v.GetNumberValue()
+		return requestNumber(v)
 	}
 	return 0
 }
 
 // helper: convert API response to structpb.Struct.
-func toStruct(data map[string]any) (*structpb.Struct, error) {
-	result, err := structpb.NewStruct(data)
-	if err != nil {
-		return nil, fmt.Errorf("convert to struct: %w", err)
-	}
-	return result, nil
+func responseJSON(data map[string]any) (json.RawMessage, error) {
+	return json.Marshal(data)
 }
 
 // paginationParams extracts page and per_page from the request, applying a
@@ -133,7 +129,7 @@ func paginationParams(fields map[string]*structpb.Value, perPageDefault int) url
 }
 
 // ListMatches lists all Dota 2 matches (past, upcoming, running).
-func (s *PandaScoreService) ListMatches(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *PandaScoreService) ListMatches(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	params := paginationParams(fields, 50)
 	params.Set("sort", "-scheduled_at")
@@ -144,11 +140,11 @@ func (s *PandaScoreService) ListMatches(_ context.Context, req *structpb.Struct)
 	}
 
 	items := extractItems(data)
-	return toStruct(map[string]any{"matches": items})
+	return responseJSON(map[string]any{"matches": items})
 }
 
 // ListUpcomingMatches lists upcoming scheduled Dota 2 matches.
-func (s *PandaScoreService) ListUpcomingMatches(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *PandaScoreService) ListUpcomingMatches(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	params := paginationParams(fields, 50)
 
@@ -158,11 +154,11 @@ func (s *PandaScoreService) ListUpcomingMatches(_ context.Context, req *structpb
 	}
 
 	items := extractItems(data)
-	return toStruct(map[string]any{"matches": items})
+	return responseJSON(map[string]any{"matches": items})
 }
 
 // ListRunningMatches lists currently live Dota 2 matches.
-func (s *PandaScoreService) ListRunningMatches(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *PandaScoreService) ListRunningMatches(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	params := paginationParams(fields, 50)
 
@@ -172,11 +168,11 @@ func (s *PandaScoreService) ListRunningMatches(_ context.Context, req *structpb.
 	}
 
 	items := extractItems(data)
-	return toStruct(map[string]any{"matches": items})
+	return responseJSON(map[string]any{"matches": items})
 }
 
 // ListPastMatches lists completed Dota 2 matches with results.
-func (s *PandaScoreService) ListPastMatches(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *PandaScoreService) ListPastMatches(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	params := paginationParams(fields, 50)
 	params.Set("sort", "-scheduled_at")
@@ -187,11 +183,11 @@ func (s *PandaScoreService) ListPastMatches(_ context.Context, req *structpb.Str
 	}
 
 	items := extractItems(data)
-	return toStruct(map[string]any{"matches": items})
+	return responseJSON(map[string]any{"matches": items})
 }
 
 // ListTournaments lists all Dota 2 tournaments.
-func (s *PandaScoreService) ListTournaments(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *PandaScoreService) ListTournaments(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	params := paginationParams(fields, 50)
 
@@ -201,11 +197,11 @@ func (s *PandaScoreService) ListTournaments(_ context.Context, req *structpb.Str
 	}
 
 	items := extractItems(data)
-	return toStruct(map[string]any{"tournaments": items})
+	return responseJSON(map[string]any{"tournaments": items})
 }
 
 // ListTeams lists all Dota 2 teams.
-func (s *PandaScoreService) ListTeams(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *PandaScoreService) ListTeams(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	params := paginationParams(fields, 50)
 
@@ -215,11 +211,11 @@ func (s *PandaScoreService) ListTeams(_ context.Context, req *structpb.Struct) (
 	}
 
 	items := extractItems(data)
-	return toStruct(map[string]any{"teams": items})
+	return responseJSON(map[string]any{"teams": items})
 }
 
 // ListPlayers lists all Dota 2 players.
-func (s *PandaScoreService) ListPlayers(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *PandaScoreService) ListPlayers(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	params := paginationParams(fields, 50)
 
@@ -229,11 +225,11 @@ func (s *PandaScoreService) ListPlayers(_ context.Context, req *structpb.Struct)
 	}
 
 	items := extractItems(data)
-	return toStruct(map[string]any{"players": items})
+	return responseJSON(map[string]any{"players": items})
 }
 
 // ListLeagues lists all Dota 2 leagues.
-func (s *PandaScoreService) ListLeagues(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *PandaScoreService) ListLeagues(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	params := paginationParams(fields, 50)
 
@@ -243,11 +239,11 @@ func (s *PandaScoreService) ListLeagues(_ context.Context, req *structpb.Struct)
 	}
 
 	items := extractItems(data)
-	return toStruct(map[string]any{"leagues": items})
+	return responseJSON(map[string]any{"leagues": items})
 }
 
 // ListSeries lists upcoming Dota 2 series.
-func (s *PandaScoreService) ListSeries(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *PandaScoreService) ListSeries(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	params := paginationParams(fields, 50)
 
@@ -257,11 +253,11 @@ func (s *PandaScoreService) ListSeries(_ context.Context, req *structpb.Struct) 
 	}
 
 	items := extractItems(data)
-	return toStruct(map[string]any{"series": items})
+	return responseJSON(map[string]any{"series": items})
 }
 
 // ListHeroes lists all Dota 2 heroes.
-func (s *PandaScoreService) ListHeroes(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *PandaScoreService) ListHeroes(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	params := paginationParams(fields, 100)
 
@@ -271,7 +267,7 @@ func (s *PandaScoreService) ListHeroes(_ context.Context, req *structpb.Struct) 
 	}
 
 	items := extractItems(data)
-	return toStruct(map[string]any{"heroes": items})
+	return responseJSON(map[string]any{"heroes": items})
 }
 
 // extractItems pulls the array payload out of the wrapped API response.

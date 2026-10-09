@@ -53,7 +53,9 @@ class BallDontLieService:
         self, request: pb.GetNBAPlayerRequest, context: Any = None
     ) -> pb.GetNBAPlayerResponse:
         payload = await self._get(f"/nba/players/{request.id}")
-        return self._parse_response({"data": payload.get("data", payload)}, pb.GetNBAPlayerResponse)
+        return self._parse_response(
+            {"data": payload.get("data", payload)}, pb.GetNBAPlayerResponse
+        )
 
     async def ListNBATeams(
         self, request: pb.ListNBATeamsRequest, context: Any = None
@@ -83,7 +85,9 @@ class BallDontLieService:
         self, request: pb.GetNBAGameRequest, context: Any = None
     ) -> pb.GetNBAGameResponse:
         payload = await self._get(f"/nba/games/{request.id}")
-        return self._parse_response({"data": payload.get("data", payload)}, pb.GetNBAGameResponse)
+        return self._parse_response(
+            {"data": payload.get("data", payload)}, pb.GetNBAGameResponse
+        )
 
     async def GetNBAStats(
         self, request: pb.GetNBAStatsRequest, context: Any = None

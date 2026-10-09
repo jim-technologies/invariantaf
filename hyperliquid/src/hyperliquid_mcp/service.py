@@ -32,8 +32,9 @@ class HyperliquidService:
         base_url: str = constants.MAINNET_API_URL,
         private_key: str | None = None,
         account_address: str | None = None,
+        info: Info | None = None,
     ):
-        self._info = Info(base_url, skip_ws=True)
+        self._info = info if info is not None else Info(base_url, skip_ws=True)
         self._exchange: Exchange | None = None
 
         # Allow private key from env var.
@@ -47,6 +48,11 @@ class HyperliquidService:
                 base_url,
                 account_address=addr,
             )
+
+    async def aclose(self) -> None:
+        self._info.session.close()
+        if self._exchange is not None:
+            self._exchange.session.close()
 
     def _require_exchange(self) -> Exchange:
         if self._exchange is None:
@@ -71,14 +77,18 @@ class HyperliquidService:
             )
         return resp
 
-    async def GetAllMids(self, request: Any, context: Any = None) -> pb.GetAllMidsResponse:
+    async def GetAllMids(
+        self, request: Any, context: Any = None
+    ) -> pb.GetAllMidsResponse:
         raw = self._info.all_mids()
         resp = pb.GetAllMidsResponse()
         for coin, price in raw.items():
             resp.mids[coin] = str(price)
         return resp
 
-    async def GetOrderbook(self, request: Any, context: Any = None) -> pb.GetOrderbookResponse:
+    async def GetOrderbook(
+        self, request: Any, context: Any = None
+    ) -> pb.GetOrderbookResponse:
         raw = self._info.l2_snapshot(request.coin)
         resp = pb.GetOrderbookResponse()
         levels = raw.get("levels", [[], []])
@@ -88,7 +98,9 @@ class HyperliquidService:
             resp.asks.append(pb.OrderbookLevel(price=ask["px"], size=ask["sz"]))
         return resp
 
-    async def GetCandles(self, request: Any, context: Any = None) -> pb.GetCandlesResponse:
+    async def GetCandles(
+        self, request: Any, context: Any = None
+    ) -> pb.GetCandlesResponse:
         interval = _INTERVAL_MAP.get(request.interval, "1h")
         raw = self._info.candles_snapshot(
             request.coin, interval, request.start_time, request.end_time
@@ -109,7 +121,9 @@ class HyperliquidService:
 
     # --- Account Data (read-only, needs address) ---
 
-    async def GetAccountState(self, request: Any, context: Any = None) -> pb.GetAccountStateResponse:
+    async def GetAccountState(
+        self, request: Any, context: Any = None
+    ) -> pb.GetAccountStateResponse:
         raw = self._info.user_state(request.address)
         resp = pb.GetAccountStateResponse(
             account_value=raw.get("marginSummary", {}).get("accountValue", ""),
@@ -149,7 +163,9 @@ class HyperliquidService:
             )
         return resp
 
-    async def GetOpenOrders(self, request: Any, context: Any = None) -> pb.GetOpenOrdersResponse:
+    async def GetOpenOrders(
+        self, request: Any, context: Any = None
+    ) -> pb.GetOpenOrdersResponse:
         raw = self._info.open_orders(request.address)
         resp = pb.GetOpenOrdersResponse()
         for o in raw:
@@ -186,7 +202,9 @@ class HyperliquidService:
 
     # --- Trading (authenticated) ---
 
-    async def PlaceOrder(self, request: Any, context: Any = None) -> pb.PlaceOrderResponse:
+    async def PlaceOrder(
+        self, request: Any, context: Any = None
+    ) -> pb.PlaceOrderResponse:
         exchange = self._require_exchange()
         is_buy = request.side == pb.SIDE_BUY
         tif_map = {
@@ -210,12 +228,16 @@ class HyperliquidService:
         except Exception as e:
             return pb.PlaceOrderResponse(success=False, error=str(e))
 
-    async def CancelOrder(self, request: Any, context: Any = None) -> pb.CancelOrderResponse:
+    async def CancelOrder(
+        self, request: Any, context: Any = None
+    ) -> pb.CancelOrderResponse:
         exchange = self._require_exchange()
         try:
             result = exchange.cancel(request.coin, request.order_id)
             if result.get("status") == "ok":
-                statuses = result.get("response", {}).get("data", {}).get("statuses", [])
+                statuses = (
+                    result.get("response", {}).get("data", {}).get("statuses", [])
+                )
                 if statuses and statuses[0] == "success":
                     return pb.CancelOrderResponse(success=True)
                 return pb.CancelOrderResponse(success=False, error=str(statuses))
@@ -223,35 +245,51 @@ class HyperliquidService:
         except Exception as e:
             return pb.CancelOrderResponse(success=False, error=str(e))
 
-    async def MarketOpen(self, request: Any, context: Any = None) -> pb.MarketOpenResponse:
+    async def MarketOpen(
+        self, request: Any, context: Any = None
+    ) -> pb.MarketOpenResponse:
         exchange = self._require_exchange()
         is_buy = request.side == pb.SIDE_BUY
         slippage = request.slippage if request.HasField("slippage") else 0.01
 
         try:
-            result = exchange.market_open(request.coin, is_buy, float(request.size), slippage=slippage)
+            result = exchange.market_open(
+                request.coin, is_buy, float(request.size), slippage=slippage
+            )
             parsed = _parse_order_result(result)
-            return pb.MarketOpenResponse(success=parsed.success, status=parsed.status, error=parsed.error)
+            return pb.MarketOpenResponse(
+                success=parsed.success, status=parsed.status, error=parsed.error
+            )
         except Exception as e:
             return pb.MarketOpenResponse(success=False, error=str(e))
 
-    async def MarketClose(self, request: Any, context: Any = None) -> pb.MarketCloseResponse:
+    async def MarketClose(
+        self, request: Any, context: Any = None
+    ) -> pb.MarketCloseResponse:
         exchange = self._require_exchange()
         slippage = request.slippage if request.HasField("slippage") else 0.01
 
         try:
             result = exchange.market_close(request.coin, slippage=slippage)
             if result is None:
-                return pb.MarketCloseResponse(success=False, error="No open position found for " + request.coin)
+                return pb.MarketCloseResponse(
+                    success=False, error="No open position found for " + request.coin
+                )
             parsed = _parse_order_result(result)
-            return pb.MarketCloseResponse(success=parsed.success, status=parsed.status, error=parsed.error)
+            return pb.MarketCloseResponse(
+                success=parsed.success, status=parsed.status, error=parsed.error
+            )
         except Exception as e:
             return pb.MarketCloseResponse(success=False, error=str(e))
 
-    async def UpdateLeverage(self, request: Any, context: Any = None) -> pb.UpdateLeverageResponse:
+    async def UpdateLeverage(
+        self, request: Any, context: Any = None
+    ) -> pb.UpdateLeverageResponse:
         exchange = self._require_exchange()
         try:
-            result = exchange.update_leverage(request.leverage, request.coin, is_cross=request.is_cross)
+            result = exchange.update_leverage(
+                request.leverage, request.coin, is_cross=request.is_cross
+            )
             if result.get("status") == "ok":
                 return pb.UpdateLeverageResponse(success=True)
             return pb.UpdateLeverageResponse(success=False, error=str(result))

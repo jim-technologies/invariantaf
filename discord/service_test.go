@@ -3,14 +3,12 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"google.golang.org/protobuf/types/known/structpb"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"strings"
 	"testing"
-
-	invariant "github.com/jim-technologies/invariantprotocol/go"
-	"google.golang.org/protobuf/types/known/structpb"
 )
 
 func mustStruct(t *testing.T, m map[string]any) *structpb.Struct {
@@ -23,22 +21,20 @@ func mustStruct(t *testing.T, m map[string]any) *structpb.Struct {
 }
 
 func TestServerWiring(t *testing.T) {
-	srv, err := invariant.ServerFromBytes(descriptorBytes)
+	srv, err := providerServer(NewDiscordService())
 	if err != nil {
 		t.Fatalf("ServerFromBytes: %v", err)
 	}
-	if err := srv.Register(NewDiscordService()); err != nil {
-		t.Fatalf("Register: %v", err)
-	}
+
 	tools := srv.Tools()
 	if len(tools) < 40 {
 		t.Fatalf("expected at least 40 tools, got %d", len(tools))
 	}
 	for _, name := range []string{
-		"DiscordService.CreateMessage",
-		"DiscordService.GetCurrentUser",
-		"DiscordService.GetChannel",
-		"DiscordService.ExecuteWebhook",
+		"discord.v1.DiscordService.CreateMessage",
+		"discord.v1.DiscordService.GetCurrentUser",
+		"discord.v1.DiscordService.GetChannel",
+		"discord.v1.DiscordService.ExecuteWebhook",
 	} {
 		if _, ok := tools[name]; !ok {
 			t.Fatalf("missing tool %s", name)

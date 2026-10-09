@@ -75,10 +75,10 @@ func (c *quickNodeClient) doREST(method, path string, body any) (map[string]any,
 		return map[string]any{}, nil
 	}
 	var result map[string]any
-	if err := json.Unmarshal(raw, &result); err != nil {
+	if err := decodeProviderJSON(raw, &result); err != nil {
 		// try parsing as array
 		var arr []any
-		if err2 := json.Unmarshal(raw, &arr); err2 == nil {
+		if err2 := decodeProviderJSON(raw, &arr); err2 == nil {
 			return map[string]any{"data": arr}, nil
 		}
 		return nil, fmt.Errorf("decode json: %w", err)
@@ -138,7 +138,7 @@ func (c *quickNodeClient) jsonRPC(method string, params any) (map[string]any, er
 		return nil, fmt.Errorf("rpc %s returned %d: %s", method, resp.StatusCode, string(raw))
 	}
 	var result map[string]any
-	if err := json.Unmarshal(raw, &result); err != nil {
+	if err := decodeProviderJSON(raw, &result); err != nil {
 		return nil, fmt.Errorf("decode rpc json: %w", err)
 	}
 	if errObj, ok := result["error"]; ok && errObj != nil {
@@ -174,33 +174,15 @@ func toStr(v any) string {
 }
 
 func toInt32(v any) int32 {
-	if v == nil {
-		return 0
-	}
-	if f, ok := v.(float64); ok {
-		return int32(f)
-	}
-	return 0
+	return providerInteger32(v)
 }
 
 func toInt64(v any) int64 {
-	if v == nil {
-		return 0
-	}
-	if f, ok := v.(float64); ok {
-		return int64(f)
-	}
-	return 0
+	return providerInteger(v)
 }
 
 func toFloat64(v any) float64 {
-	if v == nil {
-		return 0
-	}
-	if f, ok := v.(float64); ok {
-		return f
-	}
-	return 0
+	return providerNumber(v)
 }
 
 func toBool(v any) bool {
@@ -650,11 +632,11 @@ func (s *QuickNodeConsoleService) GetSecurityOptions(_ context.Context, req *pb.
 		return nil, err
 	}
 	return &pb.SecurityOptions{
-		TokenAuthEnabled:        toBool(data["token_auth_enabled"]),
-		JwtAuthEnabled:          toBool(data["jwt_auth_enabled"]),
-		IpAllowlistEnabled:      toBool(data["ip_allowlist_enabled"]),
+		TokenAuthEnabled:         toBool(data["token_auth_enabled"]),
+		JwtAuthEnabled:           toBool(data["jwt_auth_enabled"]),
+		IpAllowlistEnabled:       toBool(data["ip_allowlist_enabled"]),
 		ReferrerAllowlistEnabled: toBool(data["referrer_allowlist_enabled"]),
-		DomainMaskEnabled:       toBool(data["domain_mask_enabled"]),
+		DomainMaskEnabled:        toBool(data["domain_mask_enabled"]),
 	}, nil
 }
 
@@ -671,11 +653,11 @@ func (s *QuickNodeConsoleService) UpdateSecurityOptions(_ context.Context, req *
 		return nil, err
 	}
 	return &pb.SecurityOptions{
-		TokenAuthEnabled:        toBool(data["token_auth_enabled"]),
-		JwtAuthEnabled:          toBool(data["jwt_auth_enabled"]),
-		IpAllowlistEnabled:      toBool(data["ip_allowlist_enabled"]),
+		TokenAuthEnabled:         toBool(data["token_auth_enabled"]),
+		JwtAuthEnabled:           toBool(data["jwt_auth_enabled"]),
+		IpAllowlistEnabled:       toBool(data["ip_allowlist_enabled"]),
 		ReferrerAllowlistEnabled: toBool(data["referrer_allowlist_enabled"]),
-		DomainMaskEnabled:       toBool(data["domain_mask_enabled"]),
+		DomainMaskEnabled:        toBool(data["domain_mask_enabled"]),
 	}, nil
 }
 

@@ -164,11 +164,13 @@ class StratzService:
     def __init__(self, *, api_key: str | None = None, base_url: str | None = None):
         self._http = httpx.AsyncClient(timeout=45)
         self._api_key = api_key or os.environ.get("STRATZ_API_KEY", "")
-        self._base_url = (base_url or os.environ.get("STRATZ_BASE_URL") or _DEFAULT_BASE_URL).rstrip("/")
+        self._base_url = (
+            base_url or os.environ.get("STRATZ_BASE_URL") or _DEFAULT_BASE_URL
+        ).rstrip("/")
 
     async def aclose(self) -> None:
         """Close the HTTP client. Idempotent."""
-        await self._client.aclose()
+        await self._http.aclose()
 
     def _headers(self) -> dict[str, str]:
         headers = {
@@ -181,7 +183,7 @@ class StratzService:
             headers["Authorization"] = f"Bearer {self._api_key}"
         return headers
 
-    def _graphql(
+    async def _graphql(
         self,
         query: str,
         *,
@@ -194,7 +196,9 @@ class StratzService:
         if operation_name:
             payload["operationName"] = operation_name
 
-        resp = self._http.post(self._base_url, json=payload, headers=self._headers())
+        resp = await self._http.post(
+            self._base_url, json=payload, headers=self._headers()
+        )
         resp.raise_for_status()
 
         body = resp.json()
@@ -213,75 +217,95 @@ class StratzService:
             data = {}
         return _to_struct(data)
 
-    async def ExecuteRawQuery(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def ExecuteRawQuery(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         variables = {}
         if request.HasField("variables"):
             variables = json_format.MessageToDict(request.variables)
-        return self._graphql(
+        return await self._graphql(
             request.query,
             variables=variables,
             operation_name=request.operation_name or None,
         )
 
-    async def GetMatchSummary(self, request: Any, context: Any = None) -> struct_pb2.Struct:
-        return self._graphql(
+    async def GetMatchSummary(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
+        return await self._graphql(
             _QUERY_MATCH_SUMMARY,
             variables={"matchId": request.match_id},
             operation_name="GetMatchSummary",
         )
 
-    async def GetMatchPlayers(self, request: Any, context: Any = None) -> struct_pb2.Struct:
-        return self._graphql(
+    async def GetMatchPlayers(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
+        return await self._graphql(
             _QUERY_MATCH_PLAYERS,
             variables={"matchId": request.match_id},
             operation_name="GetMatchPlayers",
         )
 
-    async def GetMatchLaneOutcomes(self, request: Any, context: Any = None) -> struct_pb2.Struct:
-        return self._graphql(
+    async def GetMatchLaneOutcomes(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
+        return await self._graphql(
             _QUERY_MATCH_LANE_OUTCOMES,
             variables={"matchId": request.match_id},
             operation_name="GetMatchLaneOutcomes",
         )
 
-    async def GetMatchDotaPlusLevels(self, request: Any, context: Any = None) -> struct_pb2.Struct:
-        return self._graphql(
+    async def GetMatchDotaPlusLevels(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
+        return await self._graphql(
             _QUERY_MATCH_DOTAPLUS_LEVELS,
             variables={"matchId": request.match_id},
             operation_name="GetMatchDotaPlusLevels",
         )
 
-    async def GetPlayerRecentMatches(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def GetPlayerRecentMatches(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         variables: dict[str, Any] = {
             "steamAccountId": request.steam_account_id,
             "take": request.take or 10,
             "before": request.before_match_id or None,
         }
-        return self._graphql(
+        return await self._graphql(
             _QUERY_PLAYER_RECENT_MATCHES,
             variables=variables,
             operation_name="GetPlayerRecentMatches",
         )
 
-    async def GetConstantsHeroes(self, request: Any, context: Any = None) -> struct_pb2.Struct:
-        return self._graphql(
+    async def GetConstantsHeroes(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
+        return await self._graphql(
             _QUERY_CONSTANTS_HEROES,
             operation_name="GetConstantsHeroes",
         )
 
-    async def GetConstantsItems(self, request: Any, context: Any = None) -> struct_pb2.Struct:
-        return self._graphql(
+    async def GetConstantsItems(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
+        return await self._graphql(
             _QUERY_CONSTANTS_ITEMS,
             operation_name="GetConstantsItems",
         )
 
-    async def GetConstantsAbilities(self, request: Any, context: Any = None) -> struct_pb2.Struct:
-        return self._graphql(
+    async def GetConstantsAbilities(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
+        return await self._graphql(
             _QUERY_CONSTANTS_ABILITIES,
             operation_name="GetConstantsAbilities",
         )
 
-    async def GetHeroNeutralItemStats(self, request: Any, context: Any = None) -> struct_pb2.Struct:
+    async def GetHeroNeutralItemStats(
+        self, request: Any, context: Any = None
+    ) -> struct_pb2.Struct:
         # Enum literals must be injected into the query string (GraphQL enum values are not quoted).
         raw_brackets = list(request.bracket_basic_ids) or ["DIVINE_IMMORTAL"]
         brackets: list[str] = []
@@ -293,7 +317,7 @@ class StratzService:
         query = _HERO_NEUTRAL_ITEMS_TEMPLATE % {"brackets": ", ".join(brackets)}
         week = request.week_unix or int(time.time()) - (7 * 24 * 60 * 60)
 
-        return self._graphql(
+        return await self._graphql(
             query,
             variables={"heroId": request.hero_id, "week": week},
             operation_name="GetHeroNeutralItemStats",

@@ -32,11 +32,11 @@ def live_server():
 
     from dune_mcp.service import DuneService
 
-    srv = Server.from_descriptor(
-        DESCRIPTOR_PATH
-    )
+    srv = Server.from_descriptor(DESCRIPTOR_PATH)
     servicer = DuneService()
-    srv.register(servicer)
+    from dune_mcp.gen.dune.v1 import dune_pb2_grpc as _native_rpc
+
+    _native_rpc.add_DuneServiceServicer_to_server(servicer, srv)
     yield srv
     asyncio.run(srv.stop())
 
@@ -49,37 +49,43 @@ class TestLiveExecuteAndGetResults:
 
     def test_execute_query(self, live_server):
         # Query 1234567 is a placeholder -- use a known public query ID.
-        result = asyncio.run(live_server._cli(
-            [
-                "DuneService",
-                "ExecuteQuery",
-                "-r",
-                json.dumps({"queryId": "4"}),
-            ]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "dune.v1.DuneService",
+                    "ExecuteQuery",
+                    "-r",
+                    json.dumps({"queryId": "4"}),
+                ]
+            )
+        )
         assert "executionId" in result or "execution_id" in result
 
     def test_get_execution_status(self, live_server):
         # First execute, then check status.
-        exec_result = asyncio.run(live_server._cli(
-            [
-                "DuneService",
-                "ExecuteQuery",
-                "-r",
-                json.dumps({"queryId": "4"}),
-            ]
-        ))
+        exec_result = asyncio.run(
+            live_server._cli(
+                [
+                    "dune.v1.DuneService",
+                    "ExecuteQuery",
+                    "-r",
+                    json.dumps({"queryId": "4"}),
+                ]
+            )
+        )
         exec_id = exec_result.get("executionId") or exec_result.get("execution_id")
         assert exec_id
 
-        status = asyncio.run(live_server._cli(
-            [
-                "DuneService",
-                "GetExecutionStatus",
-                "-r",
-                json.dumps({"executionId": exec_id}),
-            ]
-        ))
+        status = asyncio.run(
+            live_server._cli(
+                [
+                    "dune.v1.DuneService",
+                    "GetExecutionStatus",
+                    "-r",
+                    json.dumps({"executionId": exec_id}),
+                ]
+            )
+        )
         assert "execution" in status
         assert "state" in status["execution"]
 
@@ -89,12 +95,14 @@ class TestLiveExecuteAndGetResults:
 
 class TestLiveGetLatestResults:
     def test_get_latest_results(self, live_server):
-        result = asyncio.run(live_server._cli(
-            [
-                "DuneService",
-                "GetLatestResults",
-                "-r",
-                json.dumps({"queryId": "4"}),
-            ]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "dune.v1.DuneService",
+                    "GetLatestResults",
+                    "-r",
+                    json.dumps({"queryId": "4"}),
+                ]
+            )
+        )
         assert "execution" in result or "rows" in result

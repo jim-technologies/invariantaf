@@ -58,11 +58,11 @@ func (s *CoinbaseService) get(path string, params url.Values) (map[string]any, e
 	}
 
 	var result map[string]any
-	if err := json.Unmarshal(body, &result); err != nil {
+	if err := decodeProviderJSON(body, &result); err != nil {
 		// The response may be an array (e.g. products endpoint).
 		// Try wrapping in a map.
 		var arr []any
-		if err2 := json.Unmarshal(body, &arr); err2 == nil {
+		if err2 := decodeProviderJSON(body, &arr); err2 == nil {
 			result = map[string]any{"items": arr}
 		} else {
 			return nil, fmt.Errorf("decode response: %w (body: %s)", err, string(body))
@@ -83,32 +83,28 @@ func getString(fields map[string]*structpb.Value, key, def string) string {
 // helper: get an int field from structpb (numbers come as float64).
 func getInt(fields map[string]*structpb.Value, key string) int64 {
 	if v, ok := fields[key]; ok {
-		return int64(v.GetNumberValue())
+		return requestInteger(v)
 	}
 	return 0
 }
 
 // helper: convert API response to structpb.Struct.
-func toStruct(data map[string]any) (*structpb.Struct, error) {
-	result, err := structpb.NewStruct(data)
-	if err != nil {
-		return nil, fmt.Errorf("convert to struct: %w", err)
-	}
-	return result, nil
+func responseJSON(data map[string]any) (json.RawMessage, error) {
+	return json.Marshal(data)
 }
 
 // ListProducts lists all available trading pairs on Coinbase Exchange.
-func (s *CoinbaseService) ListProducts(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *CoinbaseService) ListProducts(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	data, err := s.get("/products", url.Values{})
 	if err != nil {
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetProduct gets details for a single trading pair.
-func (s *CoinbaseService) GetProduct(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *CoinbaseService) GetProduct(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	productID := getString(fields, "product_id", "")
 	if productID == "" {
@@ -121,11 +117,11 @@ func (s *CoinbaseService) GetProduct(_ context.Context, req *structpb.Struct) (*
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetProductTicker gets the latest ticker for a trading pair.
-func (s *CoinbaseService) GetProductTicker(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *CoinbaseService) GetProductTicker(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	productID := getString(fields, "product_id", "")
 	if productID == "" {
@@ -138,11 +134,11 @@ func (s *CoinbaseService) GetProductTicker(_ context.Context, req *structpb.Stru
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetProductOrderbook gets the order book for a trading pair.
-func (s *CoinbaseService) GetProductOrderbook(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *CoinbaseService) GetProductOrderbook(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	productID := getString(fields, "product_id", "")
 	if productID == "" {
@@ -163,11 +159,11 @@ func (s *CoinbaseService) GetProductOrderbook(_ context.Context, req *structpb.S
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetProductCandles gets OHLCV candles for a trading pair.
-func (s *CoinbaseService) GetProductCandles(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *CoinbaseService) GetProductCandles(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	productID := getString(fields, "product_id", "")
 	if productID == "" {
@@ -194,11 +190,11 @@ func (s *CoinbaseService) GetProductCandles(_ context.Context, req *structpb.Str
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetProductTrades gets recent trades for a trading pair.
-func (s *CoinbaseService) GetProductTrades(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *CoinbaseService) GetProductTrades(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	productID := getString(fields, "product_id", "")
 	if productID == "" {
@@ -219,11 +215,11 @@ func (s *CoinbaseService) GetProductTrades(_ context.Context, req *structpb.Stru
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetProductStats gets 24-hour rolling statistics for a trading pair.
-func (s *CoinbaseService) GetProductStats(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *CoinbaseService) GetProductStats(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	productID := getString(fields, "product_id", "")
 	if productID == "" {
@@ -236,5 +232,5 @@ func (s *CoinbaseService) GetProductStats(_ context.Context, req *structpb.Struc
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }

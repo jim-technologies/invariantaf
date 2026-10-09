@@ -25,12 +25,12 @@ class TMDBService:
 
     async def aclose(self) -> None:
         """Close the HTTP client. Idempotent."""
-        await self._client.aclose()
+        await self._http.aclose()
 
-    def _get(self, path: str, params: dict | None = None) -> Any:
+    async def _get(self, path: str, params: dict | None = None) -> Any:
         p = dict(params or {})
         p["api_key"] = self._api_key
-        resp = self._http.get(f"{_BASE_URL}{path}", params=p)
+        resp = await self._http.get(f"{_BASE_URL}{path}", params=p)
         resp.raise_for_status()
         return resp.json()
 
@@ -65,14 +65,16 @@ class TMDBService:
             original_language=t.get("original_language", ""),
         )
 
-    async def SearchMovies(self, request: Any, context: Any = None) -> pb.SearchMoviesResponse:
+    async def SearchMovies(
+        self, request: Any, context: Any = None
+    ) -> pb.SearchMoviesResponse:
         params: dict[str, Any] = {"query": request.query}
         if request.page:
             params["page"] = request.page
         if request.year:
             params["year"] = request.year
 
-        raw = self._get("/search/movie", params)
+        raw = await self._get("/search/movie", params)
         resp = pb.SearchMoviesResponse(
             total_results=raw.get("total_results", 0),
             total_pages=raw.get("total_pages", 0),
@@ -89,7 +91,7 @@ class TMDBService:
         if request.first_air_date_year:
             params["first_air_date_year"] = request.first_air_date_year
 
-        raw = self._get("/search/tv", params)
+        raw = await self._get("/search/tv", params)
         resp = pb.SearchTVResponse(
             total_results=raw.get("total_results", 0),
             total_pages=raw.get("total_pages", 0),
@@ -100,7 +102,7 @@ class TMDBService:
         return resp
 
     async def GetMovie(self, request: Any, context: Any = None) -> pb.GetMovieResponse:
-        raw = self._get(f"/movie/{request.id}")
+        raw = await self._get(f"/movie/{request.id}")
         genres = [
             pb.Genre(id=g.get("id", 0), name=g.get("name", ""))
             for g in raw.get("genres", [])
@@ -126,8 +128,10 @@ class TMDBService:
             imdb_id=raw.get("imdb_id", "") or "",
         )
 
-    async def GetTVShow(self, request: Any, context: Any = None) -> pb.GetTVShowResponse:
-        raw = self._get(f"/tv/{request.id}")
+    async def GetTVShow(
+        self, request: Any, context: Any = None
+    ) -> pb.GetTVShowResponse:
+        raw = await self._get(f"/tv/{request.id}")
         genres = [
             pb.Genre(id=g.get("id", 0), name=g.get("name", ""))
             for g in raw.get("genres", [])
@@ -152,57 +156,69 @@ class TMDBService:
             type=raw.get("type", ""),
         )
 
-    async def GetTrending(self, request: Any, context: Any = None) -> pb.GetTrendingResponse:
+    async def GetTrending(
+        self, request: Any, context: Any = None
+    ) -> pb.GetTrendingResponse:
         media_type = request.media_type or "all"
         time_window = request.time_window or "day"
-        raw = self._get(f"/trending/{media_type}/{time_window}")
+        raw = await self._get(f"/trending/{media_type}/{time_window}")
         resp = pb.GetTrendingResponse(
             total_results=raw.get("total_results", 0),
             total_pages=raw.get("total_pages", 0),
             page=raw.get("page", 0),
         )
         for item in raw.get("results", []):
-            resp.results.append(pb.TrendingItem(
-                id=item.get("id", 0),
-                title=item.get("title", "") or "",
-                name=item.get("name", "") or "",
-                media_type=item.get("media_type", ""),
-                overview=item.get("overview", "") or "",
-                release_date=item.get("release_date", "") or "",
-                first_air_date=item.get("first_air_date", "") or "",
-                vote_average=item.get("vote_average", 0) or 0,
-                poster_path=item.get("poster_path", "") or "",
-                popularity=item.get("popularity", 0) or 0,
-            ))
+            resp.results.append(
+                pb.TrendingItem(
+                    id=item.get("id", 0),
+                    title=item.get("title", "") or "",
+                    name=item.get("name", "") or "",
+                    media_type=item.get("media_type", ""),
+                    overview=item.get("overview", "") or "",
+                    release_date=item.get("release_date", "") or "",
+                    first_air_date=item.get("first_air_date", "") or "",
+                    vote_average=item.get("vote_average", 0) or 0,
+                    poster_path=item.get("poster_path", "") or "",
+                    popularity=item.get("popularity", 0) or 0,
+                )
+            )
         return resp
 
-    async def GetMovieCredits(self, request: Any, context: Any = None) -> pb.GetMovieCreditsResponse:
-        raw = self._get(f"/movie/{request.id}/credits")
+    async def GetMovieCredits(
+        self, request: Any, context: Any = None
+    ) -> pb.GetMovieCreditsResponse:
+        raw = await self._get(f"/movie/{request.id}/credits")
         resp = pb.GetMovieCreditsResponse(id=raw.get("id", 0))
         for c in raw.get("cast", []):
-            resp.cast.append(pb.CastMember(
-                id=c.get("id", 0),
-                name=c.get("name", ""),
-                character=c.get("character", ""),
-                profile_path=c.get("profile_path", "") or "",
-                order=c.get("order", 0),
-            ))
+            resp.cast.append(
+                pb.CastMember(
+                    id=c.get("id", 0),
+                    name=c.get("name", ""),
+                    character=c.get("character", ""),
+                    profile_path=c.get("profile_path", "") or "",
+                    order=c.get("order", 0),
+                )
+            )
         for c in raw.get("crew", []):
-            resp.crew.append(pb.CrewMember(
-                id=c.get("id", 0),
-                name=c.get("name", ""),
-                job=c.get("job", ""),
-                department=c.get("department", ""),
-                profile_path=c.get("profile_path", "") or "",
-            ))
+            resp.crew.append(
+                pb.CrewMember(
+                    id=c.get("id", 0),
+                    name=c.get("name", ""),
+                    job=c.get("job", ""),
+                    department=c.get("department", ""),
+                    profile_path=c.get("profile_path", "") or "",
+                )
+            )
         return resp
 
-    async def GetMovieReviews(self, request: Any, context: Any = None) -> pb.GetMovieReviewsResponse:
+    async def GetMovieReviews(
+        self, request: Any, context: Any = None
+    ) -> pb.GetMovieReviewsResponse:
         params: dict[str, Any] = {}
         if request.page:
             params["page"] = request.page
 
-        raw = self._get(f"/movie/{request.id}/reviews", params)
+        raw = await self._get(f"/movie/{request.id}/reviews", params)
         resp = pb.GetMovieReviewsResponse(
             id=raw.get("id", 0),
             total_results=raw.get("total_results", 0),
@@ -211,22 +227,26 @@ class TMDBService:
         )
         for r in raw.get("results", []):
             details = r.get("author_details", {})
-            resp.results.append(pb.Review(
-                author=r.get("author", ""),
-                content=r.get("content", ""),
-                rating=details.get("rating", 0) or 0,
-                created_at=r.get("created_at", ""),
-                id=r.get("id", ""),
-                url=r.get("url", ""),
-            ))
+            resp.results.append(
+                pb.Review(
+                    author=r.get("author", ""),
+                    content=r.get("content", ""),
+                    rating=details.get("rating", 0) or 0,
+                    created_at=r.get("created_at", ""),
+                    id=r.get("id", ""),
+                    url=r.get("url", ""),
+                )
+            )
         return resp
 
-    async def GetPopularMovies(self, request: Any, context: Any = None) -> pb.GetPopularMoviesResponse:
+    async def GetPopularMovies(
+        self, request: Any, context: Any = None
+    ) -> pb.GetPopularMoviesResponse:
         params: dict[str, Any] = {}
         if request.page:
             params["page"] = request.page
 
-        raw = self._get("/movie/popular", params)
+        raw = await self._get("/movie/popular", params)
         resp = pb.GetPopularMoviesResponse(
             total_results=raw.get("total_results", 0),
             total_pages=raw.get("total_pages", 0),
@@ -236,12 +256,14 @@ class TMDBService:
             resp.results.append(self._parse_movie(m))
         return resp
 
-    async def GetTopRatedMovies(self, request: Any, context: Any = None) -> pb.GetTopRatedMoviesResponse:
+    async def GetTopRatedMovies(
+        self, request: Any, context: Any = None
+    ) -> pb.GetTopRatedMoviesResponse:
         params: dict[str, Any] = {}
         if request.page:
             params["page"] = request.page
 
-        raw = self._get("/movie/top_rated", params)
+        raw = await self._get("/movie/top_rated", params)
         resp = pb.GetTopRatedMoviesResponse(
             total_results=raw.get("total_results", 0),
             total_pages=raw.get("total_pages", 0),
@@ -251,7 +273,9 @@ class TMDBService:
             resp.results.append(self._parse_movie(m))
         return resp
 
-    async def DiscoverMovies(self, request: Any, context: Any = None) -> pb.DiscoverMoviesResponse:
+    async def DiscoverMovies(
+        self, request: Any, context: Any = None
+    ) -> pb.DiscoverMoviesResponse:
         params: dict[str, Any] = {
             "sort_by": request.sort_by or "popularity.desc",
         }
@@ -266,7 +290,7 @@ class TMDBService:
         if request.vote_count_gte:
             params["vote_count.gte"] = request.vote_count_gte
 
-        raw = self._get("/discover/movie", params)
+        raw = await self._get("/discover/movie", params)
         resp = pb.DiscoverMoviesResponse(
             total_results=raw.get("total_results", 0),
             total_pages=raw.get("total_pages", 0),

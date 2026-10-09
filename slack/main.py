@@ -10,6 +10,9 @@ from invariant import Server
 
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
+from slack_mcp.gen.slack.v1 import slack_pb2_grpc as pb_grpc
+
+
 # Ensure generated descriptors are loaded into the default descriptor pool.
 from slack_mcp.gen.slack.v1 import slack_pb2 as _slack_pb2  # noqa: F401
 from slack_mcp.service import SlackService
@@ -47,7 +50,7 @@ async def _serve(server: Server, modes: dict) -> None:
 
 def main() -> None:
     server = Server.from_descriptor(str(DESCRIPTOR))
-    server.register(SlackService(), service_name="slack.v1.SlackService")
+    pb_grpc.add_SlackServiceServicer_to_server(SlackService(), server)
     asyncio.run(_serve(server, _projection_from_argv(sys.argv[1:])))
 
 

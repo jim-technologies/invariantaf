@@ -11,9 +11,16 @@ from invariant import Server
 
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
+from kraken_mcp.gen.kraken.v1 import kraken_pb2_grpc as pb_grpc
+
+
 # Ensure generated protobuf descriptors are loaded in the default descriptor pool.
 from kraken_mcp.gen.kraken.v1 import kraken_pb2 as _kraken_pb2  # noqa: F401
-from kraken_mcp.service import DEFAULT_FUTURES_BASE_URL, DEFAULT_SPOT_BASE_URL, KrakenService
+from kraken_mcp.service import (
+    DEFAULT_FUTURES_BASE_URL,
+    DEFAULT_SPOT_BASE_URL,
+    KrakenService,
+)
 
 DESCRIPTOR = Path(__file__).parent / "descriptor.binpb"
 
@@ -54,15 +61,17 @@ def main() -> None:
     server = Server.from_descriptor(str(DESCRIPTOR))
 
     spot_base_url = (_env("KRAKEN_SPOT_BASE_URL") or DEFAULT_SPOT_BASE_URL).rstrip("/")
-    futures_base_url = (_env("KRAKEN_FUTURES_BASE_URL") or DEFAULT_FUTURES_BASE_URL).rstrip("/")
+    futures_base_url = (
+        _env("KRAKEN_FUTURES_BASE_URL") or DEFAULT_FUTURES_BASE_URL
+    ).rstrip("/")
 
     servicer = KrakenService(
         spot_base_url=spot_base_url,
         futures_base_url=futures_base_url,
     )
 
-    server.register(servicer, service_name="kraken.v1.KrakenSpotService")
-    server.register(servicer, service_name="kraken.v1.KrakenFuturesService")
+    pb_grpc.add_KrakenSpotServiceServicer_to_server(servicer, server)
+    pb_grpc.add_KrakenFuturesServiceServicer_to_server(servicer, server)
 
     asyncio.run(_serve(server, _projection_from_argv(sys.argv[1:])))
 

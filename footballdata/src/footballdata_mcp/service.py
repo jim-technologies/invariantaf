@@ -78,7 +78,9 @@ class FootballDataService:
         if self._has_field(request, "status"):
             query["status"] = request.status
 
-        payload = await self._get(f"/competitions/{request.code}/matches", query or None)
+        payload = await self._get(
+            f"/competitions/{request.code}/matches", query or None
+        )
         matches = [self._transform_match(m) for m in payload.get("matches", [])]
         return self._parse_message({"matches": matches}, pb.ListMatchesResponse)
 
@@ -191,24 +193,26 @@ class FootballDataService:
         table_entries = []
         for entry in data.get("table", []):
             team = entry.get("team", {})
-            table_entries.append({
-                "position": entry.get("position", 0),
-                "team": {
-                    "id": team.get("id", 0),
-                    "name": team.get("name", ""),
-                    "short_name": team.get("shortName", ""),
-                    "tla": team.get("tla", ""),
-                    "crest": team.get("crest", ""),
-                },
-                "played_games": entry.get("playedGames", 0),
-                "won": entry.get("won", 0),
-                "draw": entry.get("draw", 0),
-                "lost": entry.get("lost", 0),
-                "points": entry.get("points", 0),
-                "goals_for": entry.get("goalsFor", 0),
-                "goals_against": entry.get("goalsAgainst", 0),
-                "goal_difference": entry.get("goalDifference", 0),
-            })
+            table_entries.append(
+                {
+                    "position": entry.get("position", 0),
+                    "team": {
+                        "id": team.get("id", 0),
+                        "name": team.get("name", ""),
+                        "short_name": team.get("shortName", ""),
+                        "tla": team.get("tla", ""),
+                        "crest": team.get("crest", ""),
+                    },
+                    "played_games": entry.get("playedGames", 0),
+                    "won": entry.get("won", 0),
+                    "draw": entry.get("draw", 0),
+                    "lost": entry.get("lost", 0),
+                    "points": entry.get("points", 0),
+                    "goals_for": entry.get("goalsFor", 0),
+                    "goals_against": entry.get("goalsAgainst", 0),
+                    "goal_difference": entry.get("goalDifference", 0),
+                }
+            )
         return {
             "stage": data.get("stage", ""),
             "type": data.get("type", ""),
@@ -238,15 +242,19 @@ class FootballDataService:
         away = data.get("awayTeam", {}) or {}
 
         competition_raw = data.get("competition", {}) or {}
-        competition = self._transform_competition(competition_raw) if competition_raw else {}
+        competition = (
+            self._transform_competition(competition_raw) if competition_raw else {}
+        )
 
         referees = []
         for ref in data.get("referees", []):
-            referees.append({
-                "name": ref.get("name", ""),
-                "type": ref.get("type", ""),
-                "nationality": ref.get("nationality", ""),
-            })
+            referees.append(
+                {
+                    "name": ref.get("name", ""),
+                    "type": ref.get("type", ""),
+                    "nationality": ref.get("nationality", ""),
+                }
+            )
 
         return {
             "id": data.get("id", 0),
@@ -281,12 +289,14 @@ class FootballDataService:
         }
         squad = []
         for p in data.get("squad", []):
-            squad.append({
-                "id": p.get("id", 0),
-                "name": p.get("name", ""),
-                "nationality": p.get("nationality", ""),
-                "position": p.get("position", ""),
-            })
+            squad.append(
+                {
+                    "id": p.get("id", 0),
+                    "name": p.get("name", ""),
+                    "nationality": p.get("nationality", ""),
+                    "position": p.get("position", ""),
+                }
+            )
         return {
             "id": data.get("id", 0),
             "name": data.get("name", ""),

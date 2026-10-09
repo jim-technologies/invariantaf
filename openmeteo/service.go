@@ -91,7 +91,7 @@ func (s *OpenMeteoService) get(baseURL, path string, params url.Values) (map[str
 	}
 
 	var result map[string]any
-	if err := json.Unmarshal(body, &result); err != nil {
+	if err := decodeProviderJSON(body, &result); err != nil {
 		return nil, fmt.Errorf("decode response: %w (body: %s)", err, string(body))
 	}
 
@@ -109,7 +109,7 @@ func getString(fields map[string]*structpb.Value, key, def string) string {
 // helper: get an int field from structpb (numbers come as float64).
 func getInt(fields map[string]*structpb.Value, key string) int64 {
 	if v, ok := fields[key]; ok {
-		return int64(v.GetNumberValue())
+		return requestInteger(v)
 	}
 	return 0
 }
@@ -117,7 +117,7 @@ func getInt(fields map[string]*structpb.Value, key string) int64 {
 // helper: get a float field from structpb.
 func getFloat(fields map[string]*structpb.Value, key string) float64 {
 	if v, ok := fields[key]; ok {
-		return v.GetNumberValue()
+		return requestNumber(v)
 	}
 	return 0
 }
@@ -142,12 +142,8 @@ func getStringList(fields map[string]*structpb.Value, key string) []string {
 }
 
 // helper: convert API response to structpb.Struct.
-func toStruct(data map[string]any) (*structpb.Struct, error) {
-	result, err := structpb.NewStruct(data)
-	if err != nil {
-		return nil, fmt.Errorf("convert to struct: %w", err)
-	}
-	return result, nil
+func responseJSON(data map[string]any) (json.RawMessage, error) {
+	return json.Marshal(data)
 }
 
 // ensureFloats converts a slice of any to []float64, replacing nil with 0.0.
@@ -216,7 +212,7 @@ func toIntSlice(v any) []any {
 }
 
 // GetForecast gets hourly and daily weather forecasts for a location.
-func (s *OpenMeteoService) GetForecast(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *OpenMeteoService) GetForecast(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	lat := getFloat(fields, "latitude")
 	lon := getFloat(fields, "longitude")
@@ -240,11 +236,11 @@ func (s *OpenMeteoService) GetForecast(_ context.Context, req *structpb.Struct) 
 		return nil, err
 	}
 
-	return toStruct(buildForecastResponse(data))
+	return responseJSON(buildForecastResponse(data))
 }
 
 // GetHistoricalWeather gets historical weather data for backtesting.
-func (s *OpenMeteoService) GetHistoricalWeather(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *OpenMeteoService) GetHistoricalWeather(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	lat := getFloat(fields, "latitude")
 	lon := getFloat(fields, "longitude")
@@ -272,11 +268,11 @@ func (s *OpenMeteoService) GetHistoricalWeather(_ context.Context, req *structpb
 		return nil, err
 	}
 
-	return toStruct(buildForecastResponse(data))
+	return responseJSON(buildForecastResponse(data))
 }
 
 // GetMultiModelForecast gets forecasts from multiple weather models simultaneously.
-func (s *OpenMeteoService) GetMultiModelForecast(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *OpenMeteoService) GetMultiModelForecast(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	lat := getFloat(fields, "latitude")
 	lon := getFloat(fields, "longitude")
@@ -303,11 +299,11 @@ func (s *OpenMeteoService) GetMultiModelForecast(_ context.Context, req *structp
 		return nil, err
 	}
 
-	return toStruct(buildMultiModelResponse(data, models))
+	return responseJSON(buildMultiModelResponse(data, models))
 }
 
 // GetAirQuality gets air quality data for a location.
-func (s *OpenMeteoService) GetAirQuality(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *OpenMeteoService) GetAirQuality(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	lat := getFloat(fields, "latitude")
 	lon := getFloat(fields, "longitude")
@@ -322,11 +318,11 @@ func (s *OpenMeteoService) GetAirQuality(_ context.Context, req *structpb.Struct
 		return nil, err
 	}
 
-	return toStruct(buildAirQualityResponse(data))
+	return responseJSON(buildAirQualityResponse(data))
 }
 
 // GetMarineWeather gets marine/ocean weather data for a location.
-func (s *OpenMeteoService) GetMarineWeather(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *OpenMeteoService) GetMarineWeather(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	lat := getFloat(fields, "latitude")
 	lon := getFloat(fields, "longitude")
@@ -341,7 +337,7 @@ func (s *OpenMeteoService) GetMarineWeather(_ context.Context, req *structpb.Str
 		return nil, err
 	}
 
-	return toStruct(buildMarineResponse(data))
+	return responseJSON(buildMarineResponse(data))
 }
 
 // --- Response builders ---
@@ -365,11 +361,11 @@ func buildForecastResponse(data map[string]any) map[string]any {
 	if hourlyRaw != nil {
 		result["hourly"] = map[string]any{
 			"times":                toStringSlice(hourlyRaw["time"]),
-			"temperature_2m":      ensureFloats(toAnySlice(hourlyRaw["temperature_2m"])),
+			"temperature_2m":       ensureFloats(toAnySlice(hourlyRaw["temperature_2m"])),
 			"relative_humidity_2m": ensureFloats(toAnySlice(hourlyRaw["relative_humidity_2m"])),
-			"precipitation":       ensureFloats(toAnySlice(hourlyRaw["precipitation"])),
-			"wind_speed_10m":      ensureFloats(toAnySlice(hourlyRaw["wind_speed_10m"])),
-			"weather_code":        toIntSlice(hourlyRaw["weather_code"]),
+			"precipitation":        ensureFloats(toAnySlice(hourlyRaw["precipitation"])),
+			"wind_speed_10m":       ensureFloats(toAnySlice(hourlyRaw["wind_speed_10m"])),
+			"weather_code":         toIntSlice(hourlyRaw["weather_code"]),
 		}
 	}
 

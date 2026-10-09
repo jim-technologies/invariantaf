@@ -82,7 +82,9 @@ class NwsService:
     ) -> pb.GetAlertsResponse:
         if self._has_field(request, "area"):
             data = await self._get("/alerts/active", {"area": request.area})
-        elif self._has_field(request, "latitude") and self._has_field(request, "longitude"):
+        elif self._has_field(request, "latitude") and self._has_field(
+            request, "longitude"
+        ):
             lat = self._fmt_coord(request.latitude)
             lon = self._fmt_coord(request.longitude)
             data = await self._get("/alerts/active", {"point": f"{lat},{lon}"})
@@ -93,19 +95,21 @@ class NwsService:
         alerts = []
         for f in features:
             props = f.get("properties", {})
-            alerts.append({
-                "id": props.get("id", ""),
-                "event": props.get("event", ""),
-                "headline": props.get("headline", ""),
-                "severity": props.get("severity", ""),
-                "urgency": props.get("urgency", ""),
-                "certainty": props.get("certainty", ""),
-                "effective": props.get("effective", ""),
-                "expires": props.get("expires", ""),
-                "description": props.get("description", ""),
-                "sender_name": props.get("senderName", ""),
-                "area_desc": props.get("areaDesc", ""),
-            })
+            alerts.append(
+                {
+                    "id": props.get("id", ""),
+                    "event": props.get("event", ""),
+                    "headline": props.get("headline", ""),
+                    "severity": props.get("severity", ""),
+                    "urgency": props.get("urgency", ""),
+                    "certainty": props.get("certainty", ""),
+                    "effective": props.get("effective", ""),
+                    "expires": props.get("expires", ""),
+                    "description": props.get("description", ""),
+                    "sender_name": props.get("senderName", ""),
+                    "area_desc": props.get("areaDesc", ""),
+                }
+            )
         return self._parse_message({"alerts": alerts}, pb.GetAlertsResponse)
 
     async def GetStations(
@@ -122,12 +126,14 @@ class NwsService:
             name = props.get("name", "")
             geom = f.get("geometry", {})
             coords = geom.get("coordinates", [0, 0])
-            stations.append({
-                "station_id": station_id,
-                "name": name,
-                "latitude": coords[1] if len(coords) > 1 else 0,
-                "longitude": coords[0] if len(coords) > 0 else 0,
-            })
+            stations.append(
+                {
+                    "station_id": station_id,
+                    "name": name,
+                    "latitude": coords[1] if len(coords) > 1 else 0,
+                    "longitude": coords[0] if len(coords) > 0 else 0,
+                }
+            )
         return self._parse_message({"stations": stations}, pb.GetStationsResponse)
 
     async def GetLatestObservation(
@@ -165,7 +171,9 @@ class NwsService:
     # Internal helpers
     # -------------------------
 
-    async def _resolve_grid(self, latitude: float, longitude: float) -> tuple[str, int, int]:
+    async def _resolve_grid(
+        self, latitude: float, longitude: float
+    ) -> tuple[str, int, int]:
         """Resolve lat/lon to NWS grid coordinates via the /points endpoint."""
         lat = self._fmt_coord(latitude)
         lon = self._fmt_coord(longitude)
@@ -181,18 +189,20 @@ class NwsService:
             wind_speed = p.get("windSpeed", "")
             if isinstance(wind_speed, dict):
                 wind_speed = str(wind_speed.get("value", ""))
-            periods.append({
-                "name": p.get("name", ""),
-                "temperature": p.get("temperature", 0),
-                "temperature_unit": p.get("temperatureUnit", ""),
-                "wind_speed": str(wind_speed),
-                "wind_direction": p.get("windDirection", ""),
-                "short_forecast": p.get("shortForecast", ""),
-                "detailed_forecast": p.get("detailedForecast", ""),
-                "is_daytime": p.get("isDaytime", False),
-                "start_time": p.get("startTime", ""),
-                "end_time": p.get("endTime", ""),
-            })
+            periods.append(
+                {
+                    "name": p.get("name", ""),
+                    "temperature": p.get("temperature", 0),
+                    "temperature_unit": p.get("temperatureUnit", ""),
+                    "wind_speed": str(wind_speed),
+                    "wind_direction": p.get("windDirection", ""),
+                    "short_forecast": p.get("shortForecast", ""),
+                    "detailed_forecast": p.get("detailedForecast", ""),
+                    "is_daytime": p.get("isDaytime", False),
+                    "start_time": p.get("startTime", ""),
+                    "end_time": p.get("endTime", ""),
+                }
+            )
         return periods
 
     def _fmt_coord(self, value: float) -> str:

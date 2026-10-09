@@ -32,11 +32,11 @@ def live_server():
 
     from usgs_mcp.service import USGSService
 
-    srv = Server.from_descriptor(
-        DESCRIPTOR_PATH
-    )
+    srv = Server.from_descriptor(DESCRIPTOR_PATH)
     servicer = USGSService()
-    srv.register(servicer)
+    from usgs_mcp.gen.usgs.v1 import usgs_pb2_grpc as _native_rpc
+
+    _native_rpc.add_USGSServiceServicer_to_server(servicer, srv)
     yield srv
     asyncio.run(srv.stop())
 
@@ -47,14 +47,19 @@ def _cli_or_skip(live_server, args):
         return asyncio.run(live_server._cli(args))
     except Exception as exc:
         msg = str(exc)
-        if any(code in msg for code in ("404", "429", "500", "502", "503")) or "Timeout" in msg:
+        if (
+            any(code in msg for code in ("404", "429", "500", "502", "503"))
+            or "Timeout" in msg
+        ):
             pytest.skip(f"USGS API unavailable: {msg[:120]}")
         raise
 
 
 class TestLiveRecentEarthquakes:
     def test_returns_collection(self, live_server):
-        result = _cli_or_skip(live_server, ["USGSService", "GetRecentEarthquakes"])
+        result = _cli_or_skip(
+            live_server, ["usgs.v1.USGSService", "GetRecentEarthquakes"]
+        )
         assert "collection" in result
         c = result["collection"]
         assert "count" in c
@@ -62,7 +67,9 @@ class TestLiveRecentEarthquakes:
         assert isinstance(c["earthquakes"], list)
 
     def test_earthquake_has_fields(self, live_server):
-        result = _cli_or_skip(live_server, ["USGSService", "GetRecentEarthquakes"])
+        result = _cli_or_skip(
+            live_server, ["usgs.v1.USGSService", "GetRecentEarthquakes"]
+        )
         eqs = result["collection"]["earthquakes"]
         if len(eqs) == 0:
             pytest.skip("No recent earthquakes in the last hour")
@@ -74,7 +81,9 @@ class TestLiveRecentEarthquakes:
 
 class TestLiveSignificantEarthquakes:
     def test_returns_collection(self, live_server):
-        result = _cli_or_skip(live_server, ["USGSService", "GetSignificantEarthquakes"])
+        result = _cli_or_skip(
+            live_server, ["usgs.v1.USGSService", "GetSignificantEarthquakes"]
+        )
         assert "collection" in result
         c = result["collection"]
         assert "count" in c
@@ -86,15 +95,17 @@ class TestLiveSearchEarthquakes:
         result = _cli_or_skip(
             live_server,
             [
-                "USGSService",
+                "usgs.v1.USGSService",
                 "SearchEarthquakes",
                 "-r",
-                json.dumps({
-                    "start_time": "2024-01-01",
-                    "end_time": "2024-01-31",
-                    "min_magnitude": 5.0,
-                    "limit": 5,
-                }),
+                json.dumps(
+                    {
+                        "start_time": "2024-01-01",
+                        "end_time": "2024-01-31",
+                        "min_magnitude": 5.0,
+                        "limit": 5,
+                    }
+                ),
             ],
         )
         assert "collection" in result
@@ -111,15 +122,17 @@ class TestLiveEarthquakeDetail:
         result = _cli_or_skip(
             live_server,
             [
-                "USGSService",
+                "usgs.v1.USGSService",
                 "SearchEarthquakes",
                 "-r",
-                json.dumps({
-                    "start_time": "2024-01-01",
-                    "end_time": "2024-12-31",
-                    "min_magnitude": 6.0,
-                    "limit": 1,
-                }),
+                json.dumps(
+                    {
+                        "start_time": "2024-01-01",
+                        "end_time": "2024-12-31",
+                        "min_magnitude": 6.0,
+                        "limit": 1,
+                    }
+                ),
             ],
         )
         eqs = result["collection"]["earthquakes"]
@@ -130,7 +143,7 @@ class TestLiveEarthquakeDetail:
         detail = _cli_or_skip(
             live_server,
             [
-                "USGSService",
+                "usgs.v1.USGSService",
                 "GetEarthquakeDetail",
                 "-r",
                 json.dumps({"event_id": event_id}),
@@ -146,7 +159,7 @@ class TestLiveWaterLevels:
         result = _cli_or_skip(
             live_server,
             [
-                "USGSService",
+                "usgs.v1.USGSService",
                 "GetWaterLevels",
                 "-r",
                 json.dumps({"site_number": "01646500"}),

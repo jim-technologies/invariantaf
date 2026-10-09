@@ -33,11 +33,11 @@ def live_server():
 
     from bls_mcp.service import BLSService
 
-    srv = Server.from_descriptor(
-        DESCRIPTOR_PATH
-    )
+    srv = Server.from_descriptor(DESCRIPTOR_PATH)
     servicer = BLSService()
-    srv.register(servicer)
+    from bls_mcp.gen.bls.v1 import bls_pb2_grpc as _native_rpc
+
+    _native_rpc.add_BLSServiceServicer_to_server(servicer, srv)
     yield srv
     asyncio.run(srv.stop())
 
@@ -47,13 +47,22 @@ def live_server():
 
 class TestLiveGetSeriesData:
     def test_cpi_data(self, live_server):
-        result = asyncio.run(live_server._cli(
-            ["BLSService", "GetSeriesData", "-r", json.dumps({
-                "series_id": "CUUR0000SA0",
-                "start_year": "2024",
-                "end_year": "2024",
-            })]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "bls.v1.BLSService",
+                    "GetSeriesData",
+                    "-r",
+                    json.dumps(
+                        {
+                            "series_id": "CUUR0000SA0",
+                            "start_year": "2024",
+                            "end_year": "2024",
+                        }
+                    ),
+                ]
+            )
+        )
         assert "series" in result
         series = result["series"]
         assert series.get("series_id") == "CUUR0000SA0"
@@ -61,13 +70,22 @@ class TestLiveGetSeriesData:
         assert len(series["observations"]) > 0
 
     def test_observation_has_fields(self, live_server):
-        result = asyncio.run(live_server._cli(
-            ["BLSService", "GetSeriesData", "-r", json.dumps({
-                "series_id": "CUUR0000SA0",
-                "start_year": "2024",
-                "end_year": "2024",
-            })]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "bls.v1.BLSService",
+                    "GetSeriesData",
+                    "-r",
+                    json.dumps(
+                        {
+                            "series_id": "CUUR0000SA0",
+                            "start_year": "2024",
+                            "end_year": "2024",
+                        }
+                    ),
+                ]
+            )
+        )
         obs = result["series"]["observations"][0]
         assert "year" in obs
         assert "period" in obs
@@ -79,13 +97,22 @@ class TestLiveGetSeriesData:
 
 class TestLiveGetMultipleSeries:
     def test_multiple_series(self, live_server):
-        result = asyncio.run(live_server._cli(
-            ["BLSService", "GetMultipleSeries", "-r", json.dumps({
-                "series_ids": ["CUUR0000SA0", "LNS14000000"],
-                "start_year": "2024",
-                "end_year": "2024",
-            })]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "bls.v1.BLSService",
+                    "GetMultipleSeries",
+                    "-r",
+                    json.dumps(
+                        {
+                            "series_ids": ["CUUR0000SA0", "LNS14000000"],
+                            "start_year": "2024",
+                            "end_year": "2024",
+                        }
+                    ),
+                ]
+            )
+        )
         assert "series" in result
         series_list = result["series"]
         assert isinstance(series_list, list)
@@ -97,7 +124,7 @@ class TestLiveGetMultipleSeries:
 
 class TestLiveGetLatestCPI:
     def test_returns_latest(self, live_server):
-        result = asyncio.run(live_server._cli(["BLSService", "GetLatestCPI"]))
+        result = asyncio.run(live_server._cli(["bls.v1.BLSService", "GetLatestCPI"]))
         assert result.get("series_id") == "CUUR0000SA0"
         assert "observation" in result
         obs = result["observation"]
@@ -110,7 +137,9 @@ class TestLiveGetLatestCPI:
 
 class TestLiveGetLatestUnemployment:
     def test_returns_latest(self, live_server):
-        result = asyncio.run(live_server._cli(["BLSService", "GetLatestUnemployment"]))
+        result = asyncio.run(
+            live_server._cli(["bls.v1.BLSService", "GetLatestUnemployment"])
+        )
         assert result.get("series_id") == "LNS14000000"
         assert "observation" in result
         obs = result["observation"]
@@ -122,7 +151,9 @@ class TestLiveGetLatestUnemployment:
 
 class TestLiveGetLatestNonfarmPayrolls:
     def test_returns_latest(self, live_server):
-        result = asyncio.run(live_server._cli(["BLSService", "GetLatestNonfarmPayrolls"]))
+        result = asyncio.run(
+            live_server._cli(["bls.v1.BLSService", "GetLatestNonfarmPayrolls"])
+        )
         assert result.get("series_id") == "CES0000000001"
         assert "observation" in result
         obs = result["observation"]
@@ -134,11 +165,20 @@ class TestLiveGetLatestNonfarmPayrolls:
 
 class TestLiveSearchSeries:
     def test_catalog_lookup(self, live_server):
-        result = asyncio.run(live_server._cli(
-            ["BLSService", "SearchSeries", "-r", json.dumps({
-                "series_ids": ["CUUR0000SA0"],
-            })]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "bls.v1.BLSService",
+                    "SearchSeries",
+                    "-r",
+                    json.dumps(
+                        {
+                            "series_ids": ["CUUR0000SA0"],
+                        }
+                    ),
+                ]
+            )
+        )
         assert "results" in result
         results = result["results"]
         assert len(results) > 0

@@ -33,11 +33,11 @@ def live_server():
 
     from curve_mcp.service import CurveService
 
-    srv = Server.from_descriptor(
-        DESCRIPTOR_PATH
-    )
+    srv = Server.from_descriptor(DESCRIPTOR_PATH)
     servicer = CurveService()
-    srv.register(servicer)
+    from curve_mcp.gen.curve.v1 import curve_pb2_grpc as _native_rpc
+
+    _native_rpc.add_CurveServiceServicer_to_server(servicer, srv)
     yield srv
     asyncio.run(srv.stop())
 
@@ -47,14 +47,16 @@ def live_server():
 
 class TestLivePools:
     def test_get_pools_ethereum_main(self, live_server):
-        result = asyncio.run(live_server._cli(
-            [
-                "CurveService",
-                "GetPools",
-                "-r",
-                json.dumps({"blockchainId": "ethereum", "registryId": "main"}),
-            ]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "curve.v1.CurveService",
+                    "GetPools",
+                    "-r",
+                    json.dumps({"blockchainId": "ethereum", "registryId": "main"}),
+                ]
+            )
+        )
         assert "pools" in result
         pools = result["pools"]
         assert isinstance(pools, list)
@@ -65,12 +67,12 @@ class TestLivePools:
         assert "coins" in p
 
     def test_get_pools_defaults(self, live_server):
-        result = asyncio.run(live_server._cli(["CurveService", "GetPools"]))
+        result = asyncio.run(live_server._cli(["curve.v1.CurveService", "GetPools"]))
         assert "pools" in result
         assert len(result["pools"]) > 0
 
     def test_pool_has_coins(self, live_server):
-        result = asyncio.run(live_server._cli(["CurveService", "GetPools"]))
+        result = asyncio.run(live_server._cli(["curve.v1.CurveService", "GetPools"]))
         pools = result["pools"]
         # Find a pool with coins
         pool_with_coins = None
@@ -89,7 +91,7 @@ class TestLivePools:
 
 class TestLiveApys:
     def test_get_apys(self, live_server):
-        result = asyncio.run(live_server._cli(["CurveService", "GetApys"]))
+        result = asyncio.run(live_server._cli(["curve.v1.CurveService", "GetApys"]))
         assert "pools" in result
         pools = result["pools"]
         assert isinstance(pools, list)
@@ -104,7 +106,7 @@ class TestLiveApys:
 
 class TestLiveVolumes:
     def test_get_volumes(self, live_server):
-        result = asyncio.run(live_server._cli(["CurveService", "GetVolumes"]))
+        result = asyncio.run(live_server._cli(["curve.v1.CurveService", "GetVolumes"]))
         assert "pools" in result
         pools = result["pools"]
         assert isinstance(pools, list)
@@ -118,7 +120,7 @@ class TestLiveVolumes:
 
 class TestLiveTVL:
     def test_get_tvl(self, live_server):
-        result = asyncio.run(live_server._cli(["CurveService", "GetTVL"]))
+        result = asyncio.run(live_server._cli(["curve.v1.CurveService", "GetTVL"]))
         assert "pools" in result
         pools = result["pools"]
         assert isinstance(pools, list)
@@ -130,7 +132,9 @@ class TestLiveTVL:
 
 class TestLiveFactoryTVL:
     def test_get_factory_tvl(self, live_server):
-        result = asyncio.run(live_server._cli(["CurveService", "GetFactoryTVL"]))
+        result = asyncio.run(
+            live_server._cli(["curve.v1.CurveService", "GetFactoryTVL"])
+        )
         key = "factoryBalances" if "factoryBalances" in result else "factory_balances"
         assert key in result
         assert isinstance(result[key], (int, float))
@@ -142,7 +146,9 @@ class TestLiveFactoryTVL:
 
 class TestLiveWeeklyFees:
     def test_get_weekly_fees(self, live_server):
-        result = asyncio.run(live_server._cli(["CurveService", "GetWeeklyFees"]))
+        result = asyncio.run(
+            live_server._cli(["curve.v1.CurveService", "GetWeeklyFees"])
+        )
         key = "weeklyFees" if "weeklyFees" in result else "weekly_fees"
         assert key in result
         fees = result[key]
@@ -153,7 +159,9 @@ class TestLiveWeeklyFees:
         assert "ts" in entry
 
     def test_total_fees(self, live_server):
-        result = asyncio.run(live_server._cli(["CurveService", "GetWeeklyFees"]))
+        result = asyncio.run(
+            live_server._cli(["curve.v1.CurveService", "GetWeeklyFees"])
+        )
         key = "totalFees" if "totalFees" in result else "total_fees"
         assert key in result
         assert isinstance(result[key], (int, float))
@@ -165,7 +173,7 @@ class TestLiveWeeklyFees:
 
 class TestLiveETHPrice:
     def test_get_eth_price(self, live_server):
-        result = asyncio.run(live_server._cli(["CurveService", "GetETHPrice"]))
+        result = asyncio.run(live_server._cli(["curve.v1.CurveService", "GetETHPrice"]))
         assert "price" in result
         assert isinstance(result["price"], (int, float))
         assert result["price"] > 0
@@ -176,14 +184,16 @@ class TestLiveETHPrice:
 
 class TestLiveSubgraphData:
     def test_get_subgraph_data(self, live_server):
-        result = asyncio.run(live_server._cli(
-            [
-                "CurveService",
-                "GetSubgraphData",
-                "-r",
-                json.dumps({"blockchainId": "ethereum"}),
-            ]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "curve.v1.CurveService",
+                    "GetSubgraphData",
+                    "-r",
+                    json.dumps({"blockchainId": "ethereum"}),
+                ]
+            )
+        )
         assert "pools" in result
         pools = result["pools"]
         assert isinstance(pools, list)

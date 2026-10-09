@@ -11,7 +11,9 @@ import (
 func mustStruct(t *testing.T, m map[string]any) *structpb.Struct {
 	t.Helper()
 	s, err := structpb.NewStruct(m)
-	if err != nil { t.Fatalf("failed to create struct: %v", err) }
+	if err != nil {
+		t.Fatalf("failed to create struct: %v", err)
+	}
 	return s
 }
 
@@ -28,9 +30,13 @@ func TestLiveGetHeroes(t *testing.T) {
 	skipUnlessLive(t)
 	svc := liveService()
 	resp, err := svc.GetHeroes(context.Background(), mustStruct(t, map[string]any{}))
-	if err != nil { t.Fatalf("GetHeroes: %v", err) }
-	fields := resp.GetFields()
-	if len(fields) == 0 { t.Fatal("empty response from GetHeroes") }
+	if err != nil {
+		t.Fatalf("GetHeroes: %v", err)
+	}
+	fields := replyFields(t, resp)
+	if len(fields) == 0 {
+		t.Fatal("empty response from GetHeroes")
+	}
 	t.Logf("GetHeroes response keys: %v", keysOf(fields))
 }
 
@@ -38,9 +44,13 @@ func TestLiveGetMatch(t *testing.T) {
 	skipUnlessLive(t)
 	svc := liveService()
 	resp, err := svc.GetMatch(context.Background(), mustStruct(t, map[string]any{"match_id": float64(7000000001)}))
-	if err != nil { t.Fatalf("GetMatch: %v", err) }
-	fields := resp.GetFields()
-	if len(fields) == 0 { t.Fatal("empty response from GetMatch") }
+	if err != nil {
+		t.Fatalf("GetMatch: %v", err)
+	}
+	fields := replyFields(t, resp)
+	if len(fields) == 0 {
+		t.Fatal("empty response from GetMatch")
+	}
 	t.Logf("GetMatch response keys: %v", keysOf(fields))
 }
 
@@ -48,9 +58,13 @@ func TestLiveGetProPlayers(t *testing.T) {
 	skipUnlessLive(t)
 	svc := liveService()
 	resp, err := svc.GetProPlayers(context.Background(), mustStruct(t, map[string]any{}))
-	if err != nil { t.Fatalf("GetProPlayers: %v", err) }
-	fields := resp.GetFields()
-	if len(fields) == 0 { t.Fatal("empty response from GetProPlayers") }
+	if err != nil {
+		t.Fatalf("GetProPlayers: %v", err)
+	}
+	fields := replyFields(t, resp)
+	if len(fields) == 0 {
+		t.Fatal("empty response from GetProPlayers")
+	}
 	t.Logf("GetProPlayers response keys: %v", keysOf(fields))
 }
 
@@ -58,9 +72,13 @@ func TestLiveGetPlayer(t *testing.T) {
 	skipUnlessLive(t)
 	svc := liveService()
 	resp, err := svc.GetPlayer(context.Background(), mustStruct(t, map[string]any{"account_id": float64(311360822)}))
-	if err != nil { t.Fatalf("GetPlayer: %v", err) }
-	fields := resp.GetFields()
-	if len(fields) == 0 { t.Fatal("empty response from GetPlayer") }
+	if err != nil {
+		t.Fatalf("GetPlayer: %v", err)
+	}
+	fields := replyFields(t, resp)
+	if len(fields) == 0 {
+		t.Fatal("empty response from GetPlayer")
+	}
 	t.Logf("GetPlayer response keys: %v", keysOf(fields))
 }
 
@@ -68,9 +86,13 @@ func TestLiveGetTeams(t *testing.T) {
 	skipUnlessLive(t)
 	svc := liveService()
 	resp, err := svc.GetTeams(context.Background(), mustStruct(t, map[string]any{}))
-	if err != nil { t.Fatalf("GetTeams: %v", err) }
-	fields := resp.GetFields()
-	if len(fields) == 0 { t.Fatal("empty response from GetTeams") }
+	if err != nil {
+		t.Fatalf("GetTeams: %v", err)
+	}
+	fields := replyFields(t, resp)
+	if len(fields) == 0 {
+		t.Fatal("empty response from GetTeams")
+	}
 	t.Logf("GetTeams response keys: %v", keysOf(fields))
 }
 
@@ -78,9 +100,13 @@ func TestLiveSearchPlayers(t *testing.T) {
 	skipUnlessLive(t)
 	svc := liveService()
 	resp, err := svc.SearchPlayers(context.Background(), mustStruct(t, map[string]any{"query": map[string]any{"q": "Yatoro"}}))
-	if err != nil { t.Fatalf("SearchPlayers: %v", err) }
-	fields := resp.GetFields()
-	if len(fields) == 0 { t.Fatal("empty response from SearchPlayers") }
+	if err != nil {
+		t.Fatalf("SearchPlayers: %v", err)
+	}
+	fields := replyFields(t, resp)
+	if len(fields) == 0 {
+		t.Fatal("empty response from SearchPlayers")
+	}
 	t.Logf("SearchPlayers response keys: %v", keysOf(fields))
 }
 
@@ -88,14 +114,29 @@ func TestLiveGetHealth(t *testing.T) {
 	skipUnlessLive(t)
 	svc := liveService()
 	resp, err := svc.GetHealth(context.Background(), mustStruct(t, map[string]any{}))
-	if err != nil { t.Fatalf("GetHealth: %v", err) }
-	fields := resp.GetFields()
-	if len(fields) == 0 { t.Fatal("empty response from GetHealth") }
+	if err != nil {
+		t.Fatalf("GetHealth: %v", err)
+	}
+	fields := replyFields(t, resp)
+	if len(fields) == 0 {
+		t.Fatal("empty response from GetHealth")
+	}
 	t.Logf("GetHealth response keys: %v", keysOf(fields))
 }
 
 func keysOf(fields map[string]*structpb.Value) []string {
 	keys := make([]string, 0, len(fields))
-	for k := range fields { keys = append(keys, k) }
+	for k := range fields {
+		keys = append(keys, k)
+	}
 	return keys
+}
+
+func replyFields(t *testing.T, body []byte) map[string]*structpb.Value {
+	t.Helper()
+	result := new(structpb.Struct)
+	if err := result.UnmarshalJSON(body); err != nil {
+		t.Fatal(err)
+	}
+	return result.GetFields()
 }

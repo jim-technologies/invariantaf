@@ -58,11 +58,11 @@ func (s *CryptoSignalService) get(rawURL string) (map[string]any, error) {
 	}
 
 	var result map[string]any
-	if err := json.Unmarshal(body, &result); err != nil {
+	if err := decodeProviderJSON(body, &result); err != nil {
 		// The response may be an array (e.g. trending endpoint).
 		// Try wrapping in a map.
 		var arr []any
-		if err2 := json.Unmarshal(body, &arr); err2 == nil {
+		if err2 := decodeProviderJSON(body, &arr); err2 == nil {
 			result = map[string]any{"items": arr}
 		} else {
 			return nil, fmt.Errorf("decode response: %w (body: %s)", err, string(body))
@@ -83,22 +83,18 @@ func getString(fields map[string]*structpb.Value, key, def string) string {
 // helper: get an int field from structpb (numbers come as float64).
 func getInt(fields map[string]*structpb.Value, key string) int64 {
 	if v, ok := fields[key]; ok {
-		return int64(v.GetNumberValue())
+		return requestInteger(v)
 	}
 	return 0
 }
 
 // helper: convert API response to structpb.Struct.
-func toStruct(data map[string]any) (*structpb.Struct, error) {
-	result, err := structpb.NewStruct(data)
-	if err != nil {
-		return nil, fmt.Errorf("convert to struct: %w", err)
-	}
-	return result, nil
+func responseJSON(data map[string]any) (json.RawMessage, error) {
+	return json.Marshal(data)
 }
 
 // GetFearGreedIndex returns the crypto Fear & Greed Index with historical data.
-func (s *CryptoSignalService) GetFearGreedIndex(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *CryptoSignalService) GetFearGreedIndex(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	limit := getInt(fields, "limit")
 	if limit <= 0 {
@@ -118,11 +114,11 @@ func (s *CryptoSignalService) GetFearGreedIndex(_ context.Context, req *structpb
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetGlobalMetrics returns global cryptocurrency market metrics.
-func (s *CryptoSignalService) GetGlobalMetrics(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *CryptoSignalService) GetGlobalMetrics(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	_ = getString(req.GetFields(), "", "") // consume req to match pattern
 
 	u := fmt.Sprintf("%s/global", s.coingeckoBaseURL)
@@ -131,11 +127,11 @@ func (s *CryptoSignalService) GetGlobalMetrics(_ context.Context, req *structpb.
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetTrendingCoins returns trending coins by search volume on CoinGecko.
-func (s *CryptoSignalService) GetTrendingCoins(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *CryptoSignalService) GetTrendingCoins(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	_ = getString(req.GetFields(), "", "") // consume req to match pattern
 
 	u := fmt.Sprintf("%s/search/trending", s.coingeckoBaseURL)
@@ -144,11 +140,11 @@ func (s *CryptoSignalService) GetTrendingCoins(_ context.Context, req *structpb.
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetGasPrice returns current Ethereum gas prices from Etherscan.
-func (s *CryptoSignalService) GetGasPrice(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *CryptoSignalService) GetGasPrice(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	_ = getString(req.GetFields(), "", "") // consume req to match pattern
 
 	params := url.Values{}
@@ -161,5 +157,5 @@ func (s *CryptoSignalService) GetGasPrice(_ context.Context, req *structpb.Struc
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }

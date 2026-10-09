@@ -66,11 +66,11 @@ func (s *TheOddsApiService) get(path string, params url.Values) (map[string]any,
 	}
 
 	var result map[string]any
-	if err := json.Unmarshal(body, &result); err != nil {
+	if err := decodeProviderJSON(body, &result); err != nil {
 		// The response may be an array (e.g. sports, odds endpoints).
 		// Try wrapping in a map.
 		var arr []any
-		if err2 := json.Unmarshal(body, &arr); err2 == nil {
+		if err2 := decodeProviderJSON(body, &arr); err2 == nil {
 			result = map[string]any{"items": arr}
 		} else {
 			return nil, fmt.Errorf("decode response: %w (body: %s)", err, string(body))
@@ -91,22 +91,18 @@ func getString(fields map[string]*structpb.Value, key, def string) string {
 // helper: get an int field from structpb (numbers come as float64).
 func getInt(fields map[string]*structpb.Value, key string) int64 {
 	if v, ok := fields[key]; ok {
-		return int64(v.GetNumberValue())
+		return requestInteger(v)
 	}
 	return 0
 }
 
 // helper: convert API response to structpb.Struct.
-func toStruct(data map[string]any) (*structpb.Struct, error) {
-	result, err := structpb.NewStruct(data)
-	if err != nil {
-		return nil, fmt.Errorf("convert to struct: %w", err)
-	}
-	return result, nil
+func responseJSON(data map[string]any) (json.RawMessage, error) {
+	return json.Marshal(data)
 }
 
 // ListSports lists all available sports and leagues.
-func (s *TheOddsApiService) ListSports(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *TheOddsApiService) ListSports(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	params := url.Values{}
 
 	data, err := s.get("/sports", params)
@@ -114,11 +110,11 @@ func (s *TheOddsApiService) ListSports(_ context.Context, req *structpb.Struct) 
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetOdds gets odds from multiple bookmakers for a given sport.
-func (s *TheOddsApiService) GetOdds(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *TheOddsApiService) GetOdds(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	sport := getString(fields, "sport", "")
 	if sport == "" {
@@ -135,11 +131,11 @@ func (s *TheOddsApiService) GetOdds(_ context.Context, req *structpb.Struct) (*s
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetScores gets live and recently completed scores for a given sport.
-func (s *TheOddsApiService) GetScores(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *TheOddsApiService) GetScores(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	sport := getString(fields, "sport", "")
 	if sport == "" {
@@ -160,11 +156,11 @@ func (s *TheOddsApiService) GetScores(_ context.Context, req *structpb.Struct) (
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetEvents gets upcoming events for a given sport.
-func (s *TheOddsApiService) GetEvents(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *TheOddsApiService) GetEvents(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	sport := getString(fields, "sport", "")
 	if sport == "" {
@@ -179,11 +175,11 @@ func (s *TheOddsApiService) GetEvents(_ context.Context, req *structpb.Struct) (
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetEventOdds gets odds for a specific event from multiple bookmakers.
-func (s *TheOddsApiService) GetEventOdds(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *TheOddsApiService) GetEventOdds(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	sport := getString(fields, "sport", "")
 	if sport == "" {
@@ -204,11 +200,11 @@ func (s *TheOddsApiService) GetEventOdds(_ context.Context, req *structpb.Struct
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetHistoricalOdds gets a historical odds snapshot for a given sport and date.
-func (s *TheOddsApiService) GetHistoricalOdds(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *TheOddsApiService) GetHistoricalOdds(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	sport := getString(fields, "sport", "")
 	if sport == "" {
@@ -230,5 +226,5 @@ func (s *TheOddsApiService) GetHistoricalOdds(_ context.Context, req *structpb.S
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }

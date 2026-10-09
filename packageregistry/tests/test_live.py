@@ -32,11 +32,13 @@ def live_server():
     from packageregistry_mcp.gen.packageregistry.v1 import packageregistry_pb2 as _pb  # noqa: F401
     from packageregistry_mcp.service import PackageRegistryService
 
-    srv = Server.from_descriptor(
-        DESCRIPTOR_PATH
-    )
+    srv = Server.from_descriptor(DESCRIPTOR_PATH)
     servicer = PackageRegistryService()
-    srv.register(servicer)
+    from packageregistry_mcp.gen.packageregistry.v1 import (
+        packageregistry_pb2_grpc as _native_rpc,
+    )
+
+    _native_rpc.add_PackageRegistryServiceServicer_to_server(servicer, srv)
     yield srv
     asyncio.run(srv.stop())
 
@@ -47,14 +49,16 @@ def live_server():
 @pytest.fixture(scope="module")
 def npm_package_version(live_server):
     """Discover a valid NPM package version for detail tests."""
-    result = asyncio.run(live_server._cli(
-        [
-            "PackageRegistryService",
-            "GetNPMPackage",
-            "-r",
-            json.dumps({"name": "express"}),
-        ]
-    ))
+    result = asyncio.run(
+        live_server._cli(
+            [
+                "packageregistry.v1.PackageRegistryService",
+                "GetNPMPackage",
+                "-r",
+                json.dumps({"name": "express"}),
+            ]
+        )
+    )
     version = result.get("latestVersion") or result.get("latest_version", "")
     assert version, "expected a latest version for express"
     return version
@@ -63,14 +67,16 @@ def npm_package_version(live_server):
 @pytest.fixture(scope="module")
 def pypi_package_version(live_server):
     """Discover a valid PyPI package version for detail tests."""
-    result = asyncio.run(live_server._cli(
-        [
-            "PackageRegistryService",
-            "GetPyPIPackage",
-            "-r",
-            json.dumps({"name": "requests"}),
-        ]
-    ))
+    result = asyncio.run(
+        live_server._cli(
+            [
+                "packageregistry.v1.PackageRegistryService",
+                "GetPyPIPackage",
+                "-r",
+                json.dumps({"name": "requests"}),
+            ]
+        )
+    )
     version = result.get("version", "")
     assert version, "expected a version for requests"
     return version
@@ -81,14 +87,16 @@ def pypi_package_version(live_server):
 
 class TestLiveNPMSearch:
     def test_search_npm(self, live_server):
-        result = asyncio.run(live_server._cli(
-            [
-                "PackageRegistryService",
-                "SearchNPM",
-                "-r",
-                json.dumps({"query": "react", "size": 5}),
-            ]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "packageregistry.v1.PackageRegistryService",
+                    "SearchNPM",
+                    "-r",
+                    json.dumps({"query": "react", "size": 5}),
+                ]
+            )
+        )
         results = result.get("results", [])
         assert isinstance(results, list)
         assert len(results) > 0
@@ -97,14 +105,16 @@ class TestLiveNPMSearch:
         assert "version" in r
 
     def test_search_npm_with_keyword(self, live_server):
-        result = asyncio.run(live_server._cli(
-            [
-                "PackageRegistryService",
-                "SearchNPM",
-                "-r",
-                json.dumps({"query": "typescript", "size": 3}),
-            ]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "packageregistry.v1.PackageRegistryService",
+                    "SearchNPM",
+                    "-r",
+                    json.dumps({"query": "typescript", "size": 3}),
+                ]
+            )
+        )
         results = result.get("results", [])
         assert isinstance(results, list)
         assert len(results) > 0
@@ -117,14 +127,16 @@ class TestLiveNPMSearch:
 
 class TestLiveNPMPackage:
     def test_get_npm_package(self, live_server):
-        result = asyncio.run(live_server._cli(
-            [
-                "PackageRegistryService",
-                "GetNPMPackage",
-                "-r",
-                json.dumps({"name": "express"}),
-            ]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "packageregistry.v1.PackageRegistryService",
+                    "GetNPMPackage",
+                    "-r",
+                    json.dumps({"name": "express"}),
+                ]
+            )
+        )
         assert result.get("name") == "express"
         version = result.get("latestVersion") or result.get("latest_version", "")
         assert version
@@ -132,14 +144,16 @@ class TestLiveNPMPackage:
         assert desc
 
     def test_get_npm_package_scoped(self, live_server):
-        result = asyncio.run(live_server._cli(
-            [
-                "PackageRegistryService",
-                "GetNPMPackage",
-                "-r",
-                json.dumps({"name": "lodash"}),
-            ]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "packageregistry.v1.PackageRegistryService",
+                    "GetNPMPackage",
+                    "-r",
+                    json.dumps({"name": "lodash"}),
+                ]
+            )
+        )
         assert result.get("name") == "lodash"
         version = result.get("latestVersion") or result.get("latest_version", "")
         assert version
@@ -150,14 +164,16 @@ class TestLiveNPMPackage:
 
 class TestLiveNPMDownloads:
     def test_get_npm_downloads(self, live_server):
-        result = asyncio.run(live_server._cli(
-            [
-                "PackageRegistryService",
-                "GetNPMDownloads",
-                "-r",
-                json.dumps({"name": "express"}),
-            ]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "packageregistry.v1.PackageRegistryService",
+                    "GetNPMDownloads",
+                    "-r",
+                    json.dumps({"name": "express"}),
+                ]
+            )
+        )
         downloads = result.get("downloads", 0)
         assert int(downloads) > 0
         start = result.get("startDate") or result.get("start_date", "")
@@ -171,14 +187,16 @@ class TestLiveNPMDownloads:
 
 class TestLiveNPMVersions:
     def test_get_npm_versions(self, live_server):
-        result = asyncio.run(live_server._cli(
-            [
-                "PackageRegistryService",
-                "GetNPMVersions",
-                "-r",
-                json.dumps({"name": "express"}),
-            ]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "packageregistry.v1.PackageRegistryService",
+                    "GetNPMVersions",
+                    "-r",
+                    json.dumps({"name": "express"}),
+                ]
+            )
+        )
         versions = result.get("versions", [])
         assert isinstance(versions, list)
         assert len(versions) > 0
@@ -191,14 +209,16 @@ class TestLiveNPMVersions:
 
 class TestLiveNPMDependencies:
     def test_get_npm_dependencies(self, live_server):
-        result = asyncio.run(live_server._cli(
-            [
-                "PackageRegistryService",
-                "GetNPMDependencies",
-                "-r",
-                json.dumps({"name": "express"}),
-            ]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "packageregistry.v1.PackageRegistryService",
+                    "GetNPMDependencies",
+                    "-r",
+                    json.dumps({"name": "express"}),
+                ]
+            )
+        )
         deps = result.get("dependencies", [])
         assert isinstance(deps, list)
         assert len(deps) > 0
@@ -208,14 +228,16 @@ class TestLiveNPMDependencies:
         assert spec
 
     def test_get_npm_dependencies_with_version(self, live_server, npm_package_version):
-        result = asyncio.run(live_server._cli(
-            [
-                "PackageRegistryService",
-                "GetNPMDependencies",
-                "-r",
-                json.dumps({"name": "express", "version": npm_package_version}),
-            ]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "packageregistry.v1.PackageRegistryService",
+                    "GetNPMDependencies",
+                    "-r",
+                    json.dumps({"name": "express", "version": npm_package_version}),
+                ]
+            )
+        )
         deps = result.get("dependencies", [])
         assert isinstance(deps, list)
         assert len(deps) > 0
@@ -226,28 +248,32 @@ class TestLiveNPMDependencies:
 
 class TestLivePyPIPackage:
     def test_get_pypi_package(self, live_server):
-        result = asyncio.run(live_server._cli(
-            [
-                "PackageRegistryService",
-                "GetPyPIPackage",
-                "-r",
-                json.dumps({"name": "requests"}),
-            ]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "packageregistry.v1.PackageRegistryService",
+                    "GetPyPIPackage",
+                    "-r",
+                    json.dumps({"name": "requests"}),
+                ]
+            )
+        )
         assert result.get("name") == "requests"
         assert result.get("version")
         summary = result.get("summary", "")
         assert summary
 
     def test_get_pypi_package_flask(self, live_server):
-        result = asyncio.run(live_server._cli(
-            [
-                "PackageRegistryService",
-                "GetPyPIPackage",
-                "-r",
-                json.dumps({"name": "flask"}),
-            ]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "packageregistry.v1.PackageRegistryService",
+                    "GetPyPIPackage",
+                    "-r",
+                    json.dumps({"name": "flask"}),
+                ]
+            )
+        )
         # PyPI normalizes package names, so it might be "Flask" or "flask"
         name = result.get("name", "").lower()
         assert "flask" in name
@@ -259,14 +285,16 @@ class TestLivePyPIPackage:
 
 class TestLivePyPIVersion:
     def test_get_pypi_version(self, live_server, pypi_package_version):
-        result = asyncio.run(live_server._cli(
-            [
-                "PackageRegistryService",
-                "GetPyPIVersion",
-                "-r",
-                json.dumps({"name": "requests", "version": pypi_package_version}),
-            ]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "packageregistry.v1.PackageRegistryService",
+                    "GetPyPIVersion",
+                    "-r",
+                    json.dumps({"name": "requests", "version": pypi_package_version}),
+                ]
+            )
+        )
         assert result.get("version") == pypi_package_version
         assert result.get("name") == "requests"
 
@@ -276,14 +304,16 @@ class TestLivePyPIVersion:
 
 class TestLivePyPIReleases:
     def test_get_pypi_releases(self, live_server):
-        result = asyncio.run(live_server._cli(
-            [
-                "PackageRegistryService",
-                "GetPyPIReleases",
-                "-r",
-                json.dumps({"name": "requests"}),
-            ]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "packageregistry.v1.PackageRegistryService",
+                    "GetPyPIReleases",
+                    "-r",
+                    json.dumps({"name": "requests"}),
+                ]
+            )
+        )
         releases = result.get("releases", [])
         assert isinstance(releases, list)
         assert len(releases) > 0
@@ -296,14 +326,16 @@ class TestLivePyPIReleases:
 
 class TestLivePyPIDownloads:
     def test_get_pypi_downloads(self, live_server):
-        result = asyncio.run(live_server._cli(
-            [
-                "PackageRegistryService",
-                "GetPyPIDownloads",
-                "-r",
-                json.dumps({"name": "requests"}),
-            ]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "packageregistry.v1.PackageRegistryService",
+                    "GetPyPIDownloads",
+                    "-r",
+                    json.dumps({"name": "requests"}),
+                ]
+            )
+        )
         last_day = result.get("lastDay") or result.get("last_day", 0)
         last_week = result.get("lastWeek") or result.get("last_week", 0)
         last_month = result.get("lastMonth") or result.get("last_month", 0)
@@ -317,27 +349,33 @@ class TestLivePyPIDownloads:
 
 class TestLivePyPIDependencies:
     def test_get_pypi_dependencies(self, live_server):
-        result = asyncio.run(live_server._cli(
-            [
-                "PackageRegistryService",
-                "GetPyPIDependencies",
-                "-r",
-                json.dumps({"name": "requests"}),
-            ]
-        ))
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "packageregistry.v1.PackageRegistryService",
+                    "GetPyPIDependencies",
+                    "-r",
+                    json.dumps({"name": "requests"}),
+                ]
+            )
+        )
         requires = result.get("requiresDist") or result.get("requires_dist", [])
         assert isinstance(requires, list)
         assert len(requires) > 0
 
-    def test_get_pypi_dependencies_with_version(self, live_server, pypi_package_version):
-        result = asyncio.run(live_server._cli(
-            [
-                "PackageRegistryService",
-                "GetPyPIDependencies",
-                "-r",
-                json.dumps({"name": "requests", "version": pypi_package_version}),
-            ]
-        ))
+    def test_get_pypi_dependencies_with_version(
+        self, live_server, pypi_package_version
+    ):
+        result = asyncio.run(
+            live_server._cli(
+                [
+                    "packageregistry.v1.PackageRegistryService",
+                    "GetPyPIDependencies",
+                    "-r",
+                    json.dumps({"name": "requests", "version": pypi_package_version}),
+                ]
+            )
+        )
         requires = result.get("requiresDist") or result.get("requires_dist", [])
         assert isinstance(requires, list)
         assert len(requires) > 0

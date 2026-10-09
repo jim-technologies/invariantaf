@@ -55,7 +55,9 @@ class OpenMeteoService:
     async def GetForecast(
         self, request: pb.GetForecastRequest, context: Any = None
     ) -> pb.GetForecastResponse:
-        forecast_days = request.forecast_days if self._has_field(request, "forecast_days") else 7
+        forecast_days = (
+            request.forecast_days if self._has_field(request, "forecast_days") else 7
+        )
         timezone = request.timezone if self._has_field(request, "timezone") else "auto"
 
         query: dict[str, Any] = {
@@ -91,7 +93,9 @@ class OpenMeteoService:
     async def GetMultiModelForecast(
         self, request: pb.GetMultiModelForecastRequest, context: Any = None
     ) -> pb.GetMultiModelForecastResponse:
-        forecast_days = request.forecast_days if self._has_field(request, "forecast_days") else 7
+        forecast_days = (
+            request.forecast_days if self._has_field(request, "forecast_days") else 7
+        )
         models = list(request.models) if request.models else DEFAULT_MODELS
 
         query: dict[str, Any] = {
@@ -140,12 +144,18 @@ class OpenMeteoService:
         if hourly_raw:
             result["hourly"] = {
                 "times": hourly_raw.get("time", []),
-                "temperature_2m": self._ensure_floats(hourly_raw.get("temperature_2m", [])),
+                "temperature_2m": self._ensure_floats(
+                    hourly_raw.get("temperature_2m", [])
+                ),
                 "relative_humidity_2m": self._ensure_floats(
                     hourly_raw.get("relative_humidity_2m", [])
                 ),
-                "precipitation": self._ensure_floats(hourly_raw.get("precipitation", [])),
-                "wind_speed_10m": self._ensure_floats(hourly_raw.get("wind_speed_10m", [])),
+                "precipitation": self._ensure_floats(
+                    hourly_raw.get("precipitation", [])
+                ),
+                "wind_speed_10m": self._ensure_floats(
+                    hourly_raw.get("wind_speed_10m", [])
+                ),
                 "weather_code": hourly_raw.get("weather_code", []),
             }
 
@@ -181,21 +191,25 @@ class OpenMeteoService:
             key = f"temperature_2m_{model}"
             temps = self._ensure_floats(hourly_raw.get(key, []))
             if temps:
-                model_forecasts.append({
-                    "model_name": model,
-                    "times": times,
-                    "temperature_2m": temps,
-                })
+                model_forecasts.append(
+                    {
+                        "model_name": model,
+                        "times": times,
+                        "temperature_2m": temps,
+                    }
+                )
 
         # Fallback: if no per-model keys found, use plain temperature_2m
         if not model_forecasts and "temperature_2m" in hourly_raw:
             temps = self._ensure_floats(hourly_raw.get("temperature_2m", []))
             for model in models:
-                model_forecasts.append({
-                    "model_name": model,
-                    "times": times,
-                    "temperature_2m": temps,
-                })
+                model_forecasts.append(
+                    {
+                        "model_name": model,
+                        "times": times,
+                        "temperature_2m": temps,
+                    }
+                )
 
         return self._parse_message(
             {"model_forecasts": model_forecasts}, pb.GetMultiModelForecastResponse

@@ -42,7 +42,9 @@ def _cli_or_skip(live_server, service, method, params=None):
         pytest.skip(f"{method}: {type(exc).__name__}: {exc}")
     except Exception as exc:
         msg = str(exc)
-        if any(code in msg for code in ("429", "500", "502", "503", "Timeout", "timed out")):
+        if any(
+            code in msg for code in ("429", "500", "502", "503", "Timeout", "timed out")
+        ):
             pytest.skip(f"{method}: {msg[:120]}")
         raise
 
@@ -55,11 +57,11 @@ def live_server():
 
     base_url = (os.getenv("DEXSCREENER_BASE_URL") or DEFAULT_BASE_URL).rstrip("/")
 
-    srv = Server.from_descriptor(
-        DESCRIPTOR_PATH
-    )
+    srv = Server.from_descriptor(DESCRIPTOR_PATH)
     servicer = DexScreenerService(base_url=base_url)
-    srv.register(servicer, service_name="dexscreener.v1.DexScreenerService")
+    from dexscreener_mcp.gen.dexscreener.v1 import dexscreener_pb2_grpc as _native_rpc
+
+    _native_rpc.add_DexScreenerServiceServicer_to_server(servicer, srv)
     yield srv
     asyncio.run(srv.stop())
 
@@ -70,7 +72,9 @@ def live_server():
 class TestLiveSearchPairs:
     def test_search_weth(self, live_server):
         result = _cli_or_skip(
-            live_server, "DexScreenerService", "SearchPairs",
+            live_server,
+            "dexscreener.v1.DexScreenerService",
+            "SearchPairs",
             {"query": "WETH"},
         )
         assert "pairs" in result
@@ -85,7 +89,9 @@ class TestLiveSearchPairs:
 
     def test_search_usdc(self, live_server):
         result = _cli_or_skip(
-            live_server, "DexScreenerService", "SearchPairs",
+            live_server,
+            "dexscreener.v1.DexScreenerService",
+            "SearchPairs",
             {"query": "USDC"},
         )
         assert "pairs" in result
@@ -98,7 +104,9 @@ class TestLiveSearchPairs:
 class TestLiveGetTokenPairs:
     def test_get_weth_pairs(self, live_server):
         result = _cli_or_skip(
-            live_server, "DexScreenerService", "GetTokenPairs",
+            live_server,
+            "dexscreener.v1.DexScreenerService",
+            "GetTokenPairs",
             {"token_addresses": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"},
         )
         assert "pairs" in result
@@ -117,7 +125,9 @@ class TestLiveGetTokenPairs:
 class TestLiveGetLatestTokenProfiles:
     def test_get_profiles(self, live_server):
         result = _cli_or_skip(
-            live_server, "DexScreenerService", "GetLatestTokenProfiles",
+            live_server,
+            "dexscreener.v1.DexScreenerService",
+            "GetLatestTokenProfiles",
         )
         assert "profiles" in result
         profiles = result["profiles"]
@@ -134,7 +144,9 @@ class TestLiveGetLatestTokenProfiles:
 class TestLiveGetLatestBoostedTokens:
     def test_get_latest_boosted(self, live_server):
         result = _cli_or_skip(
-            live_server, "DexScreenerService", "GetLatestBoostedTokens",
+            live_server,
+            "dexscreener.v1.DexScreenerService",
+            "GetLatestBoostedTokens",
         )
         assert "tokens" in result
         tokens = result["tokens"]
@@ -151,7 +163,9 @@ class TestLiveGetLatestBoostedTokens:
 class TestLiveGetTopBoostedTokens:
     def test_get_top_boosted(self, live_server):
         result = _cli_or_skip(
-            live_server, "DexScreenerService", "GetTopBoostedTokens",
+            live_server,
+            "dexscreener.v1.DexScreenerService",
+            "GetTopBoostedTokens",
         )
         assert "tokens" in result
         tokens = result["tokens"]

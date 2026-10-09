@@ -76,9 +76,9 @@ func (s *PolymarketService) get(baseURL, path string, params url.Values) (map[st
 	}
 
 	var result map[string]any
-	if err := json.Unmarshal(body, &result); err != nil {
+	if err := decodeProviderJSON(body, &result); err != nil {
 		var arr []any
-		if err2 := json.Unmarshal(body, &arr); err2 == nil {
+		if err2 := decodeProviderJSON(body, &arr); err2 == nil {
 			result = map[string]any{"data": arr}
 		} else {
 			return nil, fmt.Errorf("decode response: %w (body: %s)", err, string(body))
@@ -99,7 +99,7 @@ func getString(fields map[string]*structpb.Value, key, def string) string {
 // getInt gets an int field from structpb (numbers come as float64).
 func getInt(fields map[string]*structpb.Value, key string) int64 {
 	if v, ok := fields[key]; ok {
-		return int64(v.GetNumberValue())
+		return requestInteger(v)
 	}
 	return 0
 }
@@ -107,7 +107,7 @@ func getInt(fields map[string]*structpb.Value, key string) int64 {
 // getFloat gets a float field from structpb.
 func getFloat(fields map[string]*structpb.Value, key string) float64 {
 	if v, ok := fields[key]; ok {
-		return v.GetNumberValue()
+		return requestNumber(v)
 	}
 	return 0
 }
@@ -121,18 +121,14 @@ func getBool(fields map[string]*structpb.Value, key string) (bool, bool) {
 }
 
 // toStruct converts an API response to structpb.Struct.
-func toStruct(data map[string]any) (*structpb.Struct, error) {
-	result, err := structpb.NewStruct(data)
-	if err != nil {
-		return nil, fmt.Errorf("convert to struct: %w", err)
-	}
-	return result, nil
+func responseJSON(data map[string]any) (json.RawMessage, error) {
+	return json.Marshal(data)
 }
 
 // --- PolymarketGammaService RPCs ---
 
 // Search searches markets, events, and profiles via the Gamma API.
-func (s *PolymarketService) Search(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *PolymarketService) Search(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	q := getString(fields, "q", "")
 	if q == "" {
@@ -153,11 +149,11 @@ func (s *PolymarketService) Search(_ context.Context, req *structpb.Struct) (*st
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // ListEvents lists events with optional pagination and filters via the Gamma API.
-func (s *PolymarketService) ListEvents(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *PolymarketService) ListEvents(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 
 	params := url.Values{}
@@ -185,11 +181,11 @@ func (s *PolymarketService) ListEvents(_ context.Context, req *structpb.Struct) 
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetEvent gets a single event by slug via the Gamma API.
-func (s *PolymarketService) GetEvent(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *PolymarketService) GetEvent(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	slug := getString(fields, "slug", "")
 	if slug == "" {
@@ -202,11 +198,11 @@ func (s *PolymarketService) GetEvent(_ context.Context, req *structpb.Struct) (*
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetEventById gets a single event by ID via the Gamma API.
-func (s *PolymarketService) GetEventById(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *PolymarketService) GetEventById(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	id := getString(fields, "id", "")
 	if id == "" {
@@ -219,11 +215,11 @@ func (s *PolymarketService) GetEventById(_ context.Context, req *structpb.Struct
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetMarket lists markets with optional filters via the Gamma API.
-func (s *PolymarketService) GetMarket(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *PolymarketService) GetMarket(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 
 	params := url.Values{}
@@ -251,11 +247,11 @@ func (s *PolymarketService) GetMarket(_ context.Context, req *structpb.Struct) (
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetMarketById gets a single market by ID via the Gamma API.
-func (s *PolymarketService) GetMarketById(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *PolymarketService) GetMarketById(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	id := getString(fields, "id", "")
 	if id == "" {
@@ -268,13 +264,13 @@ func (s *PolymarketService) GetMarketById(_ context.Context, req *structpb.Struc
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // --- PolymarketClobService RPCs (public endpoints) ---
 
 // GetOrderbook gets orderbook levels for a token ID via the CLOB API.
-func (s *PolymarketService) GetOrderbook(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *PolymarketService) GetOrderbook(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	tokenID := getString(fields, "token_id", "")
 	if tokenID == "" {
@@ -289,11 +285,11 @@ func (s *PolymarketService) GetOrderbook(_ context.Context, req *structpb.Struct
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetPrice gets the best price for a token ID and side via the CLOB API.
-func (s *PolymarketService) GetPrice(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *PolymarketService) GetPrice(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	tokenID := getString(fields, "token_id", "")
 	if tokenID == "" {
@@ -313,11 +309,11 @@ func (s *PolymarketService) GetPrice(_ context.Context, req *structpb.Struct) (*
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetMidpoint gets the midpoint for a token ID via the CLOB API.
-func (s *PolymarketService) GetMidpoint(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *PolymarketService) GetMidpoint(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	tokenID := getString(fields, "token_id", "")
 	if tokenID == "" {
@@ -332,11 +328,11 @@ func (s *PolymarketService) GetMidpoint(_ context.Context, req *structpb.Struct)
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetSpread gets the spread for a token ID via the CLOB API.
-func (s *PolymarketService) GetSpread(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *PolymarketService) GetSpread(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	tokenID := getString(fields, "token_id", "")
 	if tokenID == "" {
@@ -351,11 +347,11 @@ func (s *PolymarketService) GetSpread(_ context.Context, req *structpb.Struct) (
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetPriceHistory gets historical prices for a token ID via the CLOB API.
-func (s *PolymarketService) GetPriceHistory(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *PolymarketService) GetPriceHistory(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 
 	params := url.Values{}
@@ -380,53 +376,53 @@ func (s *PolymarketService) GetPriceHistory(_ context.Context, req *structpb.Str
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // PlaceOrder places an order. Requires CLOB L2 auth (not supported in Go implementation).
-func (s *PolymarketService) PlaceOrder(_ context.Context, _ *structpb.Struct) (*structpb.Struct, error) {
+func (s *PolymarketService) PlaceOrder(_ context.Context, _ *structpb.Struct) (json.RawMessage, error) {
 	return nil, fmt.Errorf("PlaceOrder requires CLOB L2 authentication; use the Python implementation")
 }
 
 // CreateAndPostOrder creates and posts an order. Requires CLOB L2 auth (not supported in Go implementation).
-func (s *PolymarketService) CreateAndPostOrder(_ context.Context, _ *structpb.Struct) (*structpb.Struct, error) {
+func (s *PolymarketService) CreateAndPostOrder(_ context.Context, _ *structpb.Struct) (json.RawMessage, error) {
 	return nil, fmt.Errorf("CreateAndPostOrder requires CLOB L2 authentication; use the Python implementation")
 }
 
 // CancelOrder cancels an order. Requires CLOB L2 auth (not supported in Go implementation).
-func (s *PolymarketService) CancelOrder(_ context.Context, _ *structpb.Struct) (*structpb.Struct, error) {
+func (s *PolymarketService) CancelOrder(_ context.Context, _ *structpb.Struct) (json.RawMessage, error) {
 	return nil, fmt.Errorf("CancelOrder requires CLOB L2 authentication; use the Python implementation")
 }
 
 // CancelAllOrders cancels all orders. Requires CLOB L2 auth (not supported in Go implementation).
-func (s *PolymarketService) CancelAllOrders(_ context.Context, _ *structpb.Struct) (*structpb.Struct, error) {
+func (s *PolymarketService) CancelAllOrders(_ context.Context, _ *structpb.Struct) (json.RawMessage, error) {
 	return nil, fmt.Errorf("CancelAllOrders requires CLOB L2 authentication; use the Python implementation")
 }
 
 // GetOpenOrders gets open orders. Requires CLOB L2 auth (not supported in Go implementation).
-func (s *PolymarketService) GetOpenOrders(_ context.Context, _ *structpb.Struct) (*structpb.Struct, error) {
+func (s *PolymarketService) GetOpenOrders(_ context.Context, _ *structpb.Struct) (json.RawMessage, error) {
 	return nil, fmt.Errorf("GetOpenOrders requires CLOB L2 authentication; use the Python implementation")
 }
 
 // GetTrades gets trades. Requires CLOB L2 auth (not supported in Go implementation).
-func (s *PolymarketService) GetTrades(_ context.Context, _ *structpb.Struct) (*structpb.Struct, error) {
+func (s *PolymarketService) GetTrades(_ context.Context, _ *structpb.Struct) (json.RawMessage, error) {
 	return nil, fmt.Errorf("GetTrades requires CLOB L2 authentication; use the Python implementation")
 }
 
 // GetBalance gets balance and allowance. Requires CLOB L2 auth (not supported in Go implementation).
-func (s *PolymarketService) GetBalance(_ context.Context, _ *structpb.Struct) (*structpb.Struct, error) {
+func (s *PolymarketService) GetBalance(_ context.Context, _ *structpb.Struct) (json.RawMessage, error) {
 	return nil, fmt.Errorf("GetBalance requires CLOB L2 authentication; use the Python implementation")
 }
 
 // GetBalanceAllowance gets balance and allowance. Requires CLOB L2 auth (not supported in Go implementation).
-func (s *PolymarketService) GetBalanceAllowance(_ context.Context, _ *structpb.Struct) (*structpb.Struct, error) {
+func (s *PolymarketService) GetBalanceAllowance(_ context.Context, _ *structpb.Struct) (json.RawMessage, error) {
 	return nil, fmt.Errorf("GetBalanceAllowance requires CLOB L2 authentication; use the Python implementation")
 }
 
 // --- PolymarketDataService RPCs ---
 
 // GetPositions gets positions for a user wallet via the Data API.
-func (s *PolymarketService) GetPositions(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *PolymarketService) GetPositions(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	user := getString(fields, "user", "")
 	if user == "" {
@@ -450,11 +446,11 @@ func (s *PolymarketService) GetPositions(_ context.Context, req *structpb.Struct
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }
 
 // GetLeaderboard gets leaderboard entries via the Data API.
-func (s *PolymarketService) GetLeaderboard(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *PolymarketService) GetLeaderboard(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 
 	params := url.Values{}
@@ -473,5 +469,5 @@ func (s *PolymarketService) GetLeaderboard(_ context.Context, req *structpb.Stru
 		return nil, err
 	}
 
-	return toStruct(data)
+	return responseJSON(data)
 }

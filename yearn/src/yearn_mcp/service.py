@@ -59,7 +59,7 @@ def _parse_vault(v: dict) -> pb.Vault:
     )
 
     # Fees.
-    raw_fees = (raw_apr.get("fees") or {})
+    raw_fees = raw_apr.get("fees") or {}
     fees = pb.VaultFees(
         performance=raw_fees.get("performance") or 0,
         management=raw_fees.get("management") or 0,
@@ -69,17 +69,19 @@ def _parse_vault(v: dict) -> pb.Vault:
     strategies = []
     for s in v.get("strategies") or []:
         s_details = s.get("details") or {}
-        strategies.append(pb.StrategyDetail(
-            address=s.get("address", "") or "",
-            name=s.get("name", "") or "",
-            status=s.get("status", "") or "",
-            total_debt=str(s_details.get("totalDebt", "")) or "",
-            total_loss=str(s_details.get("totalLoss", "")) or "",
-            total_gain=str(s_details.get("totalGain", "")) or "",
-            performance_fee=s_details.get("performanceFee") or 0,
-            last_report=s_details.get("lastReport") or 0,
-            debt_ratio=s_details.get("debtRatio") or 0,
-        ))
+        strategies.append(
+            pb.StrategyDetail(
+                address=s.get("address", "") or "",
+                name=s.get("name", "") or "",
+                status=s.get("status", "") or "",
+                total_debt=str(s_details.get("totalDebt", "")) or "",
+                total_loss=str(s_details.get("totalLoss", "")) or "",
+                total_gain=str(s_details.get("totalGain", "")) or "",
+                performance_fee=s_details.get("performanceFee") or 0,
+                last_report=s_details.get("lastReport") or 0,
+                debt_ratio=s_details.get("debtRatio") or 0,
+            )
+        )
 
     # Details.
     raw_details = v.get("details") or {}
@@ -129,16 +131,18 @@ class YearnService:
 
     async def aclose(self) -> None:
         """Close the HTTP client. Idempotent."""
-        await self._client.aclose()
+        await self._http.aclose()
 
-    def _get(self, url: str, params: dict | None = None) -> Any:
-        resp = self._http.get(url, params=params)
+    async def _get(self, url: str, params: dict | None = None) -> Any:
+        resp = await self._http.get(url, params=params)
         resp.raise_for_status()
         return resp.json()
 
-    async def ListVaults(self, request: Any, context: Any = None) -> pb.ListVaultsResponse:
+    async def ListVaults(
+        self, request: Any, context: Any = None
+    ) -> pb.ListVaultsResponse:
         chain_id = request.chain_id if request.chain_id else 1
-        raw = self._get(f"{_BASE_URL}/{chain_id}/vaults/all")
+        raw = await self._get(f"{_BASE_URL}/{chain_id}/vaults/all")
         resp = pb.ListVaultsResponse()
         for v in raw:
             resp.vaults.append(_parse_vault(v))
@@ -146,15 +150,17 @@ class YearnService:
 
     async def GetVault(self, request: Any, context: Any = None) -> pb.GetVaultResponse:
         chain_id = request.chain_id if request.chain_id else 1
-        raw = self._get(f"{_BASE_URL}/{chain_id}/vaults/{request.address}")
+        raw = await self._get(f"{_BASE_URL}/{chain_id}/vaults/{request.address}")
         vault = _parse_vault(raw)
         return pb.GetVaultResponse(vault=vault)
 
-    async def ListAllVaults(self, request: Any, context: Any = None) -> pb.ListAllVaultsResponse:
+    async def ListAllVaults(
+        self, request: Any, context: Any = None
+    ) -> pb.ListAllVaultsResponse:
         resp = pb.ListAllVaultsResponse()
         for chain_id in _SUPPORTED_CHAINS:
             try:
-                raw = self._get(f"{_BASE_URL}/{chain_id}/vaults/all")
+                raw = await self._get(f"{_BASE_URL}/{chain_id}/vaults/all")
                 for v in raw:
                     resp.vaults.append(_parse_vault(v))
             except Exception:

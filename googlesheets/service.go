@@ -58,7 +58,7 @@ func NewGoogleSheetsService() *GoogleSheetsService {
 		decoded, err := base64.StdEncoding.DecodeString(encoded)
 		if err == nil {
 			var key serviceAccountKey
-			if err := json.Unmarshal(decoded, &key); err == nil {
+			if err := decodeProviderJSON(decoded, &key); err == nil {
 				svc.saKey = &key
 			}
 		}
@@ -147,7 +147,7 @@ func (s *GoogleSheetsService) ensureAccessToken() error {
 		AccessToken string `json:"access_token"`
 		ExpiresIn   int    `json:"expires_in"`
 	}
-	if err := json.Unmarshal(body, &tokenResp); err != nil {
+	if err := decodeProviderJSON(body, &tokenResp); err != nil {
 		return fmt.Errorf("decode token response: %w", err)
 	}
 
@@ -203,7 +203,7 @@ func (s *GoogleSheetsService) get(path string, params url.Values) (map[string]an
 		return nil, fmt.Errorf("google sheets api returned %d: %s", resp.StatusCode, string(body))
 	}
 	var result map[string]any
-	if err := json.Unmarshal(body, &result); err != nil {
+	if err := decodeProviderJSON(body, &result); err != nil {
 		return nil, fmt.Errorf("decode json: %w", err)
 	}
 	return result, nil
@@ -241,7 +241,7 @@ func (s *GoogleSheetsService) post(path string, payload any) (map[string]any, er
 		return nil, fmt.Errorf("google sheets api returned %d: %s", resp.StatusCode, string(body))
 	}
 	var result map[string]any
-	if err := json.Unmarshal(body, &result); err != nil {
+	if err := decodeProviderJSON(body, &result); err != nil {
 		return nil, fmt.Errorf("decode json: %w", err)
 	}
 	return result, nil
@@ -279,7 +279,7 @@ func (s *GoogleSheetsService) put(path string, payload any) (map[string]any, err
 		return nil, fmt.Errorf("google sheets api returned %d: %s", resp.StatusCode, string(body))
 	}
 	var result map[string]any
-	if err := json.Unmarshal(body, &result); err != nil {
+	if err := decodeProviderJSON(body, &result); err != nil {
 		return nil, fmt.Errorf("decode json: %w", err)
 	}
 	return result, nil
@@ -300,13 +300,7 @@ func toStr(v any) string {
 }
 
 func toInt32(v any) int32 {
-	if v == nil {
-		return 0
-	}
-	if f, ok := v.(float64); ok {
-		return int32(f)
-	}
-	return 0
+	return providerInteger32(v)
 }
 
 func toMap(v any) map[string]any {

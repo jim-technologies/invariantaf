@@ -39,7 +39,9 @@ def _cli_or_skip(live_server, service, method, params=None):
         pytest.skip(f"{method}: {type(exc).__name__}: {exc}")
     except Exception as exc:
         msg = str(exc)
-        if any(code in msg for code in ("429", "500", "502", "503", "Timeout", "timed out")):
+        if any(
+            code in msg for code in ("429", "500", "502", "503", "Timeout", "timed out")
+        ):
             pytest.skip(f"{method}: {msg[:120]}")
         raise
 
@@ -56,16 +58,16 @@ def live_server():
         OpenMeteoService,
     )
 
-    srv = Server.from_descriptor(
-        DESCRIPTOR_PATH
-    )
+    srv = Server.from_descriptor(DESCRIPTOR_PATH)
     servicer = OpenMeteoService(
         base_url=DEFAULT_BASE_URL,
         archive_base_url=DEFAULT_ARCHIVE_BASE_URL,
         air_quality_base_url=DEFAULT_AIR_QUALITY_BASE_URL,
         marine_base_url=DEFAULT_MARINE_BASE_URL,
     )
-    srv.register(servicer, service_name="openmeteo.v1.OpenMeteoService")
+    from openmeteo_mcp.gen.openmeteo.v1 import openmeteo_pb2_grpc as _native_rpc
+
+    _native_rpc.add_OpenMeteoServiceServicer_to_server(servicer, srv)
     yield srv
     asyncio.run(srv.stop())
 
@@ -77,7 +79,7 @@ class TestLiveGetForecast:
     def test_nyc_forecast(self, live_server):
         result = _cli_or_skip(
             live_server,
-            "OpenMeteoService",
+            "openmeteo.v1.OpenMeteoService",
             "GetForecast",
             {"latitude": 40.7128, "longitude": -74.006},
         )
@@ -94,7 +96,7 @@ class TestLiveGetForecast:
     def test_tokyo_forecast(self, live_server):
         result = _cli_or_skip(
             live_server,
-            "OpenMeteoService",
+            "openmeteo.v1.OpenMeteoService",
             "GetForecast",
             {"latitude": 35.6762, "longitude": 139.6503, "forecast_days": 3},
         )
@@ -106,7 +108,7 @@ class TestLiveGetForecast:
     def test_london_forecast(self, live_server):
         result = _cli_or_skip(
             live_server,
-            "OpenMeteoService",
+            "openmeteo.v1.OpenMeteoService",
             "GetForecast",
             {"latitude": 51.5074, "longitude": -0.1278, "timezone": "Europe/London"},
         )
@@ -121,7 +123,7 @@ class TestLiveGetHistoricalWeather:
     def test_nyc_historical(self, live_server):
         result = _cli_or_skip(
             live_server,
-            "OpenMeteoService",
+            "openmeteo.v1.OpenMeteoService",
             "GetHistoricalWeather",
             {
                 "latitude": 40.7128,
@@ -140,7 +142,7 @@ class TestLiveGetHistoricalWeather:
     def test_tokyo_historical(self, live_server):
         result = _cli_or_skip(
             live_server,
-            "OpenMeteoService",
+            "openmeteo.v1.OpenMeteoService",
             "GetHistoricalWeather",
             {
                 "latitude": 35.6762,
@@ -163,7 +165,7 @@ class TestLiveGetMultiModelForecast:
     def test_nyc_multi_model(self, live_server):
         result = _cli_or_skip(
             live_server,
-            "OpenMeteoService",
+            "openmeteo.v1.OpenMeteoService",
             "GetMultiModelForecast",
             {
                 "latitude": 40.7128,
@@ -184,7 +186,7 @@ class TestLiveGetMultiModelForecast:
     def test_london_all_models(self, live_server):
         result = _cli_or_skip(
             live_server,
-            "OpenMeteoService",
+            "openmeteo.v1.OpenMeteoService",
             "GetMultiModelForecast",
             {
                 "latitude": 51.5074,
@@ -212,7 +214,7 @@ class TestLiveGetAirQuality:
     def test_nyc_air_quality(self, live_server):
         result = _cli_or_skip(
             live_server,
-            "OpenMeteoService",
+            "openmeteo.v1.OpenMeteoService",
             "GetAirQuality",
             {"latitude": 40.7128, "longitude": -74.006},
         )
@@ -225,7 +227,7 @@ class TestLiveGetAirQuality:
     def test_tokyo_air_quality(self, live_server):
         result = _cli_or_skip(
             live_server,
-            "OpenMeteoService",
+            "openmeteo.v1.OpenMeteoService",
             "GetAirQuality",
             {"latitude": 35.6762, "longitude": 139.6503},
         )
@@ -241,7 +243,7 @@ class TestLiveGetMarineWeather:
         # Point in the Atlantic Ocean near NYC
         result = _cli_or_skip(
             live_server,
-            "OpenMeteoService",
+            "openmeteo.v1.OpenMeteoService",
             "GetMarineWeather",
             {"latitude": 40.0, "longitude": -70.0},
         )
@@ -254,7 +256,7 @@ class TestLiveGetMarineWeather:
         # Point in the Pacific Ocean near Tokyo
         result = _cli_or_skip(
             live_server,
-            "OpenMeteoService",
+            "openmeteo.v1.OpenMeteoService",
             "GetMarineWeather",
             {"latitude": 34.0, "longitude": 140.0},
         )

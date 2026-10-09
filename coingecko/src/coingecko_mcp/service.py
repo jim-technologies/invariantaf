@@ -21,13 +21,13 @@ class CoinGeckoService:
 
     async def aclose(self) -> None:
         """Close the HTTP client. Idempotent."""
-        await self._client.aclose()
+        await self._http.aclose()
 
-    def _get(self, path: str, params: dict | None = None) -> Any:
+    async def _get(self, path: str, params: dict | None = None) -> Any:
         p = dict(params or {})
         if self._api_key:
             p["x_cg_demo_api_key"] = self._api_key
-        resp = self._http.get(f"{_BASE_URL}{path}", params=p)
+        resp = await self._http.get(f"{_BASE_URL}{path}", params=p)
         resp.raise_for_status()
         return resp.json()
 
@@ -41,76 +41,94 @@ class CoinGeckoService:
             "include_24hr_change": str(request.include_24h_change).lower(),
             "include_last_updated_at": "true",
         }
-        raw = self._get("/simple/price", params)
+        raw = await self._get("/simple/price", params)
 
         resp = pb.GetPriceResponse()
         for coin_id, data in raw.items():
-            resp.prices.append(pb.CoinPrice(
-                coin_id=coin_id,
-                price=data.get(vs, 0),
-                market_cap=data.get(f"{vs}_market_cap", 0),
-                volume_24h=data.get(f"{vs}_24h_vol", 0),
-                change_24h=data.get(f"{vs}_24h_change", 0),
-                last_updated=data.get("last_updated_at", 0),
-            ))
+            resp.prices.append(
+                pb.CoinPrice(
+                    coin_id=coin_id,
+                    price=data.get(vs, 0),
+                    market_cap=data.get(f"{vs}_market_cap", 0),
+                    volume_24h=data.get(f"{vs}_24h_vol", 0),
+                    change_24h=data.get(f"{vs}_24h_change", 0),
+                    last_updated=data.get("last_updated_at", 0),
+                )
+            )
         return resp
 
     async def Search(self, request: Any, context: Any = None) -> pb.SearchResponse:
-        raw = self._get("/search", params={"query": request.query})
+        raw = await self._get("/search", params={"query": request.query})
         resp = pb.SearchResponse()
         for c in raw.get("coins", []):
-            resp.coins.append(pb.SearchCoin(
-                id=c.get("id", ""),
-                name=c.get("name", ""),
-                symbol=c.get("symbol", ""),
-                market_cap_rank=c.get("market_cap_rank") or 0,
-                thumb=c.get("thumb", ""),
-                large=c.get("large", ""),
-            ))
+            resp.coins.append(
+                pb.SearchCoin(
+                    id=c.get("id", ""),
+                    name=c.get("name", ""),
+                    symbol=c.get("symbol", ""),
+                    market_cap_rank=c.get("market_cap_rank") or 0,
+                    thumb=c.get("thumb", ""),
+                    large=c.get("large", ""),
+                )
+            )
         for e in raw.get("exchanges", []):
-            resp.exchanges.append(pb.SearchExchange(
-                id=e.get("id", ""),
-                name=e.get("name", ""),
-                market_type=e.get("market_type", ""),
-                thumb=e.get("thumb", ""),
-            ))
+            resp.exchanges.append(
+                pb.SearchExchange(
+                    id=e.get("id", ""),
+                    name=e.get("name", ""),
+                    market_type=e.get("market_type", ""),
+                    thumb=e.get("thumb", ""),
+                )
+            )
         for cat in raw.get("categories", []):
-            resp.categories.append(pb.SearchCategory(
-                id=str(cat.get("id", "")),
-                name=cat.get("name", ""),
-            ))
+            resp.categories.append(
+                pb.SearchCategory(
+                    id=str(cat.get("id", "")),
+                    name=cat.get("name", ""),
+                )
+            )
         return resp
 
-    async def GetTrending(self, request: Any, context: Any = None) -> pb.GetTrendingResponse:
-        raw = self._get("/search/trending")
+    async def GetTrending(
+        self, request: Any, context: Any = None
+    ) -> pb.GetTrendingResponse:
+        raw = await self._get("/search/trending")
         resp = pb.GetTrendingResponse()
         for item in raw.get("coins", []):
             c = item.get("item", {})
-            resp.coins.append(pb.TrendingCoin(
-                id=c.get("id", ""),
-                name=c.get("name", ""),
-                symbol=c.get("symbol", ""),
-                market_cap_rank=c.get("market_cap_rank") or 0,
-                thumb=c.get("thumb", ""),
-                price_btc=c.get("price_btc", 0),
-                score=c.get("score", 0),
-            ))
+            resp.coins.append(
+                pb.TrendingCoin(
+                    id=c.get("id", ""),
+                    name=c.get("name", ""),
+                    symbol=c.get("symbol", ""),
+                    market_cap_rank=c.get("market_cap_rank") or 0,
+                    thumb=c.get("thumb", ""),
+                    price_btc=c.get("price_btc", 0),
+                    score=c.get("score", 0),
+                )
+            )
         for item in raw.get("nfts", []):
-            resp.nfts.append(pb.TrendingNFT(
-                id=item.get("id", ""),
-                name=item.get("name", ""),
-                symbol=item.get("symbol", ""),
-                thumb=item.get("thumb", ""),
-            ))
+            resp.nfts.append(
+                pb.TrendingNFT(
+                    id=item.get("id", ""),
+                    name=item.get("name", ""),
+                    symbol=item.get("symbol", ""),
+                    thumb=item.get("thumb", ""),
+                )
+            )
         for item in raw.get("categories", []):
-            resp.categories.append(pb.TrendingCategory(
-                id=str(item.get("id", "")),
-                name=item.get("name", ""),
-                coins_count=item.get("coins_count", 0),
-            ))
+            resp.categories.append(
+                pb.TrendingCategory(
+                    id=str(item.get("id", "")),
+                    name=item.get("name", ""),
+                    coins_count=item.get("coins_count", 0),
+                )
+            )
         return resp
 
-    async def GetMarkets(self, request: Any, context: Any = None) -> pb.GetMarketsResponse:
+    async def GetMarkets(
+        self, request: Any, context: Any = None
+    ) -> pb.GetMarketsResponse:
         params = {
             "vs_currency": request.vs_currency or "usd",
             "order": request.order or "market_cap_desc",
@@ -120,43 +138,49 @@ class CoinGeckoService:
         if request.category:
             params["category"] = request.category
 
-        raw = self._get("/coins/markets", params)
+        raw = await self._get("/coins/markets", params)
         resp = pb.GetMarketsResponse()
         for c in raw:
-            resp.coins.append(pb.CoinMarket(
-                id=c.get("id", ""),
-                symbol=c.get("symbol", ""),
-                name=c.get("name", ""),
-                image=c.get("image", ""),
-                current_price=c.get("current_price") or 0,
-                market_cap=c.get("market_cap") or 0,
-                market_cap_rank=c.get("market_cap_rank") or 0,
-                total_volume=c.get("total_volume") or 0,
-                high_24h=c.get("high_24h") or 0,
-                low_24h=c.get("low_24h") or 0,
-                price_change_24h=c.get("price_change_24h") or 0,
-                price_change_percentage_24h=c.get("price_change_percentage_24h") or 0,
-                circulating_supply=c.get("circulating_supply") or 0,
-                total_supply=c.get("total_supply") or 0,
-                max_supply=c.get("max_supply") or 0,
-                ath=c.get("ath") or 0,
-                ath_change_percentage=c.get("ath_change_percentage") or 0,
-                ath_date=str(c.get("ath_date", "")),
-                atl=c.get("atl") or 0,
-                atl_change_percentage=c.get("atl_change_percentage") or 0,
-                atl_date=str(c.get("atl_date", "")),
-                last_updated=str(c.get("last_updated", "")),
-            ))
+            resp.coins.append(
+                pb.CoinMarket(
+                    id=c.get("id", ""),
+                    symbol=c.get("symbol", ""),
+                    name=c.get("name", ""),
+                    image=c.get("image", ""),
+                    current_price=c.get("current_price") or 0,
+                    market_cap=c.get("market_cap") or 0,
+                    market_cap_rank=c.get("market_cap_rank") or 0,
+                    total_volume=c.get("total_volume") or 0,
+                    high_24h=c.get("high_24h") or 0,
+                    low_24h=c.get("low_24h") or 0,
+                    price_change_24h=c.get("price_change_24h") or 0,
+                    price_change_percentage_24h=c.get("price_change_percentage_24h")
+                    or 0,
+                    circulating_supply=c.get("circulating_supply") or 0,
+                    total_supply=c.get("total_supply") or 0,
+                    max_supply=c.get("max_supply") or 0,
+                    ath=c.get("ath") or 0,
+                    ath_change_percentage=c.get("ath_change_percentage") or 0,
+                    ath_date=str(c.get("ath_date", "")),
+                    atl=c.get("atl") or 0,
+                    atl_change_percentage=c.get("atl_change_percentage") or 0,
+                    atl_date=str(c.get("atl_date", "")),
+                    last_updated=str(c.get("last_updated", "")),
+                )
+            )
         return resp
 
     async def GetCoin(self, request: Any, context: Any = None) -> pb.GetCoinResponse:
-        raw = self._get(f"/coins/{request.coin_id}", params={
-            "localization": "false",
-            "tickers": "false",
-            "community_data": "false",
-            "developer_data": "false",
-            "sparkline": "false",
-        })
+        raw = await self._get(
+            f"/coins/{request.coin_id}",
+            params={
+                "localization": "false",
+                "tickers": "false",
+                "community_data": "false",
+                "developer_data": "false",
+                "sparkline": "false",
+            },
+        )
         md = raw.get("market_data", {})
         desc = raw.get("description", {})
         links = raw.get("links", {})
@@ -193,11 +217,16 @@ class CoinGeckoService:
             watchlist_users=raw.get("watchlist_portfolio_users") or 0,
         )
 
-    async def GetMarketChart(self, request: Any, context: Any = None) -> pb.GetMarketChartResponse:
-        raw = self._get(f"/coins/{request.coin_id}/market_chart", params={
-            "vs_currency": request.vs_currency or "usd",
-            "days": request.days or "7",
-        })
+    async def GetMarketChart(
+        self, request: Any, context: Any = None
+    ) -> pb.GetMarketChartResponse:
+        raw = await self._get(
+            f"/coins/{request.coin_id}/market_chart",
+            params={
+                "vs_currency": request.vs_currency or "usd",
+                "days": request.days or "7",
+            },
+        )
         resp = pb.GetMarketChartResponse()
         for ts, val in raw.get("prices", []):
             resp.prices.append(pb.TimestampValue(timestamp=int(ts), value=val))
@@ -208,23 +237,30 @@ class CoinGeckoService:
         return resp
 
     async def GetOHLC(self, request: Any, context: Any = None) -> pb.GetOHLCResponse:
-        raw = self._get(f"/coins/{request.coin_id}/ohlc", params={
-            "vs_currency": request.vs_currency or "usd",
-            "days": request.days or "7",
-        })
+        raw = await self._get(
+            f"/coins/{request.coin_id}/ohlc",
+            params={
+                "vs_currency": request.vs_currency or "usd",
+                "days": request.days or "7",
+            },
+        )
         resp = pb.GetOHLCResponse()
         for candle in raw:
-            resp.candles.append(pb.OHLC(
-                timestamp=int(candle[0]),
-                open=candle[1],
-                high=candle[2],
-                low=candle[3],
-                close=candle[4],
-            ))
+            resp.candles.append(
+                pb.OHLC(
+                    timestamp=int(candle[0]),
+                    open=candle[1],
+                    high=candle[2],
+                    low=candle[3],
+                    close=candle[4],
+                )
+            )
         return resp
 
-    async def GetGlobal(self, request: Any, context: Any = None) -> pb.GetGlobalResponse:
-        raw = self._get("/global")
+    async def GetGlobal(
+        self, request: Any, context: Any = None
+    ) -> pb.GetGlobalResponse:
+        raw = await self._get("/global")
         data = raw.get("data", {})
         mcp = data.get("market_cap_percentage", {})
         return pb.GetGlobalResponse(
@@ -234,35 +270,48 @@ class CoinGeckoService:
             total_volume_usd=(data.get("total_volume") or {}).get("usd", 0),
             btc_dominance=mcp.get("btc", 0),
             eth_dominance=mcp.get("eth", 0),
-            market_cap_change_percentage_24h=data.get("market_cap_change_percentage_24h_usd", 0),
+            market_cap_change_percentage_24h=data.get(
+                "market_cap_change_percentage_24h_usd", 0
+            ),
             updated_at=data.get("updated_at", 0),
         )
 
-    async def GetCategories(self, request: Any, context: Any = None) -> pb.GetCategoriesResponse:
-        raw = self._get("/coins/categories", params={
-            "order": request.order or "market_cap_desc",
-        })
+    async def GetCategories(
+        self, request: Any, context: Any = None
+    ) -> pb.GetCategoriesResponse:
+        raw = await self._get(
+            "/coins/categories",
+            params={
+                "order": request.order or "market_cap_desc",
+            },
+        )
         resp = pb.GetCategoriesResponse()
         for cat in raw:
-            resp.categories.append(pb.Category(
-                id=str(cat.get("id", "")),
-                name=cat.get("name", ""),
-                market_cap=cat.get("market_cap") or 0,
-                market_cap_change_24h=cat.get("market_cap_change_24h") or 0,
-                volume_24h=cat.get("volume_24h") or 0,
-                top_3_coins=cat.get("top_3_coins", []) or [],
-                updated_at=str(cat.get("updated_at", "")),
-            ))
+            resp.categories.append(
+                pb.Category(
+                    id=str(cat.get("id", "")),
+                    name=cat.get("name", ""),
+                    market_cap=cat.get("market_cap") or 0,
+                    market_cap_change_24h=cat.get("market_cap_change_24h") or 0,
+                    volume_24h=cat.get("volume_24h") or 0,
+                    top_3_coins=cat.get("top_3_coins", []) or [],
+                    updated_at=str(cat.get("updated_at", "")),
+                )
+            )
         return resp
 
-    async def GetExchangeRates(self, request: Any, context: Any = None) -> pb.GetExchangeRatesResponse:
-        raw = self._get("/exchange_rates")
+    async def GetExchangeRates(
+        self, request: Any, context: Any = None
+    ) -> pb.GetExchangeRatesResponse:
+        raw = await self._get("/exchange_rates")
         resp = pb.GetExchangeRatesResponse()
         for code, data in raw.get("rates", {}).items():
-            resp.rates[code].CopyFrom(pb.ExchangeRate(
-                name=data.get("name", ""),
-                unit=data.get("unit", ""),
-                value=data.get("value", 0),
-                type=data.get("type", ""),
-            ))
+            resp.rates[code].CopyFrom(
+                pb.ExchangeRate(
+                    name=data.get("name", ""),
+                    unit=data.get("unit", ""),
+                    value=data.get("value", 0),
+                    type=data.get("type", ""),
+                )
+            )
         return resp

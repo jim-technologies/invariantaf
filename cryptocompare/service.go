@@ -63,9 +63,9 @@ func (s *CryptoCompareService) get(path string, params url.Values) (map[string]a
 	}
 
 	var result map[string]any
-	if err := json.Unmarshal(body, &result); err != nil {
+	if err := decodeProviderJSON(body, &result); err != nil {
 		var arr []any
-		if err2 := json.Unmarshal(body, &arr); err2 == nil {
+		if err2 := decodeProviderJSON(body, &arr); err2 == nil {
 			result = map[string]any{"items": arr}
 		} else {
 			return nil, fmt.Errorf("decode response: %w (body: %s)", err, string(body))
@@ -86,22 +86,18 @@ func getString(fields map[string]*structpb.Value, key, def string) string {
 // helper: get an int field from structpb (numbers come as float64).
 func getInt(fields map[string]*structpb.Value, key string) int64 {
 	if v, ok := fields[key]; ok {
-		return int64(v.GetNumberValue())
+		return requestInteger(v)
 	}
 	return 0
 }
 
 // helper: convert API response to structpb.Struct.
-func toStruct(data map[string]any) (*structpb.Struct, error) {
-	result, err := structpb.NewStruct(data)
-	if err != nil {
-		return nil, fmt.Errorf("convert to struct: %w", err)
-	}
-	return result, nil
+func responseJSON(data map[string]any) (json.RawMessage, error) {
+	return json.Marshal(data)
 }
 
 // GetPrice gets the price of a single cryptocurrency in multiple currencies.
-func (s *CryptoCompareService) GetPrice(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *CryptoCompareService) GetPrice(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	fsym := getString(fields, "fsym", "")
 	if fsym == "" {
@@ -134,11 +130,11 @@ func (s *CryptoCompareService) GetPrice(_ context.Context, req *structpb.Struct)
 		}
 	}
 
-	return toStruct(map[string]any{"prices": prices})
+	return responseJSON(map[string]any{"prices": prices})
 }
 
 // GetMultiPrice gets a price matrix for multiple cryptocurrencies in multiple currencies.
-func (s *CryptoCompareService) GetMultiPrice(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *CryptoCompareService) GetMultiPrice(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	fsyms := getString(fields, "fsyms", "")
 	if fsyms == "" {
@@ -167,9 +163,7 @@ func (s *CryptoCompareService) GetMultiPrice(_ context.Context, req *structpb.St
 		}
 		prices := map[string]any{}
 		for k, v := range pm {
-			if n, ok := v.(float64); ok {
-				prices[k] = n
-			}
+			prices[k] = providerNumber(v)
 		}
 		rows = append(rows, map[string]any{
 			"from_symbol": fromSym,
@@ -177,11 +171,11 @@ func (s *CryptoCompareService) GetMultiPrice(_ context.Context, req *structpb.St
 		})
 	}
 
-	return toStruct(map[string]any{"rows": rows})
+	return responseJSON(map[string]any{"rows": rows})
 }
 
 // GetFullPrice gets full price data (volume, market cap, etc.) for multiple cryptocurrencies.
-func (s *CryptoCompareService) GetFullPrice(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *CryptoCompareService) GetFullPrice(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	fsyms := getString(fields, "fsyms", "")
 	if fsyms == "" {
@@ -229,11 +223,11 @@ func (s *CryptoCompareService) GetFullPrice(_ context.Context, req *structpb.Str
 		}
 	}
 
-	return toStruct(map[string]any{"coins": coins})
+	return responseJSON(map[string]any{"coins": coins})
 }
 
 // GetHistoHour gets hourly OHLCV history for a cryptocurrency pair.
-func (s *CryptoCompareService) GetHistoHour(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *CryptoCompareService) GetHistoHour(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	fsym := getString(fields, "fsym", "")
 	if fsym == "" {
@@ -259,11 +253,11 @@ func (s *CryptoCompareService) GetHistoHour(_ context.Context, req *structpb.Str
 	}
 
 	candles := extractHistoData(data)
-	return toStruct(map[string]any{"candles": candles})
+	return responseJSON(map[string]any{"candles": candles})
 }
 
 // GetHistoDay gets daily OHLCV history for a cryptocurrency pair.
-func (s *CryptoCompareService) GetHistoDay(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *CryptoCompareService) GetHistoDay(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	fsym := getString(fields, "fsym", "")
 	if fsym == "" {
@@ -289,11 +283,11 @@ func (s *CryptoCompareService) GetHistoDay(_ context.Context, req *structpb.Stru
 	}
 
 	candles := extractHistoData(data)
-	return toStruct(map[string]any{"candles": candles})
+	return responseJSON(map[string]any{"candles": candles})
 }
 
 // GetTopByVolume gets top coins ranked by total volume.
-func (s *CryptoCompareService) GetTopByVolume(_ context.Context, req *structpb.Struct) (*structpb.Struct, error) {
+func (s *CryptoCompareService) GetTopByVolume(_ context.Context, req *structpb.Struct) (json.RawMessage, error) {
 	fields := req.GetFields()
 	tsym := getString(fields, "tsym", "")
 	if tsym == "" {
@@ -326,16 +320,16 @@ func (s *CryptoCompareService) GetTopByVolume(_ context.Context, req *structpb.S
 		tsymData, _ := rawData[tsym].(map[string]any)
 
 		coins = append(coins, map[string]any{
-			"name":            toStringField(coinInfo, "FullName"),
-			"symbol":          toStringField(coinInfo, "Name"),
-			"price":           toFloat(tsymData, "PRICE"),
-			"volume_24h":      toFloat(tsymData, "VOLUME24HOUR"),
-			"market_cap":      toFloat(tsymData, "MKTCAP"),
-			"change_pct_24h":  toFloat(tsymData, "CHANGEPCT24HOUR"),
+			"name":           toStringField(coinInfo, "FullName"),
+			"symbol":         toStringField(coinInfo, "Name"),
+			"price":          toFloat(tsymData, "PRICE"),
+			"volume_24h":     toFloat(tsymData, "VOLUME24HOUR"),
+			"market_cap":     toFloat(tsymData, "MKTCAP"),
+			"change_pct_24h": toFloat(tsymData, "CHANGEPCT24HOUR"),
 		})
 	}
 
-	return toStruct(map[string]any{"coins": coins})
+	return responseJSON(map[string]any{"coins": coins})
 }
 
 // extractHistoData extracts OHLCV candles from CryptoCompare's nested response.
@@ -372,6 +366,8 @@ func toFloat(m map[string]any, key string) float64 {
 		return 0
 	}
 	switch n := v.(type) {
+	case json.Number:
+		return providerNumber(n)
 	case float64:
 		return n
 	case int:

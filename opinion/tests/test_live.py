@@ -50,18 +50,16 @@ def live_server():
     from invariant import Server
     from gen.opinion.v1 import opinion_pb2 as _opinion_pb2  # noqa: F401
 
-    base_url = (
-        os.getenv("OPINION_BASE_URL") or DEFAULT_BASE_URL
-    ).rstrip("/")
+    base_url = (os.getenv("OPINION_BASE_URL") or DEFAULT_BASE_URL).rstrip("/")
 
-    srv = Server.from_descriptor(
-        DESCRIPTOR_PATH
-    )
+    srv = Server.from_descriptor(DESCRIPTOR_PATH)
 
     api_key = (os.getenv("OPINION_API_KEY") or "").strip()
     if api_key:
+
         def provider(req):
             return {"apikey": api_key}
+
         srv.use_http_header_provider(provider)
 
     srv.connect_http(base_url, service_name="opinion.v1.OpinionService")
@@ -118,7 +116,10 @@ class TestLiveMarkets:
             {"market_id": market_id},
         )
         assert "data" in result
-        assert result["data"].get("market_id") == market_id or result["data"].get("marketId") == market_id
+        assert (
+            result["data"].get("market_id") == market_id
+            or result["data"].get("marketId") == market_id
+        )
 
     def test_get_market_by_slug(self, live_server, first_market):
         slug = first_market.get("slug")
