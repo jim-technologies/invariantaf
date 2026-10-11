@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## v0.1.0 — 2026-10-11
+
+First tagged release of the adapter workspace; `VERSION` records it. The
+root tag versions the repository as a whole: the adapters' Go modules live
+in subdirectories and are not versioned by it.
+
 - Migrate Go and Python adapters to the root Invariant Protocol v0.16.7 module
   and generated native service registration. Preserve existing protobuf fields,
   services and provider authentication configuration.
