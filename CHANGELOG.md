@@ -19,3 +19,6 @@
   quicknode and unsplash. Their `<adapter>/<adapter>` binary ignore lines also
   matched the generated package directory, so a fresh clone failed `go vet`
   with an undefined `Register<Service>Server`; those five lines are removed.
+- Flox now supplies Go 1.27.2 itself (`go_1_27`), the version every adapter
+  module declares. Removed the `GOTOOLCHAIN=go1.27.2+auto` variable, which
+  downloaded that toolchain at run time on top of a Flox Go 1.26.4 bootstrap.

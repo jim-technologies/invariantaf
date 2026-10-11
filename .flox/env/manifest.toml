@@ -12,8 +12,10 @@ buf = { pkg-path = "buf", version = "1.72.0", pkg-group = "buf" }
 protobuf = { pkg-path = "protobuf", version = "36.1", pkg-group = "protobuf" }
 uv.pkg-path = "uv"
 ruff.pkg-path = "ruff"
-go.pkg-path = "go"
-go.version = "1.26.4"
+# Flox supplies the exact patched Go release every adapter module declares, so
+# nothing downloads a toolchain at run time. The catalog's 1.27 line is its own
+# package, resolved in its own group.
+go = { pkg-path = "go_1_27", version = "1.27.2", pkg-group = "go" }
 protoc-gen-go = { pkg-path = "protoc-gen-go", version = "1.36.12", pkg-group = "proto-go" }
 protoc-gen-go-grpc = { pkg-path = "protoc-gen-go-grpc", version = "1.6.2", pkg-group = "proto-grpc" }
 govulncheck = { pkg-path = "govulncheck", pkg-group = "repo-audit" }
@@ -28,9 +30,6 @@ gcc.outputs = "all"
 ##      as well as [hook], [profile] scripts and [services] below.
 ## -------------------------------------------------------------------
 [vars]
-# Go's checksum-verified selector supplies the patched release while Flox
-# provides the portable bootstrap toolchain.
-GOTOOLCHAIN = "go1.27.2+auto"
 GOENV = "off"
 
 
