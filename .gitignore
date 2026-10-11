@@ -8,6 +8,9 @@ __pycache__/
 
 # Go build artifacts: `go build .` / `go run .` produces a binary named after
 # the package directory. Each Go adapter's binary lives at `<adapter>/<adapter>`.
+# Adapters whose generated protobuf package lives at `<adapter>/<adapter>/v1/`
+# are not listed: that path is a directory, so no binary can land there, and
+# a line for it would ignore the generated bindings.
 across/across
 aevo/aevo
 alternativeme/alternativeme
@@ -18,12 +21,9 @@ cryptocompare/cryptocompare
 cryptodotcom/cryptodotcom
 cryptosignal/cryptosignal
 discord/discord
-dockerhub/dockerhub
 drift/drift
 geminipredictions/geminipredictions
-giphy/giphy
 gmx/gmx
-googlesheets/googlesheets
 jito/jito
 noaa/noaa
 okx/okx
@@ -33,7 +33,6 @@ pandascore/pandascore
 pendle/pendle
 polymarket/polymarket
 predictfun/predictfun
-quicknode/quicknode
 raydium/raydium
 slack/slack
 stackexchange/stackexchange
@@ -42,6 +41,5 @@ telegram/telegram
 temporal/temporal
 theoddsapi/theoddsapi
 uniswap/uniswap
-unsplash/unsplash
 usgovdata/usgovdata
 venus/venus

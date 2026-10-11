@@ -15,3 +15,7 @@
 - Update existing Python live fixtures to generated registration and canonical
   tool names. Add a network-blocked entrypoint wiring check, including an
   explicit offline construction seam for Hyperliquid's official SDK.
+- Commit the generated gRPC bindings for dockerhub, giphy, googlesheets,
+  quicknode and unsplash. Their `<adapter>/<adapter>` binary ignore lines also
+  matched the generated package directory, so a fresh clone failed `go vet`
+  with an undefined `Register<Service>Server`; those five lines are removed.
